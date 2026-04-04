@@ -1,0 +1,65 @@
+# Dependencies (all apps under this repo)
+node_modules/
+
+# Build outputs
+dist/
+dist-ssr/
+build/
+out/
+*.local
+
+# Vite / tooling caches
+.vite/
+.turbo/
+.cache/
+.parcel-cache/
+.eslintcache
+*.tsbuildinfo
+
+# Environment & secrets — never commit real credentials
+.env
+.env.*
+!.env.example
+!.env*.example
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Test / coverage
+coverage/
+.nyc_output/
+
+# OS
+.DS_Store
+.DS_Store?
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Editor / IDE
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+*.swp
+*~
+
+# VS Code (optional: commit extensions.json for recommended plugins)
+.vscode/*
+!.vscode/extensions.json
+
+# Debug
+*.pem
+*.p12
+
+# Optional local tooling
+.vercel
+.netlify
