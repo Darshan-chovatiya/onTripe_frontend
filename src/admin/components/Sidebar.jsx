@@ -13,7 +13,7 @@ export default function Sidebar({ isOpen, onClose }) {
 
   const handleLogout = () => {
     logout()
-    navigate('/login', { replace: true })
+    navigate('/admin/login', { replace: true })
     if (window.innerWidth < 1024) onClose()
   }
 

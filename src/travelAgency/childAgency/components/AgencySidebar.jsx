@@ -22,7 +22,7 @@ export default function AgencySidebar({ isOpen, onClose }) {
 
   const handleLogout = () => {
     logout()
-    navigate('/login', { replace: true })
+    navigate('/travelAgency/child/login', { replace: true })
     if (window.innerWidth < 1024) onClose()
   }
 

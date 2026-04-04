@@ -53,3 +53,17 @@ export function getRequiredRolesForPath(pathname) {
   if (pathname.startsWith('/customer')) return [ROLES.CUSTOMER]
   return null
 }
+
+/**
+ * Get the specific login page path based on the current URI.
+ * Used for logout redirection and unauthorized access.
+ * @param {string} pathname
+ */
+export function getLoginPathForCurrentPath(pathname) {
+  if (pathname.startsWith('/admin')) return '/admin/login'
+  if (pathname.startsWith('/agency/parent')) return '/travelAgency/parent/login'
+  if (pathname.startsWith('/agency/child')) return '/travelAgency/child/login'
+  if (pathname.startsWith('/agency/sub')) return '/travelAgency/subchild/login'
+  return '/login'
+}
+

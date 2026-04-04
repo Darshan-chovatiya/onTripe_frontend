@@ -1,6 +1,6 @@
 import { Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/shared/context/AuthContext.jsx'
-import { getRequiredRolesForPath } from '@/shared/utils/roleHelpers.js'
+import { getRequiredRolesForPath, getLoginPathForCurrentPath } from '@/shared/utils/roleHelpers.js'
 import Loader from '@/shared/components/Loader.jsx'
 
 /**
@@ -19,7 +19,8 @@ export default function ProtectedRoute({ children }) {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace state={{ from: location.pathname }} />
+    const loginPath = getLoginPathForCurrentPath(location.pathname)
+    return <Navigate to={loginPath} replace state={{ from: location.pathname }} />
   }
 
   const required = getRequiredRolesForPath(location.pathname)
