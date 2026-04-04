@@ -36,6 +36,8 @@ axiosInstance.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`
     }
     if (config.data instanceof FormData) {
+      // Let the browser set the correct multipart/form-data boundary
+      config.headers = { ...config.headers }
       delete config.headers['Content-Type']
     }
     return config
