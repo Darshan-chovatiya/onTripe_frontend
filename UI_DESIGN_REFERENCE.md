@@ -2,6 +2,39 @@
 
 Shared visual language for **admin panel**, **customer**, **child**, **perents** (parents), and **sub child**. Keep layouts calm, sparse, and consistent.
 
+## Implementation status
+
+All five apps use the **same** Tailwind v4 `@theme` primary scale below in each `src/index.css`. Shared utility classes (`.btn-primary`, `.card`, `.input-field`, etc.) follow **minimal** rules: white label on primary buttons, light borders on cards, no lift animations on static content.
+
+| App | Theme file |
+|-----|------------|
+| Admin | `admin  panel/src/index.css` |
+| Customer | `customer/src/index.css` (includes dark mode + `.dark` variant) |
+| Child | `child/src/index.css` |
+| Parents | `perents/src/index.css` |
+| Sub child | `sub child/src/index.css` |
+
+When you change the brand, update **every** row in the table above (or extract a shared package later).
+
+### Drop-in `@theme` block (keep in sync)
+
+```css
+@theme {
+  --color-primary-50: #F4F3FC;
+  --color-primary-100: #E8E6F7;
+  --color-primary-200: #D4CFEF;
+  --color-primary-300: #B5ADE4;
+  --color-primary-400: #8A7DD4;
+  --color-primary-500: #3B2FA3;
+  --color-primary-600: #312885;
+  --color-primary-700: #29206E;
+  --color-primary-800: #221B5A;
+  --color-primary-900: #1A1548;
+  --color-primary-950: #14113A;
+  --font-sans: 'Inter', system-ui, sans-serif;
+}
+```
+
 ---
 
 ## Brand color
@@ -32,7 +65,7 @@ Use these as the single source when updating each app’s `@theme` / CSS variabl
 | `primary-800` | `#221B5A` | Dark UI accents |
 | `primary-900` | `#1A1548` | Darkest brand shade |
 
-**Implementation note:** Panels currently use Tailwind v4 `@theme` in `src/index.css`. Replace the existing `--color-primary-*` values with the table above so `bg-primary-500`, `text-primary-600`, etc. stay in sync everywhere.
+**Implementation note:** Each app’s `src/index.css` should define the same `--color-primary-*` values so `bg-primary-500`, `text-primary-600`, etc. stay in sync. An extra **`primary-950`** token (`#14113A`) is defined in code for very dark accents; use it sparingly.
 
 ---
 
@@ -150,18 +183,10 @@ Avoid arbitrary values (`px-[13px]`) unless there is a strong reason.
 
 ## File locations to sync
 
-After adopting this reference, update **`@theme` primary variables** in each app:
+Primary tokens live in each app’s **`src/index.css`** (see implementation table at the top). Layout shells (sidebar active state, login cards, headers) use **`primary-600`** for solid fills and **`text-white`** on those fills for contrast.
 
-| App | Typical path |
-|-----|----------------|
-| Admin | `admin  panel/src/index.css` |
-| Customer | `customer/src/index.css` |
-| Child | `child/src/index.css` |
-| Parents | `perents/src/index.css` |
-| Sub child | `sub child/src/index.css` |
-
-Keep **spacing and radius** conventions in shared documentation only, or extract shared tokens later if you introduce a package or copied theme file.
+Keep **spacing and radius** conventions in this document, or extract shared tokens later if you add a shared package.
 
 ---
 
-*Last aligned to brand primary `#3B2FA3` — minimal spacing and component rules for all panels.*
+*Unified theme: brand primary `#3B2FA3` (`primary-500`), minimal components, consistent across admin, customer, child, parents, and sub child panels.*
