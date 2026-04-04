@@ -19,11 +19,14 @@ function normalizeUser(raw, loginRoleHint) {
     admin: ROLES.ADMIN,
     customer: ROLES.CUSTOMER,
     parent_agency: ROLES.PARENT_AGENCY,
+    parent_agent: ROLES.PARENT_AGENCY,
     parentagency: ROLES.PARENT_AGENCY,
     parent: ROLES.PARENT_AGENCY,
     child_agency: ROLES.CHILD_AGENCY,
+    child_agent: ROLES.CHILD_AGENCY,
     childagency: ROLES.CHILD_AGENCY,
     sub_child: ROLES.SUB_CHILD,
+    sub_child_agent: ROLES.SUB_CHILD,
     subchild: ROLES.SUB_CHILD,
     organizer: loginRoleHint || ROLES.PARENT_AGENCY,
   }
@@ -138,83 +141,96 @@ export function AuthProvider({ children }) {
    */
   const login = useCallback(
     async (credentials) => {
-      const { type } = credentials
-      if (type === 'password') {
-        const { email, password, role } = credentials
-        if (!email || !password || !role) {
-          return { success: false, message: 'Missing login fields' }
-        }
-        setIsLoading(true)
-        try {
-          let path = '/auth/organizer/login'
-          if (role === ROLES.ADMIN) path = '/auth/admin/login'
-          const { data } = await axiosInstance.post(path, { email, password })
-          if (data?.status === 200 && data?.result?.user && data?.result?.token) {
-            const u = normalizeUser(data.result.user, role)
-            applySession(u, data.result.token)
-            return { success: true, role: u.role }
-          }
-          return { success: false, message: data?.message || 'Login failed' }
-        } catch (e) {
-          const msg = e?.response?.data?.message || 'Login failed'
-          return { success: false, message: msg }
-        } finally {
-          setIsLoading(false)
-        }
+      const { email, password } = credentials
+      if (!email || !password) {
+        return { success: false, message: 'Email and password required' }
       }
-
-      if (type === 'customerOtp') {
-        const { mobile, otp } = credentials
-        if (!mobile || !otp) return { success: false, message: 'Mobile and OTP required' }
-        setIsLoading(true)
-        try {
-          const { data } = await axiosInstance.post('/auth/login', { mobile, otp })
-          if (data?.status === 200 && data?.result?.user && data?.result?.token) {
-            const u = normalizeUser(data.result.user, ROLES.CUSTOMER)
-            applySession(u, data.result.token)
-            return { success: true, role: u.role }
-          }
-          return { success: false, message: data?.message || 'Login failed' }
-        } catch (e) {
-          return { success: false, message: e?.response?.data?.message || 'Login failed' }
-        } finally {
-          setIsLoading(false)
+      setIsLoading(true)
+      try {
+        const { data } = await axiosInstance.post('/auth/login', { email, password })
+        if (data?.success && data?.data?.user && data?.data?.token) {
+          const u = normalizeUser(data.data.user)
+          applySession(u, data.data.token)
+          return { success: true, role: u.role, message: data.message }
         }
+        return { success: false, message: data?.message || 'Login failed' }
+      } catch (e) {
+        const responseData = e?.response?.data
+        let msg = responseData?.message || 'Login failed'
+        if (responseData?.errors && Array.isArray(responseData.errors)) {
+          msg = responseData.errors.join(', ')
+        }
+        return { success: false, message: msg }
+      } finally {
+        setIsLoading(false)
       }
-
-      return { success: false, message: 'Unsupported login type' }
     },
     [applySession]
   )
 
-  const sendCustomerOTP = useCallback(async (mobile) => {
-    setIsLoading(true)
-    try {
-      const { data } = await axiosInstance.post('/auth/send-otp', { mobile })
-      setIsLoading(false)
-      if (data?.status === 200) return { success: true, message: data.message }
-      return { success: false, message: data?.message || 'Failed to send OTP' }
-    } catch (e) {
-      setIsLoading(false)
-      return { success: false, message: e?.response?.data?.message || 'Failed to send OTP' }
-    }
-  }, [])
-
-  const verifyCustomerOTP = useCallback(
-    async (mobile, otp, name, email) => {
+  const registerAgent = useCallback(
+    async (agentData) => {
       setIsLoading(true)
       try {
-        const { data } = await axiosInstance.post('/auth/verify-otp', { mobile, otp, name, email })
-        setIsLoading(false)
-        if (data?.status === 200 && data?.result?.user && data?.result?.token) {
-          const u = normalizeUser(data.result.user, ROLES.CUSTOMER)
-          applySession(u, data.result.token)
+        const { data } = await axiosInstance.post('/auth/register/agent', agentData)
+        if (data?.success) {
           return { success: true, message: data.message }
         }
-        return { success: false, message: data?.message || 'Verification failed' }
+        return { success: false, message: data?.message || 'Registration failed' }
       } catch (e) {
+        const responseData = e?.response?.data
+        let msg = responseData?.message || 'Registration failed'
+        if (responseData?.errors && Array.isArray(responseData.errors)) {
+          msg = responseData.errors.join(', ')
+        }
+        return { success: false, message: msg }
+      } finally {
         setIsLoading(false)
-        return { success: false, message: e?.response?.data?.message || 'Verification failed' }
+      }
+    },
+    []
+  )
+
+  const registerParent = useCallback(
+    async (formData) => {
+      setIsLoading(true);
+      try {
+        const { data } = await axiosInstance.post('/auth/register/parent', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        if (data?.success) {
+          return { success: true, message: data.message };
+        }
+        return { success: false, message: data?.message || 'Registration failed' };
+      } catch (e) {
+        const responseData = e?.response?.data
+        let msg = responseData?.message || 'Registration failed'
+        if (responseData?.errors && Array.isArray(responseData.errors)) {
+          msg = responseData.errors.join(', ')
+        }
+        return { success: false, message: msg }
+      } finally {
+        setIsLoading(false)
+      }
+    },
+    []
+  );
+
+  const loginCustomer = useCallback(
+    async (phone, bookingId) => {
+      setIsLoading(true)
+      try {
+        const { data } = await axiosInstance.post('/auth/login/customer', { phone, bookingId })
+        if (data?.success && data?.data?.token) {
+          const u = normalizeUser({ role: 'customer', phone, bookingId })
+          applySession(u, data.data.token)
+          return { success: true, role: u.role, message: data.message }
+        }
+        return { success: false, message: data?.message || 'Login failed' }
+      } catch (e) {
+        return { success: false, message: e?.response?.data?.message || 'Login failed' }
+      } finally {
+        setIsLoading(false)
       }
     },
     [applySession]
@@ -231,10 +247,11 @@ export function AuthProvider({ children }) {
       logout,
       checkAuth,
       setUser,
-      sendCustomerOTP,
-      verifyCustomerOTP,
+      registerAgent,
+      registerParent,
+      loginCustomer,
     }),
-    [user, token, isCheckingAuth, isLoading, login, logout, checkAuth, setUser, sendCustomerOTP, verifyCustomerOTP]
+    [user, token, isCheckingAuth, isLoading, login, logout, checkAuth, setUser, registerAgent, registerParent, loginCustomer]
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

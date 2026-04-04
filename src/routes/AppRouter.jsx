@@ -8,6 +8,16 @@ import Login from '@/auth/pages/Login.jsx'
 import ForgotPassword from '@/auth/pages/ForgotPassword.jsx'
 import Unauthorized from '@/pages/Unauthorized.jsx'
 
+import ChildAgentLogin from '@/travelAgency/childAgency/auth/Login.jsx'
+import ChildAgentRegister from '@/travelAgency/childAgency/auth/Register.jsx'
+import SubChildLogin from '@/travelAgency/subChild/auth/Login.jsx'
+import SubChildRegister from '@/travelAgency/subChild/auth/Register.jsx'
+
+import ParentAgentLogin from '@/travelAgency/parentAgency/auth/Login.jsx'
+import ParentAgentRegister from '@/travelAgency/parentAgency/auth/Register.jsx'
+
+import AdminLogin from '@/admin/auth/Login.jsx'
+
 import AdminLayout from '@/admin/components/AdminLayout.jsx'
 import AdminDashboard from '@/admin/pages/Dashboard.jsx'
 import AdminUsers from '@/admin/pages/Users.jsx'
@@ -62,6 +72,18 @@ export default function AppRouter() {
       <Route path="/login" element={<Login />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/unauthorized" element={<Unauthorized />} />
+
+      <Route path="/admin/login" element={<AdminLogin />} />
+
+      {/* Child and Sub-child Auth Routes */}
+      <Route path="/travelAgency/child/login" element={<ChildAgentLogin />} />
+      <Route path="/travelAgency/child/register" element={<ChildAgentRegister />} />
+      <Route path="/travelAgency/subchild/login" element={<SubChildLogin />} />
+      <Route path="/travelAgency/subchild/register" element={<SubChildRegister />} />
+
+      {/* Parent Auth Routes */}
+      <Route path="/travelAgency/parent/login" element={<ParentAgentLogin />} />
+      <Route path="/travelAgency/parent/register" element={<ParentAgentRegister />} />
 
       <Route
         path="/admin"
