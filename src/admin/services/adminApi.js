@@ -54,6 +54,10 @@ export function listPackages(params) {
   return axiosInstance.get('/admin/packages', { params })
 }
 
+export function getAgent(id) {
+  return axiosInstance.get(`/admin/agents/${id}`)
+}
+
 const adminApi = {
   listAgents,
   listPendingKyc,
@@ -67,7 +71,12 @@ const adminApi = {
   updateAgent,
   deleteAgent,
   listCustomers,
-  listPackages
+  listPackages,
+  listWhitelabelPackages: (params) => axiosInstance.get('/admin/whitelabels', { params }),
+  getAgent,
+  getAgencyCustomers: (id) => axiosInstance.get(`/admin/agents/${id}/customers`),
+  approvePackage: (id) => axiosInstance.patch(`/admin/packages/approve/${id}`),
+  rejectPackage: (id, rejectionReason) => axiosInstance.patch(`/admin/packages/reject/${id}`, { rejectionReason })
 }
 
 export default adminApi

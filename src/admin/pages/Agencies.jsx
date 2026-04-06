@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { 
   Building2, 
   Search, 
@@ -746,6 +747,7 @@ const EditAgencyModal = ({ isOpen, onClose, agent, onRefresh }) => {
 
 export default function Agencies() {
   const { toast } = useToast()
+  const navigate = useNavigate()
   const [agents, setAgents] = useState([])
   const [loading, setLoading] = useState(true)
   const [page, setPage] = useState(1)
@@ -759,8 +761,6 @@ export default function Agencies() {
   const [isKycModalOpen, setIsKycModalOpen] = useState(false)
   
   // Hierarchy Modal State
-  const [isHierarchyModalOpen, setIsHierarchyModalOpen] = useState(false)
-  const [activeParent, setActiveParent] = useState(null)
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [editingAgency, setEditingAgency] = useState(null)
@@ -997,10 +997,7 @@ export default function Agencies() {
                     </td>
                     <td className="px-4 py-3.5 whitespace-nowrap">
                         <button 
-                          onClick={() => {
-                            setActiveParent(agent)
-                            setIsHierarchyModalOpen(true)
-                          }}
+                          onClick={() => navigate(`/admin/agencies/network/${agent._id}`)}
                           className="flex items-center gap-2 group/h"
                         >
                            <div className="h-9 px-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center gap-2 transition-all group-hover/h:bg-primary-50 group-hover/h:border-primary-200 group-hover/h:shadow-sm">
@@ -1094,15 +1091,6 @@ export default function Agencies() {
           )}
         </div>
       )}
-
-      {/* Child Agencies Listing Modal */}
-      <ChildAgenciesModal
-        isOpen={isHierarchyModalOpen}
-        onClose={() => setIsHierarchyModalOpen(false)}
-        parentAgency={activeParent}
-        onToggleStatus={handleToggleAgent}
-        getStatusBadge={getStatusBadge}
-      />
 
       {/* Add Agency Modal */}
       <AddAgencyModal

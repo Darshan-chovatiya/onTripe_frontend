@@ -15,10 +15,33 @@ export default function PackageCard({ pkg, onEdit, onUpdateCover, onUpdateGaller
         ) : (
           <Image className="h-10 w-10 text-gray-300" />
         )}
-        {!pkg.isActive && (
-          <span className="absolute top-2 right-2 rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-600">
-            Inactive
-          </span>
+        <div className="absolute top-2 right-2 flex flex-col items-end gap-1.5">
+          {!pkg.isActive && (
+            <span className="rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-bold text-red-600 shadow-sm">
+              Inactive
+            </span>
+          )}
+          {pkg.status === 'pending' && (
+            <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-[10px] font-bold text-amber-700 shadow-sm border border-amber-200">
+              Pending Sync
+            </span>
+          )}
+          {pkg.status === 'approved' && (
+            <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-bold text-emerald-700 shadow-sm border border-emerald-200">
+              Live Assets
+            </span>
+          )}
+          {pkg.status === 'rejected' && (
+            <span className="rounded-full bg-rose-100 px-2.5 py-0.5 text-[10px] font-bold text-rose-700 shadow-sm border border-rose-200">
+              Review Failed
+            </span>
+          )}
+        </div>
+        {pkg.status === 'rejected' && pkg.rejectionReason && (
+          <div className="absolute bottom-2 left-2 right-2 p-2 bg-white/90 backdrop-blur-sm rounded-lg border border-red-200 shadow-sm">
+             <p className="text-[9px] font-black text-red-600 uppercase mb-1">Administrative Feedback:</p>
+             <p className="text-[10px] font-medium text-gray-700 line-clamp-1 italic">"{pkg.rejectionReason}"</p>
+          </div>
         )}
       </div>
 

@@ -24,6 +24,8 @@ import AdminReports from '@/admin/pages/Reports.jsx'
 import AdminSettings from '@/admin/pages/Settings.jsx'
 import AdminCustomers from '@/admin/pages/Customers.jsx'
 import AdminPackages from '@/admin/pages/Packages.jsx'
+import AdminWhitelabels from '@/admin/pages/Whitelabels.jsx'
+import AdminAgencyNetwork from '@/admin/pages/AgencyNetwork.jsx'
 
 import AgencyLayout from '@/travelAgency/shared/components/AgencyLayout.jsx'
 import ParentAgencySidebar from '@/travelAgency/parentAgency/components/AgencySidebar.jsx'
@@ -84,7 +86,9 @@ export default function AppRouter() {
         <Route path="dashboard" element={<AdminDashboard />} />
         <Route path="customers" element={<AdminCustomers />} />
         <Route path="packages" element={<AdminPackages />} />
+        <Route path="whitelabels" element={<AdminWhitelabels />} />
         <Route path="agencies" element={<AdminAgencies />} />
+        <Route path="agencies/network/:parentId" element={<AdminAgencyNetwork />} />
         <Route path="reports" element={<AdminReports />} />
         <Route path="settings" element={<AdminSettings />} />
       </Route>
