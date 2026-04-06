@@ -1,12 +1,10 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
-import { useAuth } from '@/shared/context/AuthContext.jsx'
-import { getRoleRedirectPath } from '@/shared/utils/roleHelpers.js'
 import ProtectedRoute from '@/routes/ProtectedRoute.jsx'
-import Loader from '@/shared/components/Loader.jsx'
 
 import Login from '@/auth/pages/Login.jsx'
 import ForgotPassword from '@/auth/pages/ForgotPassword.jsx'
 import Unauthorized from '@/pages/Unauthorized.jsx'
+import Landing from '@/pages/Landing.jsx'
 
 import ChildAgentLogin from '@/travelAgency/childAgency/auth/Login.jsx'
 import ChildAgentRegister from '@/travelAgency/childAgency/auth/Register.jsx'
@@ -51,23 +49,10 @@ import CustomerBooking from '@/customer/pages/Booking.jsx'
 import CustomerTripHistory from '@/customer/pages/TripHistory.jsx'
 import CustomerProfile from '@/customer/pages/Profile.jsx'
 
-function RootRedirect() {
-  const { isAuthenticated, isCheckingAuth, user } = useAuth()
-  if (isCheckingAuth) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50">
-        <Loader size="lg" />
-      </div>
-    )
-  }
-  if (!isAuthenticated) return <Navigate to="/login" replace />
-  return <Navigate to={getRoleRedirectPath(user?.role)} replace />
-}
-
 export default function AppRouter() {
   return (
     <Routes>
-      <Route path="/" element={<RootRedirect />} />
+      <Route path="/" element={<Landing />} />
 
       <Route path="/login" element={<Login />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />

@@ -113,8 +113,8 @@ export function AuthProvider({ children }) {
 
     try {
       const { data } = await axiosInstance.get('/auth/me')
-      if (data?.status === 200 && data?.result?.user) {
-        const u = normalizeUser(data.result.user, stored.user?.role)
+      if (data?.success && data?.data?.user) {
+        const u = normalizeUser(data.data.user, stored.user?.role)
         if (!u) {
           logout()
           return
