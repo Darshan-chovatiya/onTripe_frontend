@@ -572,9 +572,14 @@ const EditAgencyModal = ({ isOpen, onClose, agent, onRefresh }) => {
   const { toast } = useToast()
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
-    name: agent?.name || '',
-    email: agent?.email || '',
-    phone: agent?.phone || ''
+    name: '',
+    email: '',
+    phone: ''
+  })
+  const [files, setFiles] = useState({
+    aadharFront: null,
+    aadharBack: null,
+    panCard: null
   })
   const [errors, setErrors] = useState({})
 
@@ -585,21 +590,25 @@ const EditAgencyModal = ({ isOpen, onClose, agent, onRefresh }) => {
         email: agent.email || '',
         phone: agent.phone || ''
       })
+      setFiles({ aadharFront: null, aadharBack: null, panCard: null })
       setErrors({})
     }
   }, [agent])
 
+  const handleFileChange = (e, key) => {
+    const file = e.target.files[0]
+    if (file) setFiles(prev => ({ ...prev, [key]: file }))
+  }
+
   const validate = () => {
     const newErrors = {}
     
-    // Name validation
     if (!formData.name.trim()) {
       newErrors.name = 'Agency Name is required'
     } else if (formData.name.trim().length < 3) {
       newErrors.name = 'Name must be at least 3 characters'
     }
 
-    // Email validation
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
     if (!formData.email.trim()) {
       newErrors.email = 'Email Address is required'
@@ -607,7 +616,6 @@ const EditAgencyModal = ({ isOpen, onClose, agent, onRefresh }) => {
       newErrors.email = 'Please enter a valid email address'
     }
 
-    // Phone validation
     const phoneRegex = /^[0-9]{10}$/
     if (!formData.phone.trim()) {
       newErrors.phone = 'Phone Number is required'
@@ -624,10 +632,16 @@ const EditAgencyModal = ({ isOpen, onClose, agent, onRefresh }) => {
     if (!validate()) return
 
     setLoading(true)
+    const submissionData = new FormData()
+    Object.keys(formData).forEach(key => submissionData.append(key, formData[key]))
+    Object.keys(files).forEach(key => {
+      if (files[key]) submissionData.append(key, files[key])
+    })
+
     try {
-      const { data } = await adminApi.updateAgent(agent._id, formData)
+      const { data } = await adminApi.updateAgent(agent._id, submissionData)
       if (data.success) {
-        toast.success('Agency profile updated successfully')
+        toast.success('Agency profile and documents updated successfully')
         onRefresh()
         onClose()
       }
@@ -646,32 +660,84 @@ const EditAgencyModal = ({ isOpen, onClose, agent, onRefresh }) => {
       isOpen={isOpen} 
       onClose={onClose} 
       title="Edit Agency Profile" 
-      size="md"
+      size="xl"
       footer={
-        <div className="flex items-center justify-end gap-3 p-6">
-           <button onClick={onClose} type="button" className="px-5 py-2 text-sm font-bold text-slate-400 hover:text-slate-600 transition-colors">Cancel</button>
-           <button form="edit-agency-form" type="submit" disabled={loading} className="px-6 py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-bold text-sm shadow-lg shadow-primary-600/20 flex items-center gap-2 transition-all active:scale-95 disabled:opacity-50">
+        <div className="flex items-center justify-end gap-3 p-6 bg-slate-50/50 border-t border-slate-100">
+           <button onClick={onClose} type="button" className="px-5 py-2 text-[11px] font-black text-slate-400 hover:text-slate-600 uppercase tracking-widest transition-colors">Cancel</button>
+           <button form="edit-agency-form" type="submit" disabled={loading} className="px-8 py-3 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-black text-[11px] uppercase tracking-[0.1em] shadow-lg shadow-primary-600/20 flex items-center gap-2 transition-all active:scale-95 disabled:opacity-50">
               {loading ? <Loader size="sm" color="white" /> : 'Update Agency'}
            </button>
         </div>
       }
     >
-      <form id="edit-agency-form" onSubmit={handleSubmit} className="space-y-4">
-        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-4">Update Contact Information</p>
-        <div>
-           <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1.5 ml-1 ${errors.name ? 'text-red-500' : 'text-slate-400'}`}>Agency Name</label>
-           <input required type="text" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className={`w-full border rounded-xl px-4 py-2.5 text-sm font-medium focus:ring-4 transition-all outline-none ${errors.name ? 'border-red-500 bg-white focus:ring-red-500/5' : 'bg-slate-50 border-slate-200 focus:ring-primary-500/5 focus:border-primary-500/50'}`} />
-           {errors.name && <div className="text-[9px] text-red-500 font-bold mt-1 ml-1 flex items-center gap-1"><AlertCircle size={10} /> {errors.name}</div>}
-        </div>
-        <div>
-           <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1.5 ml-1 ${errors.email ? 'text-red-500' : 'text-slate-400'}`}>Email Address</label>
-           <input required type="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} className={`w-full border rounded-xl px-4 py-2.5 text-sm font-medium focus:ring-4 transition-all outline-none ${errors.email ? 'border-red-500 bg-white focus:ring-red-500/5' : 'bg-slate-50 border-slate-200 focus:ring-primary-500/5 focus:border-primary-500/50'}`} />
-           {errors.email && <div className="text-[9px] text-red-500 font-bold mt-1 ml-1 flex items-center gap-1"><AlertCircle size={10} /> {errors.email}</div>}
-        </div>
-        <div>
-           <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1.5 ml-1 ${errors.phone ? 'text-red-500' : 'text-slate-400'}`}>Phone Number</label>
-           <input required type="tel" value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} className={`w-full border rounded-xl px-4 py-2.5 text-sm font-medium focus:ring-4 transition-all outline-none ${errors.phone ? 'border-red-500 bg-white focus:ring-red-500/5' : 'bg-slate-50 border-slate-200 focus:ring-primary-500/5 focus:border-primary-500/50'}`} />
-           {errors.phone && <div className="text-[9px] text-red-500 font-bold mt-1 ml-1 flex items-center gap-1"><AlertCircle size={10} /> {errors.phone}</div>}
+      <form id="edit-agency-form" onSubmit={handleSubmit} className="p-1">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+           {/* Section 1: Identity & Contacts */}
+           <div className="space-y-6">
+              <div className="flex items-center gap-3 mb-2">
+                 <div className="h-8 w-8 rounded-lg bg-primary-50 flex items-center justify-center text-primary-600 shadow-sm"><Users size={16} /></div>
+                 <div>
+                    <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest leading-none">Account Identity</h3>
+                    <p className="text-[10px] text-slate-400 mt-1 font-bold">Update core contact and branding data</p>
+                 </div>
+              </div>
+              
+              <div className="space-y-4 p-5 rounded-2xl bg-white border border-slate-200 shadow-sm">
+                <div>
+                   <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1.5 ml-1 leading-none ${errors.name ? 'text-red-500' : 'text-slate-400'}`}>Agency Name</label>
+                   <input required type="text" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className={`w-full bg-white border rounded-xl px-4 py-2.5 text-sm font-medium focus:ring-4 transition-all outline-none ${errors.name ? 'border-red-500 focus:ring-red-500/5' : 'bg-slate-50/50 border-slate-200 focus:ring-primary-500/5 focus:border-primary-500/50'}`} placeholder="Company Name" />
+                   {errors.name && <div className="text-[9px] text-red-500 font-bold mt-1 ml-1 flex items-center gap-1"><AlertCircle size={10} /> {errors.name}</div>}
+                </div>
+                <div>
+                   <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1.5 ml-1 leading-none ${errors.email ? 'text-red-500' : 'text-slate-400'}`}>Email Address</label>
+                   <input required type="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} className={`w-full bg-white border rounded-xl px-4 py-2.5 text-sm font-medium focus:ring-4 transition-all outline-none ${errors.email ? 'border-red-500 focus:ring-red-500/5' : 'bg-slate-50/50 border-slate-200 focus:ring-primary-500/5 focus:border-primary-500/50'}`} placeholder="contact@agency.com" />
+                   {errors.email && <div className="text-[9px] text-red-500 font-bold mt-1 ml-1 flex items-center gap-1"><AlertCircle size={10} /> {errors.email}</div>}
+                </div>
+                <div>
+                   <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1.5 ml-1 leading-none ${errors.phone ? 'text-red-500' : 'text-slate-400'}`}>Phone Number</label>
+                   <input required type="tel" value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} className={`w-full bg-white border rounded-xl px-4 py-2.5 text-sm font-medium focus:ring-4 transition-all outline-none ${errors.phone ? 'border-red-500 focus:ring-red-500/5' : 'bg-slate-50/50 border-slate-200 focus:ring-primary-500/5 focus:border-primary-500/50'}`} placeholder="+91" />
+                   {errors.phone && <div className="text-[9px] text-red-500 font-bold mt-1 ml-1 flex items-center gap-1"><AlertCircle size={10} /> {errors.phone}</div>}
+                </div>
+              </div>
+           </div>
+
+           {/* Section 2: Documents */}
+           <div className="space-y-6">
+              <div className="flex items-center gap-3 mb-2">
+                 <div className="h-8 w-8 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600 shadow-sm"><ShieldCheck size={16} /></div>
+                 <div>
+                    <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest leading-none">Compliance Vault</h3>
+                    <p className="text-[10px] text-slate-400 mt-1 font-bold">Update and refresh identity documentation</p>
+                 </div>
+              </div>
+
+              <div className="space-y-4 p-5 rounded-2xl bg-white border border-slate-200 shadow-sm">
+                 {[
+                   { id: 'aadharFront', label: 'Aadhar Front Identity', icon: FileText },
+                   { id: 'aadharBack', label: 'Aadhar Back Identity', icon: FileText },
+                   { id: 'panCard', label: 'PAN Card Verification', icon: ShieldCheck }
+                 ].map((doc) => (
+                   <div key={doc.id}>
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1 leading-none">{doc.label}</label>
+                      <div className="relative group">
+                         <input 
+                            type="file" 
+                            onChange={(e) => handleFileChange(e, doc.id)}
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                            accept="image/*"
+                         />
+                         <div className={`w-full h-12 border-2 border-dashed rounded-xl flex items-center px-4 gap-3 transition-all ${files[doc.id] ? 'border-emerald-200 bg-emerald-50/30' : 'border-slate-100 bg-slate-50/30 group-hover:border-primary-200 group-hover:bg-primary-50/30'}`}>
+                            {files[doc.id] ? <CheckCircle size={14} className="text-emerald-500" /> : <doc.icon size={14} className="text-slate-300" />}
+                            <span className={`text-[11px] font-bold truncate flex-1 ${files[doc.id] ? 'text-emerald-700' : 'text-slate-400'}`}>
+                               {files[doc.id] ? files[doc.id].name : `Update ${doc.label.split(' ')[0]}...`}
+                            </span>
+                            <Plus size={14} className={files[doc.id] ? 'text-emerald-400' : 'text-slate-300'} />
+                         </div>
+                      </div>
+                   </div>
+                 ))}
+              </div>
+           </div>
         </div>
       </form>
     </Modal>
@@ -922,7 +988,10 @@ export default function Agencies() {
                         <div className="h-9 w-9 flex-shrink-0 rounded-full bg-slate-100 flex items-center justify-center border border-slate-200 group-hover:scale-105 transition-transform"><Building2 className="h-4.5 w-4.5 text-slate-500" /></div>
                         <div className="min-w-0">
                             <div className="text-sm font-bold text-slate-900 truncate max-w-[160px] leading-tight">{agent.name}</div>
-                            <div className="text-[11px] text-slate-400 mt-0.5 font-bold flex items-center gap-1"><Mail className="w-2.5 h-2.5" /> {agent.email}</div>
+                            <div className="flex flex-col gap-0.5 mt-1">
+                                <div className="text-[10px] text-slate-400 font-bold flex items-center gap-1 leading-none"><Mail className="w-2.5 h-2.5" /> {agent.email}</div>
+                                <div className="text-[9px] font-black text-primary-600 uppercase tracking-widest leading-none mt-0.5 flex items-center gap-1"><ShieldCheck className="w-2.5 h-2.5" /> {agent.agentCode || 'NO-CODE'}</div>
+                            </div>
                         </div>
                       </div>
                     </td>
@@ -1059,22 +1128,26 @@ export default function Agencies() {
       >
         {selectedAgent && (
           <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 p-6 rounded-2xl bg-slate-50/50 border border-slate-100 shadow-inner">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 p-6 rounded-2xl bg-slate-50/50 border border-slate-100 shadow-inner">
                <div className="space-y-1.5">
                   <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Corporate Identity</label>
                   <div className="text-lg font-bold text-slate-900 tracking-tight leading-none">{selectedAgent.name}</div>
                </div>
                <div className="space-y-1.5">
+                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Agent Professional Code</label>
+                  <div className="text-sm font-black text-primary-600 flex items-center gap-2"><ShieldCheck size={14} className="text-primary-500" /> {selectedAgent.agentCode || 'PENDING ASSIGNMENT'}</div>
+               </div>
+               <div className="space-y-1.5">
                   <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Audit State</label>
                   <div>{getStatusBadge(selectedAgent.kyc?.status)}</div>
                </div>
-               <div className="space-y-1.5">
+               <div className="space-y-1.5 pt-2 border-t border-slate-100 md:border-0 md:pt-0">
                   <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Contact Primary</label>
-                  <div className="text-sm font-bold text-slate-700 flex items-center gap-2"><Mail size={14} className="text-slate-300" /> {selectedAgent.email}</div>
+                  <div className="text-sm font-bold text-slate-700 flex items-center gap-2 font-mono">{selectedAgent.email}</div>
                </div>
-               <div className="space-y-1.5">
+               <div className="space-y-1.5 pt-2 border-t border-slate-100 md:border-0 md:pt-0">
                   <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Phone Identity</label>
-                  <div className="text-sm font-bold text-slate-700 flex items-center gap-2"><Phone size={14} className="text-slate-300" /> {selectedAgent.phone || 'N/A'}</div>
+                  <div className="text-sm font-bold text-slate-700 tracking-tighter">{selectedAgent.phone || 'N/A'}</div>
                </div>
             </div>
 
