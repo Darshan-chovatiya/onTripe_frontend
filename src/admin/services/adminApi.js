@@ -21,6 +21,18 @@ export function toggleAgent(userId) {
   return axiosInstance.patch(`/admin/agents/toggle/${userId}`)
 }
 
+export function createAgent(data) {
+  return axiosInstance.post('/admin/agents', data)
+}
+
+export function updateAgent(userId, data) {
+  return axiosInstance.put(`/admin/agents/${userId}`, data)
+}
+
+export function deleteAgent(userId) {
+  return axiosInstance.delete(`/admin/agents/${userId}`)
+}
+
 export function getAnalytics() {
   return axiosInstance.get('/admin/analytics')
 }
@@ -42,7 +54,10 @@ const adminApi = {
   toggleAgent,
   getAnalytics,
   listUsers,
-  updateAdminUser
+  updateAdminUser,
+  createAgent,
+  updateAgent,
+  deleteAgent
 }
 
 export default adminApi

@@ -86,7 +86,7 @@ const CustomDropdown = ({
 
       {isOpen && (
         <div
-          className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden flex flex-col min-w-max"
+          className="absolute z-50 mt-1 w-full right-0 bg-white border border-gray-200 rounded-lg shadow-xl overflow-hidden flex flex-col"
           style={{ maxHeight }}
         >
           {searchable && (

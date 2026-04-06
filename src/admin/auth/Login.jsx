@@ -30,30 +30,33 @@ export default function AdminLogin() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#0f172a] p-4 relative overflow-hidden">
-      {/* Background Orbs for Premium Look */}
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary-600/20 rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-600/10 rounded-full blur-[120px] pointer-events-none" />
+    <div className="flex min-h-screen items-center justify-center bg-slate-50 p-4 relative overflow-hidden">
+      {/* Background Orbs */}
+      <div className="absolute top-[-5%] left-[-5%] w-[35%] h-[35%] bg-primary-100/40 rounded-full blur-[100px] pointer-events-none" />
+      <div className="absolute bottom-[-5%] right-[-5%] w-[35%] h-[35%] bg-blue-50/50 rounded-full blur-[100px] pointer-events-none" />
       
-      <div className="w-full max-w-md relative z-10">
-        <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-2xl p-8 shadow-2xl animate-scale-in">
-          <div className="mb-8 text-center">
-            <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-500 to-primary-700 shadow-xl shadow-primary-500/20">
-              <ShieldCheck className="h-10 w-10 text-white" />
+      <div className="w-full max-w-[400px] relative z-10">
+        <div className="bg-white border border-slate-200/60 rounded-2xl p-7 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.08)] animate-scale-in">
+          <div className="mb-7 text-center">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-primary-50 text-primary-600 shadow-sm border border-primary-100/50">
+              <ShieldCheck className="h-7 w-7" />
             </div>
-            <h1 className="text-3xl font-extrabold text-white tracking-tight">Admin Portal</h1>
-            <p className="mt-2 text-gray-400">Secure entry for system administrators</p>
+            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Admin Portal</h1>
+            <p className="mt-1 text-sm text-slate-500 font-medium">Secure administrator access</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-2">
-              <label className="flex items-center gap-2 text-sm font-semibold text-gray-300 ml-1">
-                <Mail className="h-4 w-4 text-primary-400" /> Email Address
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-1.5 focus-within:translate-x-1 transition-transform">
+              <label className="block text-xs font-bold text-slate-500 ml-1 uppercase tracking-wider">
+                Email Address
               </label>
-              <div className="group transition-all duration-200">
+              <div className="relative group">
+                <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary-500 transition-colors">
+                  <Mail size={16} />
+                </div>
                 <input
                   type="email"
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3.5 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500/50 transition-all"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500/50 transition-all text-sm font-medium"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="admin@ontrip.com"
@@ -63,14 +66,17 @@ export default function AdminLogin() {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="flex items-center gap-2 text-sm font-semibold text-gray-300 ml-1">
-                <Lock className="h-4 w-4 text-primary-400" /> Security Key
+            <div className="space-y-1.5 focus-within:translate-x-1 transition-transform">
+              <label className="block text-xs font-bold text-slate-500 ml-1 uppercase tracking-wider">
+                Security Key
               </label>
               <div className="relative group">
+                <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary-500 transition-colors">
+                  <Lock size={16} />
+                </div>
                 <input
                   type={showPassword ? "text" : "password"}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3.5 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:border-primary-500/50 transition-all"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-10 py-2.5 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500/50 transition-all text-sm font-medium"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
@@ -79,10 +85,10 @@ export default function AdminLogin() {
                 />
                 <button
                   type="button"
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition-colors"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
                   onClick={() => setShowPassword(!showPassword)}
                 >
-                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
             </div>
@@ -90,26 +96,31 @@ export default function AdminLogin() {
             <button 
               type="submit" 
               disabled={isLoading} 
-              className="w-full py-4 px-6 bg-gradient-to-r from-primary-600 to-blue-600 hover:from-primary-500 hover:to-blue-500 text-white font-bold rounded-xl shadow-lg shadow-primary-900/20 transform transition-all active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed mt-4"
+              className="w-full py-3 px-6 bg-primary-600 hover:bg-primary-700 text-white text-sm font-bold rounded-xl shadow-lg shadow-primary-600/20 transform transition-all active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed mt-2 flex items-center justify-center gap-2"
             >
               {isLoading ? (
-                <div className="flex items-center justify-center gap-3">
-                  <div className="h-5 w-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  <span>Authenticating...</span>
-                </div>
-              ) : 'Access Dashboard'}
+                <>
+                  <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <span>Verifying...</span>
+                </>
+              ) : (
+                'Enterprise Access'
+              )}
             </button>
           </form>
 
-          <div className="mt-10 pt-6 border-t border-white/10 text-center">
-            <p className="text-xs text-gray-500 uppercase tracking-widest font-medium">
-              Protected by Enterprise Security
-            </p>
+          <div className="mt-8 pt-6 border-t border-slate-100 text-center">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-50 border border-slate-100">
+              <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <p className="text-[10px] text-slate-400 uppercase tracking-[0.1em] font-bold">
+                Secure SSL Environment
+              </p>
+            </div>
           </div>
         </div>
         
-        <p className="mt-8 text-center text-gray-500 text-sm">
-          &copy; {new Date().getFullYear()} OnTrip System. Authorized Personnel Only.
+        <p className="mt-6 text-center text-slate-400 text-xs font-semibold">
+          &copy; {new Date().getFullYear()} OnTrip System.
         </p>
       </div>
     </div>

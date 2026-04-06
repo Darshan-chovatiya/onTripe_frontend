@@ -11,8 +11,6 @@ export default function Sidebar({ isOpen, onClose }) {
   const { logout } = useAuth()
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
   const [logoError, setLogoError] = useState(false)
-  const [agenciesOpen, setAgenciesOpen] = useState(location.pathname.includes('/admin/agencies'))
-
   const handleLogout = () => {
     logout()
     navigate('/admin/login', { replace: true })
@@ -22,18 +20,7 @@ export default function Sidebar({ isOpen, onClose }) {
   const navItems = [
     { path: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { path: '/admin/users', icon: Users, label: 'Users' },
-    { 
-      label: 'Agencies', 
-      icon: Building2,
-      isSubMenu: true,
-      isOpen: agenciesOpen,
-      toggle: () => setAgenciesOpen(!agenciesOpen),
-      children: [
-        { path: '/admin/agencies?role=parent_agent', label: 'Parent Agency', icon: UserRound },
-        { path: '/admin/agencies?role=child_agent', label: 'Child Agency', icon: Users2 },
-        { path: '/admin/agencies?role=sub_child_agent', label: 'Sub-Child Agency', icon: UserSquare2 },
-      ]
-    },
+    { path: '/admin/agencies', icon: Building2, label: 'Agencies' },
     { path: '/admin/reports', icon: BarChart3, label: 'Reports' },
     { path: '/admin/settings', icon: Settings, label: 'Settings' },
   ]
@@ -97,9 +84,9 @@ export default function Sidebar({ isOpen, onClose }) {
                             to={child.path}
                             onClick={() => window.innerWidth < 1024 && onClose()}
                             className={({ isActive }) =>
-                                `flex items-center gap-3 rounded-xl px-4 py-2.5 text-xs transition-all ${
+                                `flex items-center gap-3 rounded-lg px-4 py-2.5 text-xs transition-all ${
                                   isActive 
-                                    ? 'bg-primary-500 font-semibold text-white shadow-md shadow-primary-900/20 active:scale-95' 
+                                    ? 'bg-primary-600 font-semibold text-white' 
                                     : 'text-gray-400 hover:bg-gray-800/50 hover:text-white'
                                 }`
                             }
@@ -122,8 +109,8 @@ export default function Sidebar({ isOpen, onClose }) {
                 to={item.path}
                 onClick={() => window.innerWidth < 1024 && onClose()}
                 className={({ isActive }) =>
-                  `flex items-center gap-3 rounded-xl px-4 py-3 font-sans text-sm transition-all ${
-                    isActive ? 'bg-primary-500 font-semibold text-white shadow-md shadow-primary-900/20 active:scale-95' : 'text-gray-300 hover:bg-gray-800/50 hover:text-white'
+                  `flex items-center gap-3 rounded-lg px-4 py-3 font-sans text-sm transition-all ${
+                    isActive ? 'bg-primary-600 font-semibold text-white' : 'text-gray-300 hover:bg-gray-800/50 hover:text-white'
                   }`
                 }
               >
