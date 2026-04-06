@@ -46,6 +46,14 @@ export function updateAdminUser(userId, body) {
   return axiosInstance.put(`/admin/users/${userId}`, body)
 }
 
+export function listCustomers(params) {
+  return listUsers({ ...params, role: 'customer' })
+}
+
+export function listPackages(params) {
+  return axiosInstance.get('/admin/packages', { params })
+}
+
 const adminApi = {
   listAgents,
   listPendingKyc,
@@ -57,7 +65,9 @@ const adminApi = {
   updateAdminUser,
   createAgent,
   updateAgent,
-  deleteAgent
+  deleteAgent,
+  listCustomers,
+  listPackages
 }
 
 export default adminApi

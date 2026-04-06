@@ -22,6 +22,8 @@ import AdminUsers from '@/admin/pages/Users.jsx'
 import AdminAgencies from '@/admin/pages/Agencies.jsx'
 import AdminReports from '@/admin/pages/Reports.jsx'
 import AdminSettings from '@/admin/pages/Settings.jsx'
+import AdminCustomers from '@/admin/pages/Customers.jsx'
+import AdminPackages from '@/admin/pages/Packages.jsx'
 
 import AgencyLayout from '@/travelAgency/shared/components/AgencyLayout.jsx'
 import ParentAgencySidebar from '@/travelAgency/parentAgency/components/AgencySidebar.jsx'
@@ -80,7 +82,8 @@ export default function AppRouter() {
       >
         <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard" element={<AdminDashboard />} />
-        <Route path="users" element={<AdminUsers />} />
+        <Route path="customers" element={<AdminCustomers />} />
+        <Route path="packages" element={<AdminPackages />} />
         <Route path="agencies" element={<AdminAgencies />} />
         <Route path="reports" element={<AdminReports />} />
         <Route path="settings" element={<AdminSettings />} />
