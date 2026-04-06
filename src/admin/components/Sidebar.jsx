@@ -97,9 +97,11 @@ export default function Sidebar({ isOpen, onClose }) {
                             to={child.path}
                             onClick={() => window.innerWidth < 1024 && onClose()}
                             className={({ isActive }) =>
-                              `flex items-center gap-3 rounded-lg px-4 py-2.5 text-xs transition-colors ${
-                                isActive ? 'bg-primary-600 font-medium text-white shadow-lg shadow-primary-900/20' : 'text-gray-400 hover:bg-gray-800/50 hover:text-white'
-                              }`
+                                `flex items-center gap-3 rounded-xl px-4 py-2.5 text-xs transition-all ${
+                                  isActive 
+                                    ? 'bg-primary-500 font-semibold text-white shadow-md shadow-primary-900/20 active:scale-95' 
+                                    : 'text-gray-400 hover:bg-gray-800/50 hover:text-white'
+                                }`
                             }
                           >
                             <ChildIcon className="h-4 w-4" />
@@ -120,8 +122,8 @@ export default function Sidebar({ isOpen, onClose }) {
                 to={item.path}
                 onClick={() => window.innerWidth < 1024 && onClose()}
                 className={({ isActive }) =>
-                  `flex items-center gap-3 rounded-lg px-4 py-3 font-sans text-sm transition-colors ${
-                    isActive ? 'bg-primary-600 font-medium text-white' : 'text-gray-300 hover:bg-gray-800/50 hover:text-white'
+                  `flex items-center gap-3 rounded-xl px-4 py-3 font-sans text-sm transition-all ${
+                    isActive ? 'bg-primary-500 font-semibold text-white shadow-md shadow-primary-900/20 active:scale-95' : 'text-gray-300 hover:bg-gray-800/50 hover:text-white'
                   }`
                 }
               >
