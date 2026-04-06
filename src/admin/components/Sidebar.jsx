@@ -1,15 +1,17 @@
 import { useState } from 'react'
-import { X, LogOut, LayoutDashboard, Settings, Users, Building2, BarChart3 } from 'lucide-react'
-import { NavLink, useNavigate } from 'react-router-dom'
+import { X, LogOut, LayoutDashboard, Settings, Users, Building2, BarChart3, ChevronDown, ChevronRight, UserRound, Users2, UserSquare2 } from 'lucide-react'
+import { NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/shared/context/AuthContext.jsx'
 import ConfirmDialog from '@/shared/components/ConfirmDialog.jsx'
 import logoIcon from '@/assets/Logo Icon.png'
 
 export default function Sidebar({ isOpen, onClose }) {
   const navigate = useNavigate()
+  const location = useLocation()
   const { logout } = useAuth()
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
   const [logoError, setLogoError] = useState(false)
+  const [agenciesOpen, setAgenciesOpen] = useState(location.pathname.includes('/admin/agencies'))
 
   const handleLogout = () => {
     logout()
@@ -20,7 +22,18 @@ export default function Sidebar({ isOpen, onClose }) {
   const navItems = [
     { path: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { path: '/admin/users', icon: Users, label: 'Users' },
-    { path: '/admin/agencies', icon: Building2, label: 'Agencies' },
+    { 
+      label: 'Agencies', 
+      icon: Building2,
+      isSubMenu: true,
+      isOpen: agenciesOpen,
+      toggle: () => setAgenciesOpen(!agenciesOpen),
+      children: [
+        { path: '/admin/agencies?role=parent_agent', label: 'Parent Agency', icon: UserRound },
+        { path: '/admin/agencies?role=child_agent', label: 'Child Agency', icon: Users2 },
+        { path: '/admin/agencies?role=sub_child_agent', label: 'Sub-Child Agency', icon: UserSquare2 },
+      ]
+    },
     { path: '/admin/reports', icon: BarChart3, label: 'Reports' },
     { path: '/admin/settings', icon: Settings, label: 'Settings' },
   ]
@@ -57,6 +70,49 @@ export default function Sidebar({ isOpen, onClose }) {
 
         <nav className="flex-1 space-y-1.5 overflow-y-auto p-4">
           {navItems.map((item) => {
+            if (item.isSubMenu) {
+              const Icon = item.icon
+              return (
+                <div key={item.label} className="space-y-1.5">
+                  <button
+                    onClick={item.toggle}
+                    className={`flex w-full items-center justify-between gap-3 rounded-lg px-4 py-3 text-sm transition-colors ${
+                      item.isOpen ? 'text-white bg-gray-800/30' : 'text-gray-300 hover:bg-gray-800/50 hover:text-white'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Icon className="h-5 w-5" />
+                      {item.label}
+                    </div>
+                    {item.isOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                  </button>
+                  
+                  {item.isOpen && (
+                    <div className="ml-4 space-y-1 border-l border-gray-800 pl-2">
+                      {item.children.map((child) => {
+                        const ChildIcon = child.icon
+                        return (
+                          <NavLink
+                            key={child.path}
+                            to={child.path}
+                            onClick={() => window.innerWidth < 1024 && onClose()}
+                            className={({ isActive }) =>
+                              `flex items-center gap-3 rounded-lg px-4 py-2.5 text-xs transition-colors ${
+                                isActive ? 'bg-primary-600 font-medium text-white shadow-lg shadow-primary-900/20' : 'text-gray-400 hover:bg-gray-800/50 hover:text-white'
+                              }`
+                            }
+                          >
+                            <ChildIcon className="h-4 w-4" />
+                            {child.label}
+                          </NavLink>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+              )
+            }
+
             const Icon = item.icon
             return (
               <NavLink
