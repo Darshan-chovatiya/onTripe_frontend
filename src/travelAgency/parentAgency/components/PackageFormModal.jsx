@@ -4,6 +4,7 @@ import Modal from '@/shared/components/Modal.jsx'
 import Button from '@/shared/components/Button.jsx'
 import { uploadEventImage, listVendors } from '@/travelAgency/parentAgency/services/parentAgencyApi.js'
 import { getApiErrorMessage } from '@/shared/services/apiHelpers.js'
+import { formItineraryToApi, apiItineraryToForm } from '@/travelAgency/parentAgency/utils/packageItineraryTransforms.js'
 
 const EVENT_TYPES = ['activity', 'hotel_checkin', 'hotel_checkout', 'transfer', 'meal', 'other']
 
@@ -17,7 +18,7 @@ const emptyDay = (day) => ({ day, dateSuffix: '', title: '', description: '', ev
 const EMPTY_FORM = {
   title: '', description: '', destination: '', totalDays: '', basePrice: '',
   currency: 'INR', maxCapacity: '50',
-  inclusions: [''], exclusions: [''],
+  inclusions: [''], exclusions: [''], importantNotes: [''],
   itinerary: [emptyDay(1)],
 }
 
@@ -48,12 +49,8 @@ export default function PackageFormModal({ isOpen, onClose, onSubmit, initialDat
         maxCapacity: initialData.maxCapacity || '50',
         inclusions: initialData.inclusions?.length ? initialData.inclusions : [''],
         exclusions: initialData.exclusions?.length ? initialData.exclusions : [''],
-        itinerary: initialData.itinerary?.length
-          ? initialData.itinerary.map(d => ({
-              ...d,
-              events: d.events?.length ? d.events : [],
-            }))
-          : [emptyDay(1)],
+        importantNotes: initialData.importantNotes?.length ? initialData.importantNotes : [''],
+        itinerary: apiItineraryToForm(initialData.itinerary || []),
       })
       setExpandedDays({ 0: true })
     } else {
@@ -116,7 +113,8 @@ export default function PackageFormModal({ isOpen, onClose, onSubmit, initialDat
       const fd = new FormData()
       fd.append('image', file)
       const res = await uploadEventImage(fd)
-      updateEvent(di, ei, 'image', res.data?.data?.imageUrl || '')
+      const url = res.data?.data?.url || res.data?.data?.imageUrl || ''
+      updateEvent(di, ei, 'image', url)
     } catch (err) {
       console.error(getApiErrorMessage(err))
     } finally {
@@ -126,19 +124,29 @@ export default function PackageFormModal({ isOpen, onClose, onSubmit, initialDat
 
   const toggleDay = (di) => setExpandedDays(e => ({ ...e, [di]: !e[di] }))
 
+  const buildPayload = () => {
+    const notes = form.importantNotes.filter(Boolean)
+    return {
+      title: form.title,
+      description: form.description,
+      destination: form.destination,
+      totalDays: Number(form.totalDays),
+      basePrice: Number(form.basePrice),
+      currency: form.currency,
+      maxCapacity: Number(form.maxCapacity),
+      inclusions: form.inclusions.filter(Boolean),
+      exclusions: form.exclusions.filter(Boolean),
+      importantNotes: notes,
+      itinerary: formItineraryToApi(form.itinerary),
+    }
+  }
+
   const handleSubmit = (e) => {
     e.preventDefault()
     const isEdit = !!initialData
+    const payload = buildPayload()
     if (isEdit) {
-      // Edit sends JSON directly
-      onSubmit(null, {
-        title: form.title, description: form.description, destination: form.destination,
-        totalDays: Number(form.totalDays), basePrice: Number(form.basePrice),
-        currency: form.currency, maxCapacity: Number(form.maxCapacity),
-        inclusions: form.inclusions.filter(Boolean),
-        exclusions: form.exclusions.filter(Boolean),
-        itinerary: form.itinerary,
-      })
+      onSubmit(null, payload)
     } else {
       const fd = new FormData()
       fd.append('title', form.title)
@@ -150,10 +158,11 @@ export default function PackageFormModal({ isOpen, onClose, onSubmit, initialDat
       fd.append('maxCapacity', form.maxCapacity)
       fd.append('inclusions', JSON.stringify(form.inclusions.filter(Boolean)))
       fd.append('exclusions', JSON.stringify(form.exclusions.filter(Boolean)))
-      fd.append('itinerary', JSON.stringify(form.itinerary))
+      fd.append('importantNotes', JSON.stringify(form.importantNotes.filter(Boolean)))
+      fd.append('itinerary', JSON.stringify(payload.itinerary))
       if (coverFile) fd.append('coverImage', coverFile)
       galleryFiles.forEach(f => fd.append('images', f))
-      onSubmit(fd, form)
+      onSubmit(fd, { ...form, ...payload })
     }
   }
 
@@ -252,6 +261,25 @@ export default function PackageFormModal({ isOpen, onClose, onSubmit, initialDat
             ))}
             <button type="button" onClick={() => addListItem('exclusions')} className="flex items-center gap-1 text-sm text-primary-600 hover:text-primary-700">
               <Plus size={14} /> Add exclusion
+            </button>
+          </div>
+        </div>
+
+        {/* Important notes (customer-facing) */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Important notes</label>
+          <p className="text-xs text-gray-500 mb-2">Shown to travelers (e.g. visa requirements, health advisories).</p>
+          <div className="space-y-2">
+            {form.importantNotes.map((note, i) => (
+              <div key={i} className="flex gap-2">
+                <input className="input-field flex-1" value={note} onChange={e => handleListChange('importantNotes', i, e.target.value)} placeholder="e.g. Valid passport required" />
+                {form.importantNotes.length > 1 && (
+                  <button type="button" onClick={() => removeListItem('importantNotes', i)} className="p-2 text-red-400 hover:text-red-600"><Trash2 size={15} /></button>
+                )}
+              </div>
+            ))}
+            <button type="button" onClick={() => addListItem('importantNotes')} className="flex items-center gap-1 text-sm text-primary-600 hover:text-primary-700">
+              <Plus size={14} /> Add note
             </button>
           </div>
         </div>
