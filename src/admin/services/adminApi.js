@@ -47,7 +47,7 @@ export function updateAdminUser(userId, body) {
 }
 
 export function listCustomers(params) {
-  return listUsers({ ...params, role: 'customer' })
+  return axiosInstance.get('/admin/customers/detailed', { params })
 }
 
 export function listPackages(params) {
