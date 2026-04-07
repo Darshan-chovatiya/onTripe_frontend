@@ -32,6 +32,7 @@ import ParentSettings from '@/travelAgency/parentAgency/pages/Settings.jsx'
 
 import ChildAgencySidebar from '@/travelAgency/childAgency/components/AgencySidebar.jsx'
 import ChildDashboard from '@/travelAgency/childAgency/pages/Dashboard.jsx'
+import ChildPackages from '@/travelAgency/childAgency/pages/Packages.jsx'
 import ChildBookings from '@/travelAgency/childAgency/pages/Bookings.jsx'
 import ChildManageSubChildren from '@/travelAgency/childAgency/pages/ManageSubChildren.jsx'
 import ChildSettings from '@/travelAgency/childAgency/pages/Settings.jsx'
@@ -90,7 +91,7 @@ export default function AppRouter() {
         path="/agency/parent"
         element={
           <ProtectedRoute>
-            <AgencyLayout sidebar={ParentAgencySidebar} />
+            <AgencyLayout sidebar={ParentAgencySidebar} headerTitle="Parent agency" />
           </ProtectedRoute>
         }
       >
@@ -105,12 +106,13 @@ export default function AppRouter() {
         path="/agency/child"
         element={
           <ProtectedRoute>
-            <AgencyLayout sidebar={ChildAgencySidebar} />
+            <AgencyLayout sidebar={ChildAgencySidebar} headerTitle="Child agency" />
           </ProtectedRoute>
         }
       >
         <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard" element={<ChildDashboard />} />
+        <Route path="packages" element={<ChildPackages />} />
         <Route path="bookings" element={<ChildBookings />} />
         <Route path="manage-sub-children" element={<ChildManageSubChildren />} />
         <Route path="settings" element={<ChildSettings />} />
@@ -120,7 +122,7 @@ export default function AppRouter() {
         path="/agency/sub"
         element={
           <ProtectedRoute>
-            <AgencyLayout sidebar={SubAgencySidebar} />
+            <AgencyLayout sidebar={SubAgencySidebar} headerTitle="Sub agency" />
           </ProtectedRoute>
         }
       >

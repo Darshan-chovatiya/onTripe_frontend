@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom'
 import { X, AlertTriangle } from 'lucide-react'
 
 export default function ConfirmDialog({
@@ -10,7 +11,7 @@ export default function ConfirmDialog({
   cancelText = 'Cancel',
   variant = 'danger',
 }) {
-  if (!isOpen) return null
+  if (!isOpen || typeof document === 'undefined') return null
 
   const variants = {
     danger: 'bg-red-600 hover:bg-red-700 active:bg-red-800 shadow-sm',
@@ -18,8 +19,8 @@ export default function ConfirmDialog({
     primary: 'bg-primary-600 hover:bg-primary-700 active:bg-primary-800 shadow-sm',
   }
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in">
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in">
       <div className="bg-white rounded-xl shadow-sm max-w-md w-full p-6 animate-scale-in border border-gray-200">
         <div className="flex items-start gap-4">
           <div
@@ -58,6 +59,7 @@ export default function ConfirmDialog({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }

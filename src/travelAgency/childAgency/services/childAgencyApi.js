@@ -1,7 +1,75 @@
 import axiosInstance from '@/shared/services/axiosInstance.js'
 
 export function listBookings(params) {
-  return axiosInstance.get('/agency/child/bookings', { params })
+  return axiosInstance.get('/child-agent/bookings', { params })
 }
 
-export default { listBookings }
+/** @param {FormData} formData */
+export function createBooking(formData) {
+  return axiosInstance.post('/child-agent/bookings', formData)
+}
+
+export function getBooking(id) {
+  return axiosInstance.get(`/child-agent/bookings/${id}`)
+}
+
+export function updateBooking(id, body) {
+  return axiosInstance.patch(`/child-agent/bookings/${id}`, body)
+}
+
+export function listAvailablePackages() {
+  return axiosInstance.get('/child-agent/packages/available')
+}
+
+export function listMyWhitelabels() {
+  return axiosInstance.get('/child-agent/whitelabels')
+}
+
+export function createWhitelabel(body) {
+  return axiosInstance.post('/child-agent/whitelabels', body)
+}
+
+export function updateWhitelabel(id, body) {
+  return axiosInstance.patch(`/child-agent/whitelabels/${id}`, body)
+}
+
+export function listSubChildren() {
+  return axiosInstance.get('/child-agent/sub-children')
+}
+
+export function getSubChild(id) {
+  return axiosInstance.get(`/child-agent/sub-children/${id}`)
+}
+
+export function updateSubChild(id, body) {
+  return axiosInstance.patch(`/child-agent/sub-children/${id}`, body)
+}
+
+export function getChildProfile() {
+  return axiosInstance.get('/child-agent/profile')
+}
+
+export function updateChildProfile(body) {
+  return axiosInstance.patch('/child-agent/profile', body)
+}
+
+export function changeChildPassword(body) {
+  return axiosInstance.post('/child-agent/change-password', body)
+}
+
+export default {
+  listBookings,
+  createBooking,
+  getBooking,
+  updateBooking,
+  listAvailablePackages,
+  listMyWhitelabels,
+  createWhitelabel,
+  updateWhitelabel,
+  listSubChildren,
+  getSubChild,
+  updateSubChild,
+  getChildProfile,
+  updateChildProfile,
+  changeChildPassword,
+}
