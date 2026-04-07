@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Plus, Trash2, ChevronDown, ChevronUp, ImagePlus, X } from 'lucide-react'
 import Modal from '@/shared/components/Modal.jsx'
 import Button from '@/shared/components/Button.jsx'
-import { uploadEventImage } from '@/travelAgency/parentAgency/services/parentAgencyApi.js'
+import { uploadEventImage, listVendors } from '@/travelAgency/parentAgency/services/parentAgencyApi.js'
 import { getApiErrorMessage } from '@/shared/services/apiHelpers.js'
 
 const EVENT_TYPES = ['activity', 'hotel_checkin', 'hotel_checkout', 'transfer', 'meal', 'other']
@@ -27,6 +27,14 @@ export default function PackageFormModal({ isOpen, onClose, onSubmit, initialDat
   const [galleryFiles, setGalleryFiles] = useState([])
   const [expandedDays, setExpandedDays] = useState({ 0: true })
   const [uploadingEvent, setUploadingEvent] = useState(null) // "di-ei"
+  const [vendors, setVendors] = useState([])
+
+  // Fetch vendors once when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      listVendors().then(res => setVendors(res.data?.data?.vendors || [])).catch(() => {})
+    }
+  }, [isOpen])
 
   useEffect(() => {
     if (initialData) {
@@ -347,6 +355,27 @@ export default function PackageFormModal({ isOpen, onClose, onSubmit, initialDat
                               <div>
                                 <label className="block text-xs text-gray-500 mb-0.5">Location</label>
                                 <input className="input-field" value={ev.location} onChange={e => updateEvent(di, ei, 'location', e.target.value)} placeholder="Location" />
+                              </div>
+                              <div className="sm:col-span-2">
+                                <label className="block text-xs text-gray-500 mb-0.5">Vendor</label>
+                                <select
+                                  className="input-field"
+                                  value={ev.vendor || ''}
+                                  onChange={e => updateEvent(di, ei, 'vendor', e.target.value || null)}
+                                >
+                                  <option value="">— No vendor —</option>
+                                  {vendors.map(v => (
+                                    <option key={v._id} value={v._id}>
+                                      {v.name} ({v.type?.replace('_', ' ')})
+                                    </option>
+                                  ))}
+                                </select>
+                                {ev.vendor && (() => {
+                                  const v = vendors.find(v => v._id === ev.vendor || v._id === ev.vendor?._id)
+                                  return v ? (
+                                    <p className="mt-1 text-xs text-gray-400">{v.contactPerson && `${v.contactPerson} · `}{v.phone}</p>
+                                  ) : null
+                                })()}
                               </div>
                             </div>
                             <div>

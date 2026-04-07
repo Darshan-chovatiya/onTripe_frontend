@@ -27,6 +27,9 @@ import AgencyLayout from '@/travelAgency/shared/components/AgencyLayout.jsx'
 import ParentAgencySidebar from '@/travelAgency/parentAgency/components/AgencySidebar.jsx'
 import ParentDashboard from '@/travelAgency/parentAgency/pages/Dashboard.jsx'
 import ParentPackages from '@/travelAgency/parentAgency/pages/Packages.jsx'
+import ParentPackageDetail from '@/travelAgency/parentAgency/pages/PackageDetail.jsx'
+import ParentVendors from '@/travelAgency/parentAgency/pages/Vendors.jsx'
+import ParentBookings from '@/travelAgency/parentAgency/pages/Bookings.jsx'
 import ParentManageChildren from '@/travelAgency/parentAgency/pages/ManageChildren.jsx'
 import ParentSettings from '@/travelAgency/parentAgency/pages/Settings.jsx'
 
@@ -98,6 +101,9 @@ export default function AppRouter() {
         <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard" element={<ParentDashboard />} />
         <Route path="packages" element={<ParentPackages />} />
+        <Route path="packages/:id" element={<ParentPackageDetail />} />
+        <Route path="vendors" element={<ParentVendors />} />
+        <Route path="bookings" element={<ParentBookings />} />
         <Route path="manage-children" element={<ParentManageChildren />} />
         <Route path="settings" element={<ParentSettings />} />
       </Route>

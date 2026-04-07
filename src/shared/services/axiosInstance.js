@@ -48,21 +48,28 @@ axiosInstance.interceptors.request.use(
 axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      const url = error.config?.url || ''
-      const skip =
-        url.includes('/auth/admin/login') ||
-        url.includes('/auth/organizer/login') ||
-        url.includes('/auth/login') ||
-        url.includes('/auth/send-otp') ||
-        url.includes('/auth/verify-otp')
-      if (!skip) {
-        localStorage.removeItem(AUTH_STORAGE_KEY)
-        if (!window.location.pathname.startsWith('/login')) {
-          window.location.assign('/login')
-        }
+    const status = error.response?.status
+    const message = error.response?.data?.message || ''
+    const url = error.config?.url || ''
+
+    const isAuthUrl =
+      url.includes('/auth/admin/login') ||
+      url.includes('/auth/organizer/login') ||
+      url.includes('/auth/login') ||
+      url.includes('/auth/send-otp') ||
+      url.includes('/auth/verify-otp')
+
+    const isStaleSession =
+      (status === 401) ||
+      (status === 404 && message.toLowerCase().includes('user not found'))
+
+    if (isStaleSession && !isAuthUrl) {
+      localStorage.removeItem(AUTH_STORAGE_KEY)
+      if (!window.location.pathname.startsWith('/login')) {
+        window.location.assign('/login')
       }
     }
+
     return Promise.reject(error)
   }
 )
