@@ -40,7 +40,6 @@ export default function Sidebar({ isOpen, onClose }) {
     { path: '/admin/whitelabels', icon: Layers, label: 'Whitelabels' },
     { path: '/admin/agencies', icon: Building2, label: 'Agencies' },
     { path: '/admin/child-agencies', icon: Building2, label: 'Child Agencies' },
-    { path: '/admin/reports', icon: BarChart3, label: 'Reports' },
     { path: '/admin/notifications', icon: Bell, label: 'Notifications' },
     { path: '/admin/settings', icon: Settings, label: 'Settings' },
   ]

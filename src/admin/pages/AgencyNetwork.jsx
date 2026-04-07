@@ -211,7 +211,7 @@ const AgencyCustomersModal = ({ isOpen, onClose, agency }) => {
       isOpen={isOpen} 
       onClose={onClose} 
       title={`Customers: ${agency?.name}`} 
-      size="xl"
+      size="lg"
     >
       <div className="space-y-4">
         <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">

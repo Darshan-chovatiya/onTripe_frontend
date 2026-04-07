@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { 
-  Building2, 
-  Search, 
-  CheckCircle, 
-  Clock, 
-  XCircle, 
-  Eye, 
+import {
+  Building2,
+  Search,
+  CheckCircle,
+  Clock,
+  XCircle,
+  Eye,
   FileText,
+  FileCheck,
   ChevronLeft,
   ChevronRight,
   Plus,
@@ -28,6 +29,13 @@ import Loader from '@/shared/components/Loader.jsx'
 import Modal from '@/shared/components/Modal.jsx'
 import CustomDropdown from '@/shared/components/CustomDropdown.jsx'
 import { AlertCircle } from 'lucide-react'
+
+const getFileUrl = (path) => {
+  if (!path) return '#'
+  const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001'
+  const cleanBase = baseUrl.trim().replace(/\/api$/, '')
+  return `${cleanBase}/${path.replace(/\\/g, '/')}`
+}
 
 // Internal component for Sub-Child Agency Listing inside nested Modal
 const SubChildAgenciesModal = ({ isOpen, onClose, parentAgency, onToggleStatus, getStatusBadge }) => {
@@ -74,103 +82,102 @@ const SubChildAgenciesModal = ({ isOpen, onClose, parentAgency, onToggleStatus, 
   ]
 
   return (
-    <Modal 
-      isOpen={isOpen} 
-      onClose={onClose} 
-      title={`Sub-Child Agencies`} 
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={`Sub-Child Agencies`}
       size="xl"
     >
       <div className="space-y-4">
         {/* Search & Filter Bar */}
         <div className="flex flex-col sm:flex-row gap-3 items-center justify-between">
-           <div className="relative w-full sm:flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input 
-                type="text"
-                placeholder="Search sub-agencies..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full bg-white border border-gray-200 rounded-lg pl-10 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 shadow-sm transition-all"
-              />
-           </div>
-           <div className="flex items-center gap-2 w-full sm:w-auto">
-              <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest hidden lg:block">Status:</div>
-              <CustomDropdown
-                value={status}
-                onChange={setStatus}
-                options={statusOptions}
-                className="w-full sm:w-40"
-                buttonClassName="!py-2"
-              />
-           </div>
+          <div className="relative w-full sm:flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search sub-agencies..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full bg-white border border-gray-200 rounded-lg pl-10 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 shadow-sm transition-all"
+            />
+          </div>
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest hidden lg:block">Status:</div>
+            <CustomDropdown
+              value={status}
+              onChange={setStatus}
+              options={statusOptions}
+              className="w-full sm:w-40"
+              buttonClassName="!py-2"
+            />
+          </div>
         </div>
 
         {/* Modal Content Table */}
         <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
-           <div className="overflow-x-auto min-h-[300px]">
-             {loading ? (
-               <div className="flex flex-col items-center justify-center p-20">
-                 <Loader size="md" />
-                 <p className="text-[10px] font-bold text-gray-400 mt-4 tracking-widest uppercase italic font-black">Syncing Data...</p>
-               </div>
-             ) : agents.length === 0 ? (
-               <div className="flex flex-col items-center justify-center p-20 text-center">
-                 <h4 className="text-sm font-bold text-zinc-900 leading-none">No agencies found</h4>
-                 <p className="text-xs text-gray-500 mt-1 font-medium">This agency has no sub-child nodes registered yet.</p>
-               </div>
-             ) : (
-               <table className="w-full text-left">
-                  <thead className="bg-gray-50 border-b border-gray-200">
-                    <tr>
-                      <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest">Agency Name</th>
-                      <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest">Contact Info</th>
-                      <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest">KYC Status</th>
-                      <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest text-right pr-10">Account Status</th>
+          <div className="overflow-x-auto min-h-[300px]">
+            {loading ? (
+              <div className="flex flex-col items-center justify-center p-20">
+                <Loader size="md" />
+                <p className="text-[10px] font-bold text-gray-400 mt-4 tracking-widest uppercase italic font-black">Syncing Data...</p>
+              </div>
+            ) : agents.length === 0 ? (
+              <div className="flex flex-col items-center justify-center p-20 text-center">
+                <h4 className="text-sm font-bold text-zinc-900 leading-none">No agencies found</h4>
+                <p className="text-xs text-gray-500 mt-1 font-medium">This agency has no sub-child nodes registered yet.</p>
+              </div>
+            ) : (
+              <table className="w-full text-left">
+                <thead className="bg-gray-50 border-b border-gray-200">
+                  <tr>
+                    <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest">Agency Name</th>
+                    <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest">Contact Info</th>
+                    <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest">KYC Status</th>
+                    <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest text-right pr-10">Account Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {agents.map((agent) => (
+                    <tr key={agent._id} className="hover:bg-gray-50 transition-colors group">
+                      <td className="px-4 py-3.5">
+                        <div className="text-sm font-bold text-zinc-900 truncate max-w-[140px] leading-tight">{agent.name}</div>
+                        <div className="text-[10px] text-gray-400 font-bold uppercase tracking-tight mt-0.5">ID: {agent._id.slice(-6).toUpperCase()}</div>
+                      </td>
+                      <td className="px-4 py-3.5 whitespace-nowrap">
+                        <div className="text-[11px] font-bold text-gray-600 flex flex-col gap-0.5">
+                          <div className="flex items-center gap-1.5"><Mail size={12} className="text-gray-300" /> {agent.email}</div>
+                          <div className="flex items-center gap-1.5"><Phone size={12} className="text-gray-300" /> {agent.phone || 'N/A'}</div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3.5 whitespace-nowrap">
+                        {getStatusBadge(agent.kyc?.status)}
+                      </td>
+                      <td className="px-4 py-3.5 whitespace-nowrap text-right pr-6">
+                        <button
+                          onClick={async () => {
+                            await onToggleStatus(agent._id)
+                            fetchSubChildren()
+                          }}
+                          className={`inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest border transition-all active:scale-95 min-w-[85px] shadow-sm ${agent.isActive ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-red-50 text-red-700 border-red-100'
+                            }`}
+                        >
+                          <div className={`w-1 h-1 rounded-full ${agent.isActive ? 'bg-emerald-600 animate-pulse' : 'bg-red-600'}`} />
+                          {agent.isActive ? 'Active' : 'Inactive'}
+                        </button>
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {agents.map((agent) => (
-                      <tr key={agent._id} className="hover:bg-gray-50 transition-colors group">
-                        <td className="px-4 py-3.5">
-                           <div className="text-sm font-bold text-zinc-900 truncate max-w-[140px] leading-tight">{agent.name}</div>
-                           <div className="text-[10px] text-gray-400 font-bold uppercase tracking-tight mt-0.5">ID: {agent._id.slice(-6).toUpperCase()}</div>
-                        </td>
-                        <td className="px-4 py-3.5 whitespace-nowrap">
-                            <div className="text-[11px] font-bold text-gray-600 flex flex-col gap-0.5">
-                                <div className="flex items-center gap-1.5"><Mail size={12} className="text-gray-300" /> {agent.email}</div>
-                                <div className="flex items-center gap-1.5"><Phone size={12} className="text-gray-300" /> {agent.phone || 'N/A'}</div>
-                            </div>
-                        </td>
-                        <td className="px-4 py-3.5 whitespace-nowrap">
-                            {getStatusBadge(agent.kyc?.status)}
-                        </td>
-                        <td className="px-4 py-3.5 whitespace-nowrap text-right pr-6">
-                           <button 
-                             onClick={async () => {
-                                await onToggleStatus(agent._id)
-                                fetchSubChildren()
-                             }}
-                             className={`inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest border transition-all active:scale-95 min-w-[85px] shadow-sm ${
-                                 agent.isActive ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-red-50 text-red-700 border-red-100'
-                             }`}
-                           >
-                              <div className={`w-1 h-1 rounded-full ${agent.isActive ? 'bg-emerald-600 animate-pulse' : 'bg-red-600'}`} />
-                              {agent.isActive ? 'Active' : 'Inactive'}
-                           </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-               </table>
-             )}
-           </div>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
         </div>
         {totalPages > 1 && (
           <div className="flex items-center justify-between px-2 pt-2">
             <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Page {page} of {totalPages}</div>
             <div className="flex gap-2">
-               <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-bold hover:bg-gray-50 disabled:opacity-30 transition-all font-bold">Prev</button>
-               <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-bold hover:bg-gray-50 disabled:opacity-30 transition-all font-bold">Next</button>
+              <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-bold hover:bg-gray-50 disabled:opacity-30 transition-all font-bold">Prev</button>
+              <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-bold hover:bg-gray-50 disabled:opacity-30 transition-all font-bold">Next</button>
             </div>
           </div>
         )}
@@ -229,26 +236,26 @@ const ChildAgenciesModal = ({ isOpen, onClose, parentAgency, onToggleStatus, get
 
   return (
     <>
-    <Modal 
-      isOpen={isOpen} 
-      onClose={onClose} 
-      title={`Child Agencies`} 
-      size="xl"
-    >
-      <div className="space-y-4">
-        {/* Search & Filter Bar */}
-        <div className="flex flex-col sm:flex-row gap-3 items-center justify-between">
-           <div className="relative w-full sm:flex-1">
+      <Modal
+        isOpen={isOpen}
+        onClose={onClose}
+        title={`Child Agencies`}
+        size="xl"
+      >
+        <div className="space-y-4">
+          {/* Search & Filter Bar */}
+          <div className="flex flex-col sm:flex-row gap-3 items-center justify-between">
+            <div className="relative w-full sm:flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input 
+              <input
                 type="text"
                 placeholder="Search child agencies..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="w-full bg-white border border-gray-200 rounded-lg pl-10 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 shadow-sm transition-all"
               />
-           </div>
-           <div className="flex items-center gap-2 w-full sm:w-auto">
+            </div>
+            <div className="flex items-center gap-2 w-full sm:w-auto">
               <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest hidden lg:block">Status:</div>
               <CustomDropdown
                 value={status}
@@ -257,25 +264,25 @@ const ChildAgenciesModal = ({ isOpen, onClose, parentAgency, onToggleStatus, get
                 className="w-full sm:w-40"
                 buttonClassName="!py-2"
               />
-           </div>
-        </div>
+            </div>
+          </div>
 
-        {/* Modal Content Table */}
-        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
-           <div className="overflow-x-auto overflow-y-visible min-h-[300px]">
-             {loading ? (
-               <div className="flex flex-col items-center justify-center p-20">
-                 <Loader size="md" />
-                 <p className="text-[10px] font-bold text-gray-400 mt-4 tracking-widest uppercase italic font-black">Syncing Data...</p>
-               </div>
-             ) : agents.length === 0 ? (
-               <div className="flex flex-col items-center justify-center p-20 text-center">
-                 <div className="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center text-gray-200 border border-gray-100 mb-3"><Users size={24} /></div>
-                 <h4 className="text-sm font-bold text-zinc-900 leading-none">No Child Agents Found</h4>
-                 <p className="text-xs text-gray-500 mt-1 font-medium">This parent agency has no registered child agents currently.</p>
-               </div>
-             ) : (
-               <table className="w-full text-left">
+          {/* Modal Content Table */}
+          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+            <div className="overflow-x-auto overflow-y-visible min-h-[300px]">
+              {loading ? (
+                <div className="flex flex-col items-center justify-center p-20">
+                  <Loader size="md" />
+                  <p className="text-[10px] font-bold text-gray-400 mt-4 tracking-widest uppercase italic font-black">Syncing Data...</p>
+                </div>
+              ) : agents.length === 0 ? (
+                <div className="flex flex-col items-center justify-center p-20 text-center">
+                  <div className="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center text-gray-200 border border-gray-100 mb-3"><Users size={24} /></div>
+                  <h4 className="text-sm font-bold text-zinc-900 leading-none">No Child Agents Found</h4>
+                  <p className="text-xs text-gray-500 mt-1 font-medium">This parent agency has no registered child agents currently.</p>
+                </div>
+              ) : (
+                <table className="w-full text-left">
                   <thead className="bg-gray-50 border-b border-gray-200">
                     <tr>
                       <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest">Child Agency</th>
@@ -298,73 +305,72 @@ const ChildAgenciesModal = ({ isOpen, onClose, parentAgency, onToggleStatus, get
                           </div>
                         </td>
                         <td className="px-4 py-3.5 whitespace-nowrap">
-                             <div className="text-[11px] font-bold text-gray-600 flex flex-col gap-0.5">
-                                <div className="flex items-center gap-1.5"><Mail size={12} className="text-gray-300" /> {agent.email}</div>
-                                <div className="flex items-center gap-1.5"><Phone size={12} className="text-gray-300" /> {agent.phone || 'N/A'}</div>
-                            </div>
+                          <div className="text-[11px] font-bold text-gray-600 flex flex-col gap-0.5">
+                            <div className="flex items-center gap-1.5"><Mail size={12} className="text-gray-300" /> {agent.email}</div>
+                            <div className="flex items-center gap-1.5"><Phone size={12} className="text-gray-300" /> {agent.phone || 'N/A'}</div>
+                          </div>
                         </td>
                         <td className="px-4 py-3.5 whitespace-nowrap">
-                            {getStatusBadge(agent.kyc?.status)}
+                          {getStatusBadge(agent.kyc?.status)}
                         </td>
                         <td className="px-4 py-3.5">
-                            <div className="flex justify-center">
-                               <button 
-                                 onClick={() => {
-                                    setActiveChild(agent)
-                                    setIsSubChildModalOpen(true)
-                                 }}
-                                 className="h-8 px-2.5 rounded-lg bg-gray-50 border border-gray-200 flex items-center justify-center gap-2 transition-all hover:bg-blue-50 hover:border-blue-100 shadow-xs"
-                               >
-                                  <Users size={12} className="text-gray-400" />
-                                  <span className="text-[11px] font-bold text-zinc-900">{agent.childCount || 0}</span>
-                               </button>
-                            </div>
+                          <div className="flex justify-center">
+                            <button
+                              onClick={() => {
+                                setActiveChild(agent)
+                                setIsSubChildModalOpen(true)
+                              }}
+                              className="h-8 px-2.5 rounded-lg bg-gray-50 border border-gray-200 flex items-center justify-center gap-2 transition-all hover:bg-blue-50 hover:border-blue-100 shadow-xs"
+                            >
+                              <Users size={12} className="text-gray-400" />
+                              <span className="text-[11px] font-bold text-zinc-900">{agent.childCount || 0}</span>
+                            </button>
+                          </div>
                         </td>
                         <td className="px-4 py-3.5 whitespace-nowrap text-right pr-6">
-                          <button 
+                          <button
                             onClick={async () => {
-                               await onToggleStatus(agent._id)
-                               fetchChildren()
+                              await onToggleStatus(agent._id)
+                              fetchChildren()
                             }}
-                            className={`inline-flex items-center justify-center gap-1 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest border shadow-sm transition-all active:scale-95 min-w-[85px] ${
-                                agent.isActive 
-                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100' 
+                            className={`inline-flex items-center justify-center gap-1 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest border shadow-sm transition-all active:scale-95 min-w-[85px] ${agent.isActive
+                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
                                 : 'bg-red-50 text-red-700 border-red-100'
-                            }`}
+                              }`}
                           >
-                             <div className={`w-1 h-1 rounded-full ${agent.isActive ? 'bg-emerald-600 animate-pulse' : 'bg-red-600'}`} />
-                             {agent.isActive ? 'Active' : 'Inactive'}
+                            <div className={`w-1 h-1 rounded-full ${agent.isActive ? 'bg-emerald-600 animate-pulse' : 'bg-red-600'}`} />
+                            {agent.isActive ? 'Active' : 'Inactive'}
                           </button>
                         </td>
                       </tr>
                     ))}
                   </tbody>
-               </table>
-             )}
-           </div>
-        </div>
-
-        {/* Modal Footer / Pagination */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between px-2 pt-2">
-            <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Page {page} of {totalPages}</div>
-            <div className="flex gap-2">
-               <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-bold hover:bg-gray-50 disabled:opacity-30 transition-all font-bold">Prev</button>
-               <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-bold hover:bg-gray-50 disabled:opacity-30 transition-all font-bold">Next</button>
+                </table>
+              )}
             </div>
           </div>
-        )}
-      </div>
-    </Modal>
 
-    {/* Third Level Hierarchy Modal */}
-    <SubChildAgenciesModal
-      isOpen={isSubChildModalOpen}
-      onClose={() => setIsSubChildModalOpen(false)}
-      parentAgency={activeChild}
-      onToggleStatus={onToggleStatus}
-      getStatusBadge={getStatusBadge}
-    />
+          {/* Modal Footer / Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between px-2 pt-2">
+              <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Page {page} of {totalPages}</div>
+              <div className="flex gap-2">
+                <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-bold hover:bg-gray-50 disabled:opacity-30 transition-all font-bold">Prev</button>
+                <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-bold hover:bg-gray-50 disabled:opacity-30 transition-all font-bold">Next</button>
+              </div>
+            </div>
+          )}
+        </div>
+      </Modal>
+
+      {/* Third Level Hierarchy Modal */}
+      <SubChildAgenciesModal
+        isOpen={isSubChildModalOpen}
+        onClose={() => setIsSubChildModalOpen(false)}
+        parentAgency={activeChild}
+        onToggleStatus={onToggleStatus}
+        getStatusBadge={getStatusBadge}
+      />
     </>
   )
 }
@@ -394,7 +400,7 @@ const AddAgencyModal = ({ isOpen, onClose, onRefresh }) => {
 
   const validate = () => {
     const newErrors = {}
-    
+
     // Name validation
     if (!formData.name.trim()) {
       newErrors.name = 'Agency Name is required'
@@ -424,7 +430,7 @@ const AddAgencyModal = ({ isOpen, onClose, onRefresh }) => {
     } else if (formData.password.length < 8) {
       newErrors.password = 'Password must be at least 8 characters'
     }
-    
+
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
@@ -432,7 +438,7 @@ const AddAgencyModal = ({ isOpen, onClose, onRefresh }) => {
   const handleSubmit = async (e) => {
     if (e) e.preventDefault()
     if (!validate()) return
-    
+
     setLoading(true)
     const submissionData = new FormData()
     Object.keys(formData).forEach(key => submissionData.append(key, formData[key]))
@@ -465,13 +471,13 @@ const AddAgencyModal = ({ isOpen, onClose, onRefresh }) => {
       <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 ml-1">{label}</label>
       <label className={`relative group cursor-pointer flex items-center gap-2 p-2.5 bg-gray-50 border border-dash-2 border-gray-200 rounded-xl transition-all hover:bg-white hover:border-blue-300 ${currentFile ? 'bg-emerald-50/30 border-emerald-200 border-solid' : 'border-dashed'}`}>
         <div className={`h-7 w-7 rounded-lg flex items-center justify-center shrink-0 ${currentFile ? 'bg-emerald-100 text-emerald-600' : 'bg-white border border-gray-100 text-gray-300'}`}>
-           {currentFile ? <CheckCircle size={14} /> : <FileText size={14} />}
+          {currentFile ? <CheckCircle size={14} /> : <FileText size={14} />}
         </div>
         <div className="min-w-0 flex-1">
-           <div className={`text-[11px] font-bold truncate ${currentFile ? 'text-emerald-700' : 'text-gray-400'}`}>
-              {currentFile ? currentFile.name : 'Select File'}
-           </div>
-           {currentFile && <div className="text-[8px] font-bold text-emerald-600 uppercase tracking-widest mt-0.5">Ready for Vault</div>}
+          <div className={`text-[11px] font-bold truncate ${currentFile ? 'text-emerald-700' : 'text-gray-400'}`}>
+            {currentFile ? currentFile.name : 'Select File'}
+          </div>
+          {currentFile && <div className="text-[8px] font-bold text-emerald-600 uppercase tracking-widest mt-0.5">Ready for Vault</div>}
         </div>
         <input type="file" id={id} className="hidden" accept="image/*,.pdf" onChange={(e) => handleFileChange(e, id)} />
       </label>
@@ -479,77 +485,77 @@ const AddAgencyModal = ({ isOpen, onClose, onRefresh }) => {
   )
 
   return (
-    <Modal 
-      isOpen={isOpen} 
-      onClose={onClose} 
-      title="Add New Agency" 
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Add New Agency"
       size="lg"
       footer={
         <div className="flex items-center justify-end gap-3 p-6 bg-slate-50/50">
-           <button onClick={onClose} type="button" className="px-5 py-2.5 text-sm font-bold text-slate-400 hover:text-slate-600 transition-colors pointer-events-auto">Cancel</button>
-           <button 
-             onClick={handleSubmit}
-             disabled={loading} 
-             type="button" 
-             className="px-8 py-3 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-bold text-sm shadow-xl shadow-primary-600/20 flex items-center gap-2 transition-all active:scale-95 disabled:opacity-50 pointer-events-auto"
-           >
-             {loading ? <Loader size="sm" color="white" /> : <><Plus size={18} /> Add Agency</>}
-           </button>
+          <button onClick={onClose} type="button" className="px-5 py-2.5 text-sm font-bold text-slate-400 hover:text-slate-600 transition-colors pointer-events-auto">Cancel</button>
+          <button
+            onClick={handleSubmit}
+            disabled={loading}
+            type="button"
+            className="px-8 py-3 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-bold text-sm shadow-xl shadow-primary-600/20 flex items-center gap-2 transition-all active:scale-95 disabled:opacity-50 pointer-events-auto"
+          >
+            {loading ? <Loader size="sm" color="white" /> : <><Plus size={18} /> Add Agency</>}
+          </button>
         </div>
       }
     >
       <div className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-           {/* Section 1: Identity */}
-           <div className="space-y-4">
-              <div className="flex items-center gap-2 px-1">
-                 <div className="h-6 w-6 rounded-lg bg-gray-50 flex items-center justify-center text-gray-500"><Users size={14} /></div>
-                 <h3 className="text-[10px] font-bold text-zinc-900 uppercase tracking-widest">Agency Information</h3>
+          {/* Section 1: Identity */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 px-1">
+              <div className="h-6 w-6 rounded-lg bg-gray-50 flex items-center justify-center text-gray-500"><Users size={14} /></div>
+              <h3 className="text-[10px] font-bold text-zinc-900 uppercase tracking-widest">Agency Information</h3>
+            </div>
+            <div className="space-y-3.5 p-5 rounded-2xl bg-white border border-gray-200 shadow-sm">
+              <div>
+                <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1.5 ml-1 leading-none ${errors.name ? 'text-red-500' : 'text-gray-400'}`}>Full Name</label>
+                <input required type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className={`w-full border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500/20 transition-all outline-none ${errors.name ? 'border-red-500' : 'bg-white border-gray-200 focus:border-blue-500'}`} placeholder="Company or Individual Name" />
+                {errors.name && <div className="text-[9px] text-red-500 font-bold mt-1 ml-1 flex items-center gap-1"><AlertCircle size={10} /> {errors.name}</div>}
               </div>
-              <div className="space-y-3.5 p-5 rounded-2xl bg-white border border-gray-200 shadow-sm">
+              <div>
+                <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1.5 ml-1 leading-none ${errors.email ? 'text-red-500' : 'text-gray-400'}`}>Email Address</label>
+                <input required type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} className={`w-full border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500/20 transition-all outline-none ${errors.email ? 'border-red-500' : 'bg-white border-gray-200 focus:border-blue-500'}`} placeholder="contact@agency.com" />
+                {errors.email && <div className="text-[9px] text-red-500 font-bold mt-1 ml-1 flex items-center gap-1"><AlertCircle size={10} /> {errors.email}</div>}
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                   <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1.5 ml-1 leading-none ${errors.name ? 'text-red-500' : 'text-gray-400'}`}>Full Name</label>
-                   <input required type="text" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className={`w-full border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500/20 transition-all outline-none ${errors.name ? 'border-red-500' : 'bg-white border-gray-200 focus:border-blue-500'}`} placeholder="Company or Individual Name" />
-                   {errors.name && <div className="text-[9px] text-red-500 font-bold mt-1 ml-1 flex items-center gap-1"><AlertCircle size={10} /> {errors.name}</div>}
+                  <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1.5 ml-1 leading-none ${errors.phone ? 'text-red-500' : 'text-gray-400'}`}>Phone Number</label>
+                  <input required type="tel" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} className={`w-full border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500/20 transition-all outline-none ${errors.phone ? 'border-red-500' : 'bg-white border-gray-200 focus:border-blue-500'}`} placeholder="+91" />
+                  {errors.phone && <div className="text-[9px] text-red-500 font-bold mt-1 ml-1 flex items-center gap-1"><AlertCircle size={10} /> {errors.phone}</div>}
                 </div>
                 <div>
-                   <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1.5 ml-1 leading-none ${errors.email ? 'text-red-500' : 'text-gray-400'}`}>Email Address</label>
-                   <input required type="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} className={`w-full border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500/20 transition-all outline-none ${errors.email ? 'border-red-500' : 'bg-white border-gray-200 focus:border-blue-500'}`} placeholder="contact@agency.com" />
-                   {errors.email && <div className="text-[9px] text-red-500 font-bold mt-1 ml-1 flex items-center gap-1"><AlertCircle size={10} /> {errors.email}</div>}
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                   <div>
-                      <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1.5 ml-1 leading-none ${errors.phone ? 'text-red-500' : 'text-gray-400'}`}>Phone Number</label>
-                      <input required type="tel" value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} className={`w-full border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500/20 transition-all outline-none ${errors.phone ? 'border-red-500' : 'bg-white border-gray-200 focus:border-blue-500'}`} placeholder="+91" />
-                      {errors.phone && <div className="text-[9px] text-red-500 font-bold mt-1 ml-1 flex items-center gap-1"><AlertCircle size={10} /> {errors.phone}</div>}
-                   </div>
-                   <div>
-                      <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1.5 ml-1 leading-none ${errors.password ? 'text-red-500' : 'text-gray-400'}`}>Password</label>
-                      <input required type="password" value={formData.password} onChange={(e) => setFormData({...formData, password: e.target.value})} className={`w-full border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500/20 transition-all outline-none ${errors.password ? 'border-red-500' : 'bg-white border-gray-200 focus:border-blue-500'}`} placeholder="Min. 8 characters" />
-                      {errors.password && <div className="text-[9px] text-red-500 font-bold mt-1 ml-1 flex items-center gap-1"><AlertCircle size={10} /> {errors.password}</div>}
-                   </div>
+                  <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1.5 ml-1 leading-none ${errors.password ? 'text-red-500' : 'text-gray-400'}`}>Password</label>
+                  <input required type="password" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} className={`w-full border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500/20 transition-all outline-none ${errors.password ? 'border-red-500' : 'bg-white border-gray-200 focus:border-blue-500'}`} placeholder="Min. 8 characters" />
+                  {errors.password && <div className="text-[9px] text-red-500 font-bold mt-1 ml-1 flex items-center gap-1"><AlertCircle size={10} /> {errors.password}</div>}
                 </div>
               </div>
-           </div>
+            </div>
+          </div>
 
-           {/* Section 2: Documents */}
-           <div className="space-y-4">
-              <div className="flex items-center gap-2 px-1">
-                 <div className="h-6 w-6 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600"><ShieldCheck size={14} /></div>
-                 <h3 className="text-[10px] font-bold text-zinc-900 uppercase tracking-widest">KYC Documents</h3>
+          {/* Section 2: Documents */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 px-1">
+              <div className="h-6 w-6 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600"><ShieldCheck size={14} /></div>
+              <h3 className="text-[10px] font-bold text-zinc-900 uppercase tracking-widest">KYC Documents</h3>
+            </div>
+            <div className="flex flex-col justify-between h-auto min-h-[234px] space-y-3 p-5 rounded-2xl bg-emerald-50/10 border border-emerald-100/50">
+              <div className="space-y-3">
+                <FileSlot label="Aadhar Front" id="aadharFront" currentFile={files.aadharFront} />
+                <FileSlot label="Aadhar Back" id="aadharBack" currentFile={files.aadharBack} />
+                <FileSlot label="PAN Card" id="panCard" currentFile={files.panCard} />
               </div>
-              <div className="flex flex-col justify-between h-auto min-h-[234px] space-y-3 p-5 rounded-2xl bg-emerald-50/10 border border-emerald-100/50">
-                 <div className="space-y-3">
-                    <FileSlot label="Aadhar Front" id="aadharFront" currentFile={files.aadharFront} />
-                    <FileSlot label="Aadhar Back" id="aadharBack" currentFile={files.aadharBack} />
-                    <FileSlot label="PAN Card" id="panCard" currentFile={files.panCard} />
-                 </div>
-                 <div className="flex items-start gap-2 bg-emerald-50/80 p-2.5 rounded-lg border border-emerald-200 text-emerald-800">
-                    <ShieldCheck size={12} className="mt-0.5 shrink-0" />
-                    <p className="text-[9px] font-bold uppercase tracking-tight leading-tight">Fast Track: Any agency you add here is approved automatically.</p>
-                 </div>
+              <div className="flex items-start gap-2 bg-emerald-50/80 p-2.5 rounded-lg border border-emerald-200 text-emerald-800">
+                <ShieldCheck size={12} className="mt-0.5 shrink-0" />
+                <p className="text-[9px] font-bold uppercase tracking-tight leading-tight">Fast Track: Any agency you add here is approved automatically.</p>
               </div>
-           </div>
+            </div>
+          </div>
         </div>
       </div>
     </Modal>
@@ -591,7 +597,7 @@ const EditAgencyModal = ({ isOpen, onClose, agent, onRefresh }) => {
 
   const validate = () => {
     const newErrors = {}
-    
+
     if (!formData.name.trim()) {
       newErrors.name = 'Agency Name is required'
     } else if (formData.name.trim().length < 3) {
@@ -611,7 +617,7 @@ const EditAgencyModal = ({ isOpen, onClose, agent, onRefresh }) => {
     } else if (!phoneRegex.test(formData.phone.trim().replace(/\D/g, ''))) {
       newErrors.phone = 'Please enter a valid 10-digit phone number'
     }
-    
+
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
@@ -645,88 +651,130 @@ const EditAgencyModal = ({ isOpen, onClose, agent, onRefresh }) => {
   }
 
   return (
-    <Modal 
-      isOpen={isOpen} 
-      onClose={onClose} 
-      title="Edit Agency Profile" 
-      size="xl"
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Edit Agency Profile"
+      size="lg"
       footer={
         <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-100">
-           <button onClick={onClose} type="button" className="px-5 py-2 text-sm font-bold text-gray-400 hover:text-gray-600 transition-colors">Cancel</button>
-           <button form="edit-agency-form" type="submit" disabled={loading} className="px-8 py-2.5 bg-zinc-900 hover:bg-zinc-800 text-white rounded-lg font-bold text-sm shadow-sm flex items-center gap-2 transition-all active:scale-95 disabled:opacity-50">
-              {loading ? <Loader size="sm" color="white" /> : 'Update Agency'}
-           </button>
+          <button onClick={onClose} type="button" className="px-5 py-2 text-sm font-bold text-gray-400 hover:text-gray-600 transition-colors">Cancel</button>
+          <button form="edit-agency-form" type="submit" disabled={loading} className="px-8 py-2.5 bg-zinc-900 hover:bg-zinc-800 text-white rounded-lg font-bold text-sm shadow-sm flex items-center gap-2 transition-all active:scale-95 disabled:opacity-50">
+            {loading ? <Loader size="sm" color="white" /> : 'Update Agency'}
+          </button>
         </div>
       }
     >
       <form id="edit-agency-form" onSubmit={handleSubmit} className="p-1">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-           {/* Section 1: Identity & Contacts */}
-           <div className="space-y-6">
-              <div className="flex items-center gap-3">
-                 <div className="h-8 w-8 rounded-lg bg-gray-50 flex items-center justify-center text-gray-500"><Users size={16} /></div>
-                 <div>
-                    <h3 className="text-sm font-bold text-zinc-900 leading-none">Account Identity</h3>
-                    <p className="text-[10px] text-gray-400 mt-1 font-bold">Update core contact and branding data</p>
-                 </div>
+          {/* Section 1: Identity & Contacts */}
+          <div className="space-y-6">
+            <div className="flex items-center gap-3">
+              <div className="h-8 w-8 rounded-lg bg-gray-50 flex items-center justify-center text-gray-500"><Users size={16} /></div>
+              <div>
+                <h3 className="text-sm font-bold text-zinc-900 leading-none">Account Identity</h3>
+                <p className="text-[10px] text-gray-400 mt-1 font-bold">Update core contact and branding data</p>
               </div>
-              
-              <div className="space-y-4 p-5 rounded-2xl bg-white border border-gray-200 shadow-sm">
-                <div>
-                   <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1.5 ml-1 leading-none ${errors.name ? 'text-red-500' : 'text-gray-400'}`}>Agency Name</label>
-                   <input required type="text" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className={`w-full border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500/20 transition-all outline-none ${errors.name ? 'border-red-500' : 'border-gray-200 focus:border-blue-500'}`} placeholder="Company Name" />
-                   {errors.name && <div className="text-[9px] text-red-500 font-bold mt-1 ml-1 flex items-center gap-1"><AlertCircle size={10} /> {errors.name}</div>}
-                </div>
-                <div>
-                   <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1.5 ml-1 leading-none ${errors.email ? 'text-red-500' : 'text-gray-400'}`}>Email Address</label>
-                   <input required type="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} className={`w-full border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500/20 transition-all outline-none ${errors.email ? 'border-red-500' : 'border-gray-200 focus:border-blue-500'}`} placeholder="contact@agency.com" />
-                   {errors.email && <div className="text-[9px] text-red-500 font-bold mt-1 ml-1 flex items-center gap-1"><AlertCircle size={10} /> {errors.email}</div>}
-                </div>
-                <div>
-                   <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1.5 ml-1 leading-none ${errors.phone ? 'text-red-500' : 'text-gray-400'}`}>Phone Number</label>
-                   <input required type="tel" value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} className={`w-full border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500/20 transition-all outline-none ${errors.phone ? 'border-red-500' : 'border-gray-200 focus:border-blue-500'}`} placeholder="+91" />
-                   {errors.phone && <div className="text-[9px] text-red-500 font-bold mt-1 ml-1 flex items-center gap-1"><AlertCircle size={10} /> {errors.phone}</div>}
-                </div>
-              </div>
-           </div>
+            </div>
 
-           {/* Section 2: Documents */}
-           <div className="space-y-6">
-              <div className="flex items-center gap-3">
-                 <div className="h-8 w-8 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600 shadow-sm"><ShieldCheck size={16} /></div>
-                 <div>
-                    <h3 className="text-sm font-bold text-zinc-900 leading-none">Compliance Vault</h3>
-                    <p className="text-[10px] text-gray-400 mt-1 font-bold">Update and refresh identity documentation</p>
-                 </div>
+            <div className="space-y-4 p-5 rounded-2xl bg-white border border-gray-200 shadow-sm">
+              <div>
+                <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1.5 ml-1 leading-none ${errors.name ? 'text-red-500' : 'text-gray-400'}`}>Agency Name</label>
+                <input required type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className={`w-full border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500/20 transition-all outline-none ${errors.name ? 'border-red-500' : 'border-gray-200 focus:border-blue-500'}`} placeholder="Company Name" />
+                {errors.name && <div className="text-[9px] text-red-500 font-bold mt-1 ml-1 flex items-center gap-1"><AlertCircle size={10} /> {errors.name}</div>}
               </div>
+              <div>
+                <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1.5 ml-1 leading-none ${errors.email ? 'text-red-500' : 'text-gray-400'}`}>Email Address</label>
+                <input required type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} className={`w-full border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500/20 transition-all outline-none ${errors.email ? 'border-red-500' : 'border-gray-200 focus:border-blue-500'}`} placeholder="contact@agency.com" />
+                {errors.email && <div className="text-[9px] text-red-500 font-bold mt-1 ml-1 flex items-center gap-1"><AlertCircle size={10} /> {errors.email}</div>}
+              </div>
+              <div>
+                <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1.5 ml-1 leading-none ${errors.phone ? 'text-red-500' : 'text-gray-400'}`}>Phone Number</label>
+                <input required type="tel" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} className={`w-full border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500/20 transition-all outline-none ${errors.phone ? 'border-red-500' : 'border-gray-200 focus:border-blue-500'}`} placeholder="+91" />
+                {errors.phone && <div className="text-[9px] text-red-500 font-bold mt-1 ml-1 flex items-center gap-1"><AlertCircle size={10} /> {errors.phone}</div>}
+              </div>
+            </div>
+          </div>
 
-              <div className="space-y-4 p-5 rounded-2xl bg-white border border-gray-200 shadow-sm">
-                 {[
-                   { id: 'aadharFront', label: 'Aadhar Front Identity', icon: FileText },
-                   { id: 'aadharBack', label: 'Aadhar Back Identity', icon: FileText },
-                   { id: 'panCard', label: 'PAN Card Verification', icon: ShieldCheck }
-                 ].map((doc) => (
-                   <div key={doc.id}>
-                      <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 ml-1 leading-none">{doc.label}</label>
-                      <div className="relative group">
-                         <input 
-                            type="file" 
-                            onChange={(e) => handleFileChange(e, doc.id)}
-                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                            accept="image/*"
-                         />
-                         <div className={`w-full h-12 border border-dashed rounded-lg flex items-center px-4 gap-3 transition-all ${files[doc.id] ? 'border-emerald-200 bg-emerald-50/30' : 'border-gray-200 bg-gray-50/30 group-hover:border-blue-400 group-hover:bg-white'}`}>
-                            {files[doc.id] ? <CheckCircle size={14} className="text-emerald-500" /> : <doc.icon size={14} className="text-gray-300" />}
-                            <span className={`text-xs font-bold truncate flex-1 ${files[doc.id] ? 'text-emerald-700' : 'text-gray-400'}`}>
-                               {files[doc.id] ? files[doc.id].name : `Update ${doc.label.split(' ')[0]}...`}
-                            </span>
-                            <Plus size={14} className={files[doc.id] ? 'text-emerald-400' : 'text-gray-300'} />
-                         </div>
+          {/* Section 2: Documents */}
+          <div className="space-y-6">
+            <div className="flex items-center gap-3">
+              <div className="h-8 w-8 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600 shadow-sm"><ShieldCheck size={16} /></div>
+              <div>
+                <h3 className="text-sm font-bold text-zinc-900 leading-none">Compliance Vault</h3>
+                <p className="text-[10px] text-gray-400 mt-1 font-bold">Update and refresh identity documentation</p>
+              </div>
+            </div>
+
+            <div className="space-y-4 p-5 rounded-2xl bg-white border border-gray-200 shadow-sm">
+              {[
+                { id: 'aadharFront', label: 'Aadhar Front Identity', icon: FileText },
+                { id: 'aadharBack', label: 'Aadhar Back Identity', icon: FileText },
+                { id: 'panCard', label: 'PAN Card Verification', icon: ShieldCheck }
+              ].map((doc) => {
+                const existingUrl = agent?.kyc?.[doc.id];
+                const newFile = files[doc.id];
+
+                return (
+                  <div key={doc.id}>
+                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 ml-1 leading-none">{doc.label}</label>
+                    <div className="relative group">
+                      <input
+                        type="file"
+                        onChange={(e) => handleFileChange(e, doc.id)}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                        accept="image/*"
+                      />
+                      <div className={`w-full h-auto min-h-[48px] border border-dashed rounded-lg flex flex-col p-3 transition-all ${newFile ? 'border-emerald-200 bg-emerald-50/30' : existingUrl ? 'border-blue-100 bg-blue-50/20' : 'border-gray-200 bg-gray-50/30 group-hover:border-blue-400 group-hover:bg-white'}`}>
+                        <div className="flex items-center gap-3">
+                          {newFile ? (
+                            <CheckCircle size={14} className="text-emerald-500" />
+                          ) : existingUrl ? (
+                            <FileCheck size={14} className="text-blue-500" />
+                          ) : (
+                            <doc.icon size={14} className="text-gray-300" />
+                          )}
+                          <span className={`text-xs font-bold truncate flex-1 ${(newFile || existingUrl) ? 'text-zinc-900' : 'text-gray-400'}`}>
+                            {newFile ? newFile.name : existingUrl ? 'Registry Document Loaded' : `Update ${doc.label.split(' ')[0]}...`}
+                          </span>
+                          <div className="flex items-center gap-2">
+                            {existingUrl && (
+                              <a
+                                href={getFileUrl(existingUrl)}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="h-6 w-6 flex items-center justify-center bg-white border border-gray-100 text-gray-400 hover:text-primary-600 rounded-md transition-all shadow-sm z-20"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <ExternalLink size={10} />
+                              </a>
+                            )}
+                            <Plus size={14} className={newFile ? 'text-emerald-400' : 'text-gray-300'} />
+                          </div>
+                        </div>
+
+                        {/* Preview Section */}
+                        {(newFile || existingUrl) && (
+                          <div className="mt-3 relative aspect-[16/9] w-full rounded-lg overflow-hidden border border-gray-100 bg-white group/preview">
+                            <img
+                              src={newFile ? URL.createObjectURL(newFile) : getFileUrl(existingUrl)}
+                              alt={doc.label}
+                              className="w-full h-full object-contain"
+                            />
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/preview:opacity-100 transition-opacity flex items-center justify-center">
+                              <span className="text-[10px] font-black text-white uppercase tracking-widest bg-zinc-900/50 px-3 py-1.5 rounded-full backdrop-blur-sm">
+                                Click Card to Update
+                              </span>
+                            </div>
+                          </div>
+                        )}
                       </div>
-                   </div>
-                 ))}
-              </div>
-           </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </div>
       </form>
     </Modal>
@@ -747,7 +795,7 @@ export default function Agencies() {
   // KYC Modal State
   const [selectedAgent, setSelectedAgent] = useState(null)
   const [isKycModalOpen, setIsKycModalOpen] = useState(false)
-  
+
   // Hierarchy Modal State
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
@@ -880,12 +928,6 @@ export default function Agencies() {
     )
   }
 
-  const getFileUrl = (path) => {
-    if (!path) return '#'
-    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001'
-    const cleanBase = baseUrl.trim().replace(/\/api$/, '')
-    return `${cleanBase}/${path.replace(/\\/g, '/')}`
-  }
 
   const statusOptions = [
     { value: 'all', label: 'All Status' },
@@ -898,42 +940,42 @@ export default function Agencies() {
       {/* Header */}
       {/* Header & Controls */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-         <div>
-            <h1 className="text-2xl font-bold text-zinc-900">Parent Agencies</h1>
-            <p className="text-gray-500 text-sm">Manage tier-1 travel distribution entities and corporate identities</p>
-         </div>
+        <div>
+          <h1 className="text-2xl font-bold text-zinc-900">Parent Agencies</h1>
+          <p className="text-gray-500 text-sm">Manage tier-1 travel distribution entities and corporate identities</p>
+        </div>
 
-         <div className="flex flex-col sm:flex-row items-center gap-3">
-            <div className="relative w-full sm:w-64">
-               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-               <input
-                  type="text"
-                  placeholder="Search agencies..."
-                  className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 shadow-sm"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-               />
-            </div>
+        <div className="flex flex-col sm:flex-row items-center gap-3">
+          <div className="relative w-full sm:w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search agencies..."
+              className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 shadow-sm"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
 
-            <div className="flex items-center gap-2 w-full sm:w-auto">
-               <div className="text-xs font-bold text-gray-400 uppercase tracking-widest hidden xl:block">Status:</div>
-               <CustomDropdown
-                  value={statusFilter}
-                  onChange={setStatusFilter}
-                  options={statusOptions}
-                  className="w-full sm:w-40"
-                  buttonClassName="!py-2"
-               />
-            </div>
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <div className="text-xs font-bold text-gray-400 uppercase tracking-widest hidden xl:block">Status:</div>
+            <CustomDropdown
+              value={statusFilter}
+              onChange={setStatusFilter}
+              options={statusOptions}
+              className="w-full sm:w-40"
+              buttonClassName="!py-2"
+            />
+          </div>
 
-            <button
-               onClick={() => setIsAddModalOpen(true)}
-               className="w-full sm:w-auto flex items-center justify-center gap-2 bg-zinc-900 text-white px-5 py-2 rounded-lg text-sm font-bold hover:bg-zinc-800 transition-all shadow-sm whitespace-nowrap"
-            >
-               <Plus size={18} />
-               <span>Add Agency</span>
-            </button>
-         </div>
+          <button
+            onClick={() => setIsAddModalOpen(true)}
+            className="w-full sm:w-auto flex items-center justify-center gap-2 bg-zinc-900 text-white px-5 py-2 rounded-lg text-sm font-bold hover:bg-zinc-800 transition-all shadow-sm whitespace-nowrap"
+          >
+            <Plus size={18} />
+            <span>Add Agency</span>
+          </button>
+        </div>
       </div>
 
       {/* Main Table */}
@@ -944,11 +986,11 @@ export default function Agencies() {
         </div>
       ) : agents.length === 0 ? (
         <div className="bg-white rounded-2xl border border-slate-200 p-16 text-center shadow-sm">
-            <div className="w-14 h-14 rounded-2xl bg-slate-50 flex items-center justify-center mx-auto mb-4 border border-slate-100">
-                <Building2 className="w-7 h-7 text-slate-300" />
-            </div>
-            <h3 className="text-lg font-bold text-slate-900 leading-none">No active instances found</h3>
-            <p className="text-sm text-slate-500 mt-2 font-medium">Broaden your search criteria to identify platform entities.</p>
+          <div className="w-14 h-14 rounded-2xl bg-slate-50 flex items-center justify-center mx-auto mb-4 border border-slate-100">
+            <Building2 className="w-7 h-7 text-slate-300" />
+          </div>
+          <h3 className="text-lg font-bold text-slate-900 leading-none">No active instances found</h3>
+          <p className="text-sm text-slate-500 mt-2 font-medium">Broaden your search criteria to identify platform entities.</p>
         </div>
       ) : (
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-visible ring-1 ring-black/5">
@@ -971,58 +1013,57 @@ export default function Agencies() {
                       <div className="flex items-center gap-2.5">
                         <div className="h-9 w-9 flex-shrink-0 rounded-full bg-slate-100 flex items-center justify-center border border-slate-200 group-hover:scale-105 transition-transform"><Building2 className="h-4.5 w-4.5 text-slate-500" /></div>
                         <div className="min-w-0">
-                            <div className="text-sm font-bold text-slate-900 truncate max-w-[160px] leading-tight">{agent.name}</div>
-                            <div className="flex flex-col gap-0.5 mt-1">
-                                <div className="text-[10px] text-slate-400 font-bold flex items-center gap-1 leading-none"><Mail className="w-2.5 h-2.5" /> {agent.email}</div>
-                                <div className="text-[9px] font-black text-primary-600 uppercase tracking-widest leading-none mt-0.5 flex items-center gap-1"><ShieldCheck className="w-2.5 h-2.5" /> {agent.agentCode || 'NO-CODE'}</div>
-                            </div>
+                          <div className="text-sm font-bold text-slate-900 truncate max-w-[160px] leading-tight">{agent.name}</div>
+                          <div className="flex flex-col gap-0.5 mt-1">
+                            <div className="text-[10px] text-slate-400 font-bold flex items-center gap-1 leading-none"><Mail className="w-2.5 h-2.5" /> {agent.email}</div>
+                            <div className="text-[9px] font-black text-primary-600 uppercase tracking-widest leading-none mt-0.5 flex items-center gap-1"><ShieldCheck className="w-2.5 h-2.5" /> {agent.agentCode || 'NO-CODE'}</div>
+                          </div>
                         </div>
                       </div>
                     </td>
                     <td className="px-4 py-3.5 whitespace-nowrap">
-                        <button 
-                          onClick={() => navigate(`/admin/agencies/network/${agent._id}`)}
-                          className="flex items-center gap-2 group/h"
-                        >
-                           <div className="h-9 px-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center gap-2 transition-all group-hover/h:bg-primary-50 group-hover/h:border-primary-200 group-hover/h:shadow-sm">
-                              <Users size={14} className="text-slate-400 group-hover/h:text-primary-600 transition-colors" />
-                              <span className="text-xs font-black text-slate-900">{agent.childCount || 0}</span>
-                              <div className="h-1.5 w-1.5 rounded-full bg-primary-500 animate-pulse hidden group-hover/h:block" />
-                           </div>
-                           <div className="p-1 px-1.5 rounded bg-slate-50 text-[8px] font-black text-slate-400 uppercase tracking-widest opacity-0 group-hover/h:opacity-100 transition-all flex items-center gap-1 translate-x-[-10px] group-hover/h:translate-x-0">
-                             Explore <ArrowRight size={8} />
-                           </div>
-                        </button>
-                    </td>
-                    <td className="px-4 py-3.5 whitespace-nowrap">
-                        <div className="flex items-center gap-2">
-                            <div className="h-6 w-6 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-400 shadow-sm"><Phone className="w-3 h-3" /></div>
-                            <div className="text-[11px] font-bold text-slate-600 tracking-tight">{agent.phone || 'N/A'}</div>
+                      <button
+                        onClick={() => navigate(`/admin/agencies/network/${agent._id}`)}
+                        className="flex items-center gap-2 group/h"
+                      >
+                        <div className="h-9 px-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center gap-2 transition-all group-hover/h:bg-primary-50 group-hover/h:border-primary-200 group-hover/h:shadow-sm">
+                          <Users size={14} className="text-slate-400 group-hover/h:text-primary-600 transition-colors" />
+                          <span className="text-xs font-black text-slate-900">{agent.childCount || 0}</span>
+                          <div className="h-1.5 w-1.5 rounded-full bg-primary-500 animate-pulse hidden group-hover/h:block" />
                         </div>
+                        <div className="p-1 px-1.5 rounded bg-slate-50 text-[8px] font-black text-slate-400 uppercase tracking-widest opacity-0 group-hover/h:opacity-100 transition-all flex items-center gap-1 translate-x-[-10px] group-hover/h:translate-x-0">
+                          Explore <ArrowRight size={8} />
+                        </div>
+                      </button>
                     </td>
                     <td className="px-4 py-3.5 whitespace-nowrap">
-                        <button 
-                            onClick={() => handleToggleAgent(agent._id)}
-                            className={`inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all active:scale-95 min-w-[85px] border shadow-sm ${
-                                agent.isActive 
-                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100/80 hover:shadow-emerald-500/10' 
-                                : 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100/80 hover:shadow-red-500/10'
-                            }`}
-                        >
-                            <div className={`w-1 h-1 rounded-full ${agent.isActive ? 'bg-emerald-600 animate-pulse' : 'bg-red-600'}`} />
-                            {agent.isActive ? 'Active' : 'Inactive'}
-                        </button>
+                      <div className="flex items-center gap-2">
+                        <div className="h-6 w-6 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-400 shadow-sm"><Phone className="w-3 h-3" /></div>
+                        <div className="text-[11px] font-bold text-slate-600 tracking-tight">{agent.phone || 'N/A'}</div>
+                      </div>
                     </td>
                     <td className="px-4 py-3.5 whitespace-nowrap">
-                        <button 
-                            onClick={() => {
-                                setSelectedAgent(agent)
-                                setIsKycModalOpen(true)
-                            }}
-                            className="active:scale-95 transition-transform"
-                        >
-                            {getStatusBadge(agent.kyc?.status)}
-                        </button>
+                      <button
+                        onClick={() => handleToggleAgent(agent._id)}
+                        className={`inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all active:scale-95 min-w-[85px] border shadow-sm ${agent.isActive
+                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100/80 hover:shadow-emerald-500/10'
+                            : 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100/80 hover:shadow-red-500/10'
+                          }`}
+                      >
+                        <div className={`w-1 h-1 rounded-full ${agent.isActive ? 'bg-emerald-600 animate-pulse' : 'bg-red-600'}`} />
+                        {agent.isActive ? 'Active' : 'Inactive'}
+                      </button>
+                    </td>
+                    <td className="px-4 py-3.5 whitespace-nowrap">
+                      <button
+                        onClick={() => {
+                          setSelectedAgent(agent)
+                          setIsKycModalOpen(true)
+                        }}
+                        className="active:scale-95 transition-transform"
+                      >
+                        {getStatusBadge(agent.kyc?.status)}
+                      </button>
                     </td>
                     <td className="px-4 py-3.5 text-right whitespace-nowrap pr-6">
                       <div className="flex items-center justify-end gap-2">
@@ -1064,13 +1105,13 @@ export default function Agencies() {
           {/* Pagination Footer */}
           {totalPages > 1 && (
             <div className="bg-slate-50/50 border-t border-slate-100 px-6 py-4 flex items-center justify-between">
-                <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
-                    Page <span className="text-slate-900 mx-1">{page}</span> of <span className="text-slate-900 mx-1">{totalPages}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                    <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="h-8 w-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-white hover:shadow-sm disabled:opacity-20 transition-all"><ChevronLeft className="w-4 h-4" /></button>
-                    <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="h-8 w-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-white hover:shadow-sm disabled:opacity-20 transition-all"><ChevronRight className="w-4 h-4" /></button>
-                </div>
+              <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
+                Page <span className="text-slate-900 mx-1">{page}</span> of <span className="text-slate-900 mx-1">{totalPages}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="h-8 w-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-white hover:shadow-sm disabled:opacity-20 transition-all"><ChevronLeft className="w-4 h-4" /></button>
+                <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="h-8 w-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-white hover:shadow-sm disabled:opacity-20 transition-all"><ChevronRight className="w-4 h-4" /></button>
+              </div>
             </div>
           )}
         </div>
@@ -1092,8 +1133,8 @@ export default function Agencies() {
       />
 
       {/* KYC Review Modal */}
-      <Modal 
-        isOpen={isKycModalOpen} 
+      <Modal
+        isOpen={isKycModalOpen}
         onClose={() => setIsKycModalOpen(false)}
         title={selectedAgent ? `KYC Review: ${selectedAgent.name}` : 'KYC Review'}
         size="lg"
@@ -1101,61 +1142,61 @@ export default function Agencies() {
         {selectedAgent && (
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 p-6 rounded-2xl bg-slate-50/50 border border-slate-100 shadow-inner">
-               <div className="space-y-1.5">
-                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Corporate Identity</label>
-                  <div className="text-lg font-bold text-slate-900 tracking-tight leading-none">{selectedAgent.name}</div>
-               </div>
-               <div className="space-y-1.5">
-                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Agent Professional Code</label>
-                  <div className="text-sm font-black text-primary-600 flex items-center gap-2"><ShieldCheck size={14} className="text-primary-500" /> {selectedAgent.agentCode || 'PENDING ASSIGNMENT'}</div>
-               </div>
-               <div className="space-y-1.5">
-                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Audit State</label>
-                  <div>{getStatusBadge(selectedAgent.kyc?.status)}</div>
-               </div>
-               <div className="space-y-1.5 pt-2 border-t border-slate-100 md:border-0 md:pt-0">
-                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Contact Primary</label>
-                  <div className="text-sm font-bold text-slate-700 flex items-center gap-2 font-mono">{selectedAgent.email}</div>
-               </div>
-               <div className="space-y-1.5 pt-2 border-t border-slate-100 md:border-0 md:pt-0">
-                  <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Phone Identity</label>
-                  <div className="text-sm font-bold text-slate-700 tracking-tighter">{selectedAgent.phone || 'N/A'}</div>
-               </div>
+              <div className="space-y-1.5">
+                <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Corporate Identity</label>
+                <div className="text-lg font-bold text-slate-900 tracking-tight leading-none">{selectedAgent.name}</div>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Agent Professional Code</label>
+                <div className="text-sm font-black text-primary-600 flex items-center gap-2"><ShieldCheck size={14} className="text-primary-500" /> {selectedAgent.agentCode || 'PENDING ASSIGNMENT'}</div>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Audit State</label>
+                <div>{getStatusBadge(selectedAgent.kyc?.status)}</div>
+              </div>
+              <div className="space-y-1.5 pt-2 border-t border-slate-100 md:border-0 md:pt-0">
+                <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Contact Primary</label>
+                <div className="text-sm font-bold text-slate-700 flex items-center gap-2 font-mono">{selectedAgent.email}</div>
+              </div>
+              <div className="space-y-1.5 pt-2 border-t border-slate-100 md:border-0 md:pt-0">
+                <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Phone Identity</label>
+                <div className="text-sm font-bold text-slate-700 tracking-tighter">{selectedAgent.phone || 'N/A'}</div>
+              </div>
             </div>
 
             <div className="space-y-4">
-               <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest flex items-center gap-2"><FileText size={16} className="text-primary-500" /> Credentials Vault</h3>
-               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {[
-                    { label: 'Aadhar Front', path: selectedAgent.kyc?.aadharFront },
-                    { label: 'Aadhar Back', path: selectedAgent.kyc?.aadharBack },
-                    { label: 'Pan Card', path: selectedAgent.kyc?.panCard }
-                  ].map((doc, idx) => doc.path ? (
-                    <div key={idx} className="group relative rounded-xl border border-slate-200 overflow-hidden bg-white shadow-sm hover:shadow-md transition-all">
-                       <div className="aspect-[4/3] flex items-center justify-center p-2 bg-slate-50">
-                          {doc.path.match(/\.(jpg|jpeg|png|webp|gif)$/i) ? (
-                             <img src={getFileUrl(doc.path)} className="h-full w-full object-cover rounded-lg group-hover:scale-110 transition-transform duration-500" />
-                          ) : <FileText size={32} className="text-slate-200" />}
-                       </div>
-                       <div className="p-3 bg-white border-t border-slate-50 flex items-center justify-between">
-                          <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{doc.label}</span>
-                          <a href={getFileUrl(doc.path)} target="_blank" rel="noreferrer" className="h-7 w-7 flex items-center justify-center bg-primary-50 text-primary-600 rounded-lg hover:bg-primary-600 hover:text-white transition-all shadow-sm"><ExternalLink size={12} /></a>
-                       </div>
+              <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest flex items-center gap-2"><FileText size={16} className="text-primary-500" /> Credentials Vault</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {[
+                  { label: 'Aadhar Front', path: selectedAgent.kyc?.aadharFront },
+                  { label: 'Aadhar Back', path: selectedAgent.kyc?.aadharBack },
+                  { label: 'Pan Card', path: selectedAgent.kyc?.panCard }
+                ].map((doc, idx) => doc.path ? (
+                  <div key={idx} className="group relative rounded-xl border border-slate-200 overflow-hidden bg-white shadow-sm hover:shadow-md transition-all">
+                    <div className="aspect-[4/3] flex items-center justify-center p-2 bg-slate-50">
+                      {doc.path.match(/\.(jpg|jpeg|png|webp|gif)$/i) ? (
+                        <img src={getFileUrl(doc.path)} className="h-full w-full object-cover rounded-lg group-hover:scale-110 transition-transform duration-500" />
+                      ) : <FileText size={32} className="text-slate-200" />}
                     </div>
-                  ) : (
-                    <div key={idx} className="aspect-[4/3] flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-100 bg-slate-50/50 text-slate-300">
-                       <XCircle size={24} className="opacity-20" />
-                       <span className="text-[9px] font-black uppercase mt-2">{doc.label} Missing</span>
+                    <div className="p-3 bg-white border-t border-slate-50 flex items-center justify-between">
+                      <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{doc.label}</span>
+                      <a href={getFileUrl(doc.path)} target="_blank" rel="noreferrer" className="h-7 w-7 flex items-center justify-center bg-primary-50 text-primary-600 rounded-lg hover:bg-primary-600 hover:text-white transition-all shadow-sm"><ExternalLink size={12} /></a>
                     </div>
-                  ))}
-               </div>
+                  </div>
+                ) : (
+                  <div key={idx} className="aspect-[4/3] flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-100 bg-slate-50/50 text-slate-300">
+                    <XCircle size={24} className="opacity-20" />
+                    <span className="text-[9px] font-black uppercase mt-2">{doc.label} Missing</span>
+                  </div>
+                ))}
+              </div>
             </div>
 
             {selectedAgent.kyc?.status === 'pending' && (
               <div className="space-y-4 pt-6 border-t border-slate-100">
                 <div className="space-y-2">
                   <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Compliance Audit Feedback</label>
-                  <textarea 
+                  <textarea
                     className="w-full rounded-xl border border-slate-200 p-4 text-sm focus:outline-none focus:ring-4 focus:ring-primary-500/5 focus:border-primary-500/50 bg-slate-50/50 transition-all min-h-[100px] resize-none"
                     placeholder="Provide specific reasons for compliance failure..."
                     value={rejectionReason}
@@ -1163,14 +1204,14 @@ export default function Agencies() {
                   />
                 </div>
                 <div className="flex gap-4">
-                  <button 
+                  <button
                     onClick={() => handleKycAction('approve')}
                     disabled={isActionLoading}
                     className="flex-1 h-12 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-sm shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-50"
                   >
                     {isActionLoading ? <Loader size="sm" color="white" /> : <><ShieldCheck size={18} /> Approve Agency</>}
                   </button>
-                  <button 
+                  <button
                     onClick={() => handleKycAction('reject')}
                     disabled={isActionLoading}
                     className="flex-1 h-12 bg-white border border-red-200 text-red-600 hover:bg-red-50 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-50"
