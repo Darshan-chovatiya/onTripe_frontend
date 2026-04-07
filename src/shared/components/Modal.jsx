@@ -35,7 +35,7 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md', f
             <X className="w-5 h-5" />
           </button>
         </div>
-        <div className="flex-1 overflow-y-auto p-6">{children}</div>
+        <div className="min-h-0 flex-1 overflow-y-auto p-6">{children}</div>
         {footer ? (
           <div className="flex-shrink-0 border-t border-gray-200 bg-white rounded-b-xl">{footer}</div>
         ) : null}

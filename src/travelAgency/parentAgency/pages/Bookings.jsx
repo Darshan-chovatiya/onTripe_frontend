@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { RefreshCw, BookOpen, Calendar, User, IndianRupee, Hash, Eye } from 'lucide-react'
+import { BookOpen, Calendar, User, IndianRupee, Hash, Eye } from 'lucide-react'
 import { listBookings } from '@/travelAgency/parentAgency/services/parentAgencyApi.js'
 import { getApiErrorMessage } from '@/shared/services/apiHelpers.js'
 import BookingDetailModal from '@/travelAgency/parentAgency/components/BookingDetailModal.jsx'
@@ -54,14 +54,9 @@ export default function Bookings() {
   return (
     <div className="animate-fade-in space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Bookings</h1>
-          <p className="text-sm text-gray-500 mt-0.5">All bookings across your network</p>
-        </div>
-        <button onClick={fetchBookings} className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors" aria-label="Refresh">
-          <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
-        </button>
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">Bookings</h1>
+        <p className="mt-0.5 text-sm text-gray-500">All bookings across your network</p>
       </div>
 
       {/* Filters */}
