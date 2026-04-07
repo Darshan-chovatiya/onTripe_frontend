@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { RefreshCw, Users, CheckCircle, XCircle, Clock, Eye } from 'lucide-react'
+import { RefreshCw, Users, CheckCircle, XCircle, Clock, Eye, Mail, Phone, User, ShieldCheck, UserCheck } from 'lucide-react'
 import { listChildAgencies, toggleChildAgentStatus, approveChildKyc } from '@/travelAgency/parentAgency/services/parentAgencyApi.js'
 import { getApiErrorMessage } from '@/shared/services/apiHelpers.js'
 import ChildAgentDetailModal from '@/travelAgency/parentAgency/components/ChildAgentDetailModal.jsx'
@@ -113,11 +113,11 @@ export default function ManageChildren() {
 
       {/* Stats */}
       {children.length > 0 && (
-        <div className="flex gap-4 text-sm">
+        <div className="flex flex-wrap gap-4 text-sm">
           <span className="text-gray-500">Total: <span className="font-semibold text-gray-800">{children.length}</span></span>
-          <span className="text-green-600">KYC Approved: <span className="font-semibold">{children.filter(c => c.kyc?.status === 'approved').length}</span></span>
-          <span className="text-yellow-600">Pending: <span className="font-semibold">{children.filter(c => c.kyc?.status === 'pending').length}</span></span>
-          <span className="text-red-500">Rejected: <span className="font-semibold">{children.filter(c => c.kyc?.status === 'rejected').length}</span></span>
+          <span className="text-gray-500">Approved: <span className="font-semibold text-gray-800">{children.filter(c => c.kyc?.status === 'approved').length}</span></span>
+          <span className="text-gray-500">Pending: <span className="font-semibold text-gray-800">{children.filter(c => c.kyc?.status === 'pending').length}</span></span>
+          <span className="text-gray-500">Rejected: <span className="font-semibold text-gray-800">{children.filter(c => c.kyc?.status === 'rejected').length}</span></span>
         </div>
       )}
 
@@ -126,15 +126,13 @@ export default function ManageChildren() {
 
       {/* Loading skeleton */}
       {loading && children.length === 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[1, 2, 3].map(i => (
-            <div key={i} className="rounded-2xl border border-gray-100 bg-white p-5 space-y-3 animate-pulse">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-gray-200" />
-                <div className="space-y-1.5 flex-1">
-                  <div className="h-4 bg-gray-200 rounded w-2/3" />
-                  <div className="h-3 bg-gray-200 rounded w-1/2" />
-                </div>
+        <div className="space-y-3">
+          {[1,2,3].map(i => (
+            <div key={i} className="rounded-2xl border border-gray-100 bg-white p-4 animate-pulse flex gap-4">
+              <div className="h-10 w-10 rounded-full bg-gray-200 flex-shrink-0" />
+              <div className="flex-1 space-y-2">
+                <div className="h-4 bg-gray-200 rounded w-1/3" />
+                <div className="h-3 bg-gray-200 rounded w-1/2" />
               </div>
             </div>
           ))}
@@ -154,70 +152,92 @@ export default function ManageChildren() {
         </div>
       )}
 
-      {/* Grid */}
+      {/* Table */}
       {filtered.length > 0 && (
         <div className="rounded-2xl border border-gray-100 bg-white shadow-sm overflow-hidden">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-100 text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                <th className="px-5 py-3 text-left">Name</th>
-                <th className="px-5 py-3 text-left">Email</th>
-                <th className="px-5 py-3 text-left">Phone</th>
-                <th className="px-5 py-3 text-left">KYC</th>
-                <th className="px-5 py-3 text-left">Status</th>
-                <th className="px-5 py-3 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-50">
-              {filtered.map(child => {
-                const kycStatus = child.kyc?.status || 'pending'
-                const KycIcon = KYC_ICONS[kycStatus] || Clock
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-100 text-xs font-semibold text-gray-500 uppercase tracking-wide bg-gray-50">
+                  <th className="px-5 py-3 text-left">Agent Name</th>
+                  <th className="px-5 py-3 text-left">Contact Info</th>
+                  <th className="px-5 py-3 text-left">KYC Status</th>
+                  <th className="px-5 py-3 text-left">Account Status</th>
+                  <th className="px-5 py-3 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {filtered.map(child => {
+                  const kycStatus = child.kyc?.status || 'pending'
+                  const KycIcon = KYC_ICONS[kycStatus] || Clock
 
-                return (
-                  <tr key={child._id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-5 py-3.5 font-semibold text-gray-900">{child.name}</td>
-                    <td className="px-5 py-3.5 text-gray-500">{child.email || '—'}</td>
-                    <td className="px-5 py-3.5 text-gray-500">{child.phone || '—'}</td>
-                    <td className="px-5 py-3.5">
-                      <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${KYC_STYLES[kycStatus]}`}>
-                        <KycIcon size={10} />
-                        {kycStatus.charAt(0).toUpperCase() + kycStatus.slice(1)}
-                      </span>
-                    </td>
-                    <td className="px-5 py-3.5">
-                      <span className={`inline-flex items-center gap-1 text-xs font-medium ${child.isActive ? 'text-green-600' : 'text-red-500'}`}>
-                        <Users size={12} />
-                        {child.isActive ? 'Active' : 'Inactive'}
-                      </span>
-                    </td>
-                    <td className="px-5 py-3.5 text-right">
-                      <div className="inline-flex items-center gap-3">
-                        <button onClick={() => setViewId(child._id)} className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-800 transition-colors">
-                          <Eye size={13} /> View
-                        </button>
-                        {child.kyc?.status === 'pending' && (
-                          <button
-                            onClick={() => setKycTarget(child)}
-                            className="text-xs font-medium text-blue-600 hover:text-blue-800 transition-colors"
-                          >
-                            Approve KYC
-                          </button>
-                        )}
+                  return (
+                    <tr key={child._id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-5 py-3.5">
+                        <div className="flex items-center gap-2">
+                          <div className="h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500">
+                            <User size={14} />
+                          </div>
+                          <div>
+                            <p className="font-semibold text-gray-900">{child.name}</p>
+                            <p className="text-xs text-gray-400">Agent ID: {child._id.slice(-6).toUpperCase()}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <p className="flex items-center gap-1.5 text-gray-700"><Mail size={12} className="text-gray-400" />{child.email || '—'}</p>
+                        {child.phone && <p className="flex items-center gap-1.5 text-xs text-gray-400 mt-0.5"><Phone size={11} className="text-gray-400" />{child.phone}</p>}
+                      </td>
+                      <td className="px-5 py-3.5">
+                        <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${KYC_STYLES[kycStatus]}`}>
+                          <KycIcon size={12} />
+                          {kycStatus}
+                        </span>
+                      </td>
+                      <td className="px-5 py-3.5">
                         <button
                           onClick={() => setToggleTarget(child)}
-                          className={`text-xs font-medium transition-colors ${child.isActive ? 'text-red-500 hover:text-red-700' : 'text-green-600 hover:text-green-800'}`}
+                          className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium transition-all hover:ring-2 hover:ring-offset-1 ${
+                            child.isActive 
+                              ? 'bg-green-50 text-green-700 hover:ring-green-200' 
+                              : 'bg-red-50 text-red-700 hover:ring-red-200'
+                          }`}
+                          title={child.isActive ? 'Click to Deactivate' : 'Click to Activate'}
                         >
-                          {child.isActive ? 'Deactivate' : 'Activate'}
+                          <ShieldCheck size={12} />
+                          {child.isActive ? 'Active' : 'Deactivated'}
                         </button>
-                      </div>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
+                      </td>
+                      <td className="px-5 py-3.5 text-right">
+                        <div className="inline-flex items-center gap-3">
+                          <button 
+                            onClick={() => setViewId(child._id)} 
+                            className="p-1.5 rounded-lg text-gray-400 hover:text-gray-900 hover:bg-gray-100 transition-all" 
+                            title="View Details"
+                          >
+                            <Eye size={16} />
+                          </button>
+                          
+                          {child.kyc?.status === 'pending' && (
+                            <button
+                              onClick={() => setKycTarget(child)}
+                              className="p-1.5 rounded-lg text-blue-500 hover:text-blue-700 hover:bg-blue-50 transition-all"
+                              title="Approve KYC"
+                            >
+                              <UserCheck size={18} />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
+
       {/* Detail modal */}
       <ChildAgentDetailModal
         isOpen={!!viewId}
@@ -254,3 +274,4 @@ export default function ManageChildren() {
     </div>
   )
 }
+
