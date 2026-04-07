@@ -190,13 +190,13 @@ const Customers = () => {
             <p className="text-gray-500 text-sm">Review platform travelers and manage traveler identity records</p>
          </div>
 
-         <div className="flex items-center gap-3">
-            <div className="relative">
+         <div className="flex flex-col sm:flex-row items-center gap-3">
+            <div className="relative w-full sm:w-64">
                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                <input
                   type="text"
                   placeholder="Name, email or phone..."
-                  className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 w-64 shadow-sm"
+                  className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 shadow-sm"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                />
@@ -210,10 +210,10 @@ const Customers = () => {
           <table className="w-full text-left text-sm">
             <thead className="bg-gray-50 border-b border-gray-200">
                <tr>
-                 <th className="px-6 py-4 font-bold text-zinc-900">Traveler Identity</th>
-                 <th className="px-6 py-4 font-bold text-zinc-900 text-center">Agency Profiles</th>
-                 <th className="px-6 py-4 font-bold text-zinc-900">Contact Details</th>
-                 <th className="px-6 py-4 font-bold text-zinc-900 text-right pr-12">Actions</th>
+                 <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest">Traveler Identity</th>
+                 <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest text-center">Agency Profiles</th>
+                 <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest">Contact Details</th>
+                 <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest text-right pr-12">Actions</th>
                </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">

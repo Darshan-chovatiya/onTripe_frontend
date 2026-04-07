@@ -214,10 +214,10 @@ const Packages = () => {
                <table className="w-full text-left text-sm">
                   <thead className="bg-gray-50 border-b border-gray-200">
                      <tr>
-                        <th className="px-6 py-4 font-bold text-zinc-900">Package Name</th>
-                        <th className="px-6 py-4 font-bold text-zinc-900">Base Price</th>
-                        <th className="px-6 py-4 font-bold text-zinc-900">Agency</th>
-                        <th className="px-6 py-4 font-bold text-zinc-900 text-right">Actions</th>
+                        <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest">Package Name</th>
+                        <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest">Base Price</th>
+                        <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest">Agency</th>
+                        <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest text-right pr-12">Actions</th>
                      </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">

@@ -122,10 +122,10 @@ const SubChildAgenciesModal = ({ isOpen, onClose, parentAgency, onToggleStatus, 
                <table className="w-full text-left">
                   <thead className="bg-gray-50 border-b border-gray-200">
                     <tr>
-                      <th className="px-4 py-3.5 text-[10px] font-bold text-zinc-900 uppercase tracking-widest">Agency Name</th>
-                      <th className="px-4 py-3.5 text-[10px] font-bold text-zinc-900 uppercase tracking-widest">Contact Info</th>
-                      <th className="px-4 py-3.5 text-[10px] font-bold text-zinc-900 uppercase tracking-widest">KYC Status</th>
-                      <th className="px-4 py-3.5 text-[10px] font-bold text-zinc-900 uppercase tracking-widest text-right pr-6">Account Status</th>
+                      <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest">Agency Name</th>
+                      <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest">Contact Info</th>
+                      <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest">KYC Status</th>
+                      <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest text-right pr-10">Account Status</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
@@ -278,11 +278,11 @@ const ChildAgenciesModal = ({ isOpen, onClose, parentAgency, onToggleStatus, get
                <table className="w-full text-left">
                   <thead className="bg-gray-50 border-b border-gray-200">
                     <tr>
-                      <th className="px-4 py-3.5 text-[10px] font-bold text-zinc-900 uppercase tracking-widest">Child Agency</th>
-                      <th className="px-4 py-3.5 text-[10px] font-bold text-zinc-900 uppercase tracking-widest">Contact Hub</th>
-                      <th className="px-4 py-3.5 text-[10px] font-bold text-zinc-900 uppercase tracking-widest">KYC Status</th>
-                      <th className="px-4 py-3.5 text-[10px] font-bold text-zinc-900 uppercase tracking-widest text-center">Sub-Hierarchy</th>
-                      <th className="px-4 py-3.5 text-[10px] font-bold text-zinc-900 uppercase tracking-widest ml-auto pr-6 text-right">Actions</th>
+                      <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest">Child Agency</th>
+                      <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest">Contact Hub</th>
+                      <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest">KYC Status</th>
+                      <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest text-center">Sub-Hierarchy</th>
+                      <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest text-right pr-10">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
@@ -956,12 +956,12 @@ export default function Agencies() {
             <table className="w-full table-auto">
               <thead className="bg-slate-50/80 border-b border-slate-100">
                 <tr>
-                  <th className="px-4 py-3.5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Parent Agency</th>
-                  <th className="px-4 py-3.5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Child Network</th>
-                  <th className="px-4 py-3.5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Primary Contact</th>
-                  <th className="px-4 py-3.5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Account State</th>
-                  <th className="px-4 py-3.5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">KYC Verification</th>
-                  <th className="px-4 py-3.5 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none pr-8">Actions</th>
+                  <th className="px-6 py-4 text-left text-[10px] font-black text-zinc-900 uppercase tracking-widest leading-none">Parent Agency</th>
+                  <th className="px-6 py-4 text-left text-[10px] font-black text-zinc-900 uppercase tracking-widest leading-none">Child Network</th>
+                  <th className="px-6 py-4 text-left text-[10px] font-black text-zinc-900 uppercase tracking-widest leading-none">Primary Contact</th>
+                  <th className="px-6 py-4 text-left text-[10px] font-black text-zinc-900 uppercase tracking-widest leading-none">Account State</th>
+                  <th className="px-6 py-4 text-left text-[10px] font-black text-zinc-900 uppercase tracking-widest leading-none">KYC Verification</th>
+                  <th className="px-6 py-4 text-right text-[10px] font-black text-zinc-900 uppercase tracking-widest leading-none pr-8">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">

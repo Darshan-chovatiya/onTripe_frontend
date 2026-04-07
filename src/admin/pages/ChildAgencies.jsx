@@ -83,12 +83,13 @@ export default function ChildAgencies() {
     }
   }
 
-  const handleFetchSubChildren = async (parentId) => {
+  const handleFetchSubChildren = async (agent) => {
+    setSelectedAgent(agent)
     setLoadingSubChildren(true)
     setIsSubChildModalOpen(true)
     try {
       // Fetch sub-child agents for this parent
-      const { data } = await adminApi.listAgents({ parentRef: parentId, role: 'sub_child_agent' })
+      const { data } = await adminApi.listAgents({ parentRef: agent._id, role: 'sub_child_agent' })
       if (data?.success) {
         setSubChildren(data.data.agents)
       }
@@ -99,11 +100,12 @@ export default function ChildAgencies() {
     }
   }
 
-  const handleFetchCustomers = async (parentId) => {
+  const handleFetchCustomers = async (agent) => {
+    setSelectedAgent(agent)
     setLoadingCustomers(true)
     setIsCustomerModalOpen(true)
     try {
-      const { data } = await adminApi.getAgencyCustomers(parentId)
+      const { data } = await adminApi.getAgencyCustomers(agent._id)
       if (data?.success) {
         setAgencyCustomers(data.data.customers)
       }
@@ -167,7 +169,7 @@ export default function ChildAgencies() {
     <Modal
       isOpen={isSubChildModalOpen}
       onClose={() => setIsSubChildModalOpen(false)}
-      title="Sub-Child Agencies"
+      title={`Sub-Agency Network: ${selectedAgent?.name}`}
       size="xl"
     >
       <div className="space-y-4">
@@ -186,11 +188,11 @@ export default function ChildAgencies() {
            ) : (
               <table className="w-full text-left">
                  <thead className="bg-gray-50 border-b border-gray-100">
-                    <tr>
-                       <th className="px-6 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest">Identity</th>
-                       <th className="px-6 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest">Details</th>
-                       <th className="px-6 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Status</th>
-                    </tr>
+                     <tr>
+                        <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest">Identity</th>
+                        <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest">Details</th>
+                        <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest text-right pr-6">Status</th>
+                     </tr>
                  </thead>
                  <tbody className="divide-y divide-gray-50">
                     {subChildren.map(sub => (
@@ -220,46 +222,46 @@ export default function ChildAgencies() {
     <Modal
       isOpen={isCustomerModalOpen}
       onClose={() => setIsCustomerModalOpen(false)}
-      title="Registered Traveler Matrix"
+      title={`Traveler Network Registry: ${selectedAgent?.name}`}
       size="xl"
     >
       <div className="space-y-4">
-        <p className="text-xs text-gray-400 font-bold uppercase tracking-widest leading-none">Entity: Managed Travelers & Hierarchy Clients</p>
+        <p className="text-xs text-gray-400 font-bold uppercase tracking-widest leading-none">Customers managed by this agency and its network</p>
         
         <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm min-h-[300px]">
            {loadingCustomers ? (
               <div className="p-12 flex flex-col items-center justify-center">
                  <Loader size="md" />
-                 <p className="text-[10px] font-bold text-gray-400 mt-4 tracking-widest uppercase">Querying Traveler Cluster...</p>
+                 <p className="text-[10px] font-bold text-gray-400 mt-4 tracking-widest uppercase">Fetching Customer List...</p>
               </div>
            ) : agencyCustomers.length === 0 ? (
               <div className="p-12 text-center">
-                 <p className="text-sm text-gray-400 font-medium italic">No travelers are currently mapped to this distribution node.</p>
+                 <p className="text-sm text-gray-400 font-medium italic">No customers found for this agency.</p>
               </div>
            ) : (
               <table className="w-full text-left">
                  <thead className="bg-gray-50 border-b border-gray-100">
-                    <tr>
-                       <th className="px-6 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest">Traveler</th>
-                       <th className="px-6 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest">Agent Role</th>
-                       <th className="px-6 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest">Managed By</th>
-                    </tr>
+                     <tr>
+                        <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest">Customer Details</th>
+                        <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest">Account Type</th>
+                        <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest">Managed By</th>
+                     </tr>
                  </thead>
                  <tbody className="divide-y divide-gray-50">
                     {agencyCustomers.map((ac, idx) => (
                       <tr key={ac._id || idx} className="hover:bg-gray-50/50 transition-colors">
                          <td className="px-6 py-4">
                             <div className="text-sm font-bold text-zinc-900">{ac.customer?.name}</div>
-                            <div className="text-[9px] font-black text-gray-400 uppercase tracking-widest">{ac.customer?.email || 'OFFLINE REGISTRY'}</div>
+                            <div className="text-[9px] font-black text-gray-400 uppercase tracking-widest">{ac.customer?.email}</div>
                          </td>
                          <td className="px-6 py-4">
                             <div className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full w-fit uppercase tracking-tighter">
-                               {ac.customer?.role || 'REGULAR'}
+                               {ac.customer?.role === 'sub_child_agent' ? 'Sub-Agent' : (ac.customer?.role === 'child_agent' ? 'Child Agent' : 'Regular Customer')}
                             </div>
                          </td>
                          <td className="px-6 py-4">
                             <div className="text-xs text-gray-600 font-bold">{ac.managedBy?.name}</div>
-                            <div className="text-[9px] font-black text-gray-400 uppercase tracking-widest">{ac.managedBy?.role}</div>
+                            <div className="text-[9px] font-black text-gray-400 uppercase tracking-widest">{ac.managedBy?.role?.replace(/_/g, ' ')}</div>
                          </td>
                       </tr>
                     ))}
@@ -326,13 +328,13 @@ export default function ChildAgencies() {
             <table className="w-full text-left">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  <th className="px-6 py-4 text-[10px] font-bold text-zinc-900 uppercase tracking-widest">Child Agency</th>
-                  <th className="px-6 py-4 text-[10px] font-bold text-zinc-900 uppercase tracking-widest">Contact Info</th>
-                  <th className="px-6 py-4 text-[10px] font-bold text-zinc-900 uppercase tracking-widest">Parent Agency</th>
-                  <th className="px-6 py-4 text-[10px] font-bold text-zinc-900 uppercase tracking-widest text-center">Hierarchy</th>
-                  <th className="px-6 py-4 text-[10px] font-bold text-zinc-900 uppercase tracking-widest text-center">Customers</th>
-                  <th className="px-6 py-4 text-[10px] font-bold text-zinc-900 uppercase tracking-widest text-center">Status</th>
-                  <th className="px-6 py-4 text-[10px] font-bold text-zinc-900 uppercase tracking-widest text-right pr-6">Action</th>
+                  <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest">Child Agency</th>
+                  <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest">Contact Info</th>
+                  <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest">Parent Agency</th>
+                  <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest text-center">Hierarchy</th>
+                  <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest text-center">Customers</th>
+                  <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest text-center">Status</th>
+                  <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest text-right pr-6">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -367,7 +369,7 @@ export default function ChildAgencies() {
                     </td>
                     <td className="px-6 py-5 whitespace-nowrap text-center">
                         <button 
-                          onClick={() => handleFetchSubChildren(agent._id)}
+                          onClick={() => handleFetchSubChildren(agent)}
                           className="inline-flex items-center justify-center p-2 rounded-lg bg-gray-50 border border-gray-200 gap-2 min-w-[45px] hover:bg-primary-50 hover:border-primary-200 group-hover:shadow-sm transition-all shadow-sm"
                         >
                              <Users size={12} className="text-gray-400 group-hover:text-primary-600" />
@@ -376,7 +378,7 @@ export default function ChildAgencies() {
                     </td>
                     <td className="px-6 py-5 whitespace-nowrap text-center">
                         <button 
-                          onClick={() => handleFetchCustomers(agent._id)}
+                          onClick={() => handleFetchCustomers(agent)}
                           className="inline-flex items-center justify-center p-2 rounded-lg bg-gray-50 border border-gray-200 gap-2 min-w-[45px] hover:bg-emerald-50 hover:border-emerald-200 group-hover:shadow-sm transition-all shadow-sm"
                         >
                              <UserRound size={12} className="text-gray-400 group-hover:text-emerald-600" />
