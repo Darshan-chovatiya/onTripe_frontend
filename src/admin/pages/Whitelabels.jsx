@@ -133,7 +133,6 @@ const Whitelabels = () => {
 
    const roleOptions = [
       { label: 'All Levels', value: 'all' },
-      { label: 'Parent Agency', value: 'parent_agent' },
       { label: 'Child Agent', value: 'child_agent' },
       { label: 'Sub-Child Agent', value: 'sub_child_agent' }
    ]
@@ -224,7 +223,15 @@ const Whitelabels = () => {
                         data.map((wl) => (
                            <tr key={wl._id} className="hover:bg-gray-50/50 transition-colors">
                               <td className="px-6 py-4">
-                                 <div className="font-bold text-zinc-900">{wl.customTitle || 'Standard Iteration'}</div>
+                                 <div className="flex items-center gap-2">
+                                    <div className="font-bold text-zinc-900">{wl.customTitle || 'Standard Iteration'}</div>
+                                    {wl.createdBy?.role === 'child_agent' && (
+                                       <span className="px-1.5 py-0.5 rounded bg-blue-50 text-[8px] font-black text-blue-600 uppercase tracking-tighter border border-blue-100">Child</span>
+                                    )}
+                                    {wl.createdBy?.role === 'sub_child_agent' && (
+                                       <span className="px-1.5 py-0.5 rounded bg-amber-50 text-[8px] font-black text-amber-600 uppercase tracking-tighter border border-amber-100">Sub-Distributor</span>
+                                    )}
+                                 </div>
                                  <div className="text-[10px] text-gray-400 uppercase tracking-widest mt-0.5">Custom Identity</div>
                               </td>
                               <td className="px-6 py-4">
