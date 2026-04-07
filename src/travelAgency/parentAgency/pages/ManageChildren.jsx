@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { RefreshCw, Users, CheckCircle, XCircle, Clock, Eye } from 'lucide-react'
-import { listChildAgencies, toggleChildAgentStatus } from '@/travelAgency/parentAgency/services/parentAgencyApi.js'
+import { listChildAgencies, toggleChildAgentStatus, approveChildKyc } from '@/travelAgency/parentAgency/services/parentAgencyApi.js'
 import { getApiErrorMessage } from '@/shared/services/apiHelpers.js'
 import ChildAgentDetailModal from '@/travelAgency/parentAgency/components/ChildAgentDetailModal.jsx'
 import ConfirmDialog from '@/shared/components/ConfirmDialog.jsx'
@@ -25,8 +25,9 @@ export default function ManageChildren() {
   const [search, setSearch] = useState('')
   const [kycFilter, setKycFilter] = useState('all')
   const [viewId, setViewId] = useState(null)
-  const [toggleTarget, setToggleTarget] = useState(null) // { _id, name, isActive }
+  const [toggleTarget, setToggleTarget] = useState(null)
   const [toggling, setToggling] = useState(false)
+  const [kycTarget, setKycTarget] = useState(null)
   const { toast } = useToast()
 
   const fetchChildren = useCallback(async () => {
@@ -56,6 +57,19 @@ export default function ManageChildren() {
     } finally {
       setToggling(false)
       setToggleTarget(null)
+    }
+  }
+
+  const handleApproveKyc = async () => {
+    if (!kycTarget) return
+    try {
+      await approveChildKyc(kycTarget._id)
+      toast.success(`KYC approved for ${kycTarget.name}`)
+      await fetchChildren()
+    } catch (err) {
+      toast.error(getApiErrorMessage(err))
+    } finally {
+      setKycTarget(null)
     }
   }
 
@@ -181,6 +195,14 @@ export default function ManageChildren() {
                         <button onClick={() => setViewId(child._id)} className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-800 transition-colors">
                           <Eye size={13} /> View
                         </button>
+                        {child.kyc?.status === 'pending' && (
+                          <button
+                            onClick={() => setKycTarget(child)}
+                            className="text-xs font-medium text-blue-600 hover:text-blue-800 transition-colors"
+                          >
+                            Approve KYC
+                          </button>
+                        )}
                         <button
                           onClick={() => setToggleTarget(child)}
                           className={`text-xs font-medium transition-colors ${child.isActive ? 'text-red-500 hover:text-red-700' : 'text-green-600 hover:text-green-800'}`}
@@ -217,6 +239,17 @@ export default function ManageChildren() {
         confirmText={toggleTarget?.isActive ? 'Deactivate' : 'Activate'}
         cancelText="Cancel"
         variant={toggleTarget?.isActive ? 'danger' : 'primary'}
+      />
+
+      <ConfirmDialog
+        isOpen={!!kycTarget}
+        onClose={() => setKycTarget(null)}
+        onConfirm={handleApproveKyc}
+        title="Approve KYC"
+        message={`Approve KYC for "${kycTarget?.name}"? They will gain full access to the platform.`}
+        confirmText="Approve"
+        cancelText="Cancel"
+        variant="primary"
       />
     </div>
   )

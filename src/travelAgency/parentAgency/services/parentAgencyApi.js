@@ -12,6 +12,10 @@ export function toggleChildAgentStatus(id) {
   return axiosInstance.patch(`/parent-agent/children/${id}/toggle-status`)
 }
 
+export function approveChildKyc(id) {
+  return axiosInstance.patch(`/parent-agent/children/${id}/approve-kyc`)
+}
+
 // Packages
 export function createPackage(formData) {
   return axiosInstance.post('/parent-agent/packages', formData)
