@@ -18,11 +18,13 @@ export default function PackageCard({ pkg, onEdit, onUpdateCover, onUpdateGaller
         ) : (
           <Image className="h-10 w-10 text-gray-300" />
         )}
-        {!pkg.isActive && (
-          <span className="absolute top-2 right-2 rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-600">
-            Inactive
-          </span>
-        )}
+        <div className="absolute top-2 right-2 flex flex-col items-end gap-1.5">
+          {!pkg.isActive && (
+            <span className="rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-bold text-red-600 shadow-sm">
+              Inactive
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Info */}

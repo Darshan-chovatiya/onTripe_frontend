@@ -135,8 +135,8 @@ export default function Settings() {
   return (
     <div className="space-y-6 sm:space-y-8">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900 sm:text-4xl">Account Settings</h1>
-        <p className="mt-2 text-sm text-gray-600 sm:text-base">Manage your account preferences</p>
+         <h1 className="text-2xl font-bold text-zinc-900">Account Settings</h1>
+         <p className="text-gray-500 text-sm">Manage your administrative profile and security preferences</p>
       </div>
 
       <div className="border-b border-gray-200">

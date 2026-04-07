@@ -11,6 +11,7 @@ export const routeConfig = [
   { path: '/admin/dashboard', allowedRoles: [ROLES.ADMIN] },
   { path: '/admin/users', allowedRoles: [ROLES.ADMIN] },
   { path: '/admin/agencies', allowedRoles: [ROLES.ADMIN] },
+  { path: '/admin/child-agencies', allowedRoles: [ROLES.ADMIN] },
   { path: '/admin/reports', allowedRoles: [ROLES.ADMIN] },
   { path: '/admin/settings', allowedRoles: [ROLES.ADMIN] },
 

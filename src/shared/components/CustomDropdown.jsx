@@ -67,7 +67,7 @@ const CustomDropdown = ({
         type="button"
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
-        className={`w-full px-2.5 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 bg-white transition-colors flex items-center justify-between gap-1 shadow-sm ${
+        className={`w-full px-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 bg-white transition-all flex items-center justify-between gap-2 shadow-sm ${
           disabled
             ? 'opacity-50 cursor-not-allowed text-gray-400'
             : 'hover:bg-gray-50 cursor-pointer text-gray-700'
@@ -78,7 +78,7 @@ const CustomDropdown = ({
           {displayText}
         </span>
         <ChevronDown
-          className={`w-3 h-3 text-gray-400 transition-transform flex-shrink-0 ${
+          className={`w-4 h-4 text-gray-400 transition-transform flex-shrink-0 ${
             isOpen ? 'transform rotate-180' : ''
           }`}
         />
@@ -86,7 +86,7 @@ const CustomDropdown = ({
 
       {isOpen && (
         <div
-          className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden flex flex-col min-w-max"
+          className="absolute z-50 mt-1 w-full right-0 bg-white border border-gray-200 rounded-lg shadow-xl overflow-hidden flex flex-col"
           style={{ maxHeight }}
         >
           {searchable && (

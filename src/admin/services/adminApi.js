@@ -21,6 +21,18 @@ export function toggleAgent(userId) {
   return axiosInstance.patch(`/admin/agents/toggle/${userId}`)
 }
 
+export function createAgent(data) {
+  return axiosInstance.post('/admin/agents', data)
+}
+
+export function updateAgent(userId, data) {
+  return axiosInstance.put(`/admin/agents/${userId}`, data)
+}
+
+export function deleteAgent(userId) {
+  return axiosInstance.delete(`/admin/agents/${userId}`)
+}
+
 export function getAnalytics() {
   return axiosInstance.get('/admin/analytics')
 }
@@ -34,6 +46,18 @@ export function updateAdminUser(userId, body) {
   return axiosInstance.put(`/admin/users/${userId}`, body)
 }
 
+export function listCustomers(params) {
+  return listUsers({ ...params, role: 'customer' })
+}
+
+export function listPackages(params) {
+  return axiosInstance.get('/admin/packages', { params })
+}
+
+export function getAgent(id) {
+  return axiosInstance.get(`/admin/agents/${id}`)
+}
+
 const adminApi = {
   listAgents,
   listPendingKyc,
@@ -42,7 +66,17 @@ const adminApi = {
   toggleAgent,
   getAnalytics,
   listUsers,
-  updateAdminUser
+  updateAdminUser,
+  createAgent,
+  updateAgent,
+  deleteAgent,
+  listCustomers,
+  listPackages,
+  listWhitelabelPackages: (params) => axiosInstance.get('/admin/whitelabels', { params }),
+  getAgent,
+  getAgencyCustomers: (id) => axiosInstance.get(`/admin/agents/${id}/customers`),
+  approvePackage: (id) => axiosInstance.patch(`/admin/packages/approve/${id}`),
+  rejectPackage: (id, rejectionReason) => axiosInstance.patch(`/admin/packages/reject/${id}`, { rejectionReason })
 }
 
 export default adminApi
