@@ -45,6 +45,10 @@ export function updateSubChild(id, body) {
   return axiosInstance.patch(`/child-agent/sub-children/${id}`, body)
 }
 
+export function approveSubChildKyc(id) {
+  return axiosInstance.patch(`/child-agent/sub-children/${id}/approve-kyc`)
+}
+
 export function getChildProfile() {
   return axiosInstance.get('/child-agent/profile')
 }

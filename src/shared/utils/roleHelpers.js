@@ -6,9 +6,11 @@ export function getRoleRedirectPath(role) {
     case ROLES.ADMIN:
       return '/admin/dashboard'
     case ROLES.PARENT_AGENCY:
+      return '/agency/parent/dashboard'
     case ROLES.CHILD_AGENCY:
+      return '/agency/child/dashboard'
     case ROLES.SUB_CHILD:
-      return '/agency/dashboard'
+      return '/agency/sub/dashboard'
     case ROLES.CUSTOMER:
       return '/customer/home'
     default:

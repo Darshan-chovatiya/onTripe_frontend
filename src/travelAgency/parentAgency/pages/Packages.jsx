@@ -1,5 +1,6 @@
-import { useState } from 'react'
-import { Plus, RefreshCw, PackageOpen } from 'lucide-react'
+import { useState, useEffect, useMemo } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
+import { Plus, PackageOpen } from 'lucide-react'
 import { usePackages } from '@/travelAgency/parentAgency/hooks/usePackages.js'
 import PackageCard from '@/travelAgency/parentAgency/components/PackageCard.jsx'
 import PackageFormModal from '@/travelAgency/parentAgency/components/PackageFormModal.jsx'
@@ -10,15 +11,36 @@ import { useToast } from '@/shared/components/ToastContainer.jsx'
 import { getApiErrorMessage } from '@/shared/services/apiHelpers.js'
 
 export default function Packages() {
-  const { packages, loading, error, fetchPackages, create, update, updateCover, updateGallery, deactivate } = usePackages()
+  const { packages, loading, error, create, update, updateCover, updateGallery, deactivate, activate } =
+    usePackages()
   const { toast } = useToast()
+  const location = useLocation()
+  const navigate = useNavigate()
 
   const [formModal, setFormModal] = useState({ open: false, data: null })
   const [imageModal, setImageModal] = useState({ open: false, pkg: null, mode: 'cover' })
   const [confirmDeactivate, setConfirmDeactivate] = useState({ open: false, pkg: null })
+  const [confirmActivate, setConfirmActivate] = useState({ open: false, pkg: null })
   const [submitting, setSubmitting] = useState(false)
 
-  // Create / Edit submit
+  const stats = useMemo(() => {
+    const live = packages.filter((p) => p.isActive).length
+    const paused = packages.length - live
+    return { live, paused, total: packages.length }
+  }, [packages])
+
+  useEffect(() => {
+    const editId = location.state?.editId
+    if (!editId || loading) return
+    const p = packages.find((x) => String(x._id) === String(editId))
+    if (p) {
+      setFormModal({ open: true, data: p })
+    } else {
+      toast.error('Package not found or you no longer have access.')
+    }
+    navigate(location.pathname, { replace: true, state: {} })
+  }, [location.state?.editId, packages, loading, location.pathname, navigate, toast])
+
   const handleFormSubmit = async (formData, rawForm) => {
     setSubmitting(true)
     try {
@@ -67,73 +89,106 @@ export default function Packages() {
     }
   }
 
+  const handleActivate = async () => {
+    if (!confirmActivate.pkg) return
+    try {
+      await activate(confirmActivate.pkg._id)
+      toast.success('Package activated')
+    } catch (err) {
+      toast.error(getApiErrorMessage(err))
+    } finally {
+      setConfirmActivate({ open: false, pkg: null })
+    }
+  }
+
   return (
-    <div className="animate-fade-in space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+    <div className="animate-fade-in space-y-6 pb-10">
+      {/* Header — same pattern as Vendors, Bookings, Child Agents */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Packages</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Manage your travel packages</p>
+          <p className="mt-0.5 text-sm text-gray-500">Manage your travel packages</p>
         </div>
-        <div className="flex gap-2">
-          <button onClick={fetchPackages} className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors" aria-label="Refresh">
-            <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
-          </button>
-          <Button onClick={() => setFormModal({ open: true, data: null })}>
-            <Plus size={16} className="mr-1 inline" /> New Package
-          </Button>
-        </div>
+        <Button onClick={() => setFormModal({ open: true, data: null })}>
+          <Plus size={16} className="mr-1 inline" /> New Package
+        </Button>
       </div>
 
-      {/* Error */}
-      {error && (
-        <div className="rounded-xl bg-red-50 border border-red-200 p-4 text-sm text-red-700">{error}</div>
+      {packages.length > 0 && (
+        <div className="flex flex-wrap gap-4 text-sm">
+          <span className="text-gray-500">
+            Total: <span className="font-semibold text-gray-800">{stats.total}</span>
+          </span>
+          <span className="text-gray-500">
+            Live: <span className="font-semibold text-emerald-700">{stats.live}</span>
+          </span>
+          <span className="text-gray-500">
+            Paused: <span className="font-semibold text-gray-800">{stats.paused}</span>
+          </span>
+        </div>
       )}
 
-      {/* Loading skeleton */}
+      {error && (
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
+      )}
+
       {loading && packages.length === 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[1, 2, 3].map(i => (
-            <div key={i} className="rounded-2xl border border-gray-100 bg-white shadow-sm overflow-hidden animate-pulse">
-              <div className="h-44 bg-gray-200" />
-              <div className="p-4 space-y-3">
-                <div className="h-4 bg-gray-200 rounded w-3/4" />
-                <div className="h-3 bg-gray-200 rounded w-1/2" />
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
+          {[1, 2, 3].map((i) => (
+            <div
+              key={i}
+              className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-md animate-pulse"
+            >
+              <div className="aspect-[16/10] bg-gradient-to-br from-gray-100 to-gray-200" />
+              <div className="space-y-3 p-5">
+                <div className="h-4 w-4/5 max-w-[85%] rounded-lg bg-gray-200" />
+                <div className="h-3 w-full rounded bg-gray-100" />
+                <div className="h-3 w-2/3 rounded bg-gray-100" />
+                <div className="flex gap-2 pt-2">
+                  <div className="h-9 flex-1 rounded-xl bg-gray-100" />
+                  <div className="h-9 flex-1 rounded-xl bg-gray-100" />
+                </div>
               </div>
             </div>
           ))}
         </div>
       )}
 
-      {/* Empty state */}
       {!loading && packages.length === 0 && !error && (
-        <div className="flex flex-col items-center justify-center py-20 text-center">
-          <PackageOpen className="h-14 w-14 text-gray-300 mb-4" />
-          <h3 className="text-lg font-semibold text-gray-700">No packages yet</h3>
-          <p className="text-sm text-gray-400 mt-1 mb-5">Create your first travel package to get started.</p>
-          <Button onClick={() => setFormModal({ open: true, data: null })}>
-            <Plus size={16} className="mr-1 inline" /> Create Package
-          </Button>
+        <div className="relative overflow-hidden rounded-3xl border border-dashed border-primary-200/80 bg-gradient-to-b from-white to-primary-50/30 px-6 py-16 text-center sm:px-12">
+          <div className="mx-auto flex max-w-md flex-col items-center">
+            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary-100 text-primary-600 shadow-inner">
+              <PackageOpen className="h-8 w-8" strokeWidth={1.5} />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900">No packages yet</h3>
+            <p className="mt-2 text-sm leading-relaxed text-gray-600">
+              Create your first package with destinations, pricing, and a day-by-day plan. You can add photos anytime.
+            </p>
+            <Button onClick={() => setFormModal({ open: true, data: null })} className="mt-6">
+              <Plus size={16} className="mr-1.5 inline" /> Create package
+            </Button>
+          </div>
         </div>
       )}
 
-      {/* Grid */}
       {packages.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {packages.map(pkg => (
-            <PackageCard
-              key={pkg._id}
-              pkg={pkg}
-              onEdit={(p) => setFormModal({ open: true, data: p })}
-              onUpdateCover={(p) => setImageModal({ open: true, pkg: p, mode: 'cover' })}
-              onUpdateGallery={(p) => setImageModal({ open: true, pkg: p, mode: 'gallery' })}
-              onDeactivate={(p) => setConfirmDeactivate({ open: true, pkg: p })}
-            />
-          ))}
-        </div>
+        <section>
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
+            {packages.map((pkg) => (
+              <PackageCard
+                key={pkg._id}
+                pkg={pkg}
+                onEdit={(p) => setFormModal({ open: true, data: p })}
+                onUpdateCover={(p) => setImageModal({ open: true, pkg: p, mode: 'cover' })}
+                onUpdateGallery={(p) => setImageModal({ open: true, pkg: p, mode: 'gallery' })}
+                onDeactivate={(p) => setConfirmDeactivate({ open: true, pkg: p })}
+                onActivate={(p) => setConfirmActivate({ open: true, pkg: p })}
+              />
+            ))}
+          </div>
+        </section>
       )}
 
-      {/* Modals */}
       <PackageFormModal
         isOpen={formModal.open}
         onClose={() => setFormModal({ open: false, data: null })}
@@ -159,6 +214,17 @@ export default function Packages() {
         confirmText="Deactivate"
         cancelText="Cancel"
         variant="danger"
+      />
+
+      <ConfirmDialog
+        isOpen={confirmActivate.open}
+        onClose={() => setConfirmActivate({ open: false, pkg: null })}
+        onConfirm={handleActivate}
+        title="Activate Package"
+        message={`Activate "${confirmActivate.pkg?.title}"? Linked whitelabel offers will be turned back on for child agents.`}
+        confirmText="Activate"
+        cancelText="Cancel"
+        variant="primary"
       />
     </div>
   )

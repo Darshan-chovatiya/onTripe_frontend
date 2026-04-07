@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Mail, Phone, Search, UserCircle } from 'lucide-react'
 import { ROLES } from '@/shared/utils/constants.js'
 import { useAgencyPermissions } from '@/travelAgency/agency/hooks/useAgencyPermissions.js'
@@ -10,6 +10,7 @@ import { useToast } from '@/shared/components/ToastContainer.jsx'
 export default function AgencyCustomers() {
   const { role } = useAgencyPermissions()
   const { toast } = useToast()
+  const toastRef = useRef(toast)
   const [q, setQ] = useState('')
   const [loading, setLoading] = useState(false)
   const [rows, setRows] = useState([])
@@ -41,7 +42,7 @@ export default function AgencyCustomers() {
           }))
         )
       } catch (err) {
-        if (!cancelled) toast.error(getApiErrorMessage(err))
+        if (!cancelled) toastRef.current.error(getApiErrorMessage(err))
       } finally {
         if (!cancelled) setLoading(false)
       }
@@ -49,7 +50,7 @@ export default function AgencyCustomers() {
     return () => {
       cancelled = true
     }
-  }, [role, toast])
+  }, [role])
 
   const filtered = useMemo(() => {
     const s = q.trim().toLowerCase()

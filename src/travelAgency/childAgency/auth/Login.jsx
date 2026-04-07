@@ -1,26 +1,33 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Mail, Lock, Eye, EyeOff, Ticket } from 'lucide-react'
+import { Mail, Lock, Eye, EyeOff, Ticket, Clock } from 'lucide-react'
 import { useAuth } from '@/shared/context/AuthContext.jsx'
-import { useToast } from '@/shared/components/ToastContainer.jsx'
 import Loader from '@/shared/components/Loader.jsx'
+import { getRoleRedirectPath } from '@/shared/utils/roleHelpers.js'
 
 export default function ChildLogin() {
   const navigate = useNavigate()
   const { login, isLoading } = useAuth()
-  const { toast } = useToast()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [error, setError] = useState('')
+  const [kycPending, setKycPending] = useState(false)
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    setError('')
+    setKycPending(false)
     const res = await login({ email: email.trim(), password })
     if (res.success) {
-      toast.success(res.message || 'Login successful')
-      navigate('/agency/dashboard', { replace: true })
+      navigate(getRoleRedirectPath(res.role), { replace: true })
     } else {
-      toast.error(res.message || 'Login failed')
+      const msg = res.message || 'Login failed'
+      if (msg.toLowerCase().includes('kyc')) {
+        setKycPending(true)
+      } else {
+        setError(msg)
+      }
     }
   }
 
@@ -36,6 +43,18 @@ export default function ChildLogin() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {kycPending && (
+            <div className="flex items-start gap-3 rounded-xl border border-yellow-200 bg-yellow-50 p-4">
+              <Clock className="mt-0.5 h-5 w-5 flex-shrink-0 text-yellow-600" />
+              <div>
+                <p className="text-sm font-semibold text-yellow-800">KYC Approval Pending</p>
+                <p className="mt-0.5 text-xs text-yellow-700">Your account is under review. You will be able to log in once your KYC is approved.</p>
+              </div>
+            </div>
+          )}
+          {error && (
+            <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div>
+          )}
           <div>
             <label className="mb-1 flex items-center gap-2 text-sm font-medium text-gray-700">
               <Mail className="h-4 w-4 text-primary-500" /> Email address <span className="text-red-500">*</span>
