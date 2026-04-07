@@ -14,6 +14,8 @@ export const routeConfig = [
 
   { path: '/agency/parent/dashboard', allowedRoles: [ROLES.PARENT_AGENCY] },
   { path: '/agency/parent/packages', allowedRoles: [ROLES.PARENT_AGENCY] },
+  { path: '/agency/parent/vendors', allowedRoles: [ROLES.PARENT_AGENCY] },
+  { path: '/agency/parent/bookings', allowedRoles: [ROLES.PARENT_AGENCY] },
   { path: '/agency/parent/manage-children', allowedRoles: [ROLES.PARENT_AGENCY] },
   { path: '/agency/parent/settings', allowedRoles: [ROLES.PARENT_AGENCY] },
 
