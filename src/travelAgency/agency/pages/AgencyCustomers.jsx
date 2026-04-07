@@ -1,25 +1,66 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Mail, Phone, Search, UserCircle } from 'lucide-react'
-
-const DUMMY_CUSTOMERS = [
-  { id: '1', name: 'Priya Sharma', phone: '+91 98765 43210', email: 'priya.s@email.com', trips: 3, lastTrip: '2026-03-12', status: 'Active' },
-  { id: '2', name: 'Rahul Verma', phone: '+91 91234 56789', email: 'rahul.v@gmail.com', trips: 1, lastTrip: '2026-01-28', status: 'Active' },
-  { id: '3', name: 'Ananya Iyer', phone: '+91 99887 76655', email: 'ananya.i@outlook.com', trips: 0, lastTrip: '—', status: 'Lead' },
-]
+import { ROLES } from '@/shared/utils/constants.js'
+import { useAgencyPermissions } from '@/travelAgency/agency/hooks/useAgencyPermissions.js'
+import { listCustomers as listChildCustomers } from '@/travelAgency/childAgency/services/childAgencyApi.js'
+import { listCustomers as listSubCustomers } from '@/travelAgency/subChild/services/subChildApi.js'
+import { getApiErrorMessage } from '@/shared/services/apiHelpers.js'
+import { useToast } from '@/shared/components/ToastContainer.jsx'
 
 export default function AgencyCustomers() {
+  const { role } = useAgencyPermissions()
+  const { toast } = useToast()
   const [q, setQ] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [rows, setRows] = useState([])
+
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      if (role !== ROLES.CHILD_AGENCY && role !== ROLES.SUB_CHILD) {
+        setRows([])
+        return
+      }
+      setLoading(true)
+      try {
+        const res =
+          role === ROLES.CHILD_AGENCY
+            ? await listChildCustomers()
+            : await listSubCustomers()
+        const customers = res.data?.data?.customers ?? []
+        if (cancelled) return
+        setRows(
+          customers.map((item) => ({
+            id: item._id,
+            name: item.name || item.customer?.name || '—',
+            phone: item.customer?.phone || '—',
+            email: item.email || item.customer?.email || '—',
+            trips: Array.isArray(item.bookings) ? item.bookings.length : 0,
+            lastActivity: item.updatedAt || item.createdAt,
+            isActive: item.isActive !== false,
+          }))
+        )
+      } catch (err) {
+        if (!cancelled) toast.error(getApiErrorMessage(err))
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [role, toast])
 
   const filtered = useMemo(() => {
     const s = q.trim().toLowerCase()
-    if (!s) return DUMMY_CUSTOMERS
-    return DUMMY_CUSTOMERS.filter(
+    if (!s) return rows
+    return rows.filter(
       (c) =>
         c.name.toLowerCase().includes(s) ||
         c.phone.replace(/\s/g, '').includes(s) ||
         c.email.toLowerCase().includes(s)
     )
-  }, [q])
+  }, [q, rows])
 
   return (
     <div className="animate-fade-in space-y-6">
@@ -27,7 +68,7 @@ export default function AgencyCustomers() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Customers</h1>
           <p className="mt-1 text-sm text-gray-500">
-            Travelers and leads linked to your agency. Connect your CRM or booking API when ready — data below is placeholder.
+            Travelers and leads linked to your agency.
           </p>
         </div>
       </header>
@@ -77,14 +118,16 @@ export default function AgencyCustomers() {
                     </div>
                   </td>
                   <td className="px-4 py-3 text-gray-800">{c.trips}</td>
-                  <td className="hidden px-4 py-3 text-gray-600 md:table-cell">{c.lastTrip}</td>
+                  <td className="hidden px-4 py-3 text-gray-600 md:table-cell">
+                    {c.lastActivity ? new Date(c.lastActivity).toLocaleDateString('en-IN') : '—'}
+                  </td>
                   <td className="px-4 py-3">
                     <span
                       className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                        c.status === 'Lead' ? 'bg-amber-50 text-amber-800' : 'bg-emerald-50 text-emerald-800'
+                        c.isActive ? 'bg-emerald-50 text-emerald-800' : 'bg-gray-100 text-gray-700'
                       }`}
                     >
-                      {c.status}
+                      {c.isActive ? 'Active' : 'Inactive'}
                     </span>
                   </td>
                 </tr>
@@ -92,7 +135,10 @@ export default function AgencyCustomers() {
             </tbody>
           </table>
         </div>
-        {filtered.length === 0 ? (
+        {loading ? (
+          <p className="px-4 py-8 text-center text-sm text-gray-500">Loading customers…</p>
+        ) : null}
+        {!loading && filtered.length === 0 ? (
           <p className="px-4 py-8 text-center text-sm text-gray-500">No customers match your search.</p>
         ) : null}
       </div>

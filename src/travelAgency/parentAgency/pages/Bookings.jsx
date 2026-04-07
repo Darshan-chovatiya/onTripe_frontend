@@ -1,12 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Plus, RefreshCw, BookOpen, Calendar, User, IndianRupee, Hash, Eye, Edit2 } from 'lucide-react'
-import { listBookings, createBooking, updateBooking } from '@/travelAgency/parentAgency/services/parentAgencyApi.js'
+import { RefreshCw, BookOpen, Calendar, User, IndianRupee, Hash, Eye } from 'lucide-react'
+import { listBookings } from '@/travelAgency/parentAgency/services/parentAgencyApi.js'
 import { getApiErrorMessage } from '@/shared/services/apiHelpers.js'
-import CreateBookingModal from '@/travelAgency/parentAgency/components/CreateBookingModal.jsx'
 import BookingDetailModal from '@/travelAgency/parentAgency/components/BookingDetailModal.jsx'
-import EditBookingModal from '@/travelAgency/parentAgency/components/EditBookingModal.jsx'
-import Button from '@/shared/components/Button.jsx'
-import { useToast } from '@/shared/components/ToastContainer.jsx'
 
 const STATUS_STYLES = {
   confirmed: 'bg-blue-50 text-blue-700',
@@ -28,11 +24,7 @@ export default function Bookings() {
   const [error, setError] = useState(null)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
-  const [createModal, setCreateModal] = useState(false)
   const [viewId, setViewId] = useState(null)
-  const [editBooking, setEditBooking] = useState(null)
-  const [submitting, setSubmitting] = useState(false)
-  const { toast } = useToast()
 
   const fetchBookings = useCallback(async () => {
     setLoading(true)
@@ -48,34 +40,6 @@ export default function Bookings() {
   }, [])
 
   useEffect(() => { fetchBookings() }, [fetchBookings])
-
-  const handleCreate = async (data) => {
-    setSubmitting(true)
-    try {
-      await createBooking(data)
-      toast.success('Booking created successfully')
-      setCreateModal(false)
-      await fetchBookings()
-    } catch (err) {
-      toast.error(getApiErrorMessage(err))
-    } finally {
-      setSubmitting(false)
-    }
-  }
-
-  const handleEdit = async (data) => {
-    setSubmitting(true)
-    try {
-      await updateBooking(editBooking._id, data)
-      toast.success('Booking updated')
-      setEditBooking(null)
-      await fetchBookings()
-    } catch (err) {
-      toast.error(getApiErrorMessage(err))
-    } finally {
-      setSubmitting(false)
-    }
-  }
 
   const filtered = bookings.filter(b => {
     const matchSearch = !search ||
@@ -95,14 +59,9 @@ export default function Bookings() {
           <h1 className="text-2xl font-bold text-gray-900">Bookings</h1>
           <p className="text-sm text-gray-500 mt-0.5">All bookings across your network</p>
         </div>
-        <div className="flex gap-2">
-          <button onClick={fetchBookings} className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors" aria-label="Refresh">
-            <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
-          </button>
-          <Button onClick={() => setCreateModal(true)}>
-            <Plus size={16} className="mr-1 inline" /> New Booking
-          </Button>
-        </div>
+        <button onClick={fetchBookings} className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors" aria-label="Refresh">
+          <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
+        </button>
       </div>
 
       {/* Filters */}
@@ -159,11 +118,7 @@ export default function Bookings() {
           <h3 className="text-lg font-semibold text-gray-700">
             {bookings.length === 0 ? 'No bookings yet' : 'No bookings match your search'}
           </h3>
-          {bookings.length === 0 && (
-            <Button className="mt-4" onClick={() => setCreateModal(true)}>
-              <Plus size={16} className="mr-1 inline" /> Create First Booking
-            </Button>
-          )}
+          {bookings.length === 0 && <p className="text-sm text-gray-400 mt-1">No bookings created in your network yet.</p>}
         </div>
       )}
 
@@ -234,9 +189,6 @@ export default function Bookings() {
                         <button onClick={() => setViewId(b._id)} className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-800 transition-colors">
                           <Eye size={13} />
                         </button>
-                        <button onClick={() => setEditBooking(b)} className="flex items-center gap-1 text-xs text-primary-600 hover:text-primary-800 transition-colors">
-                          <Edit2 size={13} />
-                        </button>
                       </div>
                     </td>
                   </tr>
@@ -247,12 +199,7 @@ export default function Bookings() {
         </div>
       )}
 
-      <CreateBookingModal
-        isOpen={createModal}
-        onClose={() => setCreateModal(false)}
-        onSubmit={handleCreate}
-        loading={submitting}
-      />
+      <BookingDetailModal isOpen={!!viewId} onClose={() => setViewId(null)} bookingId={viewId} />
     </div>
   )
 }

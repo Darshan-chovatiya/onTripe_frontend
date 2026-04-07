@@ -57,6 +57,14 @@ export function changeChildPassword(body) {
   return axiosInstance.post('/child-agent/change-password', body)
 }
 
+export function listCustomers() {
+  return axiosInstance.get('/child-agent/customers')
+}
+
+export function getCustomerByPhone(phone) {
+  return axiosInstance.get('/child-agent/customers/by-phone', { params: { phone } })
+}
+
 export default {
   listBookings,
   createBooking,
@@ -72,4 +80,6 @@ export default {
   getChildProfile,
   updateChildProfile,
   changeChildPassword,
+  listCustomers,
+  getCustomerByPhone,
 }
