@@ -1,5 +1,5 @@
 import AgencyCreateBookingModal from '@/travelAgency/shared/components/AgencyCreateBookingModal.jsx'
-import { listCustomers, getCustomerByPhone } from '@/travelAgency/childAgency/services/childAgencyApi.js'
+import { listCustomers, getCustomerByPhone } from '@/travelAgency/subChild/services/subChildApi.js'
 
 export default function CreateBookingModal(props) {
   return (

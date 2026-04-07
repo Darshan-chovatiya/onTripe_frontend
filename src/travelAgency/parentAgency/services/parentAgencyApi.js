@@ -25,6 +25,10 @@ export function listMyPackages() {
   return axiosInstance.get('/parent-agent/packages')
 }
 
+export function getPackageById(id) {
+  return axiosInstance.get(`/parent-agent/packages/${id}`)
+}
+
 export function updatePackage(id, data) {
   return axiosInstance.patch(`/parent-agent/packages/${id}`, data)
 }
@@ -70,7 +74,16 @@ export function deleteVendor(id) {
   return axiosInstance.delete(`/parent-agent/vendors/${id}`)
 }
 
-export default { listChildAgencies, createPackage, listMyPackages, updatePackage, updatePackageCover, updatePackageGallery, deactivatePackage }
+export default {
+  listChildAgencies,
+  createPackage,
+  listMyPackages,
+  getPackageById,
+  updatePackage,
+  updatePackageCover,
+  updatePackageGallery,
+  deactivatePackage,
+}
 
 // Bookings
 export function listBookings() {

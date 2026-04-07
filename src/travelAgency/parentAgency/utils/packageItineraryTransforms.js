@@ -221,3 +221,82 @@ export function getDisplayEventsForDay(day) {
     }
   })
 }
+
+/**
+ * Rich experience rows for package detail (legacy `events` or API `experiences`).
+ * @param {unknown} day
+ */
+export function getDetailExperiencesForDay(day) {
+  if (!day || typeof day !== 'object') return []
+  const d = /** @type {Record<string, unknown>} */ (day)
+
+  if (Array.isArray(d.events) && d.events.length) {
+    return d.events.map((raw) => {
+      const e = raw && typeof raw === 'object' ? /** @type {Record<string, unknown>} */ (raw) : {}
+      const typeStr = e.type != null ? String(e.type) : 'other'
+      const imgs = e.image ? [String(e.image)] : []
+      return {
+        title: e.title != null ? String(e.title) : '',
+        type: typeStr,
+        category: typeStr,
+        description: e.description != null ? String(e.description) : '',
+        location: e.location != null ? String(e.location) : '',
+        mapsLink: null,
+        startTime: e.startTime != null ? String(e.startTime) : '',
+        endTime: e.endTime != null ? String(e.endTime) : '',
+        durationStr: e.duration != null ? String(e.duration) : '',
+        images: imgs,
+        videoUrl: null,
+        whatToBring: [],
+        difficulty: null,
+        minAge: undefined,
+        maxAge: undefined,
+        isOptional: false,
+        isHighlight: false,
+        includedInPrice: true,
+        extraCost: undefined,
+        vendorNotes: '',
+        vendor: e.vendor,
+      }
+    })
+  }
+
+  if (!Array.isArray(d.experiences) || !d.experiences.length) return []
+
+  return d.experiences.map((raw) => {
+    const ex = raw && typeof raw === 'object' ? /** @type {Record<string, unknown>} */ (raw) : {}
+    const cat = ex.category != null ? String(ex.category) : 'other'
+    const type = CATEGORY_TO_EVENT_TYPE[cat] || 'other'
+    const imgs = Array.isArray(ex.images) ? ex.images.map((x) => String(x)) : []
+    let durationStr = ''
+    if (ex.durationMinutes != null && typeof ex.durationMinutes === 'number') {
+      const m = ex.durationMinutes
+      durationStr = m >= 60 ? `${Math.round(m / 60)} Hours` : `${m} min`
+    }
+    const extra =
+      typeof ex.extraCost === 'number' && !Number.isNaN(ex.extraCost) ? ex.extraCost : undefined
+    return {
+      title: ex.name != null ? String(ex.name) : '',
+      type,
+      category: cat,
+      description: ex.description != null ? String(ex.description) : '',
+      location: ex.location != null ? String(ex.location) : '',
+      mapsLink: ex.mapsLink != null && String(ex.mapsLink).trim() ? String(ex.mapsLink) : null,
+      startTime: ex.startTime != null ? String(ex.startTime) : '',
+      endTime: ex.endTime != null ? String(ex.endTime) : '',
+      durationStr,
+      images: imgs,
+      videoUrl: ex.videoUrl != null && String(ex.videoUrl).trim() ? String(ex.videoUrl) : null,
+      whatToBring: Array.isArray(ex.whatToBring) ? ex.whatToBring.map(String) : [],
+      difficulty: ex.difficulty != null ? String(ex.difficulty) : null,
+      minAge: typeof ex.minAge === 'number' ? ex.minAge : undefined,
+      maxAge: typeof ex.maxAge === 'number' ? ex.maxAge : undefined,
+      isOptional: Boolean(ex.isOptional),
+      isHighlight: Boolean(ex.isHighlight),
+      includedInPrice: ex.includedInPrice !== false,
+      extraCost: extra,
+      vendorNotes: ex.vendorNotes != null ? String(ex.vendorNotes) : '',
+      vendor: ex.vendor,
+    }
+  })
+}
