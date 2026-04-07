@@ -12,7 +12,7 @@ export function getRoleRedirectPath(role) {
     case ROLES.SUB_CHILD:
       return '/agency/sub/dashboard'
     case ROLES.CUSTOMER:
-      return '/customer/home'
+      return '/customer/booking'
     default:
       return '/login'
   }
