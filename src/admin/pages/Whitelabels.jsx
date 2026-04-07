@@ -50,7 +50,7 @@ const WhitelabelDetailModal = ({ isOpen, onClose, wl }) => {
                      </div>
                   </div>
                   <p className="text-sm text-gray-600 leading-relaxed max-w-2xl">{wl.customDescription || wl.originalPackage?.description || 'No description provided for this iteration.'}</p>
-                  
+
                   <div className="pt-2 flex flex-wrap gap-2">
                      <div className="flex items-center gap-1.5 bg-zinc-50 border border-zinc-200 px-2.5 py-1 rounded-full" title="Duration">
                         <Clock size={12} className="text-zinc-500" />
@@ -102,13 +102,13 @@ const WhitelabelDetailModal = ({ isOpen, onClose, wl }) => {
                   <h3 className="text-xs font-bold text-gray-400 leading-none">Itinerary Details</h3>
                   <div className="text-xs text-gray-400 font-bold tracking-tight">Standard Sequence Profile</div>
                </div>
-               
+
                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                   {wl.originalPackage?.itinerary?.slice(0, 8).map((day, idx) => (
-                    <div key={idx} className="p-3 border border-gray-100 rounded-xl bg-gray-50/30 flex items-center gap-3 shadow-sm">
-                       <div className="h-6 w-6 rounded bg-zinc-900 text-white flex items-center justify-center text-[10px] font-black shrink-0">{day.day}</div>
-                       <div className="text-xs font-bold text-zinc-900 truncate">{day.title}</div>
-                    </div>
+                     <div key={idx} className="p-3 border border-gray-100 rounded-xl bg-gray-50/30 flex items-center gap-3 shadow-sm">
+                        <div className="h-6 w-6 rounded bg-zinc-900 text-white flex items-center justify-center text-[10px] font-black shrink-0">{day.day}</div>
+                        <div className="text-xs font-bold text-zinc-900 truncate">{day.title}</div>
+                     </div>
                   ))}
                </div>
                {wl.originalPackage?.itinerary?.length > 8 && (
@@ -133,17 +133,17 @@ const Whitelabels = () => {
 
    const roleOptions = [
       { label: 'All Levels', value: 'all' },
-      { label: 'Parent Agency', value: 'parent_agency' },
+      { label: 'Parent Agency', value: 'parent_agent' },
       { label: 'Child Agent', value: 'child_agent' },
-      { label: 'Subchild Agent', value: 'subchild_agent' }
+      { label: 'Sub-Child Agent', value: 'sub_child_agent' }
    ]
 
    const fetchWhitelabels = async () => {
       setLoading(true)
       try {
-         const params = { 
-            page, 
-            limit: 10, 
+         const params = {
+            page,
+            limit: 10,
             search,
             role: agentRole !== 'all' ? agentRole : undefined
          }
@@ -201,7 +201,7 @@ const Whitelabels = () => {
                <table className="w-full text-left text-sm">
                   <thead className="bg-gray-50 border-b border-gray-200">
                      <tr>
-                        <th className="px-6 py-4 font-bold text-zinc-900">Iteration Name</th>
+                        <th className="px-6 py-4 font-bold text-zinc-900">Whitelabel Name</th>
                         <th className="px-6 py-4 font-bold text-zinc-900">From Package</th>
                         <th className="px-6 py-4 font-bold text-zinc-900">Agency</th>
                         <th className="px-6 py-4 font-bold text-zinc-900">Price Update</th>
