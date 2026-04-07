@@ -58,6 +58,18 @@ export function getAgent(id) {
   return axiosInstance.get(`/admin/agents/${id}`)
 }
 
+export function getNotificationRecipients() {
+  return axiosInstance.get('/admin/notifications/recipients')
+}
+
+export function sendNotification(data) {
+  return axiosInstance.post('/notifications/send', data)
+}
+
+export function getSentNotifications() {
+  return axiosInstance.get('/notifications/sent')
+}
+
 const adminApi = {
   listAgents,
   listPendingKyc,
@@ -76,9 +88,10 @@ const adminApi = {
   getAgent,
   getAgencyCustomers: (id) => axiosInstance.get(`/admin/agents/${id}/customers`),
   approvePackage: (id) => axiosInstance.patch(`/admin/packages/approve/${id}`),
-  rejectPackage: (id, rejectionReason) => axiosInstance.patch(`/admin/packages/reject/${id}`, { rejectionReason })
+  rejectPackage: (id, rejectionReason) => axiosInstance.patch(`/admin/packages/reject/${id}`, { rejectionReason }),
+  getNotificationRecipients,
+  sendNotification,
+  getSentNotifications
 }
 
 export default adminApi
-
-
