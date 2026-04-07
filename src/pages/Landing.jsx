@@ -19,7 +19,7 @@ const PANELS = [
   {
     name: 'Customer',
     description: 'Book and manage trips',
-    path: '/customer/home',
+    path: '/customer/booking',
     signInPath: '/login',
   },
 ]

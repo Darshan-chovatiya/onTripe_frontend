@@ -44,8 +44,6 @@ import AgencySettings from '@/travelAgency/agency/pages/AgencySettings.jsx'
 import { P } from '@/travelAgency/agency/rbac/agencyPermissions.js'
 
 import CustomerLayout from '@/customer/components/CustomerLayout.jsx'
-import CustomerHome from '@/customer/pages/Home.jsx'
-import CustomerSearch from '@/customer/pages/Search.jsx'
 import CustomerBooking from '@/customer/pages/Booking.jsx'
 import CustomerTripHistory from '@/customer/pages/TripHistory.jsx'
 import CustomerProfile from '@/customer/pages/Profile.jsx'
@@ -195,10 +193,8 @@ export default function AppRouter() {
           </ProtectedRoute>
         }
       >
-        <Route index element={<Navigate to="home" replace />} />
-        <Route path="home" element={<CustomerHome />} />
-        <Route path="search" element={<CustomerSearch />} />
-        <Route path="booking" element={<CustomerBooking />} />
+        <Route index element={<Navigate to="booking" replace />} />
+        <Route path="booking/:bookingId?" element={<CustomerBooking />} />
         <Route path="trip-history" element={<CustomerTripHistory />} />
         <Route path="profile" element={<CustomerProfile />} />
       </Route>

@@ -216,13 +216,28 @@ export function AuthProvider({ children }) {
     []
   );
 
-  const loginCustomer = useCallback(
-    async (phone, bookingId) => {
+  const requestCustomerOtp = useCallback(
+    async (phone) => {
       setIsLoading(true)
       try {
-        const { data } = await axiosInstance.post('/auth/login/customer', { phone, bookingId })
+        const { data } = await axiosInstance.post('/auth/otp/customer', { phone })
+        return { success: data?.success, message: data?.message }
+      } catch (e) {
+        return { success: false, message: e?.response?.data?.message || 'Failed to send OTP' }
+      } finally {
+        setIsLoading(false)
+      }
+    },
+    []
+  )
+
+  const loginCustomer = useCallback(
+    async (phone, otp) => {
+      setIsLoading(true)
+      try {
+        const { data } = await axiosInstance.post('/auth/login/customer', { phone, otp })
         if (data?.success && data?.data?.token) {
-          const u = normalizeUser({ role: 'customer', phone, bookingId })
+          const u = normalizeUser({ role: 'customer', phone, id: data.data.customerId })
           applySession(u, data.data.token)
           return { success: true, role: u.role, message: data.message }
         }
@@ -250,8 +265,9 @@ export function AuthProvider({ children }) {
       registerAgent,
       registerParent,
       loginCustomer,
+      requestCustomerOtp,
     }),
-    [user, token, isCheckingAuth, isLoading, login, logout, checkAuth, setUser, registerAgent, registerParent, loginCustomer]
+    [user, token, isCheckingAuth, isLoading, login, logout, checkAuth, setUser, registerAgent, registerParent, loginCustomer, requestCustomerOtp]
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
