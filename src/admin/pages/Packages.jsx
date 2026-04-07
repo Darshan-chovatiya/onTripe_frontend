@@ -13,9 +13,7 @@ import {
   Phone,
   Mail,
   CheckCircle,
-  XCircle,
-  Check,
-  X
+  Check
 } from 'lucide-react'
 import adminApi from '@/admin/services/adminApi'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
@@ -28,7 +26,7 @@ const getFileUrl = (path) => {
   return path.startsWith('http') ? path : `http://localhost:5001/${path}`
 }
 
-const PackageDetailModal = ({ isOpen, onClose, pkg, onApprove, onReject }) => {
+const PackageDetailModal = ({ isOpen, onClose, pkg }) => {
   if (!pkg) return null
 
   return (
@@ -55,29 +53,7 @@ const PackageDetailModal = ({ isOpen, onClose, pkg, onApprove, onReject }) => {
            </div>
         </div>
 
-        {/* Approval Actions Section (Clean & Simple) */}
-        {pkg.status === 'pending' && (
-           <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
-              <div>
-                 <h4 className="text-sm font-bold text-gray-900">Awaiting Administrative Approval</h4>
-                 <p className="text-xs text-gray-500 mt-1">Please review the itinerary and pricing before approving for distribution.</p>
-              </div>
-              <div className="flex gap-3 w-full sm:w-auto">
-                 <button 
-                   onClick={() => onReject(pkg._id)}
-                   className="flex-1 sm:w-auto px-6 py-2 rounded-lg bg-white border border-red-200 text-red-600 text-xs font-bold uppercase tracking-wider hover:bg-red-50 flex items-center justify-center gap-2"
-                 >
-                    <X size={14} /> Reject
-                 </button>
-                 <button 
-                   onClick={() => onApprove(pkg._id)}
-                   className="flex-1 sm:w-auto px-6 py-2 rounded-lg bg-blue-600 text-white text-xs font-bold uppercase tracking-wider hover:bg-blue-700 flex items-center justify-center gap-2 shadow-md"
-                 >
-                    <Check size={14} /> Approve
-                 </button>
-              </div>
-           </div>
-        )}
+
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
            <div className="lg:col-span-2 space-y-6">
@@ -154,7 +130,6 @@ const Packages = () => {
   const [packages, setPackages] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
-  const [status, setStatus] = useState('all')
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [selectedPkg, setSelectedPkg] = useState(null)
@@ -166,8 +141,7 @@ const Packages = () => {
       const params = {
         page,
         limit: 10,
-        search: search || undefined,
-        status: status === 'all' ? undefined : status
+        search: search || undefined
       }
       const { data } = await adminApi.listPackages(params)
       if (data?.success) {
@@ -183,57 +157,9 @@ const Packages = () => {
 
   useEffect(() => {
     fetchPackages()
-  }, [page, status, search])
+  }, [page, search])
 
-  const handleApprove = async (id) => {
-     try {
-        const { data } = await adminApi.approvePackage(id)
-        if (data.success) {
-           toast.success('Package approved successfully')
-           setIsModalOpen(false)
-           fetchPackages()
-        }
-     } catch (err) {
-        toast.error('Failed to approve package')
-     }
-  }
 
-  const handleReject = async (id) => {
-     const reason = prompt('Please enter rejection reason:')
-     if (reason === null) return
-     try {
-        const { data } = await adminApi.rejectPackage(id, reason)
-        if (data.success) {
-           toast.success('Package rejected successfully')
-           setIsModalOpen(false)
-           fetchPackages()
-        }
-     } catch (err) {
-        toast.error('Failed to reject package')
-     }
-  }
-
-  const getStatusBadge = (status) => {
-    const configs = {
-      pending: { bg: 'bg-amber-100', text: 'text-amber-700', icon: Clock },
-      approved: { bg: 'bg-emerald-100', text: 'text-emerald-700', icon: CheckCircle },
-      rejected: { bg: 'bg-red-100', text: 'text-red-700', icon: XCircle }
-    }
-    const config = configs[status] || configs.pending
-    return (
-      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${config.bg} ${config.text}`}>
-        <config.icon size={10} />
-        {status}
-      </span>
-    )
-  }
-
-  const statusOptions = [
-    { value: 'all', label: 'All Packages' },
-    { value: 'pending', label: 'Pending' },
-    { value: 'approved', label: 'Approved' },
-    { value: 'rejected', label: 'Rejected' }
-  ]
 
   return (
     <div className="space-y-6">
@@ -254,12 +180,6 @@ const Packages = () => {
                 onChange={(e) => setSearch(e.target.value)}
               />
            </div>
-           <CustomDropdown 
-              value={status}
-              onChange={setStatus}
-              options={statusOptions}
-              buttonClassName="!rounded-lg !border-gray-200 !text-sm !px-4 !py-2 h-auto"
-           />
         </div>
       </div>
 
@@ -271,7 +191,6 @@ const Packages = () => {
                     <th className="px-6 py-4 font-bold text-gray-700">Package Details</th>
                     <th className="px-6 py-4 font-bold text-gray-700">Base Price</th>
                     <th className="px-6 py-4 font-bold text-gray-700">Origin Agency</th>
-                    <th className="px-6 py-4 font-bold text-gray-700">Status</th>
                     <th className="px-6 py-4 font-bold text-gray-700 text-right">Actions</th>
                  </tr>
               </thead>
@@ -311,9 +230,7 @@ const Packages = () => {
                              <div className="text-gray-900 font-medium">{pkg.createdBy?.name}</div>
                              <div className="text-[10px] text-gray-500 uppercase tracking-widest">{pkg.createdBy?.agentCode}</div>
                           </td>
-                          <td className="px-6 py-4">
-                             {getStatusBadge(pkg.status)}
-                          </td>
+
                           <td className="px-6 py-4 text-right">
                              <button 
                                onClick={() => {
@@ -348,8 +265,6 @@ const Packages = () => {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         pkg={selectedPkg}
-        onApprove={handleApprove}
-        onReject={handleReject}
       />
     </div>
   )
