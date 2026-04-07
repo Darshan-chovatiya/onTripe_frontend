@@ -5,11 +5,8 @@ import { useAuth } from '@/shared/context/AuthContext.jsx'
 import ConfirmDialog from '@/shared/components/ConfirmDialog.jsx'
 import { getLoginPathForCurrentPath } from '@/shared/utils/roleHelpers.js'
 
-function agencySettingsPath(pathname) {
-  if (pathname.startsWith('/agency/parent')) return '/agency/parent/settings'
-  if (pathname.startsWith('/agency/child')) return '/agency/child/settings'
-  if (pathname.startsWith('/agency/sub')) return '/agency/sub/settings'
-  return '/agency/child/settings'
+function agencySettingsPath() {
+  return '/agency/settings'
 }
 
 function initials(name) {
@@ -52,7 +49,7 @@ export default function AgencyUserMenu() {
 
   if (!user) return null
 
-  const settingsHref = agencySettingsPath(location.pathname)
+  const settingsHref = agencySettingsPath()
 
   const openLogoutConfirm = () => {
     setOpen(false)

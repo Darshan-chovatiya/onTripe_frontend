@@ -18,7 +18,7 @@ export default function ChildLogin() {
     const res = await login({ email: email.trim(), password })
     if (res.success) {
       toast.success(res.message || 'Login successful')
-      navigate('/agency/child/dashboard', { replace: true })
+      navigate('/agency/dashboard', { replace: true })
     } else {
       toast.error(res.message || 'Login failed')
     }

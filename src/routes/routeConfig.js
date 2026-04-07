@@ -1,5 +1,7 @@
 import { ROLES } from '@/shared/utils/constants.js'
 
+const AGENCY_ROLES = [ROLES.PARENT_AGENCY, ROLES.CHILD_AGENCY, ROLES.SUB_CHILD]
+
 /**
  * Canonical route metadata (paths must match AppRouter).
  * Role enforcement is implemented via `getRequiredRolesForPath` in `@/shared/utils/roleHelpers.js`.
@@ -12,23 +14,14 @@ export const routeConfig = [
   { path: '/admin/reports', allowedRoles: [ROLES.ADMIN] },
   { path: '/admin/settings', allowedRoles: [ROLES.ADMIN] },
 
-  { path: '/agency/parent/dashboard', allowedRoles: [ROLES.PARENT_AGENCY] },
-  { path: '/agency/parent/packages', allowedRoles: [ROLES.PARENT_AGENCY] },
-  { path: '/agency/parent/vendors', allowedRoles: [ROLES.PARENT_AGENCY] },
-  { path: '/agency/parent/bookings', allowedRoles: [ROLES.PARENT_AGENCY] },
-  { path: '/agency/parent/manage-children', allowedRoles: [ROLES.PARENT_AGENCY] },
-  { path: '/agency/parent/settings', allowedRoles: [ROLES.PARENT_AGENCY] },
-
-  { path: '/agency/child/dashboard', allowedRoles: [ROLES.CHILD_AGENCY] },
-  { path: '/agency/child/packages', allowedRoles: [ROLES.CHILD_AGENCY] },
-  { path: '/agency/child/bookings', allowedRoles: [ROLES.CHILD_AGENCY] },
-  { path: '/agency/child/manage-sub-children', allowedRoles: [ROLES.CHILD_AGENCY] },
-  { path: '/agency/child/settings', allowedRoles: [ROLES.CHILD_AGENCY] },
-
-  { path: '/agency/sub/dashboard', allowedRoles: [ROLES.SUB_CHILD] },
-  { path: '/agency/sub/my-bookings', allowedRoles: [ROLES.SUB_CHILD] },
-  { path: '/agency/sub/profile', allowedRoles: [ROLES.SUB_CHILD] },
-  { path: '/agency/sub/settings', allowedRoles: [ROLES.SUB_CHILD] },
+  { path: '/agency/dashboard', allowedRoles: AGENCY_ROLES },
+  { path: '/agency/packages', allowedRoles: AGENCY_ROLES },
+  { path: '/agency/vendors', allowedRoles: [ROLES.PARENT_AGENCY] },
+  { path: '/agency/bookings', allowedRoles: [ROLES.PARENT_AGENCY, ROLES.CHILD_AGENCY] },
+  { path: '/agency/my-bookings', allowedRoles: [ROLES.SUB_CHILD] },
+  { path: '/agency/manage-downstream', allowedRoles: [ROLES.PARENT_AGENCY, ROLES.CHILD_AGENCY] },
+  { path: '/agency/customers', allowedRoles: [ROLES.CHILD_AGENCY, ROLES.SUB_CHILD] },
+  { path: '/agency/settings', allowedRoles: AGENCY_ROLES },
 
   { path: '/customer/home', allowedRoles: [ROLES.CUSTOMER] },
   { path: '/customer/search', allowedRoles: [ROLES.CUSTOMER] },

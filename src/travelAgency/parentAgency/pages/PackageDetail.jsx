@@ -5,6 +5,7 @@ import {
   CheckCircle2, XCircle, CalendarDays, Clock3, MapPinned,
   Layers, Edit2, ImagePlus, Store
 } from 'lucide-react'
+import { AGENCY_PANEL_BASE } from '@/travelAgency/agency/constants.js'
 import { listMyPackages } from '@/travelAgency/parentAgency/services/parentAgencyApi.js'
 import { getApiErrorMessage } from '@/shared/services/apiHelpers.js'
 
@@ -66,7 +67,7 @@ export default function PackageDetail() {
         </button>
         <div className="flex gap-2">
           <button
-            onClick={() => navigate('/agency/parent/packages', { state: { editId: pkg._id } })}
+            onClick={() => navigate(`${AGENCY_PANEL_BASE}/packages`, { state: { editId: pkg._id } })}
             className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors"
           >
             <Edit2 size={13} /> Edit

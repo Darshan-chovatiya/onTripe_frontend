@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom'
+import { AGENCY_PANEL_BASE } from '@/travelAgency/agency/constants.js'
 import { MapPin, Clock, IndianRupee, Image, Edit2, ImagePlus, Trash2, Eye } from 'lucide-react'
 
 export default function PackageCard({ pkg, onEdit, onUpdateCover, onUpdateGallery, onDeactivate }) {
@@ -44,7 +45,7 @@ export default function PackageCard({ pkg, onEdit, onUpdateCover, onUpdateGaller
 
       {/* Actions */}
       <div className="border-t border-gray-100 p-3 flex gap-2 flex-wrap">
-        <button onClick={() => navigate(`/agency/parent/packages/${pkg._id}`)} className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium text-primary-600 hover:bg-primary-50 transition-colors">
+        <button onClick={() => navigate(`${AGENCY_PANEL_BASE}/packages/${pkg._id}`)} className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium text-primary-600 hover:bg-primary-50 transition-colors">
           <Eye size={13} /> View
         </button>
         <button onClick={() => onEdit(pkg)} className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 transition-colors">

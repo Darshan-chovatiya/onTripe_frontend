@@ -6,11 +6,9 @@ export function getRoleRedirectPath(role) {
     case ROLES.ADMIN:
       return '/admin/dashboard'
     case ROLES.PARENT_AGENCY:
-      return '/agency/parent/dashboard'
     case ROLES.CHILD_AGENCY:
-      return '/agency/child/dashboard'
     case ROLES.SUB_CHILD:
-      return '/agency/sub/dashboard'
+      return '/agency/dashboard'
     case ROLES.CUSTOMER:
       return '/customer/home'
     default:
@@ -50,6 +48,9 @@ export function getRequiredRolesForPath(pathname) {
   if (pathname.startsWith('/agency/parent')) return [ROLES.PARENT_AGENCY]
   if (pathname.startsWith('/agency/child')) return [ROLES.CHILD_AGENCY]
   if (pathname.startsWith('/agency/sub')) return [ROLES.SUB_CHILD]
+  if (pathname.startsWith('/agency')) {
+    return [ROLES.PARENT_AGENCY, ROLES.CHILD_AGENCY, ROLES.SUB_CHILD]
+  }
   if (pathname.startsWith('/customer')) return [ROLES.CUSTOMER]
   return null
 }
@@ -64,6 +65,7 @@ export function getLoginPathForCurrentPath(pathname) {
   if (pathname.startsWith('/agency/parent')) return '/travelAgency/parent/login'
   if (pathname.startsWith('/agency/child')) return '/travelAgency/child/login'
   if (pathname.startsWith('/agency/sub')) return '/travelAgency/subchild/login'
+  if (pathname.startsWith('/agency')) return '/travelAgency/parent/login'
   return '/login'
 }
 

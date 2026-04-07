@@ -3,6 +3,7 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { Menu, Settings, LogOut, ChevronDown, Bell } from 'lucide-react'
 import { useAuth } from '@/shared/context/AuthContext.jsx'
 import ConfirmDialog from '@/shared/components/ConfirmDialog.jsx'
+import { useAgencyPermissions } from '@/travelAgency/agency/hooks/useAgencyPermissions.js'
 
 // Map path segments to readable page titles
 function usePageTitle() {
@@ -14,15 +15,16 @@ function usePageTitle() {
     vendors: 'Vendors',
     bookings: 'Bookings',
     'manage-children': 'Manage Children',
+    'manage-downstream': 'Manage network',
     settings: 'Settings',
     'manage-sub-children': 'Manage Sub-Children',
     'my-bookings': 'My Bookings',
-    profile: 'Profile',
+    customers: 'Customers',
   }
   return titles[segment] || segment.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) || 'Dashboard'
 }
 
-function UserMenu({ user, onSettings, onLogout }) {
+function UserMenu({ user, onSettings, onLogout, roleLabel }) {
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
 
@@ -59,7 +61,7 @@ function UserMenu({ user, onSettings, onLogout }) {
             <p className="text-sm font-semibold text-gray-900 truncate">{user?.name}</p>
             <p className="text-xs text-gray-400 truncate">{user?.email}</p>
             <span className="mt-1.5 inline-flex items-center rounded-full bg-primary-50 px-2 py-0.5 text-xs font-medium text-primary-700">
-              Parent Agent
+              {roleLabel}
             </span>
           </div>
 
@@ -88,7 +90,7 @@ function UserMenu({ user, onSettings, onLogout }) {
   )
 }
 
-function AgencyTopBar({ onMenuClick, onSettings, onLogout }) {
+function AgencyTopBar({ onMenuClick, onSettings, onLogout, roleLabel }) {
   const { user } = useAuth()
   const title = usePageTitle()
 
@@ -110,7 +112,7 @@ function AgencyTopBar({ onMenuClick, onSettings, onLogout }) {
         <button type="button" className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 transition-colors" aria-label="Notifications">
           <Bell size={18} />
         </button>
-        <UserMenu user={user} onSettings={onSettings} onLogout={onLogout} />
+        <UserMenu user={user} onSettings={onSettings} onLogout={onLogout} roleLabel={roleLabel} />
       </div>
     </header>
   )
@@ -121,16 +123,14 @@ export default function AgencyLayout({ sidebar: Sidebar }) {
   const [confirmLogout, setConfirmLogout] = useState(false)
   const navigate = useNavigate()
   const { logout } = useAuth()
+  const { roleLabel, loginPathForLogout } = useAgencyPermissions()
 
   const handleLogout = () => {
     logout()
-    navigate('/travelAgency/parent/login', { replace: true })
+    navigate(loginPathForLogout, { replace: true })
   }
 
-  // Derive settings path from current location
-  const { pathname } = useLocation()
-  const base = '/' + pathname.split('/').slice(1, 3).join('/')
-  const settingsPath = `${base}/settings`
+  const settingsPath = '/agency/settings'
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -140,6 +140,7 @@ export default function AgencyLayout({ sidebar: Sidebar }) {
           onMenuClick={() => setSidebarOpen(true)}
           onSettings={() => navigate(settingsPath)}
           onLogout={() => setConfirmLogout(true)}
+          roleLabel={roleLabel}
         />
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
           <div className="mx-auto max-w-7xl">
