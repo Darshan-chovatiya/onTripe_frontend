@@ -152,12 +152,12 @@ export default function UserManagement() {
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-visible animate-scale-in ring-1 ring-black/5">
             <div className="overflow-visible">
                 <table className="w-full table-auto">
-                    <thead className="bg-slate-50/80 border-b border-slate-100">
+                    <thead className="bg-gray-50 border-b border-gray-200">
                         <tr>
-                            <th className="px-4 py-3.5 text-left text-[10px] font-bold text-slate-400 uppercase tracking-widest">Personal Identity</th>
-                            <th className="px-4 py-3.5 text-left text-[10px] font-bold text-slate-400 uppercase tracking-widest">Security Role</th>
-                            <th className="px-4 py-3.5 text-left text-[10px] font-bold text-slate-400 uppercase tracking-widest">Account Integrity</th>
-                            <th className="px-4 py-3.5 text-right text-[10px] font-bold text-slate-400 uppercase tracking-widest pr-8">Verification Date</th>
+                            <th className="px-6 py-4 text-left text-[10px] font-black text-zinc-900 uppercase tracking-widest">Personal Identity</th>
+                            <th className="px-6 py-4 text-left text-[10px] font-black text-zinc-900 uppercase tracking-widest">Security Role</th>
+                            <th className="px-6 py-4 text-left text-[10px] font-black text-zinc-900 uppercase tracking-widest">Account Integrity</th>
+                            <th className="px-6 py-4 text-right text-[10px] font-black text-zinc-900 uppercase tracking-widest pr-8">Verification Date</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">

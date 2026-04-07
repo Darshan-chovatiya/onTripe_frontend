@@ -70,8 +70,8 @@ const SubChildAgenciesModal = ({ isOpen, onClose, parentAgency, onToggleStatus, 
     <Modal 
       isOpen={isOpen} 
       onClose={onClose} 
-      title={`Sub-Child Agencies`} 
-      size="xl"
+      title={`Sub-Agency Network: ${parentAgency?.name}`} 
+      size="lg"
     >
       <div className="space-y-4">
         {/* Simplified Header with Search & Filter */}
@@ -117,13 +117,13 @@ const SubChildAgenciesModal = ({ isOpen, onClose, parentAgency, onToggleStatus, 
                </div>
              ) : (
                <table className="w-full text-left">
-                  <thead className="bg-slate-50 border-b border-slate-100">
+                  <thead className="bg-gray-50 border-b border-gray-200">
                     <tr>
-                      <th className="px-4 py-3 text-[9px] font-black text-slate-400 uppercase tracking-widest">Sub-Child Agency</th>
-                      <th className="px-4 py-3 text-[9px] font-black text-slate-400 uppercase tracking-widest">Contact Hub</th>
-                      <th className="px-4 py-3 text-[9px] font-black text-slate-400 uppercase tracking-widest">KYC Status</th>
-                      <th className="px-4 py-3 text-[9px] font-black text-slate-400 uppercase tracking-widest">Joined On</th>
-                      <th className="px-4 py-3 text-[9px] font-black text-slate-400 uppercase tracking-widest text-right">Account Status</th>
+                      <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest">Sub-Child Agency</th>
+                      <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest">Contact Hub</th>
+                      <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest">KYC Status</th>
+                      <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest">Joined On</th>
+                      <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest text-right pr-6">Account Status</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -210,8 +210,8 @@ const AgencyCustomersModal = ({ isOpen, onClose, agency }) => {
     <Modal 
       isOpen={isOpen} 
       onClose={onClose} 
-      title={`Traveler Network Registry: ${agency?.name}`} 
-      size="xl"
+      title={`Customers: ${agency?.name}`} 
+      size="lg"
     >
       <div className="space-y-4">
         <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
@@ -219,22 +219,22 @@ const AgencyCustomersModal = ({ isOpen, onClose, agency }) => {
              {loading ? (
                <div className="flex flex-col items-center justify-center p-20">
                  <Loader size="md" />
-                 <p className="text-[10px] font-bold text-slate-400 mt-4 tracking-widest uppercase italic font-black">Decrypting Traveler Data...</p>
+                 <p className="text-[10px] font-bold text-slate-400 mt-4 tracking-widest uppercase italic font-black">Loading Customer List...</p>
                </div>
              ) : customers.length === 0 ? (
                <div className="flex flex-col items-center justify-center p-20 text-center">
                  <div className="w-12 h-12 bg-slate-50 rounded-xl flex items-center justify-center text-slate-200 border border-slate-100 mb-3"><Users size={24} /></div>
-                 <h4 className="text-sm font-bold text-slate-900 leading-none">No Travelers Identified</h4>
-                 <p className="text-xs text-slate-400 mt-1 font-medium italic">This agency network currently has no registered travelers.</p>
+                 <h4 className="text-sm font-bold text-slate-900 leading-none">No Customers Found</h4>
+                 <p className="text-xs text-slate-400 mt-1 font-medium italic">No customers are currently linked to this agency.</p>
                </div>
              ) : (
                <table className="w-full text-left">
-                  <thead className="bg-slate-50 border-b border-slate-100 italic">
+                  <thead className="bg-gray-50 border-b border-gray-200">
                     <tr>
-                      <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">Traveler Identity</th>
-                      <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">Digital Touchpoint</th>
-                      <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">Node Attribution</th>
-                      <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">Account Hub</th>
+                      <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest">Customer Name</th>
+                      <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest">Contact Details</th>
+                      <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest">Managed By</th>
+                      <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest text-right pr-6">Status</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -256,14 +256,14 @@ const AgencyCustomersModal = ({ isOpen, onClose, agency }) => {
                             <div className="flex flex-col">
                                <div className="text-[10px] font-black text-slate-900 leading-none uppercase">{customer.parentRef?.name}</div>
                                <div className="text-[9px] font-bold text-primary-500 uppercase tracking-tighter mt-1 italic opacity-60">
-                                  {customer.parentRef?.role === 'child_agent' ? 'Direct Node' : 'Sub-Node Mapping'}
-                               </div>
+                                  {customer.parentRef?.role === 'child_agent' ? 'Managed Direct' : 'Handled by Sub-Agent'}
+                                </div>
                             </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                            <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border ${customer.isActive ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-red-50 text-red-700 border-red-100'}`}>
                               <div className={`h-1 w-1 rounded-full ${customer.isActive ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}`} />
-                              {customer.isActive ? 'Active State' : 'Inactive Link'}
+                              {customer.isActive ? 'Active' : 'Inactive'}
                            </div>
                         </td>
                       </tr>
@@ -433,15 +433,15 @@ const AgencyNetwork = () => {
 
         <div className="overflow-x-auto min-h-[400px]">
            <table className="w-full text-left">
-              <thead className="bg-slate-50/80 border-b border-slate-100">
+              <thead className="bg-gray-50 border-b border-gray-200">
                  <tr>
-                    <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">Child Agency</th>
-                    <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">Contact Hub</th>
-                    <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">KYC Status</th>
-                    <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest text-center">Sub-Hierarchy</th>
-                    <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest text-center">Traveler Matrix</th>
-                    <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">Joined On</th>
-                    <th className="px-6 py-4 text-[9px] font-black text-slate-400 uppercase tracking-widest text-right pr-10">Account Status</th>
+                    <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest">Child Agency</th>
+                    <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest">Contact Hub</th>
+                    <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest">KYC Status</th>
+                    <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest text-center">Sub-Hierarchy</th>
+                    <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest text-center">Traveler Matrix</th>
+                    <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest">Joined On</th>
+                    <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest text-right pr-10">Account Status</th>
                  </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
