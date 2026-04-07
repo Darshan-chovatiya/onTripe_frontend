@@ -71,7 +71,7 @@ const SubChildAgenciesModal = ({ isOpen, onClose, parentAgency, onToggleStatus, 
       isOpen={isOpen} 
       onClose={onClose} 
       title={`Sub-Agency Network: ${parentAgency?.name}`} 
-      size="xl"
+      size="lg"
     >
       <div className="space-y-4">
         {/* Simplified Header with Search & Filter */}

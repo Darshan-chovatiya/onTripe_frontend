@@ -170,7 +170,7 @@ export default function ChildAgencies() {
       isOpen={isSubChildModalOpen}
       onClose={() => setIsSubChildModalOpen(false)}
       title={`Sub-Agency Network: ${selectedAgent?.name}`}
-      size="xl"
+      size="lg"
     >
       <div className="space-y-4">
         <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">Hierarchy Layer: Sub-Distributors</p>
