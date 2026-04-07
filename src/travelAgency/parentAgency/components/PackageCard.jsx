@@ -1,6 +1,9 @@
-import { MapPin, Clock, IndianRupee, Image, Edit2, ImagePlus, Trash2 } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { AGENCY_PANEL_BASE } from '@/travelAgency/agency/constants.js'
+import { MapPin, Clock, IndianRupee, Image, Edit2, ImagePlus, Trash2, Eye } from 'lucide-react'
 
 export default function PackageCard({ pkg, onEdit, onUpdateCover, onUpdateGallery, onDeactivate }) {
+  const navigate = useNavigate()
   const base = import.meta.env.VITE_API_BASE_URL?.replace('/api', '').replace(/\/$/, '') || 'http://localhost:5001'
   const coverSrc = pkg.coverImage
     ? `${base}/${pkg.coverImage.replace(/\\/g, '/')}`
@@ -44,6 +47,9 @@ export default function PackageCard({ pkg, onEdit, onUpdateCover, onUpdateGaller
 
       {/* Actions */}
       <div className="border-t border-gray-100 p-3 flex gap-2 flex-wrap">
+        <button onClick={() => navigate(`${AGENCY_PANEL_BASE}/packages/${pkg._id}`)} className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium text-primary-600 hover:bg-primary-50 transition-colors">
+          <Eye size={13} /> View
+        </button>
         <button onClick={() => onEdit(pkg)} className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 transition-colors">
           <Edit2 size={13} /> Edit
         </button>

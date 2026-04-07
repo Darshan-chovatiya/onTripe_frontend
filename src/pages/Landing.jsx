@@ -11,22 +11,10 @@ const PANELS = [
     signInPath: '/admin/login',
   },
   {
-    name: 'Parent agency',
-    description: 'Top-level travel agency',
-    path: '/agency/parent/dashboard',
+    name: 'Agency',
+    description: 'Parent, child, or sub-child — one panel, role-based access',
+    path: '/agency/dashboard',
     signInPath: '/travelAgency/parent/login',
-  },
-  {
-    name: 'Child agency',
-    description: 'Agency under parent',
-    path: '/agency/child/dashboard',
-    signInPath: '/travelAgency/child/login',
-  },
-  {
-    name: 'Sub child',
-    description: 'Agency under child',
-    path: '/agency/sub/dashboard',
-    signInPath: '/travelAgency/subchild/login',
   },
   {
     name: 'Customer',

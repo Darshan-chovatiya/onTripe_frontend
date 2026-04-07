@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
-import { X, LogOut, LayoutDashboard, Package, Users, Settings } from 'lucide-react'
+import { X, LogOut, LayoutDashboard, Package, Users, Settings, Store, BookOpen } from 'lucide-react'
 import { useAuth } from '@/shared/context/AuthContext.jsx'
 import ConfirmDialog from '@/shared/components/ConfirmDialog.jsx'
 import logoIcon from '@/assets/Logo Icon.png'
@@ -16,6 +16,8 @@ export default function AgencySidebar({ isOpen, onClose }) {
   const navItems = [
     { path: `${BASE}/dashboard`, icon: LayoutDashboard, label: 'Dashboard' },
     { path: `${BASE}/packages`, icon: Package, label: 'Packages' },
+    { path: `${BASE}/vendors`, icon: Store, label: 'Vendors' },
+    { path: `${BASE}/bookings`, icon: BookOpen, label: 'Bookings' },
     { path: `${BASE}/manage-children`, icon: Users, label: 'Manage children' },
     { path: `${BASE}/settings`, icon: Settings, label: 'Settings' },
   ]

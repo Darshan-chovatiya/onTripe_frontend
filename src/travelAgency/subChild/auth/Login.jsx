@@ -18,7 +18,7 @@ export default function SubChildLogin() {
     const res = await login({ email: email.trim(), password })
     if (res.success) {
       toast.success(res.message || 'Login successful')
-      navigate('/agency/sub/dashboard', { replace: true })
+      navigate('/agency/dashboard', { replace: true })
     } else {
       toast.error(res.message || 'Login failed')
     }

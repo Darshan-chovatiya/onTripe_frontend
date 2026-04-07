@@ -1,5 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import ProtectedRoute from '@/routes/ProtectedRoute.jsx'
+import AgencyPermissionRoute from '@/routes/AgencyPermissionRoute.jsx'
+import AgencyLegacyRedirect from '@/routes/AgencyLegacyRedirect.jsx'
 
 import Login from '@/auth/pages/Login.jsx'
 import ForgotPassword from '@/auth/pages/ForgotPassword.jsx'
@@ -30,23 +32,17 @@ import AdminChildAgencies from '@/admin/pages/ChildAgencies.jsx'
 import AdminNotifications from '@/admin/pages/Notifications.jsx'
 
 import AgencyLayout from '@/travelAgency/shared/components/AgencyLayout.jsx'
-import ParentAgencySidebar from '@/travelAgency/parentAgency/components/AgencySidebar.jsx'
-import ParentDashboard from '@/travelAgency/parentAgency/pages/Dashboard.jsx'
-import ParentPackages from '@/travelAgency/parentAgency/pages/Packages.jsx'
-import ParentManageChildren from '@/travelAgency/parentAgency/pages/ManageChildren.jsx'
-import ParentSettings from '@/travelAgency/parentAgency/pages/Settings.jsx'
-
-import ChildAgencySidebar from '@/travelAgency/childAgency/components/AgencySidebar.jsx'
-import ChildDashboard from '@/travelAgency/childAgency/pages/Dashboard.jsx'
-import ChildBookings from '@/travelAgency/childAgency/pages/Bookings.jsx'
-import ChildManageSubChildren from '@/travelAgency/childAgency/pages/ManageSubChildren.jsx'
-import ChildSettings from '@/travelAgency/childAgency/pages/Settings.jsx'
-
-import SubAgencySidebar from '@/travelAgency/subChild/components/AgencySidebar.jsx'
-import SubDashboard from '@/travelAgency/subChild/pages/Dashboard.jsx'
-import SubMyBookings from '@/travelAgency/subChild/pages/MyBookings.jsx'
-import SubProfile from '@/travelAgency/subChild/pages/Profile.jsx'
-import SubSettings from '@/travelAgency/subChild/pages/Settings.jsx'
+import AgencyPanelSidebar from '@/travelAgency/agency/components/AgencyPanelSidebar.jsx'
+import AgencyDashboard from '@/travelAgency/agency/pages/AgencyDashboard.jsx'
+import AgencyPackages from '@/travelAgency/agency/pages/AgencyPackages.jsx'
+import AgencyPackageDetail from '@/travelAgency/agency/pages/AgencyPackageDetail.jsx'
+import AgencyVendors from '@/travelAgency/agency/pages/AgencyVendors.jsx'
+import AgencyBookings from '@/travelAgency/agency/pages/AgencyBookings.jsx'
+import AgencyMyBookings from '@/travelAgency/agency/pages/AgencyMyBookings.jsx'
+import AgencyManageDownstream from '@/travelAgency/agency/pages/AgencyManageDownstream.jsx'
+import AgencyCustomers from '@/travelAgency/agency/pages/AgencyCustomers.jsx'
+import AgencySettings from '@/travelAgency/agency/pages/AgencySettings.jsx'
+import { P } from '@/travelAgency/agency/rbac/agencyPermissions.js'
 
 import CustomerLayout from '@/customer/components/CustomerLayout.jsx'
 import CustomerHome from '@/customer/pages/Home.jsx'
@@ -97,49 +93,100 @@ export default function AppRouter() {
         <Route path="settings" element={<AdminSettings />} />
       </Route>
 
+      {/* Legacy agency URLs → unified panel */}
       <Route
-        path="/agency/parent"
+        path="/agency/parent/*"
         element={
           <ProtectedRoute>
-            <AgencyLayout sidebar={ParentAgencySidebar} />
+            <AgencyLegacyRedirect mode="parent" />
           </ProtectedRoute>
         }
-      >
-        <Route index element={<Navigate to="dashboard" replace />} />
-        <Route path="dashboard" element={<ParentDashboard />} />
-        <Route path="packages" element={<ParentPackages />} />
-        <Route path="manage-children" element={<ParentManageChildren />} />
-        <Route path="settings" element={<ParentSettings />} />
-      </Route>
+      />
+      <Route
+        path="/agency/child/*"
+        element={
+          <ProtectedRoute>
+            <AgencyLegacyRedirect mode="child" />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/agency/sub/*"
+        element={
+          <ProtectedRoute>
+            <AgencyLegacyRedirect mode="sub" />
+          </ProtectedRoute>
+        }
+      />
 
       <Route
-        path="/agency/child"
+        path="/agency"
         element={
           <ProtectedRoute>
-            <AgencyLayout sidebar={ChildAgencySidebar} />
+            <AgencyLayout sidebar={AgencyPanelSidebar} />
           </ProtectedRoute>
         }
       >
         <Route index element={<Navigate to="dashboard" replace />} />
-        <Route path="dashboard" element={<ChildDashboard />} />
-        <Route path="bookings" element={<ChildBookings />} />
-        <Route path="manage-sub-children" element={<ChildManageSubChildren />} />
-        <Route path="settings" element={<ChildSettings />} />
-      </Route>
-
-      <Route
-        path="/agency/sub"
-        element={
-          <ProtectedRoute>
-            <AgencyLayout sidebar={SubAgencySidebar} />
-          </ProtectedRoute>
-        }
-      >
-        <Route index element={<Navigate to="dashboard" replace />} />
-        <Route path="dashboard" element={<SubDashboard />} />
-        <Route path="my-bookings" element={<SubMyBookings />} />
-        <Route path="profile" element={<SubProfile />} />
-        <Route path="settings" element={<SubSettings />} />
+        <Route path="dashboard" element={<AgencyDashboard />} />
+        <Route
+          path="packages"
+          element={
+            <AgencyPermissionRoute anyOf={[P.PACKAGES_FULL, P.PACKAGES_CLONE]}>
+              <AgencyPackages />
+            </AgencyPermissionRoute>
+          }
+        />
+        <Route
+          path="packages/:id"
+          element={
+            <AgencyPermissionRoute permission={P.PACKAGES_FULL}>
+              <AgencyPackageDetail />
+            </AgencyPermissionRoute>
+          }
+        />
+        <Route
+          path="vendors"
+          element={
+            <AgencyPermissionRoute permission={P.VENDORS}>
+              <AgencyVendors />
+            </AgencyPermissionRoute>
+          }
+        />
+        <Route
+          path="bookings"
+          element={
+            <AgencyPermissionRoute anyOf={[P.BOOKINGS_NETWORK, P.BOOKINGS_SALES]}>
+              <AgencyBookings />
+            </AgencyPermissionRoute>
+          }
+        />
+        <Route
+          path="my-bookings"
+          element={
+            <AgencyPermissionRoute permission={P.BOOKINGS_OWN}>
+              <AgencyMyBookings />
+            </AgencyPermissionRoute>
+          }
+        />
+        <Route
+          path="manage-downstream"
+          element={
+            <AgencyPermissionRoute anyOf={[P.NETWORK_CHILDREN, P.NETWORK_SUBCHILDREN]}>
+              <AgencyManageDownstream />
+            </AgencyPermissionRoute>
+          }
+        />
+        <Route
+          path="customers"
+          element={
+            <AgencyPermissionRoute permission={P.CUSTOMERS}>
+              <AgencyCustomers />
+            </AgencyPermissionRoute>
+          }
+        />
+        <Route path="profile" element={<Navigate to="/agency/customers" replace />} />
+        <Route path="settings" element={<AgencySettings />} />
       </Route>
 
       <Route
