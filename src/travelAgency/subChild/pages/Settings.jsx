@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Loader2, Shield, User } from 'lucide-react'
+import { Loader2, Shield, User, CheckCircle, Clock, XCircle } from 'lucide-react'
 import { useAuth } from '@/shared/context/AuthContext.jsx'
 import {
   changeSubChildPassword,
@@ -22,6 +22,7 @@ export default function Settings() {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
+  const [kycStatus, setKycStatus] = useState(null)
   const [profileSaving, setProfileSaving] = useState(false)
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
@@ -39,12 +40,14 @@ export default function Settings() {
           setName(u.name || '')
           setEmail(u.email || '')
           setPhone(u.phone || '')
+          setKycStatus(u.kyc?.status || u.kycStatus || null)
         }
       } catch {
         if (!cancelled) {
           setName(user?.name || '')
           setEmail(user?.email || '')
           setPhone(user?.phone || '')
+          setKycStatus(user?.kyc?.status || null)
         }
       } finally {
         if (!cancelled) setLoadingProfile(false)
@@ -107,6 +110,22 @@ export default function Settings() {
               <input className="input-field w-full" value={name} onChange={(e) => setName(e.target.value)} placeholder="Full name" />
               <input type="email" className="input-field w-full" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" />
               <input className="input-field w-full" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Phone" />
+
+              {/* KYC Status */}
+              {kycStatus && (() => {
+                const map = {
+                  approved: { icon: CheckCircle, label: 'KYC Approved',  cls: 'bg-green-50 border-green-200 text-green-700' },
+                  pending:  { icon: Clock,        label: 'KYC Pending',   cls: 'bg-yellow-50 border-yellow-200 text-yellow-700' },
+                  rejected: { icon: XCircle,      label: 'KYC Rejected',  cls: 'bg-red-50 border-red-200 text-red-700' },
+                }
+                const { icon: Icon, label, cls } = map[kycStatus] || map.pending
+                return (
+                  <div className={`flex items-center gap-2 rounded-xl border px-4 py-3 text-sm font-medium ${cls}`}>
+                    <Icon size={15} /> {label}
+                  </div>
+                )
+              })()}
+
               <Button type="submit" disabled={profileSaving}>{profileSaving ? 'Saving…' : 'Save profile'}</Button>
             </form>
           )}

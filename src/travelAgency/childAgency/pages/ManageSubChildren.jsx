@@ -6,6 +6,7 @@ import Button from '@/shared/components/Button.jsx'
 import ConfirmDialog from '@/shared/components/ConfirmDialog.jsx'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
 import { getApiErrorMessage } from '@/shared/services/apiHelpers.js'
+import { approveSubChildKyc } from '@/travelAgency/childAgency/services/childAgencyApi.js'
 
 export default function ManageSubChildren() {
   const { subChildren, loading, error, refresh, fetchOne, setActive } = useManageSubChildren()
@@ -13,6 +14,7 @@ export default function ManageSubChildren() {
   const [detailId, setDetailId] = useState(null)
   const [busyId, setBusyId] = useState(null)
   const [confirm, setConfirm] = useState({ open: false, sub: null, nextActive: false })
+  const [kycTarget, setKycTarget] = useState(null)
 
   const runToggle = async (sub, nextActive) => {
     setBusyId(sub._id)
@@ -37,6 +39,21 @@ export default function ManageSubChildren() {
       return
     }
     runToggle(sub, nextActive)
+  }
+
+  const handleApproveKyc = async () => {
+    if (!kycTarget) return
+    setBusyId(kycTarget._id)
+    try {
+      await approveSubChildKyc(kycTarget._id)
+      toast.success(`KYC approved for ${kycTarget.name}`)
+      refresh()
+    } catch (err) {
+      toast.error(getApiErrorMessage(err))
+    } finally {
+      setBusyId(null)
+      setKycTarget(null)
+    }
   }
 
   return (
@@ -102,8 +119,12 @@ export default function ManageSubChildren() {
                     <td className="px-4 py-3 text-gray-600">{sub.email || '—'}</td>
                     <td className="px-4 py-3 text-gray-600">{sub.phone || '—'}</td>
                     <td className="px-4 py-3">
-                      <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium capitalize text-gray-700">
-                        {sub.kyc?.status || '—'}
+                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium capitalize ${
+                        sub.kyc?.status === 'approved' ? 'bg-green-50 text-green-700' :
+                        sub.kyc?.status === 'rejected' ? 'bg-red-50 text-red-700' :
+                        'bg-yellow-50 text-yellow-700'
+                      }`}>
+                        {sub.kyc?.status || 'pending'}
                       </span>
                     </td>
                     <td className="px-4 py-3">
@@ -127,6 +148,16 @@ export default function ManageSubChildren() {
                           <Eye className="h-3.5 w-3.5" />
                           View
                         </button>
+                        {sub.kyc?.status === 'pending' && (
+                          <button
+                            type="button"
+                            disabled={busyId === sub._id}
+                            onClick={() => setKycTarget(sub)}
+                            className="inline-flex items-center gap-1 rounded-lg border border-blue-200 px-2.5 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-50"
+                          >
+                            Approve KYC
+                          </button>
+                        )}
                         <button
                           type="button"
                           disabled={busyId === sub._id}
@@ -173,6 +204,17 @@ export default function ManageSubChildren() {
         confirmText="Deactivate"
         cancelText="Cancel"
         variant="danger"
+      />
+
+      <ConfirmDialog
+        isOpen={!!kycTarget}
+        onClose={() => setKycTarget(null)}
+        onConfirm={handleApproveKyc}
+        title="Approve KYC"
+        message={`Approve KYC for "${kycTarget?.name}"? They will gain full access to the platform.`}
+        confirmText="Approve"
+        cancelText="Cancel"
+        variant="primary"
       />
     </div>
   )
