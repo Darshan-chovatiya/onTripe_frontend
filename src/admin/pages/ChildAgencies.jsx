@@ -222,8 +222,8 @@ export default function ChildAgencies() {
     <Modal
       isOpen={isCustomerModalOpen}
       onClose={() => setIsCustomerModalOpen(false)}
-      title={`Traveler Network Registry: ${selectedAgent?.name}`}
-      size="xl"
+      title={`Customers List of ${selectedAgent?.name}`}
+      size="lg"
     >
       <div className="space-y-4">
         <p className="text-xs text-gray-400 font-bold uppercase tracking-widest leading-none">Customers managed by this agency and its network</p>
