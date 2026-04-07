@@ -273,40 +273,39 @@ export default function ChildAgencies() {
 
   return (
     <div className="space-y-6">
-      {/* Header Section */}
+      {/* Header Section with Search and Filter */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-zinc-900">Child Agencies</h1>
           <p className="text-gray-500 text-sm">Manage and monitor secondary distribution nodes and sub-agencies</p>
         </div>
-      </div>
 
-      {/* Filter Bar */}
-      <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
-        <div className="relative w-full lg:max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input 
-            type="text"
-            placeholder="Search agencies..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-white border border-gray-200 rounded-lg pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 shadow-sm transition-all"
-          />
-        </div>
-        
-        <div className="flex items-center gap-2 w-full lg:w-auto">
-          <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest hidden lg:block">Status:</div>
-          <CustomDropdown
-            value={statusFilter}
-            onChange={setStatusFilter}
-            options={[
-              { value: 'all', label: 'All Status' },
-              { value: 'active', label: 'Active' },
-              { value: 'inactive', label: 'Inactive' }
-            ]}
-            className="w-full lg:w-44"
-            buttonClassName="!py-2.5"
-          />
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input 
+              type="text"
+              placeholder="Search agencies..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 w-64 shadow-sm shadow-gray-100/50"
+            />
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <div className="text-xs font-bold text-gray-400 uppercase tracking-widest hidden lg:block">Status:</div>
+            <CustomDropdown
+              value={statusFilter}
+              onChange={setStatusFilter}
+              options={[
+                { value: 'all', label: 'All Status' },
+                { value: 'active', label: 'Active' },
+                { value: 'inactive', label: 'Inactive' }
+              ]}
+              className="w-44"
+              buttonClassName="!py-2"
+            />
+          </div>
         </div>
       </div>
 
