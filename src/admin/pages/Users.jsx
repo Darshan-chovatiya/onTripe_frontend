@@ -96,53 +96,43 @@ export default function UserManagement() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Platform Users</h1>
-          <p className="text-sm text-slate-500 mt-1.5 font-medium">Overview of all active and registered personas on the OnTrip platform.</p>
-        </div>
-        <button className="flex items-center justify-center gap-2 px-5 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-bold rounded-xl shadow-lg shadow-primary-600/20 transition-all active:scale-95">
-          <UserPlus size={18} />
-          Create Account
-        </button>
-      </div>
+      {/* Header & Controls */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+         <div>
+            <h1 className="text-2xl font-bold text-zinc-900">Platform Users</h1>
+            <p className="text-gray-500 text-sm">Overview of all active and registered personas on the OnTrip platform</p>
+         </div>
 
-      <div className="bg-white border border-slate-200/60 rounded-2xl p-4 shadow-sm">
-        <div className="flex flex-col md:flex-row gap-4 items-end">
-          <div className="flex-1 w-full transition-all">
-            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Universal Search</label>
-            <div className="relative group">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-primary-500 transition-colors" />
-              <input
-                type="text"
-                placeholder="Search identity, email or role..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-11 pr-4 py-2.5 text-sm font-medium focus:outline-none focus:ring-4 focus:ring-primary-500/5 focus:border-primary-500/50 transition-all"
-              />
+         <div className="flex flex-col sm:flex-row items-center gap-3">
+            <div className="relative w-full sm:w-64">
+               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+               <input
+                  type="text"
+                  placeholder="Search users..."
+                  className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 shadow-sm"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+               />
             </div>
-          </div>
-          <div className="w-full md:w-40 overflow-hidden">
-             <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1 leading-none">Security Role</label>
-             <CustomDropdown
-                value={roleFilter}
-                options={roleOptions}
-                onChange={setRoleFilter}
-                placeholder="Filter"
-                buttonClassName="!h-[44px] !rounded-xl !bg-slate-50 !border-slate-200 !text-sm !font-medium"
-             />
-          </div>
-          <div className="w-full md:w-32 overflow-hidden">
-             <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1 leading-none">Status</label>
-             <CustomDropdown
-                value="all"
-                options={statusOptions}
-                onChange={() => {}}
-                placeholder="Status"
-                buttonClassName="!h-[44px] !rounded-xl !bg-slate-50 !border-slate-200 !text-sm !font-medium"
-             />
-          </div>
-        </div>
+
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+               <div className="text-xs font-bold text-gray-400 uppercase tracking-widest hidden xl:block">Role:</div>
+               <CustomDropdown
+                  value={roleFilter}
+                  onChange={setRoleFilter}
+                  options={roleOptions || []}
+                  className="w-full sm:w-40"
+                  buttonClassName="!py-2"
+               />
+            </div>
+
+            <button 
+               className="w-full sm:w-auto flex items-center justify-center gap-2 bg-zinc-900 text-white px-5 py-2 rounded-lg text-sm font-bold hover:bg-zinc-800 transition-all shadow-sm whitespace-nowrap"
+            >
+               <UserPlus size={18} />
+               <span>Create User</span>
+            </button>
+         </div>
       </div>
 
       {loading ? (

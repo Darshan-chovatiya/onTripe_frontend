@@ -57,21 +57,24 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-700">
+      {/* Header & Activity Snapshot */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="space-y-1">
-          <h1 className="text-3xl font-black text-slate-900 tracking-tight italic uppercase">Command Center</h1>
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest italic flex items-center gap-2">
-            <LayoutDashboard size={14} className="text-primary-500" />
-            Platform overview for {user?.name || 'Administrator'}
-          </p>
-        </div>
-        <div className="flex items-center gap-2 bg-white border border-slate-200 p-2 rounded-2xl shadow-sm">
-           <div className="h-10 w-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400"><Calendar size={20} /></div>
-           <div className="pr-4">
-              <div className="text-[10px] font-black text-slate-400 uppercase leading-none mb-1">System Date</div>
-              <div className="text-sm font-bold text-slate-900 leading-none">{new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</div>
-           </div>
-        </div>
+         <div>
+            <h1 className="text-2xl font-bold text-zinc-900">Command Center</h1>
+            <p className="text-gray-500 text-sm">Platform overview and live distribution metrics for {user?.name || 'Administrator'}</p>
+         </div>
+
+         <div className="flex items-center gap-3 bg-white border border-gray-200 p-2 rounded-xl shadow-sm">
+            <div className="h-9 w-9 rounded-lg bg-gray-50 flex items-center justify-center text-gray-400">
+               <Calendar size={18} />
+            </div>
+            <div className="pr-4">
+               <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider leading-none mb-1">System Date</div>
+               <div className="text-sm font-bold text-zinc-900 leading-none">
+                  {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+               </div>
+            </div>
+         </div>
       </div>
 
       {/* Stat Cards Grid */}

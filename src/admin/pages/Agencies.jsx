@@ -81,87 +81,82 @@ const SubChildAgenciesModal = ({ isOpen, onClose, parentAgency, onToggleStatus, 
       size="xl"
     >
       <div className="space-y-4">
-        <div className="flex flex-col sm:flex-row gap-3 items-end bg-slate-50 p-4 rounded-xl border border-slate-100">
-           <div className="flex-1 w-full">
-              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1 leading-none">Search Agency</label>
-              <div className="relative group">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 group-focus-within:text-primary-500 transition-colors" />
-                <input 
-                  type="text"
-                  placeholder="Name, email or ID..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="w-full bg-white border border-slate-200 rounded-lg pl-9 pr-3 py-2 text-xs font-medium focus:outline-none focus:ring-4 focus:ring-primary-500/5 focus:border-primary-500/50 transition-all"
-                />
-              </div>
+        {/* Search & Filter Bar */}
+        <div className="flex flex-col sm:flex-row gap-3 items-center justify-between">
+           <div className="relative w-full sm:flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input 
+                type="text"
+                placeholder="Search sub-agencies..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full bg-white border border-gray-200 rounded-lg pl-10 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 shadow-sm transition-all"
+              />
            </div>
-           <div className="w-full sm:w-36">
-              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1 leading-none">Filter</label>
+           <div className="flex items-center gap-2 w-full sm:w-auto">
+              <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest hidden lg:block">Status:</div>
               <CustomDropdown
                 value={status}
                 onChange={setStatus}
                 options={statusOptions}
-                placeholder="Filter"
-                buttonClassName="!h-[38px] !rounded-lg !bg-white !border-slate-200 !text-xs !font-medium"
+                className="w-full sm:w-40"
+                buttonClassName="!py-2"
               />
            </div>
         </div>
 
-        <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+        {/* Modal Content Table */}
+        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
            <div className="overflow-x-auto min-h-[300px]">
              {loading ? (
                <div className="flex flex-col items-center justify-center p-20">
                  <Loader size="md" />
-                 <p className="text-[10px] font-bold text-slate-400 mt-4 tracking-widest uppercase italic font-black">Loading...</p>
+                 <p className="text-[10px] font-bold text-gray-400 mt-4 tracking-widest uppercase italic font-black">Syncing Data...</p>
                </div>
              ) : agents.length === 0 ? (
                <div className="flex flex-col items-center justify-center p-20 text-center">
-                 <h4 className="text-sm font-bold text-slate-900 leading-none">No agencies found</h4>
-                 <p className="text-xs text-slate-400 mt-1 font-medium">This agency has no sub-child agencies yet.</p>
+                 <h4 className="text-sm font-bold text-zinc-900 leading-none">No agencies found</h4>
+                 <p className="text-xs text-gray-500 mt-1 font-medium">This agency has no sub-child nodes registered yet.</p>
                </div>
              ) : (
                <table className="w-full text-left">
-                  <thead className="bg-slate-50 border-b border-slate-100">
+                  <thead className="bg-gray-50 border-b border-gray-200">
                     <tr>
-                      <th className="px-4 py-3 text-[9px] font-black text-slate-400 uppercase tracking-widest">Sub-Child Agency</th>
-                      <th className="px-4 py-3 text-[9px] font-black text-slate-400 uppercase tracking-widest">Contact Identity</th>
-                      <th className="px-4 py-3 text-[9px] font-black text-slate-400 uppercase tracking-widest">KYC Verification</th>
-                      <th className="px-4 py-3 text-[9px] font-black text-slate-400 uppercase tracking-widest">Enrolled On</th>
-                      <th className="px-4 py-3 text-[9px] font-black text-slate-400 uppercase tracking-widest">Account Status</th>
+                      <th className="px-4 py-3.5 text-[10px] font-bold text-zinc-900 uppercase tracking-widest">Agency Name</th>
+                      <th className="px-4 py-3.5 text-[10px] font-bold text-zinc-900 uppercase tracking-widest">Contact Info</th>
+                      <th className="px-4 py-3.5 text-[10px] font-bold text-zinc-900 uppercase tracking-widest">KYC Status</th>
+                      <th className="px-4 py-3.5 text-[10px] font-bold text-zinc-900 uppercase tracking-widest text-right pr-6">Account Status</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-gray-100">
                     {agents.map((agent) => (
-                      <tr key={agent._id} className="hover:bg-slate-50 transition-colors group">
+                      <tr key={agent._id} className="hover:bg-gray-50 transition-colors group">
                         <td className="px-4 py-3.5">
-                           <div className="text-xs font-bold text-slate-900 truncate max-w-[140px] leading-tight">{agent.name}</div>
-                           <div className="text-[9px] text-slate-400 font-bold uppercase tracking-tight mt-0.5">ID: {agent._id.slice(-6).toUpperCase()}</div>
+                           <div className="text-sm font-bold text-zinc-900 truncate max-w-[140px] leading-tight">{agent.name}</div>
+                           <div className="text-[10px] text-gray-400 font-bold uppercase tracking-tight mt-0.5">ID: {agent._id.slice(-6).toUpperCase()}</div>
                         </td>
                         <td className="px-4 py-3.5 whitespace-nowrap">
-                            <div className="text-[10px] font-bold text-slate-600 flex flex-col gap-0.5">
-                                <div className="flex items-center gap-1"><Mail size={10} className="text-slate-300" /> {agent.email}</div>
-                                <div className="flex items-center gap-1"><Phone size={10} className="text-slate-300" /> {agent.phone || 'N/A'}</div>
+                            <div className="text-[11px] font-bold text-gray-600 flex flex-col gap-0.5">
+                                <div className="flex items-center gap-1.5"><Mail size={12} className="text-gray-300" /> {agent.email}</div>
+                                <div className="flex items-center gap-1.5"><Phone size={12} className="text-gray-300" /> {agent.phone || 'N/A'}</div>
                             </div>
                         </td>
                         <td className="px-4 py-3.5 whitespace-nowrap">
                             {getStatusBadge(agent.kyc?.status)}
                         </td>
-                        <td className="px-4 py-3.5 whitespace-nowrap">
-                            <div className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">{new Date(agent.createdAt).toLocaleDateString()}</div>
-                        </td>
-                        <td className="px-4 py-3.5 whitespace-nowrap">
-                          <button 
-                            onClick={async () => {
-                               await onToggleStatus(agent._id)
-                               fetchSubChildren()
-                            }}
-                            className={`inline-flex items-center justify-center gap-1.5 px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-widest border transition-all active:scale-95 min-w-[75px] shadow-sm ${
-                                agent.isActive ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-red-50 text-red-700 border-red-100'
-                            }`}
-                          >
-                             <div className={`w-1 h-1 rounded-full ${agent.isActive ? 'bg-emerald-600 animate-pulse' : 'bg-red-600'}`} />
-                             {agent.isActive ? 'Active' : 'Inactive'}
-                          </button>
+                        <td className="px-4 py-3.5 whitespace-nowrap text-right pr-6">
+                           <button 
+                             onClick={async () => {
+                                await onToggleStatus(agent._id)
+                                fetchSubChildren()
+                             }}
+                             className={`inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest border transition-all active:scale-95 min-w-[85px] shadow-sm ${
+                                 agent.isActive ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-red-50 text-red-700 border-red-100'
+                             }`}
+                           >
+                              <div className={`w-1 h-1 rounded-full ${agent.isActive ? 'bg-emerald-600 animate-pulse' : 'bg-red-600'}`} />
+                              {agent.isActive ? 'Active' : 'Inactive'}
+                           </button>
                         </td>
                       </tr>
                     ))}
@@ -172,10 +167,10 @@ const SubChildAgenciesModal = ({ isOpen, onClose, parentAgency, onToggleStatus, 
         </div>
         {totalPages > 1 && (
           <div className="flex items-center justify-between px-2 pt-2">
-            <div className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">P.{page} / {totalPages}</div>
-            <div className="flex gap-1.5">
-               <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="h-7 w-7 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-30"><ChevronLeft size={14}/></button>
-               <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="h-7 w-7 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-30"><ChevronRight size={14}/></button>
+            <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Page {page} of {totalPages}</div>
+            <div className="flex gap-2">
+               <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-bold hover:bg-gray-50 disabled:opacity-30 transition-all font-bold">Prev</button>
+               <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-bold hover:bg-gray-50 disabled:opacity-30 transition-all font-bold">Next</button>
             </div>
           </div>
         )}
@@ -241,75 +236,71 @@ const ChildAgenciesModal = ({ isOpen, onClose, parentAgency, onToggleStatus, get
       size="xl"
     >
       <div className="space-y-4">
-        {/* Simplified Header with Search & Filter */}
-        <div className="flex flex-col sm:flex-row gap-3 items-end bg-slate-50 p-4 rounded-xl border border-slate-100">
-           <div className="flex-1 w-full">
-              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1 leading-none">Search Agency</label>
-              <div className="relative group">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 group-focus-within:text-primary-500 transition-colors" />
-                <input 
-                  type="text"
-                  placeholder="Name, email or ID..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="w-full bg-white border border-slate-200 rounded-lg pl-9 pr-3 py-2 text-xs font-medium focus:outline-none focus:ring-4 focus:ring-primary-500/5 focus:border-primary-500/50 transition-all"
-                />
-              </div>
+        {/* Search & Filter Bar */}
+        <div className="flex flex-col sm:flex-row gap-3 items-center justify-between">
+           <div className="relative w-full sm:flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input 
+                type="text"
+                placeholder="Search child agencies..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full bg-white border border-gray-200 rounded-lg pl-10 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 shadow-sm transition-all"
+              />
            </div>
-           <div className="w-full sm:w-36">
-              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1 leading-none">Filter</label>
+           <div className="flex items-center gap-2 w-full sm:w-auto">
+              <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest hidden lg:block">Status:</div>
               <CustomDropdown
                 value={status}
                 onChange={setStatus}
                 options={statusOptions}
-                placeholder="Filter"
-                buttonClassName="!h-[38px] !rounded-lg !bg-white !border-slate-200 !text-xs !font-medium"
+                className="w-full sm:w-40"
+                buttonClassName="!py-2"
               />
            </div>
         </div>
 
-        {/* Modal Content */}
-        <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+        {/* Modal Content Table */}
+        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
            <div className="overflow-x-auto overflow-y-visible min-h-[300px]">
              {loading ? (
                <div className="flex flex-col items-center justify-center p-20">
                  <Loader size="md" />
-                 <p className="text-[10px] font-bold text-slate-400 mt-4 tracking-widest uppercase italic font-black">Syncing Hierarchy...</p>
+                 <p className="text-[10px] font-bold text-gray-400 mt-4 tracking-widest uppercase italic font-black">Syncing Data...</p>
                </div>
              ) : agents.length === 0 ? (
                <div className="flex flex-col items-center justify-center p-20 text-center">
-                 <div className="w-12 h-12 bg-slate-50 rounded-xl flex items-center justify-center text-slate-200 border border-slate-100 mb-3"><Users size={24} /></div>
-                 <h4 className="text-sm font-bold text-slate-900 leading-none">No Child Agents Found</h4>
-                 <p className="text-xs text-slate-400 mt-1 font-medium">This parent agency has no registered child agents currently.</p>
+                 <div className="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center text-gray-200 border border-gray-100 mb-3"><Users size={24} /></div>
+                 <h4 className="text-sm font-bold text-zinc-900 leading-none">No Child Agents Found</h4>
+                 <p className="text-xs text-gray-500 mt-1 font-medium">This parent agency has no registered child agents currently.</p>
                </div>
              ) : (
                <table className="w-full text-left">
-                  <thead className="bg-slate-50 border-b border-slate-100">
+                  <thead className="bg-gray-50 border-b border-gray-200">
                     <tr>
-                      <th className="px-4 py-3 text-[9px] font-black text-slate-400 uppercase tracking-widest">Child Agency</th>
-                      <th className="px-4 py-3 text-[9px] font-black text-slate-400 uppercase tracking-widest">Contact Hub</th>
-                      <th className="px-4 py-3 text-[9px] font-black text-slate-400 uppercase tracking-widest">KYC Status</th>
-                      <th className="px-4 py-3 text-[9px] font-black text-slate-400 uppercase tracking-widest text-center">Sub-Hierarchy</th>
-                      <th className="px-4 py-3 text-[9px] font-black text-slate-400 uppercase tracking-widest">Joined On</th>
-                      <th className="px-4 py-3 text-[9px] font-black text-slate-400 uppercase tracking-widest">Status</th>
+                      <th className="px-4 py-3.5 text-[10px] font-bold text-zinc-900 uppercase tracking-widest">Child Agency</th>
+                      <th className="px-4 py-3.5 text-[10px] font-bold text-zinc-900 uppercase tracking-widest">Contact Hub</th>
+                      <th className="px-4 py-3.5 text-[10px] font-bold text-zinc-900 uppercase tracking-widest">KYC Status</th>
+                      <th className="px-4 py-3.5 text-[10px] font-bold text-zinc-900 uppercase tracking-widest text-center">Sub-Hierarchy</th>
+                      <th className="px-4 py-3.5 text-[10px] font-bold text-zinc-900 uppercase tracking-widest ml-auto pr-6 text-right">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-gray-100">
                     {agents.map((agent) => (
-                      <tr key={agent._id} className="hover:bg-slate-50/50 transition-colors group">
+                      <tr key={agent._id} className="hover:bg-gray-50/50 transition-colors group">
                         <td className="px-4 py-3.5">
                           <div className="flex items-center gap-2.5">
-                            <div className="h-8 w-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform"><Building2 size={14} className="text-slate-400" /></div>
+                            <div className="h-8 w-8 rounded-lg bg-white border border-gray-200 flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform"><Building2 size={14} className="text-gray-400" /></div>
                             <div>
-                              <div className="text-xs font-bold text-slate-900 truncate max-w-[120px] leading-none">{agent.name}</div>
-                              <div className="text-[9px] text-slate-400 font-bold uppercase mt-1 tracking-tight">ID: {agent._id.slice(-6).toUpperCase()}</div>
+                              <div className="text-sm font-bold text-zinc-900 truncate max-w-[120px] leading-none">{agent.name}</div>
+                              <div className="text-[10px] text-gray-400 font-bold uppercase mt-1 tracking-tight">ID: {agent._id.slice(-6).toUpperCase()}</div>
                             </div>
                           </div>
                         </td>
                         <td className="px-4 py-3.5 whitespace-nowrap">
-                             <div className="text-[10px] font-bold text-slate-600 flex flex-col gap-0.5">
-                                <div className="flex items-center gap-1"><Mail size={10} className="text-slate-300" /> {agent.email}</div>
-                                <div className="flex items-center gap-1"><Phone size={10} className="text-slate-300" /> {agent.phone || 'N/A'}</div>
+                             <div className="text-[11px] font-bold text-gray-600 flex flex-col gap-0.5">
+                                <div className="flex items-center gap-1.5"><Mail size={12} className="text-gray-300" /> {agent.email}</div>
+                                <div className="flex items-center gap-1.5"><Phone size={12} className="text-gray-300" /> {agent.phone || 'N/A'}</div>
                             </div>
                         </td>
                         <td className="px-4 py-3.5 whitespace-nowrap">
@@ -322,25 +313,22 @@ const ChildAgenciesModal = ({ isOpen, onClose, parentAgency, onToggleStatus, get
                                     setActiveChild(agent)
                                     setIsSubChildModalOpen(true)
                                  }}
-                                 className="h-8 px-2.5 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-center gap-2 transition-all hover:bg-primary-50 hover:border-primary-100 shadow-xs"
+                                 className="h-8 px-2.5 rounded-lg bg-gray-50 border border-gray-200 flex items-center justify-center gap-2 transition-all hover:bg-blue-50 hover:border-blue-100 shadow-xs"
                                >
-                                  <Users size={12} className="text-slate-400" />
-                                  <span className="text-[10px] font-black text-slate-900">{agent.childCount || 0}</span>
+                                  <Users size={12} className="text-gray-400" />
+                                  <span className="text-[11px] font-bold text-zinc-900">{agent.childCount || 0}</span>
                                </button>
                             </div>
                         </td>
-                        <td className="px-4 py-3.5 whitespace-nowrap text-[10px] font-bold text-slate-500 uppercase tracking-tight">
-                            {new Date(agent.createdAt).toLocaleDateString()}
-                        </td>
-                        <td className="px-4 py-3.5 whitespace-nowrap">
+                        <td className="px-4 py-3.5 whitespace-nowrap text-right pr-6">
                           <button 
                             onClick={async () => {
                                await onToggleStatus(agent._id)
                                fetchChildren()
                             }}
-                            className={`inline-flex items-center justify-center gap-1 px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-widest border shadow-sm transition-all active:scale-95 min-w-[75px] ${
+                            className={`inline-flex items-center justify-center gap-1 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest border shadow-sm transition-all active:scale-95 min-w-[85px] ${
                                 agent.isActive 
-                                ? 'bg-emerald-50 text-emerald-700 border-emerald-100 hover:bg-emerald-100' 
+                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100' 
                                 : 'bg-red-50 text-red-700 border-red-100'
                             }`}
                           >
@@ -359,10 +347,10 @@ const ChildAgenciesModal = ({ isOpen, onClose, parentAgency, onToggleStatus, get
         {/* Modal Footer / Pagination */}
         {totalPages > 1 && (
           <div className="flex items-center justify-between px-2 pt-2">
-            <div className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">P.{page} of {totalPages}</div>
-            <div className="flex gap-1.5">
-               <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="h-7 w-7 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-30"><ChevronLeft size={14}/></button>
-               <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="h-7 w-7 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-30"><ChevronRight size={14}/></button>
+            <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">Page {page} of {totalPages}</div>
+            <div className="flex gap-2">
+               <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-bold hover:bg-gray-50 disabled:opacity-30 transition-all font-bold">Prev</button>
+               <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-bold hover:bg-gray-50 disabled:opacity-30 transition-all font-bold">Next</button>
             </div>
           </div>
         )}
@@ -474,13 +462,13 @@ const AddAgencyModal = ({ isOpen, onClose, onRefresh }) => {
 
   const FileSlot = ({ label, id, currentFile }) => (
     <div className="flex-1 min-w-0">
-      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1">{label}</label>
-      <label className={`relative group cursor-pointer flex items-center gap-2 p-2.5 bg-slate-50 border border-dash-2 border-slate-200 rounded-xl transition-all hover:bg-white hover:border-primary-300 ${currentFile ? 'bg-emerald-50/30 border-emerald-200 border-solid' : 'border-dashed'}`}>
-        <div className={`h-7 w-7 rounded-lg flex items-center justify-center shrink-0 ${currentFile ? 'bg-emerald-100 text-emerald-600' : 'bg-white border text-slate-300'}`}>
+      <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 ml-1">{label}</label>
+      <label className={`relative group cursor-pointer flex items-center gap-2 p-2.5 bg-gray-50 border border-dash-2 border-gray-200 rounded-xl transition-all hover:bg-white hover:border-blue-300 ${currentFile ? 'bg-emerald-50/30 border-emerald-200 border-solid' : 'border-dashed'}`}>
+        <div className={`h-7 w-7 rounded-lg flex items-center justify-center shrink-0 ${currentFile ? 'bg-emerald-100 text-emerald-600' : 'bg-white border border-gray-100 text-gray-300'}`}>
            {currentFile ? <CheckCircle size={14} /> : <FileText size={14} />}
         </div>
         <div className="min-w-0 flex-1">
-           <div className={`text-[11px] font-bold truncate ${currentFile ? 'text-emerald-700' : 'text-slate-400'}`}>
+           <div className={`text-[11px] font-bold truncate ${currentFile ? 'text-emerald-700' : 'text-gray-400'}`}>
               {currentFile ? currentFile.name : 'Select File'}
            </div>
            {currentFile && <div className="text-[8px] font-bold text-emerald-600 uppercase tracking-widest mt-0.5">Ready for Vault</div>}
@@ -515,29 +503,29 @@ const AddAgencyModal = ({ isOpen, onClose, onRefresh }) => {
            {/* Section 1: Identity */}
            <div className="space-y-4">
               <div className="flex items-center gap-2 px-1">
-                 <div className="h-6 w-6 rounded-lg bg-primary-50 flex items-center justify-center text-primary-600"><Users size={14} /></div>
-                 <h3 className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Agency Information</h3>
+                 <div className="h-6 w-6 rounded-lg bg-gray-50 flex items-center justify-center text-gray-500"><Users size={14} /></div>
+                 <h3 className="text-[10px] font-bold text-zinc-900 uppercase tracking-widest">Agency Information</h3>
               </div>
-              <div className="space-y-3.5 p-5 rounded-2xl bg-white border border-slate-200 shadow-sm">
+              <div className="space-y-3.5 p-5 rounded-2xl bg-white border border-gray-200 shadow-sm">
                 <div>
-                   <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1.5 ml-1 leading-none ${errors.name ? 'text-red-500' : 'text-slate-400'}`}>Full Name</label>
-                   <input required type="text" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className={`w-full bg-white border rounded-xl px-4 py-2.5 text-sm font-medium focus:ring-4 transition-all outline-none ${errors.name ? 'border-red-500 focus:ring-red-500/5' : 'bg-slate-50/50 border-slate-200 focus:ring-primary-500/5 focus:border-primary-500/50'}`} placeholder="Company or Individual Name" />
+                   <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1.5 ml-1 leading-none ${errors.name ? 'text-red-500' : 'text-gray-400'}`}>Full Name</label>
+                   <input required type="text" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className={`w-full border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500/20 transition-all outline-none ${errors.name ? 'border-red-500' : 'bg-white border-gray-200 focus:border-blue-500'}`} placeholder="Company or Individual Name" />
                    {errors.name && <div className="text-[9px] text-red-500 font-bold mt-1 ml-1 flex items-center gap-1"><AlertCircle size={10} /> {errors.name}</div>}
                 </div>
                 <div>
-                   <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1.5 ml-1 leading-none ${errors.email ? 'text-red-500' : 'text-slate-400'}`}>Email Address</label>
-                   <input required type="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} className={`w-full bg-white border rounded-xl px-4 py-2.5 text-sm font-medium focus:ring-4 transition-all outline-none ${errors.email ? 'border-red-500 focus:ring-red-500/5' : 'bg-slate-50/50 border-slate-200 focus:ring-primary-500/5 focus:border-primary-500/50'}`} placeholder="contact@agency.com" />
+                   <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1.5 ml-1 leading-none ${errors.email ? 'text-red-500' : 'text-gray-400'}`}>Email Address</label>
+                   <input required type="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} className={`w-full border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500/20 transition-all outline-none ${errors.email ? 'border-red-500' : 'bg-white border-gray-200 focus:border-blue-500'}`} placeholder="contact@agency.com" />
                    {errors.email && <div className="text-[9px] text-red-500 font-bold mt-1 ml-1 flex items-center gap-1"><AlertCircle size={10} /> {errors.email}</div>}
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                    <div>
-                      <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1.5 ml-1 leading-none ${errors.phone ? 'text-red-500' : 'text-slate-400'}`}>Phone Number</label>
-                      <input required type="tel" value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} className={`w-full bg-white border rounded-xl px-4 py-2.5 text-sm font-medium focus:ring-4 transition-all outline-none ${errors.phone ? 'border-red-500 focus:ring-red-500/5' : 'bg-slate-50/50 border-slate-200 focus:ring-primary-500/5 focus:border-primary-500/50'}`} placeholder="+91" />
+                      <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1.5 ml-1 leading-none ${errors.phone ? 'text-red-500' : 'text-gray-400'}`}>Phone Number</label>
+                      <input required type="tel" value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} className={`w-full border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500/20 transition-all outline-none ${errors.phone ? 'border-red-500' : 'bg-white border-gray-200 focus:border-blue-500'}`} placeholder="+91" />
                       {errors.phone && <div className="text-[9px] text-red-500 font-bold mt-1 ml-1 flex items-center gap-1"><AlertCircle size={10} /> {errors.phone}</div>}
                    </div>
                    <div>
-                      <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1.5 ml-1 leading-none ${errors.password ? 'text-red-500' : 'text-slate-400'}`}>Password</label>
-                      <input required type="password" value={formData.password} onChange={(e) => setFormData({...formData, password: e.target.value})} className={`w-full bg-white border rounded-xl px-4 py-2.5 text-sm font-medium focus:ring-4 transition-all outline-none ${errors.password ? 'border-red-500 focus:ring-red-500/5' : 'bg-slate-50/50 border-slate-200 focus:ring-primary-500/5 focus:border-primary-500/50'}`} placeholder="Min. 8 characters" />
+                      <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1.5 ml-1 leading-none ${errors.password ? 'text-red-500' : 'text-gray-400'}`}>Password</label>
+                      <input required type="password" value={formData.password} onChange={(e) => setFormData({...formData, password: e.target.value})} className={`w-full border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500/20 transition-all outline-none ${errors.password ? 'border-red-500' : 'bg-white border-gray-200 focus:border-blue-500'}`} placeholder="Min. 8 characters" />
                       {errors.password && <div className="text-[9px] text-red-500 font-bold mt-1 ml-1 flex items-center gap-1"><AlertCircle size={10} /> {errors.password}</div>}
                    </div>
                 </div>
@@ -548,7 +536,7 @@ const AddAgencyModal = ({ isOpen, onClose, onRefresh }) => {
            <div className="space-y-4">
               <div className="flex items-center gap-2 px-1">
                  <div className="h-6 w-6 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600"><ShieldCheck size={14} /></div>
-                 <h3 className="text-[10px] font-black text-slate-900 uppercase tracking-widest">KYC Documents</h3>
+                 <h3 className="text-[10px] font-bold text-zinc-900 uppercase tracking-widest">KYC Documents</h3>
               </div>
               <div className="flex flex-col justify-between h-auto min-h-[234px] space-y-3 p-5 rounded-2xl bg-emerald-50/10 border border-emerald-100/50">
                  <div className="space-y-3">
@@ -558,7 +546,7 @@ const AddAgencyModal = ({ isOpen, onClose, onRefresh }) => {
                  </div>
                  <div className="flex items-start gap-2 bg-emerald-50/80 p-2.5 rounded-lg border border-emerald-200 text-emerald-800">
                     <ShieldCheck size={12} className="mt-0.5 shrink-0" />
-                    <p className="text-[9px] font-black uppercase tracking-tight leading-tight">Fast Track: Any agency you add here is approved automatically.</p>
+                    <p className="text-[9px] font-bold uppercase tracking-tight leading-tight">Fast Track: Any agency you add here is approved automatically.</p>
                  </div>
               </div>
            </div>
@@ -663,9 +651,9 @@ const EditAgencyModal = ({ isOpen, onClose, agent, onRefresh }) => {
       title="Edit Agency Profile" 
       size="xl"
       footer={
-        <div className="flex items-center justify-end gap-3 p-6 bg-slate-50/50 border-t border-slate-100">
-           <button onClick={onClose} type="button" className="px-5 py-2 text-[11px] font-black text-slate-400 hover:text-slate-600 uppercase tracking-widest transition-colors">Cancel</button>
-           <button form="edit-agency-form" type="submit" disabled={loading} className="px-8 py-3 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-black text-[11px] uppercase tracking-[0.1em] shadow-lg shadow-primary-600/20 flex items-center gap-2 transition-all active:scale-95 disabled:opacity-50">
+        <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-100">
+           <button onClick={onClose} type="button" className="px-5 py-2 text-sm font-bold text-gray-400 hover:text-gray-600 transition-colors">Cancel</button>
+           <button form="edit-agency-form" type="submit" disabled={loading} className="px-8 py-2.5 bg-zinc-900 hover:bg-zinc-800 text-white rounded-lg font-bold text-sm shadow-sm flex items-center gap-2 transition-all active:scale-95 disabled:opacity-50">
               {loading ? <Loader size="sm" color="white" /> : 'Update Agency'}
            </button>
         </div>
@@ -675,28 +663,28 @@ const EditAgencyModal = ({ isOpen, onClose, agent, onRefresh }) => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
            {/* Section 1: Identity & Contacts */}
            <div className="space-y-6">
-              <div className="flex items-center gap-3 mb-2">
-                 <div className="h-8 w-8 rounded-lg bg-primary-50 flex items-center justify-center text-primary-600 shadow-sm"><Users size={16} /></div>
+              <div className="flex items-center gap-3">
+                 <div className="h-8 w-8 rounded-lg bg-gray-50 flex items-center justify-center text-gray-500"><Users size={16} /></div>
                  <div>
-                    <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest leading-none">Account Identity</h3>
-                    <p className="text-[10px] text-slate-400 mt-1 font-bold">Update core contact and branding data</p>
+                    <h3 className="text-sm font-bold text-zinc-900 leading-none">Account Identity</h3>
+                    <p className="text-[10px] text-gray-400 mt-1 font-bold">Update core contact and branding data</p>
                  </div>
               </div>
               
-              <div className="space-y-4 p-5 rounded-2xl bg-white border border-slate-200 shadow-sm">
+              <div className="space-y-4 p-5 rounded-2xl bg-white border border-gray-200 shadow-sm">
                 <div>
-                   <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1.5 ml-1 leading-none ${errors.name ? 'text-red-500' : 'text-slate-400'}`}>Agency Name</label>
-                   <input required type="text" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className={`w-full bg-white border rounded-xl px-4 py-2.5 text-sm font-medium focus:ring-4 transition-all outline-none ${errors.name ? 'border-red-500 focus:ring-red-500/5' : 'bg-slate-50/50 border-slate-200 focus:ring-primary-500/5 focus:border-primary-500/50'}`} placeholder="Company Name" />
+                   <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1.5 ml-1 leading-none ${errors.name ? 'text-red-500' : 'text-gray-400'}`}>Agency Name</label>
+                   <input required type="text" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className={`w-full border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500/20 transition-all outline-none ${errors.name ? 'border-red-500' : 'border-gray-200 focus:border-blue-500'}`} placeholder="Company Name" />
                    {errors.name && <div className="text-[9px] text-red-500 font-bold mt-1 ml-1 flex items-center gap-1"><AlertCircle size={10} /> {errors.name}</div>}
                 </div>
                 <div>
-                   <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1.5 ml-1 leading-none ${errors.email ? 'text-red-500' : 'text-slate-400'}`}>Email Address</label>
-                   <input required type="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} className={`w-full bg-white border rounded-xl px-4 py-2.5 text-sm font-medium focus:ring-4 transition-all outline-none ${errors.email ? 'border-red-500 focus:ring-red-500/5' : 'bg-slate-50/50 border-slate-200 focus:ring-primary-500/5 focus:border-primary-500/50'}`} placeholder="contact@agency.com" />
+                   <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1.5 ml-1 leading-none ${errors.email ? 'text-red-500' : 'text-gray-400'}`}>Email Address</label>
+                   <input required type="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} className={`w-full border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500/20 transition-all outline-none ${errors.email ? 'border-red-500' : 'border-gray-200 focus:border-blue-500'}`} placeholder="contact@agency.com" />
                    {errors.email && <div className="text-[9px] text-red-500 font-bold mt-1 ml-1 flex items-center gap-1"><AlertCircle size={10} /> {errors.email}</div>}
                 </div>
                 <div>
-                   <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1.5 ml-1 leading-none ${errors.phone ? 'text-red-500' : 'text-slate-400'}`}>Phone Number</label>
-                   <input required type="tel" value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} className={`w-full bg-white border rounded-xl px-4 py-2.5 text-sm font-medium focus:ring-4 transition-all outline-none ${errors.phone ? 'border-red-500 focus:ring-red-500/5' : 'bg-slate-50/50 border-slate-200 focus:ring-primary-500/5 focus:border-primary-500/50'}`} placeholder="+91" />
+                   <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1.5 ml-1 leading-none ${errors.phone ? 'text-red-500' : 'text-gray-400'}`}>Phone Number</label>
+                   <input required type="tel" value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} className={`w-full border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500/20 transition-all outline-none ${errors.phone ? 'border-red-500' : 'border-gray-200 focus:border-blue-500'}`} placeholder="+91" />
                    {errors.phone && <div className="text-[9px] text-red-500 font-bold mt-1 ml-1 flex items-center gap-1"><AlertCircle size={10} /> {errors.phone}</div>}
                 </div>
               </div>
@@ -704,22 +692,22 @@ const EditAgencyModal = ({ isOpen, onClose, agent, onRefresh }) => {
 
            {/* Section 2: Documents */}
            <div className="space-y-6">
-              <div className="flex items-center gap-3 mb-2">
+              <div className="flex items-center gap-3">
                  <div className="h-8 w-8 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600 shadow-sm"><ShieldCheck size={16} /></div>
                  <div>
-                    <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest leading-none">Compliance Vault</h3>
-                    <p className="text-[10px] text-slate-400 mt-1 font-bold">Update and refresh identity documentation</p>
+                    <h3 className="text-sm font-bold text-zinc-900 leading-none">Compliance Vault</h3>
+                    <p className="text-[10px] text-gray-400 mt-1 font-bold">Update and refresh identity documentation</p>
                  </div>
               </div>
 
-              <div className="space-y-4 p-5 rounded-2xl bg-white border border-slate-200 shadow-sm">
+              <div className="space-y-4 p-5 rounded-2xl bg-white border border-gray-200 shadow-sm">
                  {[
                    { id: 'aadharFront', label: 'Aadhar Front Identity', icon: FileText },
                    { id: 'aadharBack', label: 'Aadhar Back Identity', icon: FileText },
                    { id: 'panCard', label: 'PAN Card Verification', icon: ShieldCheck }
                  ].map((doc) => (
                    <div key={doc.id}>
-                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1 leading-none">{doc.label}</label>
+                      <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 ml-1 leading-none">{doc.label}</label>
                       <div className="relative group">
                          <input 
                             type="file" 
@@ -727,12 +715,12 @@ const EditAgencyModal = ({ isOpen, onClose, agent, onRefresh }) => {
                             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                             accept="image/*"
                          />
-                         <div className={`w-full h-12 border-2 border-dashed rounded-xl flex items-center px-4 gap-3 transition-all ${files[doc.id] ? 'border-emerald-200 bg-emerald-50/30' : 'border-slate-100 bg-slate-50/30 group-hover:border-primary-200 group-hover:bg-primary-50/30'}`}>
-                            {files[doc.id] ? <CheckCircle size={14} className="text-emerald-500" /> : <doc.icon size={14} className="text-slate-300" />}
-                            <span className={`text-[11px] font-bold truncate flex-1 ${files[doc.id] ? 'text-emerald-700' : 'text-slate-400'}`}>
+                         <div className={`w-full h-12 border border-dashed rounded-lg flex items-center px-4 gap-3 transition-all ${files[doc.id] ? 'border-emerald-200 bg-emerald-50/30' : 'border-gray-200 bg-gray-50/30 group-hover:border-blue-400 group-hover:bg-white'}`}>
+                            {files[doc.id] ? <CheckCircle size={14} className="text-emerald-500" /> : <doc.icon size={14} className="text-gray-300" />}
+                            <span className={`text-xs font-bold truncate flex-1 ${files[doc.id] ? 'text-emerald-700' : 'text-gray-400'}`}>
                                {files[doc.id] ? files[doc.id].name : `Update ${doc.label.split(' ')[0]}...`}
                             </span>
-                            <Plus size={14} className={files[doc.id] ? 'text-emerald-400' : 'text-slate-300'} />
+                            <Plus size={14} className={files[doc.id] ? 'text-emerald-400' : 'text-gray-300'} />
                          </div>
                       </div>
                    </div>
@@ -908,48 +896,44 @@ export default function Agencies() {
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Parent Agencies</h1>
-          <p className="text-sm text-slate-500 mt-1.5 font-medium">Holistic view of all Tier-1 travel distribution entities on the platform.</p>
-        </div>
-        <button 
-          onClick={() => setIsAddModalOpen(true)}
-          className="flex items-center justify-center gap-2 px-5 py-2.5 bg-primary-600 hover:bg-primary-700 text-white text-sm font-bold rounded-xl shadow-lg shadow-primary-600/20 transition-all active:scale-95"
-        >
-          <Plus className="w-5 h-5 shadow-sm" />
-          <span>Add Agency</span>
-        </button>
-      </div>
+      {/* Header & Controls */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+         <div>
+            <h1 className="text-2xl font-bold text-zinc-900">Parent Agencies</h1>
+            <p className="text-gray-500 text-sm">Manage tier-1 travel distribution entities and corporate identities</p>
+         </div>
 
-      {/* Main Filters */}
-      <div className="bg-white border border-slate-200/60 rounded-2xl p-4 shadow-sm">
-        <div className="flex flex-col sm:flex-row gap-4 items-end">
-          <div className="flex-1 w-full lg:w-auto">
-            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1 leading-none">Universal Intelligence Search</label>
-            <div className="relative group">
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-primary-500 transition-colors" />
-              <input
-                type="text"
-                placeholder="Search across corporate identity, email or performance..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-11 pr-4 py-2.5 text-sm font-medium focus:outline-none focus:ring-4 focus:ring-primary-500/5 focus:border-primary-500/50 transition-all"
-              />
+         <div className="flex flex-col sm:flex-row items-center gap-3">
+            <div className="relative w-full sm:w-64">
+               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+               <input
+                  type="text"
+                  placeholder="Search agencies..."
+                  className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 shadow-sm"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+               />
             </div>
-          </div>
-          <div className="w-full sm:w-40">
-            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1 leading-none">Account</label>
-            <CustomDropdown
-              value={statusFilter}
-              onChange={setStatusFilter}
-              options={statusOptions}
-              placeholder="Filter"
-              className="w-full"
-              buttonClassName="!h-[44px] !rounded-xl !bg-slate-50 !border-slate-200 !text-sm !font-medium"
-            />
-          </div>
-        </div>
+
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+               <div className="text-xs font-bold text-gray-400 uppercase tracking-widest hidden xl:block">Status:</div>
+               <CustomDropdown
+                  value={statusFilter}
+                  onChange={setStatusFilter}
+                  options={statusOptions}
+                  className="w-full sm:w-40"
+                  buttonClassName="!py-2"
+               />
+            </div>
+
+            <button
+               onClick={() => setIsAddModalOpen(true)}
+               className="w-full sm:w-auto flex items-center justify-center gap-2 bg-zinc-900 text-white px-5 py-2 rounded-lg text-sm font-bold hover:bg-zinc-800 transition-all shadow-sm whitespace-nowrap"
+            >
+               <Plus size={18} />
+               <span>Add Agency</span>
+            </button>
+         </div>
       </div>
 
       {/* Main Table */}

@@ -372,40 +372,35 @@ const AgencyNetwork = () => {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
-      {/* Header & Stats */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <div className="space-y-4">
-           <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-              <Link to="/admin/agencies" className="hover:text-primary-600 transition-colors">Agencies</Link>
-              <ChevronRight size={10} />
-              <span className="text-slate-900">Network Explorer</span>
-           </div>
-           <div className="flex items-center gap-4">
-              <div className="h-14 w-14 rounded-2xl bg-slate-900 text-white flex items-center justify-center shadow-xl shadow-slate-900/10">
-                 <Users size={28} />
-              </div>
-              <div className="space-y-1">
-                 <h1 className="text-2xl font-black text-slate-900 tracking-tight leading-none italic uppercase">{parentAgency?.name}</h1>
-                 <div className="flex items-center gap-3">
-                    <span className="text-[10px] font-black text-primary-500 uppercase tracking-widest flex items-center gap-1.5">
-                       <ShieldCheck size={12} /> {parentAgency?.agentCode}
-                    </span>
-                    <div className="h-1 w-1 rounded-full bg-slate-200" />
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic">Executive Hub</span>
-                 </div>
-              </div>
-           </div>
-        </div>
+      {/* Header & Breadcrumbs */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+         <div>
+            <div className="flex items-center gap-2 text-xs font-bold text-gray-400 mb-2">
+               <Link to="/admin/agencies" className="hover:text-blue-600 transition-colors">Agencies</Link>
+               <ChevronRight size={12} />
+               <span className="text-zinc-900">Network Explorer</span>
+            </div>
+            <div className="flex items-center gap-3">
+               <h1 className="text-2xl font-bold text-zinc-900">{parentAgency?.name}</h1>
+               <div className="bg-blue-50 text-blue-600 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border border-blue-100 italic">
+                  {parentAgency?.agentCode}
+               </div>
+            </div>
+            <p className="text-gray-500 text-sm mt-1">Audit distribution hierarchy and performance metrics for this hub</p>
+         </div>
 
-        <div className="flex gap-4">
-           <div className="px-6 py-4 rounded-2xl bg-white border border-slate-200 shadow-sm flex flex-col items-center min-w-[120px]">
-              <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 leading-none">Direct Nodes</div>
-              <div className="text-2xl font-black text-slate-900 leading-none">{parentAgency?.childCount || 0}</div>
-           </div>
-           <button onClick={() => navigate(-1)} className="h-14 px-6 rounded-2xl bg-white border border-slate-200 text-slate-900 font-black text-[10px] uppercase tracking-[0.2em] hover:bg-slate-50 transition-all flex items-center gap-3 shadow-sm active:scale-95">
-              <ChevronLeft size={16} className="text-primary-600" /> Terminate Link
-           </button>
-        </div>
+         <div className="flex items-center gap-3">
+            <div className="bg-white border border-gray-200 px-4 py-2 rounded-xl text-center shadow-sm">
+               <div className="text-[10px] font-bold text-gray-400 uppercase mb-1">Direct Nodes</div>
+               <div className="text-xl font-bold text-zinc-900">{parentAgency?.childCount || 0}</div>
+            </div>
+            <button 
+               onClick={() => navigate(-1)}
+               className="flex items-center gap-2 border border-gray-200 text-zinc-900 px-4 py-2 rounded-lg text-sm font-bold hover:bg-gray-50 transition-all shadow-sm"
+            >
+               <ChevronLeft size={16} /> Back
+            </button>
+         </div>
       </div>
 
       {/* Main Network Table - Replacing Side Panel UI with Grid-Table */}

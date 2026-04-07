@@ -112,23 +112,23 @@ const Customers = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header Panel */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight leading-none">Customer Management</h1>
-          <p className="text-sm font-bold text-slate-400 mt-2">Manage and view all registered platform travelers</p>
-        </div>
-        
-        <div className="flex items-center gap-3 bg-white p-2 rounded-2xl border border-slate-200 shadow-sm w-full md:w-96 group focus-within:ring-4 focus-within:ring-primary-500/5 transition-all">
-          <Search className="ml-2 text-slate-400 group-focus-within:text-primary-500" size={18} />
-          <input 
-            type="text" 
-            placeholder="Search by name, email or ID..."
-            className="flex-1 bg-transparent border-none focus:outline-none text-sm font-medium text-slate-900 placeholder:text-slate-300"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </div>
+      {/* Header & Controls */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+         <div>
+            <h1 className="text-2xl font-bold text-zinc-900">Customer Management</h1>
+            <p className="text-gray-500 text-sm">Review platform travelers and manage traveler identity records</p>
+         </div>
+
+         <div className="relative w-full sm:w-80">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+               type="text"
+               placeholder="Search travelers..."
+               className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 shadow-sm"
+               value={search}
+               onChange={(e) => setSearch(e.target.value)}
+            />
+         </div>
       </div>
 
       {/* Main Table Content */}
