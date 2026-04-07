@@ -7,7 +7,8 @@ import {
   Phone, 
   Users,
   Building,
-  ArrowRight
+  ArrowRight,
+  UserRound
 } from 'lucide-react'
 import adminApi from '@/admin/services/adminApi'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
@@ -31,6 +32,9 @@ export default function ChildAgencies() {
   const [isSubChildModalOpen, setIsSubChildModalOpen] = useState(false)
   const [subChildren, setSubChildren] = useState([])
   const [loadingSubChildren, setLoadingSubChildren] = useState(false)
+  const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false)
+  const [agencyCustomers, setAgencyCustomers] = useState([])
+  const [loadingCustomers, setLoadingCustomers] = useState(false)
 
   // Debouncing search
   useEffect(() => {
@@ -79,12 +83,13 @@ export default function ChildAgencies() {
     }
   }
 
-  const handleFetchSubChildren = async (parentId) => {
+  const handleFetchSubChildren = async (agent) => {
+    setSelectedAgent(agent)
     setLoadingSubChildren(true)
     setIsSubChildModalOpen(true)
     try {
       // Fetch sub-child agents for this parent
-      const { data } = await adminApi.listAgents({ parentRef: parentId, role: 'sub_child_agent' })
+      const { data } = await adminApi.listAgents({ parentRef: agent._id, role: 'sub_child_agent' })
       if (data?.success) {
         setSubChildren(data.data.agents)
       }
@@ -92,6 +97,22 @@ export default function ChildAgencies() {
       toast.error('Failed to resolve sub-hierarchy')
     } finally {
       setLoadingSubChildren(false)
+    }
+  }
+
+  const handleFetchCustomers = async (agent) => {
+    setSelectedAgent(agent)
+    setLoadingCustomers(true)
+    setIsCustomerModalOpen(true)
+    try {
+      const { data } = await adminApi.getAgencyCustomers(agent._id)
+      if (data?.success) {
+        setAgencyCustomers(data.data.customers)
+      }
+    } catch (error) {
+      toast.error('Failed to retrieve associated traveler profiles')
+    } finally {
+      setLoadingCustomers(false)
     }
   }
 
@@ -148,8 +169,8 @@ export default function ChildAgencies() {
     <Modal
       isOpen={isSubChildModalOpen}
       onClose={() => setIsSubChildModalOpen(false)}
-      title="Sub-Child Agencies"
-      size="xl"
+      title={`Sub-Agency Network: ${selectedAgent?.name}`}
+      size="lg"
     >
       <div className="space-y-4">
         <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">Hierarchy Layer: Sub-Distributors</p>
@@ -167,11 +188,11 @@ export default function ChildAgencies() {
            ) : (
               <table className="w-full text-left">
                  <thead className="bg-gray-50 border-b border-gray-100">
-                    <tr>
-                       <th className="px-6 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest">Identity</th>
-                       <th className="px-6 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest">Details</th>
-                       <th className="px-6 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Status</th>
-                    </tr>
+                     <tr>
+                        <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest">Identity</th>
+                        <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest">Details</th>
+                        <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest text-right pr-6">Status</th>
+                     </tr>
                  </thead>
                  <tbody className="divide-y divide-gray-50">
                     {subChildren.map(sub => (
@@ -197,42 +218,96 @@ export default function ChildAgencies() {
     </Modal>
   )
 
+  const CustomerModal = () => (
+    <Modal
+      isOpen={isCustomerModalOpen}
+      onClose={() => setIsCustomerModalOpen(false)}
+      title={`Traveler Network Registry: ${selectedAgent?.name}`}
+      size="xl"
+    >
+      <div className="space-y-4">
+        <p className="text-xs text-gray-400 font-bold uppercase tracking-widest leading-none">Customers managed by this agency and its network</p>
+        
+        <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm min-h-[300px]">
+           {loadingCustomers ? (
+              <div className="p-12 flex flex-col items-center justify-center">
+                 <Loader size="md" />
+                 <p className="text-[10px] font-bold text-gray-400 mt-4 tracking-widest uppercase">Fetching Customer List...</p>
+              </div>
+           ) : agencyCustomers.length === 0 ? (
+              <div className="p-12 text-center">
+                 <p className="text-sm text-gray-400 font-medium italic">No customers found for this agency.</p>
+              </div>
+           ) : (
+              <table className="w-full text-left">
+                 <thead className="bg-gray-50 border-b border-gray-100">
+                     <tr>
+                        <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest">Customer Details</th>
+                        <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest">Account Type</th>
+                        <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest">Managed By</th>
+                     </tr>
+                 </thead>
+                 <tbody className="divide-y divide-gray-50">
+                    {agencyCustomers.map((ac, idx) => (
+                      <tr key={ac._id || idx} className="hover:bg-gray-50/50 transition-colors">
+                         <td className="px-6 py-4">
+                            <div className="text-sm font-bold text-zinc-900">{ac.customer?.name}</div>
+                            <div className="text-[9px] font-black text-gray-400 uppercase tracking-widest">{ac.customer?.email}</div>
+                         </td>
+                         <td className="px-6 py-4">
+                            <div className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full w-fit uppercase tracking-tighter">
+                               {ac.customer?.role === 'sub_child_agent' ? 'Sub-Agent' : (ac.customer?.role === 'child_agent' ? 'Child Agent' : 'Regular Customer')}
+                            </div>
+                         </td>
+                         <td className="px-6 py-4">
+                            <div className="text-xs text-gray-600 font-bold">{ac.managedBy?.name}</div>
+                            <div className="text-[9px] font-black text-gray-400 uppercase tracking-widest">{ac.managedBy?.role?.replace(/_/g, ' ')}</div>
+                         </td>
+                      </tr>
+                    ))}
+                 </tbody>
+              </table>
+           )}
+        </div>
+      </div>
+    </Modal>
+  )
+
   return (
     <div className="space-y-6">
-      {/* Header Section */}
+      {/* Header Section with Search and Filter */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-zinc-900">Child Agencies</h1>
           <p className="text-gray-500 text-sm">Manage and monitor secondary distribution nodes and sub-agencies</p>
         </div>
-      </div>
 
-      {/* Filter Bar */}
-      <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
-        <div className="relative w-full lg:max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input 
-            type="text"
-            placeholder="Search agencies..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-white border border-gray-200 rounded-lg pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 shadow-sm transition-all"
-          />
-        </div>
-        
-        <div className="flex items-center gap-2 w-full lg:w-auto">
-          <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest hidden lg:block">Status:</div>
-          <CustomDropdown
-            value={statusFilter}
-            onChange={setStatusFilter}
-            options={[
-              { value: 'all', label: 'All Status' },
-              { value: 'active', label: 'Active' },
-              { value: 'inactive', label: 'Inactive' }
-            ]}
-            className="w-full lg:w-44"
-            buttonClassName="!py-2.5"
-          />
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input 
+              type="text"
+              placeholder="Search agencies..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 w-64 shadow-sm shadow-gray-100/50"
+            />
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <div className="text-xs font-bold text-gray-400 uppercase tracking-widest hidden lg:block">Status:</div>
+            <CustomDropdown
+              value={statusFilter}
+              onChange={setStatusFilter}
+              options={[
+                { value: 'all', label: 'All Status' },
+                { value: 'active', label: 'Active' },
+                { value: 'inactive', label: 'Inactive' }
+              ]}
+              className="w-44"
+              buttonClassName="!py-2"
+            />
+          </div>
         </div>
       </div>
 
@@ -253,12 +328,13 @@ export default function ChildAgencies() {
             <table className="w-full text-left">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  <th className="px-6 py-4 text-[10px] font-bold text-zinc-900 uppercase tracking-widest">Child Agency</th>
-                  <th className="px-6 py-4 text-[10px] font-bold text-zinc-900 uppercase tracking-widest">Contact Info</th>
-                  <th className="px-6 py-4 text-[10px] font-bold text-zinc-900 uppercase tracking-widest">Parent Agency</th>
-                  <th className="px-6 py-4 text-[10px] font-bold text-zinc-900 uppercase tracking-widest text-center">Hierarchy</th>
-                  <th className="px-6 py-4 text-[10px] font-bold text-zinc-900 uppercase tracking-widest text-center">Status</th>
-                  <th className="px-6 py-4 text-[10px] font-bold text-zinc-900 uppercase tracking-widest text-right pr-6">Action</th>
+                  <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest">Child Agency</th>
+                  <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest">Contact Info</th>
+                  <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest">Parent Agency</th>
+                  <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest text-center">Hierarchy</th>
+                  <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest text-center">Customers</th>
+                  <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest text-center">Status</th>
+                  <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest text-right pr-6">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -293,11 +369,20 @@ export default function ChildAgencies() {
                     </td>
                     <td className="px-6 py-5 whitespace-nowrap text-center">
                         <button 
-                          onClick={() => handleFetchSubChildren(agent._id)}
-                          className="inline-flex items-center justify-center p-2 rounded-lg bg-gray-50 border border-gray-200 gap-2 min-w-[45px] hover:bg-primary-50 hover:border-primary-200 group-hover:shadow-sm transition-all"
+                          onClick={() => handleFetchSubChildren(agent)}
+                          className="inline-flex items-center justify-center p-2 rounded-lg bg-gray-50 border border-gray-200 gap-2 min-w-[45px] hover:bg-primary-50 hover:border-primary-200 group-hover:shadow-sm transition-all shadow-sm"
                         >
                              <Users size={12} className="text-gray-400 group-hover:text-primary-600" />
                              <span className="text-xs font-black text-zinc-900">{agent.childCount || 0}</span>
+                        </button>
+                    </td>
+                    <td className="px-6 py-5 whitespace-nowrap text-center">
+                        <button 
+                          onClick={() => handleFetchCustomers(agent)}
+                          className="inline-flex items-center justify-center p-2 rounded-lg bg-gray-50 border border-gray-200 gap-2 min-w-[45px] hover:bg-emerald-50 hover:border-emerald-200 group-hover:shadow-sm transition-all shadow-sm"
+                        >
+                             <UserRound size={12} className="text-gray-400 group-hover:text-emerald-600" />
+                             <span className="text-xs font-black text-zinc-900">{agent.customerCount || 0}</span>
                         </button>
                     </td>
                     <td className="px-6 py-5 whitespace-nowrap text-center">
@@ -361,6 +446,7 @@ export default function ChildAgencies() {
       {/* Pop-up Modals */}
       <AgentDetailModal />
       <SubChildModal />
+      <CustomerModal />
     </div>
   )
 }

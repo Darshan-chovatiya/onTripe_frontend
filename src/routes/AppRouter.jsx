@@ -22,13 +22,13 @@ import AdminLayout from '@/admin/components/AdminLayout.jsx'
 import AdminDashboard from '@/admin/pages/Dashboard.jsx'
 import AdminUsers from '@/admin/pages/Users.jsx'
 import AdminAgencies from '@/admin/pages/Agencies.jsx'
-import AdminReports from '@/admin/pages/Reports.jsx'
 import AdminSettings from '@/admin/pages/Settings.jsx'
 import AdminCustomers from '@/admin/pages/Customers.jsx'
 import AdminPackages from '@/admin/pages/Packages.jsx'
 import AdminWhitelabels from '@/admin/pages/Whitelabels.jsx'
 import AdminAgencyNetwork from '@/admin/pages/AgencyNetwork.jsx'
 import AdminChildAgencies from '@/admin/pages/ChildAgencies.jsx'
+import AdminNotifications from '@/admin/pages/Notifications.jsx'
 
 import AgencyLayout from '@/travelAgency/shared/components/AgencyLayout.jsx'
 import AgencyPanelSidebar from '@/travelAgency/agency/components/AgencyPanelSidebar.jsx'
@@ -87,7 +87,7 @@ export default function AppRouter() {
         <Route path="agencies" element={<AdminAgencies />} />
         <Route path="agencies/network/:parentId" element={<AdminAgencyNetwork />} />
         <Route path="child-agencies" element={<AdminChildAgencies />} />
-        <Route path="reports" element={<AdminReports />} />
+        <Route path="notifications" element={<AdminNotifications />} />
         <Route path="settings" element={<AdminSettings />} />
       </Route>
 

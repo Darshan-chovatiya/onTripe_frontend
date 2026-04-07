@@ -24,7 +24,7 @@ export default function Settings() {
       setProfileData({
         name: user.name || '',
         email: user.email || '',
-        mobile: user.mobile || '',
+        mobile: user.phone || user.mobile || '',
       })
     }
   }, [user])
@@ -83,14 +83,23 @@ export default function Settings() {
 
     setLoading(true)
     try {
-      const response = await updateAdminUser(user.id, profileData)
-      if (response.data.status === 200) {
-        toast.success('Profile updated successfully')
-        const next = response.data.result.user
-        setUser({ ...next, role: user.role })
+      // Backend expects 'phone' instead of 'mobile'
+      const payload = {
+        name: profileData.name,
+        email: profileData.email,
+        phone: profileData.mobile // Map mobile to phone
+      }
+
+      const response = await updateAdminUser(user.id, payload)
+      if (response?.data?.success) {
+        toast.success('Your professional profile has been synchronized successfully')
+        const updatedUser = response.data.data.user
+        // Update context to refresh header instantly
+        // Consistent mapping: ensure both mobile and phone are updated in context if normalized
+        setUser({ ...user, ...updatedUser, mobile: updatedUser.phone })
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to update profile')
+      toast.error(error.response?.data?.message || 'Neural link failed to update profile')
     } finally {
       setLoading(false)
     }
@@ -102,13 +111,13 @@ export default function Settings() {
 
     setLoading(true)
     try {
-      const response = await axiosInstance.put('/users/change-password', {
+      const response = await axiosInstance.put('/auth/change-password', {
         currentPassword: passwordData.currentPassword,
         newPassword: passwordData.newPassword,
         confirmPassword: passwordData.confirmPassword,
       })
-      if (response.data.status === 200) {
-        toast.success('Password changed successfully')
+      if (response.data.success) {
+        toast.success('Your security credentials have been updated successfully')
         setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' })
         setFormErrors({})
       }
