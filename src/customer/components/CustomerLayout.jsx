@@ -21,7 +21,7 @@ export default function CustomerLayout() {
   ]
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-24">
+    <div className="bg-gray-50 dark:bg-gray-900">
       {/* Logout Confirmation Modal */}
       {showConfirmLogout && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 animate-fade-in">
@@ -56,7 +56,7 @@ export default function CustomerLayout() {
       )}
 
       {/* Main Content Area */}
-      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <main className="px-4 py-8 sm:px-6 lg:px-8">
         <Outlet />
       </main>
 

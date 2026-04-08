@@ -292,7 +292,7 @@ export default function CommunityChat({ packageId, customerId, currentUserId }) 
   )
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-[2.5rem] shadow-2xl shadow-gray-100/50 border border-gray-50 dark:border-white/5 overflow-hidden flex flex-col h-[700px] max-w-5xl mx-auto animate-fade-in relative">
+    <div className="bg-white dark:bg-gray-800 rounded-[2.5rem] shadow-2xl shadow-gray-100/50 border border-gray-50 dark:border-white/5 overflow-hidden flex flex-col animate-fade-in relative">
       
       {/* Header */}
       <div className="px-8 py-6 border-b border-gray-50 dark:border-white/5 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md flex items-center justify-between z-10">
@@ -331,7 +331,7 @@ export default function CommunityChat({ packageId, customerId, currentUserId }) 
       <div 
         ref={scrollRef}
         onScroll={onScroll}
-        className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6 scrollbar-hide bg-gray-50/30 dark:bg-transparent"
+        className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6 scrollbar-hide bg-gray-50/30 dark:bg-transparen  max-h-[500px] overflow-auto"
       >
         {loadingMore && (
           <div className="sticky top-0 z-10 -mt-2 pb-2">
@@ -372,9 +372,7 @@ export default function CommunityChat({ packageId, customerId, currentUserId }) 
                         e.stopPropagation()
                         setOpenMenuFor((prev) => (prev === msg._id ? null : msg._id))
                       }}
-                      className={`opacity-0 group-hover:opacity-100 transition-opacity p-2 rounded-2xl border border-transparent hover:border-gray-200 hover:bg-white shadow-sm ${
-                        openMenuFor === msg._id ? 'opacity-100 border-gray-200 bg-white' : ''
-                      }`}
+                      className={`transition-opacity p-2 rounded-2xl border border-transparent hover:border-gray-200 hover:bg-white shadow-sm`}
                       aria-label="Message actions"
                     >
                       <MoreVertical size={16} className="text-gray-500" />
