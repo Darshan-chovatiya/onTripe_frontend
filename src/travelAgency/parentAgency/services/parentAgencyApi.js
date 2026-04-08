@@ -97,3 +97,17 @@ export function updateProfile(data) {
 export function changePassword(data) {
   return axiosInstance.patch('/parent-agent/change-password', data)
 }
+
+// Analytics
+export function getAnalytics() {
+  return axiosInstance.get('/parent-agent/analytics')
+}
+
+// Booking Tickets
+export function uploadBookingTickets(id, formData) {
+  return axiosInstance.post(`/parent-agent/bookings/${id}/tickets`, formData)
+}
+
+export function deleteBookingTicket(id, ticketId) {
+  return axiosInstance.delete(`/parent-agent/bookings/${id}/tickets/${ticketId}`)
+}

@@ -1,5 +1,9 @@
 import axiosInstance from '@/shared/services/axiosInstance.js'
 
+export function getAnalytics() {
+  return axiosInstance.get('/child-agent/analytics')
+}
+
 export function listBookings(params) {
   return axiosInstance.get('/child-agent/bookings', { params })
 }

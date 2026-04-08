@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from 'react'
-import { RefreshCw, BookOpen, Calendar, User, IndianRupee, Hash, Eye } from 'lucide-react'
+import { RefreshCw, BookOpen, Calendar, User, IndianRupee, Hash, Eye, Ticket } from 'lucide-react'
 import { listBookings } from '@/travelAgency/parentAgency/services/parentAgencyApi.js'
 import { getApiErrorMessage } from '@/shared/services/apiHelpers.js'
 import BookingDetailModal from '@/travelAgency/parentAgency/components/BookingDetailModal.jsx'
+import BookingTicketsModal from '@/travelAgency/parentAgency/components/BookingTicketsModal.jsx'
 
 const STATUS_STYLES = {
   confirmed: 'bg-blue-50 text-blue-700',
@@ -25,6 +26,7 @@ export default function Bookings() {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [viewId, setViewId] = useState(null)
+  const [ticketsBooking, setTicketsBooking] = useState(null)
 
   const fetchBookings = useCallback(async () => {
     setLoading(true)
@@ -182,12 +184,26 @@ export default function Bookings() {
                       </span>
                     </td>
                     <td className="px-5 py-3.5 text-xs text-gray-500">
-                      {b.bookedBy?.name || b.bookedBy?.email || 'You'}
+                      {typeof b.bookedBy === 'string'
+                        ? '—'
+                        : b.bookedBy?.name || b.bookedBy?.email || '—'}
                     </td>
                     <td className="px-5 py-3.5 text-right">
                       <div className="inline-flex items-center gap-3">
                         <button onClick={() => setViewId(b._id)} className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-800 transition-colors">
                           <Eye size={13} />
+                        </button>
+                        <button
+                          onClick={() => setTicketsBooking(b)}
+                          className="flex items-center gap-1 text-xs font-medium text-primary-600 hover:text-primary-800 transition-colors"
+                          title="Manage Tickets"
+                        >
+                          <Ticket size={13} /> Tickets
+                          {b.tickets?.length > 0 && (
+                            <span className="ml-0.5 rounded-full bg-primary-100 px-1.5 py-0.5 text-xs font-semibold text-primary-700">
+                              {b.tickets.length}
+                            </span>
+                          )}
                         </button>
                       </div>
                     </td>
@@ -200,6 +216,18 @@ export default function Bookings() {
       )}
 
       <BookingDetailModal isOpen={!!viewId} onClose={() => setViewId(null)} bookingId={viewId} />
+
+      <BookingTicketsModal
+        isOpen={!!ticketsBooking}
+        onClose={() => setTicketsBooking(null)}
+        booking={ticketsBooking}
+        onUpdated={(updatedTickets) => {
+          setBookings(prev => prev.map(b =>
+            b._id === ticketsBooking?._id ? { ...b, tickets: updatedTickets } : b
+          ))
+          setTicketsBooking(prev => prev ? { ...prev, tickets: updatedTickets } : null)
+        }}
+      />
     </div>
   )
 }
