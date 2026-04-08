@@ -525,6 +525,9 @@ export default function AgencyCustomers() {
               <div>
                 <span className="font-semibold">Email:</span> {viewTarget.email || '—'}
               </div>
+              <div>
+                <span className="font-semibold">Total Trips:</span> {viewTarget.trips || 0}
+              </div>
             </div>
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 text-sm">
@@ -604,42 +607,6 @@ export default function AgencyCustomers() {
                   <span className="text-xs text-gray-500">No documents uploaded.</span>
                 ) : null}
               </div>
-            </div>
-
-            <div className="rounded-lg border border-gray-100 bg-white px-3 py-2 text-sm">
-              <div className="mb-2 flex items-center justify-between">
-                <span className="font-semibold text-gray-700">Trips ({viewTarget.trips || 0})</span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setViewOpen(false)
-                    openCustomerTripsPage(viewTarget)
-                  }}
-                  className="rounded-full bg-primary-50 px-2 py-0.5 text-xs font-semibold text-primary-700 hover:bg-primary-100"
-                >
-                  Open full trips page
-                </button>
-              </div>
-              {Array.isArray(viewTarget.tripsData) && viewTarget.tripsData.length > 0 ? (
-                <div className="space-y-2">
-                  {viewTarget.tripsData.slice(0, 5).map((t) => (
-                    <div key={t._id} className="rounded-md border border-gray-100 bg-gray-50 px-2.5 py-2">
-                      <div className="text-xs font-semibold text-gray-800">
-                        {t.bookingId || '—'} • {t.package?.title || t.whitelabelPackage?.customTitle || 'Package'}
-                      </div>
-                      <div className="mt-1 text-[11px] text-gray-600">
-                        {t.travelDate ? new Date(t.travelDate).toLocaleDateString('en-IN') : '—'} • ₹
-                        {Number(t.totalAmount || 0).toLocaleString('en-IN')} • {t.bookingStatus || '—'}
-                      </div>
-                    </div>
-                  ))}
-                  {viewTarget.tripsData.length > 5 ? (
-                    <div className="text-xs text-gray-500">Showing 5 of {viewTarget.tripsData.length} trips.</div>
-                  ) : null}
-                </div>
-              ) : (
-                <div className="text-xs text-gray-500">No trips found for this customer.</div>
-              )}
             </div>
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 text-xs text-gray-500">
