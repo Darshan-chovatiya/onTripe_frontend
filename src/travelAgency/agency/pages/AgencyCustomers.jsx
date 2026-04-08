@@ -222,11 +222,32 @@ export default function AgencyCustomers() {
         await updateSubChildAgencyCustomer(editTarget.agencyCustomerId, payload)
       }
 
+      setRows((prev) =>
+        prev.map((r) =>
+          r.agencyCustomerId === editTarget.agencyCustomerId
+            ? {
+                ...r,
+                name: editForm.name,
+                email: editForm.email,
+                notes: editForm.notes,
+              }
+            : r
+        )
+      )
+      setViewTarget((prev) =>
+        prev && prev.agencyCustomerId === editTarget.agencyCustomerId
+          ? {
+              ...prev,
+              name: editForm.name,
+              email: editForm.email,
+              notes: editForm.notes,
+            }
+          : prev
+      )
       toast.success('Customer updated successfully')
       setEditOpen(false)
       setEditTarget(null)
       setSelectedIds(new Set())
-      setRefreshTick((t) => t + 1)
     } catch (err) {
       toast.error(getApiErrorMessage(err) || 'Failed to update customer')
     } finally {
@@ -243,9 +264,26 @@ export default function AgencyCustomers() {
       } else if (role === ROLES.SUB_CHILD) {
         await toggleSubChildAgencyCustomerActive(row.agencyCustomerId)
       }
+      setRows((prev) =>
+        prev.map((r) =>
+          r.agencyCustomerId === row.agencyCustomerId
+            ? {
+                ...r,
+                isActive: !r.isActive,
+              }
+            : r
+        )
+      )
+      setViewTarget((prev) =>
+        prev && prev.agencyCustomerId === row.agencyCustomerId
+          ? {
+              ...prev,
+              isActive: !prev.isActive,
+            }
+          : prev
+      )
       toast.success(row.isActive ? 'Customer deactivated' : 'Customer activated')
       setSelectedIds(new Set())
-      setRefreshTick((t) => t + 1)
     } catch (err) {
       toast.error(getApiErrorMessage(err) || 'Failed to update customer status')
     } finally {
