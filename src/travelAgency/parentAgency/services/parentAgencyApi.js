@@ -120,3 +120,16 @@ export function sendNotification(data) {
 export function getSentNotifications() {
   return axiosInstance.get('/notifications/sent')
 }
+// Analytics
+export function getAnalytics() {
+  return axiosInstance.get('/parent-agent/analytics')
+}
+
+// Booking Tickets
+export function uploadBookingTickets(id, formData) {
+  return axiosInstance.post(`/parent-agent/bookings/${id}/tickets`, formData)
+}
+
+export function deleteBookingTicket(id, ticketId) {
+  return axiosInstance.delete(`/parent-agent/bookings/${id}/tickets/${ticketId}`)
+}
