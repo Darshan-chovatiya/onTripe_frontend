@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useLayoutEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { 
   Building2, 
@@ -52,12 +52,13 @@ export default function ChildAgencies({ agentRole = 'child_agent', pageTitle = '
     return () => clearTimeout(handler)
   }, [searchQuery])
 
-  useEffect(() => {
+  // Same component type is reused when switching Child ↔ Sub-child (only props change), so
+  // useState(...) does not re-run. useLayoutEffect runs before fetch effects so we do not query
+  // with a sub-child parent id while viewing child agencies (or vice versa).
+  useLayoutEffect(() => {
     const parentRefFromUrl = searchParams.get('parentRef')
-    if (parentRefFromUrl && parentRefFromUrl !== parentFilter) {
-      setParentFilter(parentRefFromUrl)
-    }
-  }, [searchParams, parentFilter])
+    setParentFilter(parentRefFromUrl || 'all')
+  }, [agentRole, searchParams])
 
   useEffect(() => {
     setPage(1)
