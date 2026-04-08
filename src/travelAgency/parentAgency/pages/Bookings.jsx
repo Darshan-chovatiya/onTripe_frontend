@@ -1,12 +1,9 @@
 import { useState, useEffect, useCallback } from 'react'
-import { BookOpen, Calendar, User, IndianRupee, Hash, Eye, MessageSquare,Ticket } from 'lucide-react'
+import { BookOpen, Calendar, User, IndianRupee, Hash, Eye, Ticket } from 'lucide-react'
 import { listBookings } from '@/travelAgency/parentAgency/services/parentAgencyApi.js'
 import { getApiErrorMessage } from '@/shared/services/apiHelpers.js'
 import BookingDetailModal from '@/travelAgency/parentAgency/components/BookingDetailModal.jsx'
 import { useAuth } from '@/shared/context/AuthContext.jsx'
-import Modal from '@/shared/components/Modal.jsx'
-import CommunityChat from '@/customer/components/CommunityChat.jsx'
-import { basePackageFromBooking } from '@/travelAgency/shared/utils/bookingDetailHelpers.js'
 import BookingTicketsModal from '@/travelAgency/parentAgency/components/BookingTicketsModal.jsx'
 
 const STATUS_STYLES = {
@@ -30,7 +27,6 @@ export default function Bookings() {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [viewId, setViewId] = useState(null)
-  const [chatPackageId, setChatPackageId] = useState(null)
   const { user } = useAuth()
   const [ticketsBooking, setTicketsBooking] = useState(null)
 
@@ -145,7 +141,6 @@ export default function Bookings() {
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {filtered.map((b) => {
-                  const communityPackageId = basePackageFromBooking(b)?._id || b?.package?._id || null
                   return (
                   <tr key={b._id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-5 py-3.5">
@@ -193,19 +188,6 @@ export default function Bookings() {
                     </td>
                     <td className="px-5 py-3.5 text-right">
                       <div className="inline-flex items-center gap-3">
-                        <button
-                          type="button"
-                          onClick={() => communityPackageId && setChatPackageId(communityPackageId)}
-                          disabled={!communityPackageId}
-                          title={communityPackageId ? 'Open community chat' : 'Community chat not available'}
-                          className={`flex items-center gap-1 text-xs rounded-lg px-2.5 py-1.5 transition-colors ${
-                            communityPackageId
-                              ? 'text-primary-600 hover:text-primary-800 hover:bg-primary-50'
-                              : 'text-gray-300 cursor-not-allowed bg-gray-50'
-                          }`}
-                        >
-                          <MessageSquare size={13} />
-                        </button>
                         <button onClick={() => setViewId(b._id)} className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-800 transition-colors">
                           <Eye size={13} />
                         </button>
@@ -234,14 +216,6 @@ export default function Bookings() {
 
       <BookingDetailModal isOpen={!!viewId} onClose={() => setViewId(null)} bookingId={viewId} />
 
-      <Modal
-        isOpen={!!chatPackageId}
-        onClose={() => setChatPackageId(null)}
-        title="Community chat"
-        size="xl"
-      >
-        {chatPackageId ? <CommunityChat packageId={chatPackageId} currentUserId={user?.id} /> : null}
-      </Modal>
       <BookingTicketsModal
         isOpen={!!ticketsBooking}
         onClose={() => setTicketsBooking(null)}

@@ -13,10 +13,11 @@ import {
   Users,
   Images,
   Sparkles,
+  MessageSquare,
 } from 'lucide-react'
 import { destinationText } from '@/travelAgency/parentAgency/utils/packageDisplay.js'
 
-export default function PackageCard({ pkg, onEdit, onUpdateCover, onUpdateGallery, onDeactivate, onActivate }) {
+export default function PackageCard({ pkg, onEdit, onUpdateCover, onUpdateGallery, onDeactivate, onActivate, onChat }) {
   const navigate = useNavigate()
   const base = import.meta.env.VITE_API_BASE_URL?.replace('/api', '').replace(/\/$/, '') || 'http://localhost:5001'
   const coverSrc = pkg.coverImage ? `${base}/${pkg.coverImage.replace(/\\/g, '/')}` : null
@@ -142,11 +143,11 @@ export default function PackageCard({ pkg, onEdit, onUpdateCover, onUpdateGaller
             </button>
           </div>
 
-          <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
+          <div className="flex gap-1.5 sm:gap-2">
             <button
               type="button"
               onClick={() => navigate(`${AGENCY_PANEL_BASE}/packages/${pkg._id}`)}
-              className="inline-flex min-h-[2.5rem] items-center justify-center gap-1 rounded-xl bg-primary-600 px-1.5 py-2 text-[11px] font-semibold text-white shadow-sm transition hover:bg-primary-700 sm:text-xs"
+              className="inline-flex h-10 flex-1 items-center justify-center gap-1 rounded-xl bg-primary-600 px-1.5 py-2 text-[11px] font-semibold text-white shadow-sm transition hover:bg-primary-700 sm:text-xs"
             >
               <Eye className="h-3.5 w-3.5 shrink-0" />
               <span className="truncate">View</span>
@@ -154,30 +155,36 @@ export default function PackageCard({ pkg, onEdit, onUpdateCover, onUpdateGaller
             <button
               type="button"
               onClick={() => onEdit(pkg)}
-              className="inline-flex min-h-[2.5rem] items-center justify-center gap-1 rounded-xl border border-gray-200 bg-white px-1.5 py-2 text-[11px] font-semibold text-gray-800 shadow-sm transition hover:border-primary-200 hover:bg-primary-50/50 sm:text-xs"
+              className="inline-flex h-10 flex-1 items-center justify-center gap-1 rounded-xl border border-gray-200 bg-white px-1.5 py-2 text-[11px] font-semibold text-gray-800 shadow-sm transition hover:border-primary-200 hover:bg-primary-50/50 sm:text-xs"
             >
               <Edit2 className="h-3.5 w-3.5 shrink-0" />
               <span className="truncate">Update</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => onChat(pkg)}
+              className="inline-flex h-10 items-center justify-center gap-1 rounded-xl border border-primary-100 bg-primary-50 px-2.5 py-2 text-primary-700 shadow-sm transition hover:bg-primary-100"
+              title="Community chat"
+            >
+              <MessageSquare className="h-4 w-4 shrink-0" />
             </button>
             {pkg.isActive ? (
               <button
                 type="button"
                 onClick={() => onDeactivate(pkg)}
-                className="inline-flex min-h-[2.75rem] flex-col items-center justify-center gap-0.5 rounded-xl border border-red-100 bg-red-50/80 px-1 py-1.5 text-[10px] font-semibold leading-tight text-red-600 transition hover:bg-red-100 sm:min-h-[2.5rem] sm:flex-row sm:gap-1 sm:px-1.5 sm:text-[11px] sm:leading-none"
+                className="inline-flex h-10 flex-col items-center justify-center rounded-xl border border-red-100 bg-red-50/80 px-1 py-1 text-[10px] font-semibold leading-tight text-red-600 transition hover:bg-red-100 sm:flex-row sm:gap-1 sm:px-1.5 sm:text-[11px] sm:leading-none"
                 title="Deactivate package"
               >
                 <Trash2 className="h-3.5 w-3.5 shrink-0" />
-                <span className="max-w-full text-center leading-tight">Deactivate</span>
               </button>
             ) : (
               <button
                 type="button"
                 onClick={() => onActivate(pkg)}
-                className="inline-flex min-h-[2.75rem] flex-col items-center justify-center gap-0.5 rounded-xl border border-emerald-200 bg-emerald-50/80 px-1 py-1.5 text-[10px] font-semibold leading-tight text-emerald-700 transition hover:bg-emerald-100 sm:min-h-[2.5rem] sm:flex-row sm:gap-1 sm:px-1.5 sm:text-[11px] sm:leading-none"
+                className="inline-flex h-10 flex-col items-center justify-center rounded-xl border border-emerald-200 bg-emerald-50/80 px-1 py-1 text-[10px] font-semibold leading-tight text-emerald-700 transition hover:bg-emerald-100 sm:flex-row sm:gap-1 sm:px-1.5 sm:text-[11px] sm:leading-none"
                 title="Activate package"
               >
                 <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
-                <span className="max-w-full text-center leading-tight">Activate</span>
               </button>
             )}
           </div>

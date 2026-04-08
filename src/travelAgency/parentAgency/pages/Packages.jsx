@@ -9,6 +9,9 @@ import ConfirmDialog from '@/shared/components/ConfirmDialog.jsx'
 import Button from '@/shared/components/Button.jsx'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
 import { getApiErrorMessage } from '@/shared/services/apiHelpers.js'
+import { useAuth } from '@/shared/context/AuthContext.jsx'
+import Modal from '@/shared/components/Modal.jsx'
+import CommunityChat from '@/customer/components/CommunityChat.jsx'
 
 export default function Packages() {
   const { packages, loading, error, create, update, updateCover, updateGallery, deactivate, activate } =
@@ -16,12 +19,14 @@ export default function Packages() {
   const { toast } = useToast()
   const location = useLocation()
   const navigate = useNavigate()
+  const { user } = useAuth()
 
   const [formModal, setFormModal] = useState({ open: false, data: null })
   const [imageModal, setImageModal] = useState({ open: false, pkg: null, mode: 'cover' })
   const [confirmDeactivate, setConfirmDeactivate] = useState({ open: false, pkg: null })
   const [confirmActivate, setConfirmActivate] = useState({ open: false, pkg: null })
   const [submitting, setSubmitting] = useState(false)
+  const [chatPackageId, setChatPackageId] = useState(null)
 
   const stats = useMemo(() => {
     const live = packages.filter((p) => p.isActive).length
@@ -183,6 +188,7 @@ export default function Packages() {
                 onUpdateGallery={(p) => setImageModal({ open: true, pkg: p, mode: 'gallery' })}
                 onDeactivate={(p) => setConfirmDeactivate({ open: true, pkg: p })}
                 onActivate={(p) => setConfirmActivate({ open: true, pkg: p })}
+                onChat={(p) => setChatPackageId(p._id)}
               />
             ))}
           </div>
@@ -226,6 +232,15 @@ export default function Packages() {
         cancelText="Cancel"
         variant="primary"
       />
+
+      <Modal
+        isOpen={!!chatPackageId}
+        onClose={() => setChatPackageId(null)}
+        title="Community chat"
+        size="xl"
+      >
+        {chatPackageId ? <CommunityChat packageId={chatPackageId} currentUserId={user?.id} /> : null}
+      </Modal>
     </div>
   )
 }

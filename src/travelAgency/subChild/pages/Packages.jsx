@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { PackageOpen, Layers, Tags } from 'lucide-react'
 import { useSubChildPackages } from '@/travelAgency/subChild/hooks/useSubChildPackages.js'
+import { useSubChildBookings } from '@/travelAgency/subChild/hooks/useSubChildBookings.js'
 import AvailablePackageCard from '@/travelAgency/childAgency/components/AvailablePackageCard.jsx'
 import WhitelabelPackageCard from '@/travelAgency/childAgency/components/WhitelabelPackageCard.jsx'
 import WhitelabelModal from '@/travelAgency/childAgency/components/WhitelabelModal.jsx'
@@ -8,11 +9,25 @@ import Button from '@/shared/components/Button.jsx'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
 import { getApiErrorMessage } from '@/shared/services/apiHelpers.js'
 import { mapWhitelabelByOriginalPackageId } from '@/travelAgency/childAgency/utils/whitelabelHelpers.js'
+import Modal from '@/shared/components/Modal.jsx'
+import CommunityChat from '@/customer/components/CommunityChat.jsx'
 
 export default function SubChildPackages() {
-  const { availablePackages, whitelabels, loading, error, createWhitelabel, updateWhitelabel } = useSubChildPackages()
+  const { availablePackages, whitelabels, loading, error, createWhitelabel, updateWhitelabel, currentUserId } = useSubChildPackages()
+  const { bookings } = useSubChildBookings()
   const { toast } = useToast()
   const [submitting, setSubmitting] = useState(false)
+  const [chatPackageId, setChatPackageId] = useState(null)
+
+  // Calculate which packages have bookings
+  const bookedWhiteLabelIds = useMemo(() => {
+    const ids = new Set()
+    bookings.forEach((b) => {
+      const wlId = b.whitelabelPackage?._id || b.whitelabelPackage
+      if (wlId) ids.add(String(wlId))
+    })
+    return ids
+  }, [bookings])
   const [modal, setModal] = useState({
     open: false,
     mode: 'create',
@@ -136,7 +151,14 @@ export default function SubChildPackages() {
         {whitelabels.length > 0 ? (
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {whitelabels.map((wl) => (
-              <WhitelabelPackageCard key={wl._id} item={wl} onEdit={openEdit} onToggleActive={handleToggleActive} />
+              <WhitelabelPackageCard
+                key={wl._id}
+                item={wl}
+                onEdit={openEdit}
+                onToggleActive={handleToggleActive}
+                onChat={() => setChatPackageId(wl.originalPackage?._id || wl.originalPackage)}
+                hasBooking={bookedWhiteLabelIds.has(String(wl._id))}
+              />
             ))}
           </div>
         ) : null}
@@ -152,6 +174,15 @@ export default function SubChildPackages() {
         onSubmit={handleModalSubmit}
         loading={submitting}
       />
+
+      <Modal
+        isOpen={!!chatPackageId}
+        onClose={() => setChatPackageId(null)}
+        title="Community chat"
+        size="xl"
+      >
+        {chatPackageId ? <CommunityChat packageId={chatPackageId} currentUserId={currentUserId} /> : null}
+      </Modal>
     </div>
   )
 }

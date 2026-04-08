@@ -13,13 +13,16 @@ import {
    Phone,
    Mail,
    CheckCircle,
-   Check
+   Check,
+   MessageSquare
 } from 'lucide-react'
 import adminApi from '@/admin/services/adminApi'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
 import Loader from '@/shared/components/Loader.jsx'
 import Modal from '@/shared/components/Modal.jsx'
 import CustomDropdown from '@/shared/components/CustomDropdown.jsx'
+import CommunityChat from '@/customer/components/CommunityChat.jsx'
+import { useAuth } from '@/shared/context/AuthContext.jsx'
 
 const getFileUrl = (path) => {
    if (!path) return null
@@ -161,6 +164,8 @@ const Packages = () => {
    const [totalPages, setTotalPages] = useState(1)
    const [selectedPkg, setSelectedPkg] = useState(null)
    const [isModalOpen, setIsModalOpen] = useState(false)
+   const [chatPackageId, setChatPackageId] = useState(null)
+   const { user } = useAuth()
 
    const fetchPackages = async () => {
       setLoading(true)
@@ -256,8 +261,8 @@ const Packages = () => {
                                  <div className="text-zinc-900 font-medium">{pkg.createdBy?.name}</div>
                                  <div className="text-[10px] text-gray-500 uppercase tracking-widest">{pkg.createdBy?.agentCode}</div>
                               </td>
-
                               <td className="px-6 py-4 text-right">
+
                                  <button
                                     onClick={() => {
                                        setSelectedPkg(pkg)
@@ -267,6 +272,13 @@ const Packages = () => {
                                     title="View Details"
                                  >
                                     <Eye size={18} />
+                                 </button>
+                                 <button
+                                    onClick={() => setChatPackageId(pkg._id)}
+                                    className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all"
+                                    title="Community Chat"
+                                 >
+                                    <MessageSquare size={18} />
                                  </button>
                               </td>
                            </tr>
@@ -292,6 +304,15 @@ const Packages = () => {
             onClose={() => setIsModalOpen(false)}
             pkg={selectedPkg}
          />
+
+         <Modal
+            isOpen={!!chatPackageId}
+            onClose={() => setChatPackageId(null)}
+            title="Community chat"
+            size="xl"
+         >
+            {chatPackageId ? <CommunityChat packageId={chatPackageId} currentUserId={user?.id} /> : null}
+         </Modal>
       </div>
    )
 }

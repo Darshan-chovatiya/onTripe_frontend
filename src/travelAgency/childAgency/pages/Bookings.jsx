@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { CalendarDays, Eye, IndianRupee, Plus, Ticket, MessageSquare } from 'lucide-react'
+import { CalendarDays, Eye, IndianRupee, Plus, Ticket } from 'lucide-react'
 import { useChildBookings } from '@/travelAgency/childAgency/hooks/useChildBookings.js'
 import { useChildPackages } from '@/travelAgency/childAgency/hooks/useChildPackages.js'
 import CreateBookingModal from '@/travelAgency/childAgency/components/CreateBookingModal.jsx'
@@ -7,8 +7,6 @@ import BookingDetailModal from '@/travelAgency/childAgency/components/BookingDet
 import Button from '@/shared/components/Button.jsx'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
 import { getApiErrorMessage } from '@/shared/services/apiHelpers.js'
-import Modal from '@/shared/components/Modal.jsx'
-import CommunityChat from '@/customer/components/CommunityChat.jsx'
 import { basePackageFromBooking } from '@/travelAgency/shared/utils/bookingDetailHelpers.js'
 
 function bookingOfferLabel(b) {
@@ -41,7 +39,6 @@ export default function Bookings() {
   const { toast } = useToast()
   const [modalOpen, setModalOpen] = useState(false)
   const [detailId, setDetailId] = useState(null)
-  const [chatPackageId, setChatPackageId] = useState(null)
   const [submitting, setSubmitting] = useState(false)
 
   const sorted = useMemo(
@@ -142,7 +139,6 @@ export default function Bookings() {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {sorted.map((b) => {
-                  const communityPackageId = basePackageFromBooking(b)?._id || b?.package?._id || null
                   const bookedBy = b.bookedBy
                   const isSelf = currentUserId && bookedBy && String(bookedBy._id || bookedBy) === String(currentUserId)
                   return (
@@ -200,19 +196,6 @@ export default function Bookings() {
                           <Eye className="h-3.5 w-3.5" />
                           View
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => communityPackageId && setChatPackageId(communityPackageId)}
-                          disabled={!communityPackageId}
-                          title={communityPackageId ? 'Open community chat' : 'Community chat not available'}
-                          className={`ml-2 inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium transition-colors ${
-                            communityPackageId
-                              ? 'text-primary-600 hover:text-primary-700 hover:bg-primary-50'
-                              : 'opacity-50 cursor-not-allowed text-gray-300'
-                          }`}
-                        >
-                          <MessageSquare className="h-3.5 w-3.5" />
-                        </button>
                       </td>
                     </tr>
                   )
@@ -239,15 +222,6 @@ export default function Bookings() {
         fetchBooking={fetchBooking}
         updateBooking={handleUpdateBooking}
       />
-
-      <Modal
-        isOpen={!!chatPackageId}
-        onClose={() => setChatPackageId(null)}
-        title="Community chat"
-        size="xl"
-      >
-        {chatPackageId ? <CommunityChat packageId={chatPackageId} currentUserId={currentUserId} /> : null}
-      </Modal>
     </div>
   )
 }

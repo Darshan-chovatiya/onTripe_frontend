@@ -1,8 +1,8 @@
-import { MapPin, Clock, IndianRupee, Image, Pencil, Power } from 'lucide-react'
+import { MapPin, Clock, IndianRupee, Image, Pencil, Power, MessageSquare } from 'lucide-react'
 import Button from '@/shared/components/Button.jsx'
 import { packageCoverUrl } from '@/travelAgency/childAgency/components/packageMedia.js'
 
-export default function WhitelabelPackageCard({ item, onEdit, onToggleActive }) {
+export default function WhitelabelPackageCard({ item, onEdit, onToggleActive, onChat, hasBooking }) {
   const orig = item.originalPackage
   const coverSrc = packageCoverUrl(item.customCoverImage || orig?.coverImage)
   const title = item.customTitle || orig?.title || 'White-label package'
@@ -61,14 +61,19 @@ export default function WhitelabelPackageCard({ item, onEdit, onToggleActive }) 
         </div>
       </div>
       <div className="flex flex-wrap gap-2 border-t border-gray-100 p-3">
-        <Button type="button" variant="secondary" className="flex-1 min-w-[7rem]" onClick={() => onEdit(item)}>
+        <Button type="button" variant="secondary" className="flex-1 min-w-[5rem]" onClick={() => onEdit(item)}>
           <Pencil className="mr-1 inline h-3.5 w-3.5" />
           Edit
         </Button>
-        <Button type="button" variant="secondary" onClick={() => onToggleActive(item)}>
+        <Button type="button" variant="secondary" className="flex-1 min-w-[5rem]" onClick={() => onToggleActive(item)}>
           <Power className="mr-1 inline h-3.5 w-3.5" />
-          {item.isActive ? 'Deactivate' : 'Activate'}
+          {item.isActive ? 'Off' : 'On'}
         </Button>
+        {hasBooking && (
+          <Button type="button" variant="secondary" onClick={onChat} title="Community chat">
+            <MessageSquare className="h-4 w-4 text-primary-600" />
+          </Button>
+        )}
       </div>
     </div>
   )
