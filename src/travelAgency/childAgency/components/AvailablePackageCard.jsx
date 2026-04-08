@@ -1,9 +1,12 @@
-import { MapPin, Clock, IndianRupee, Image, Tag, Pencil } from 'lucide-react'
+import { MapPin, Clock, IndianRupee, Image, Tag, Pencil, Eye } from 'lucide-react'
+import { useState } from 'react'
 import Button from '@/shared/components/Button.jsx'
 import { packageCoverUrl } from '@/travelAgency/childAgency/components/packageMedia.js'
+import PackageDetailModal from '@/travelAgency/childAgency/components/PackageDetailModal.jsx'
 
 export default function AvailablePackageCard({ pkg, existingWhitelabel, onCreateWhiteLabel, onEditWhiteLabel }) {
   const coverSrc = packageCoverUrl(pkg.coverImage)
+  const [detailOpen, setDetailOpen] = useState(false)
 
   return (
     <div className="flex flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition-shadow hover:shadow-md">
@@ -37,6 +40,10 @@ export default function AvailablePackageCard({ pkg, existingWhitelabel, onCreate
         {pkg.description ? <p className="line-clamp-2 text-xs text-gray-400">{pkg.description}</p> : null}
       </div>
       <div className="space-y-2 border-t border-gray-100 p-3">
+        <Button type="button" variant="secondary" className="w-full" onClick={() => setDetailOpen(true)}>
+          <Eye className="mr-1.5 inline h-4 w-4" />
+          View details
+        </Button>
         {existingWhitelabel ? (
           <>
             <p className="text-center text-xs text-gray-500">One white-label per package — you already have an offer.</p>
@@ -52,6 +59,8 @@ export default function AvailablePackageCard({ pkg, existingWhitelabel, onCreate
           </Button>
         )}
       </div>
+
+      <PackageDetailModal isOpen={detailOpen} onClose={() => setDetailOpen(false)} pkg={pkg} />
     </div>
   )
 }

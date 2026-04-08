@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { CalendarDays, Eye, IndianRupee, Plus, Ticket, MessageSquare } from 'lucide-react'
+import { CalendarDays, Eye, IndianRupee, Plus, Ticket, MessageSquare, Pencil } from 'lucide-react'
 import { useChildBookings } from '@/travelAgency/childAgency/hooks/useChildBookings.js'
 import { useChildPackages } from '@/travelAgency/childAgency/hooks/useChildPackages.js'
 import CreateBookingModal from '@/travelAgency/childAgency/components/CreateBookingModal.jsx'
@@ -41,6 +41,7 @@ export default function Bookings() {
   const { toast } = useToast()
   const [modalOpen, setModalOpen] = useState(false)
   const [detailId, setDetailId] = useState(null)
+  const [detailOpenEdit, setDetailOpenEdit] = useState(false)
   const [chatPackageId, setChatPackageId] = useState(null)
   const [submitting, setSubmitting] = useState(false)
 
@@ -194,11 +195,19 @@ export default function Bookings() {
                       <td className="px-4 py-3 text-right">
                         <button
                           type="button"
-                          onClick={() => setDetailId(b._id)}
+                          onClick={() => { setDetailId(b._id); setDetailOpenEdit(false) }}
                           className="inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
                         >
                           <Eye className="h-3.5 w-3.5" />
                           View
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => { setDetailId(b._id); setDetailOpenEdit(true) }}
+                          className="ml-2 inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-700 hover:bg-primary-50 hover:text-primary-600 hover:border-primary-200"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                          Edit
                         </button>
                         <button
                           type="button"
@@ -234,10 +243,11 @@ export default function Bookings() {
 
       <BookingDetailModal
         isOpen={Boolean(detailId)}
-        onClose={() => setDetailId(null)}
+        onClose={() => { setDetailId(null); setDetailOpenEdit(false) }}
         bookingId={detailId}
         fetchBooking={fetchBooking}
         updateBooking={handleUpdateBooking}
+        openInEdit={detailOpenEdit}
       />
 
       <Modal

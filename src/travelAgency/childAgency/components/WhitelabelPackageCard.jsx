@@ -1,11 +1,14 @@
-import { MapPin, Clock, IndianRupee, Image, Pencil, Power } from 'lucide-react'
+import { MapPin, Clock, IndianRupee, Image, Pencil, Power, Eye } from 'lucide-react'
+import { useState } from 'react'
 import Button from '@/shared/components/Button.jsx'
 import { packageCoverUrl } from '@/travelAgency/childAgency/components/packageMedia.js'
+import PackageDetailModal from '@/travelAgency/childAgency/components/PackageDetailModal.jsx'
 
 export default function WhitelabelPackageCard({ item, onEdit, onToggleActive }) {
   const orig = item.originalPackage
   const coverSrc = packageCoverUrl(item.customCoverImage || orig?.coverImage)
   const title = item.customTitle || orig?.title || 'White-label package'
+  const [detailOpen, setDetailOpen] = useState(false)
 
   return (
     <div className="flex flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition-shadow hover:shadow-md">
@@ -61,6 +64,10 @@ export default function WhitelabelPackageCard({ item, onEdit, onToggleActive }) 
         </div>
       </div>
       <div className="flex flex-wrap gap-2 border-t border-gray-100 p-3">
+        <Button type="button" variant="secondary" className="w-full" onClick={() => setDetailOpen(true)}>
+          <Eye className="mr-1 inline h-3.5 w-3.5" />
+          View details
+        </Button>
         <Button type="button" variant="secondary" className="flex-1 min-w-[7rem]" onClick={() => onEdit(item)}>
           <Pencil className="mr-1 inline h-3.5 w-3.5" />
           Edit
@@ -70,6 +77,8 @@ export default function WhitelabelPackageCard({ item, onEdit, onToggleActive }) 
           {item.isActive ? 'Deactivate' : 'Activate'}
         </Button>
       </div>
+
+      <PackageDetailModal isOpen={detailOpen} onClose={() => setDetailOpen(false)} pkg={item} isWhitelabel />
     </div>
   )
 }

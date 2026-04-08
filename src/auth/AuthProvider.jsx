@@ -172,7 +172,9 @@ export function AuthProvider({ children }) {
     async (agentData) => {
       setIsLoading(true)
       try {
-        const { data } = await axiosInstance.post('/auth/register/agent', agentData)
+        const { data } = await axiosInstance.post('/auth/register/agent', agentData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        })
         if (data?.success) {
           return { success: true, message: data.message }
         }
