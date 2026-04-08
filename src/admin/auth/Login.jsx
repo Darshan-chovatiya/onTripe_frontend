@@ -1,9 +1,8 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Mail, Lock, Eye, EyeOff, ShieldCheck } from 'lucide-react'
+import { Eye, EyeOff } from 'lucide-react'
 import { useAuth } from '@/shared/context/AuthContext.jsx'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
-import Loader from '@/shared/components/Loader.jsx'
 import { ROLES } from '@/shared/utils/constants.js'
 
 export default function AdminLogin() {
@@ -22,7 +21,7 @@ export default function AdminLogin() {
         toast.error('Access denied. You are not an administrator.')
         return
       }
-      toast.success(res.message || 'Welcome back, Administrator')
+      toast.success(res.message || 'Welcome back')
       navigate('/admin/dashboard', { replace: true })
     } else {
       toast.error(res.message || 'Login failed')
@@ -30,97 +29,79 @@ export default function AdminLogin() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50 p-4 relative overflow-hidden">
-      {/* Background Orbs */}
-      <div className="absolute top-[-5%] left-[-5%] w-[35%] h-[35%] bg-primary-100/40 rounded-full blur-[100px] pointer-events-none" />
-      <div className="absolute bottom-[-5%] right-[-5%] w-[35%] h-[35%] bg-blue-50/50 rounded-full blur-[100px] pointer-events-none" />
-      
-      <div className="w-full max-w-[400px] relative z-10">
-        <div className="bg-white border border-slate-200/60 rounded-2xl p-7 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.08)] animate-scale-in">
-          <div className="mb-7 text-center">
-            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-primary-50 text-primary-600 shadow-sm border border-primary-100/50">
-              <ShieldCheck className="h-7 w-7" />
-            </div>
-            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Admin Portal</h1>
-            <p className="mt-1 text-sm text-slate-500 font-medium">Secure administrator access</p>
-          </div>
+    <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 px-4 py-10">
+      <div className="w-full max-w-[380px] animate-fade-in">
+        <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+          <header className="bg-primary-700 px-8 py-7 text-center">
+            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-primary-200">OnTrip</p>
+            <h1 className="mt-3 text-xl font-semibold tracking-tight text-white sm:text-2xl">Admin sign in</h1>
+            <p className="mt-2 text-sm leading-snug text-primary-100">Administrator access only.</p>
+          </header>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-1.5 focus-within:translate-x-1 transition-transform">
-              <label className="block text-xs font-bold text-slate-500 ml-1 uppercase tracking-wider">
-                Email Address
+          <div className="p-8">
+            <form onSubmit={handleSubmit} className="space-y-5">
+            <div>
+              <label htmlFor="admin-email" className="mb-1.5 block text-sm font-medium text-gray-700">
+                Email
               </label>
-              <div className="relative group">
-                <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary-500 transition-colors">
-                  <Mail size={16} />
-                </div>
-                <input
-                  type="email"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500/50 transition-all text-sm font-medium"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@ontrip.com"
-                  autoComplete="email"
-                  required
-                />
-              </div>
+              <input
+                id="admin-email"
+                type="email"
+                className="input-field"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@company.com"
+                autoComplete="email"
+                required
+              />
             </div>
 
-            <div className="space-y-1.5 focus-within:translate-x-1 transition-transform">
-              <label className="block text-xs font-bold text-slate-500 ml-1 uppercase tracking-wider">
-                Security Key
+            <div>
+              <label htmlFor="admin-password" className="mb-1.5 block text-sm font-medium text-gray-700">
+                Password
               </label>
-              <div className="relative group">
-                <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary-500 transition-colors">
-                  <Lock size={16} />
-                </div>
+              <div className="relative">
                 <input
-                  type={showPassword ? "text" : "password"}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-10 py-2.5 text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500/50 transition-all text-sm font-medium"
+                  id="admin-password"
+                  type={showPassword ? 'text' : 'password'}
+                  className="input-field pr-11"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
+                  placeholder="Enter your password"
                   autoComplete="current-password"
                   required
                 />
                 <button
                   type="button"
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
-                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+                  onClick={() => setShowPassword((v) => !v)}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
                 >
-                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  {showPassword ? <EyeOff className="h-4 w-4" strokeWidth={2} /> : <Eye className="h-4 w-4" strokeWidth={2} />}
                 </button>
               </div>
             </div>
 
-            <button 
-              type="submit" 
-              disabled={isLoading} 
-              className="w-full py-3 px-6 bg-primary-600 hover:bg-primary-700 text-white text-sm font-bold rounded-xl shadow-lg shadow-primary-600/20 transform transition-all active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed mt-2 flex items-center justify-center gap-2"
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="btn-primary mt-1 w-full py-3 text-sm font-semibold"
             >
               {isLoading ? (
-                <>
-                  <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  <span>Verifying...</span>
-                </>
+                <span className="inline-flex items-center justify-center gap-2">
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                  Signing in…
+                </span>
               ) : (
-                'Enterprise Access'
+                'Sign in'
               )}
             </button>
           </form>
-
-          <div className="mt-8 pt-6 border-t border-slate-100 text-center">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-50 border border-slate-100">
-              <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              <p className="text-[10px] text-slate-400 uppercase tracking-[0.1em] font-bold">
-                Secure SSL Environment
-              </p>
-            </div>
           </div>
         </div>
-        
-        <p className="mt-6 text-center text-slate-400 text-xs font-semibold">
-          &copy; {new Date().getFullYear()} OnTrip System.
+
+        <p className="mt-8 text-center text-xs text-gray-400">
+          © {new Date().getFullYear()} OnTrip. All rights reserved.
         </p>
       </div>
     </div>

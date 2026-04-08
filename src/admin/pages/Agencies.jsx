@@ -1,26 +1,27 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
+  AlertCircle,
+  ArrowRight,
   Building2,
-  Search,
   CheckCircle,
-  Clock,
-  XCircle,
-  Eye,
-  FileText,
-  FileCheck,
   ChevronLeft,
   ChevronRight,
-  Plus,
-  Mail,
-  Phone,
-  ShieldCheck,
-  ShieldAlert,
-  Users,
+  Clock,
+  Eye,
   ExternalLink,
-  ArrowRight,
+  FileCheck,
+  FileText,
+  Mail,
   Pencil,
-  Trash2
+  Phone,
+  Plus,
+  Search,
+  ShieldAlert,
+  ShieldCheck,
+  Trash2,
+  Users,
+  XCircle,
 } from 'lucide-react'
 import Swal from 'sweetalert2'
 import adminApi from '@/admin/services/adminApi'
@@ -28,7 +29,6 @@ import { useToast } from '@/shared/components/ToastContainer.jsx'
 import Loader from '@/shared/components/Loader.jsx'
 import Modal from '@/shared/components/Modal.jsx'
 import CustomDropdown from '@/shared/components/CustomDropdown.jsx'
-import { AlertCircle } from 'lucide-react'
 
 const getFileUrl = (path) => {
   if (!path) return '#'
@@ -936,80 +936,76 @@ export default function Agencies() {
   ]
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Header */}
-      {/* Header & Controls */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+    <div className="animate-fade-in space-y-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900">Parent Agencies</h1>
-          <p className="text-gray-500 text-sm">Manage tier-1 travel distribution entities and corporate identities</p>
+          <h1 className="text-xl font-semibold tracking-tight text-gray-900 sm:text-2xl">Parent Agencies</h1>
+          <p className="mt-1 text-sm text-gray-500">
+            Manage tier-1 travel distribution entities and corporate identities
+          </p>
         </div>
+        <button
+          type="button"
+          onClick={() => setIsAddModalOpen(true)}
+          className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-zinc-800 sm:w-auto sm:self-auto"
+        >
+          <Plus size={18} strokeWidth={2} />
+          Add Agency
+        </button>
+      </div>
 
-        <div className="flex flex-col sm:flex-row items-center gap-3">
-          <div className="relative w-full sm:w-64">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+      <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+        <div className="flex flex-col gap-3 border-b border-gray-200 px-4 py-3 sm:flex-row sm:items-center sm:gap-4">
+          <div className="relative min-w-0 flex-1 sm:max-w-xs">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" strokeWidth={2} />
             <input
               type="text"
               placeholder="Search agencies..."
-              className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 shadow-sm"
+              className="w-full rounded-md border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-gray-300 focus:outline-none focus:ring-1 focus:ring-gray-300"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <div className="text-xs font-bold text-gray-400 uppercase tracking-widest hidden xl:block">Status:</div>
+          <div className="w-full sm:w-44">
             <CustomDropdown
               value={statusFilter}
               onChange={setStatusFilter}
               options={statusOptions}
-              className="w-full sm:w-40"
+              className="w-full"
               buttonClassName="!py-2"
             />
           </div>
-
-          <button
-            onClick={() => setIsAddModalOpen(true)}
-            className="w-full sm:w-auto flex items-center justify-center gap-2 bg-zinc-900 text-white px-5 py-2 rounded-lg text-sm font-bold hover:bg-zinc-800 transition-all shadow-sm whitespace-nowrap"
-          >
-            <Plus size={18} />
-            <span>Add Agency</span>
-          </button>
         </div>
-      </div>
 
-      {/* Main Table */}
-      {loading ? (
-        <div className="bg-white rounded-2xl border border-slate-200 p-16 flex flex-col items-center justify-center shadow-sm">
-          <Loader size="lg" />
-          <p className="text-[10px] font-bold text-slate-400 mt-5 tracking-[0.2em] uppercase italic">Synching registry...</p>
-        </div>
-      ) : agents.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-slate-200 p-16 text-center shadow-sm">
-          <div className="w-14 h-14 rounded-2xl bg-slate-50 flex items-center justify-center mx-auto mb-4 border border-slate-100">
-            <Building2 className="w-7 h-7 text-slate-300" />
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-16">
+            <Loader size="lg" />
+            <p className="mt-4 text-xs text-gray-500">Loading agencies…</p>
           </div>
-          <h3 className="text-lg font-bold text-slate-900 leading-none">No active instances found</h3>
-          <p className="text-sm text-slate-500 mt-2 font-medium">Broaden your search criteria to identify platform entities.</p>
-        </div>
-      ) : (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-visible ring-1 ring-black/5">
-          <div className="overflow-visible">
-            <table className="w-full table-auto">
-              <thead className="bg-slate-50/80 border-b border-slate-100">
+        ) : agents.length === 0 ? (
+          <div className="px-4 py-14 text-center">
+            <Building2 className="mx-auto h-8 w-8 text-gray-300" strokeWidth={1.5} />
+            <p className="mt-3 text-sm font-medium text-gray-900">No agencies found</p>
+            <p className="mt-1 text-sm text-gray-500">Try adjusting search or status.</p>
+          </div>
+        ) : (
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[720px] text-sm">
+              <thead className="border-b border-gray-200 bg-gray-50">
                 <tr>
-                  <th className="px-6 py-4 text-left text-[10px] font-black text-zinc-900 uppercase tracking-widest leading-none">Parent Agency</th>
-                  <th className="px-6 py-4 text-left text-[10px] font-black text-zinc-900 uppercase tracking-widest leading-none">Child Network</th>
-                  <th className="px-6 py-4 text-left text-[10px] font-black text-zinc-900 uppercase tracking-widest leading-none">Primary Contact</th>
-                  <th className="px-6 py-4 text-left text-[10px] font-black text-zinc-900 uppercase tracking-widest leading-none">Account State</th>
-                  <th className="px-6 py-4 text-left text-[10px] font-black text-zinc-900 uppercase tracking-widest leading-none">KYC Verification</th>
-                  <th className="px-6 py-4 text-right text-[10px] font-black text-zinc-900 uppercase tracking-widest leading-none pr-8">Actions</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-600">Parent agency</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-600">Child network</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-600">Contact</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-600">Status</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-600">KYC</th>
+                  <th className="px-4 py-2.5 text-right text-xs font-medium text-gray-600">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-gray-100">
                 {agents.map((agent) => (
-                  <tr key={agent._id} className="relative hover:bg-slate-50/50 transition-colors group">
-                    <td className="px-4 py-3.5">
+                  <tr key={agent._id} className="group transition-colors hover:bg-gray-50/80">
+                    <td className="px-4 py-2.5">
                       <div className="flex items-center gap-2.5">
                         <div className="h-9 w-9 flex-shrink-0 rounded-full bg-slate-100 flex items-center justify-center border border-slate-200 group-hover:scale-105 transition-transform"><Building2 className="h-4.5 w-4.5 text-slate-500" /></div>
                         <div className="min-w-0">
@@ -1021,10 +1017,10 @@ export default function Agencies() {
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-3.5 whitespace-nowrap">
+                    <td className="whitespace-nowrap px-4 py-2.5">
                       <button
                         onClick={() => navigate(`/admin/agencies/network/${agent._id}`)}
-                        className="flex items-center gap-2 group/h"
+                        className="group/h flex items-center gap-2"
                       >
                         <div className="h-9 px-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center gap-2 transition-all group-hover/h:bg-primary-50 group-hover/h:border-primary-200 group-hover/h:shadow-sm">
                           <Users size={14} className="text-slate-400 group-hover/h:text-primary-600 transition-colors" />
@@ -1036,13 +1032,15 @@ export default function Agencies() {
                         </div>
                       </button>
                     </td>
-                    <td className="px-4 py-3.5 whitespace-nowrap">
+                    <td className="whitespace-nowrap px-4 py-2.5">
                       <div className="flex items-center gap-2">
-                        <div className="h-6 w-6 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-400 shadow-sm"><Phone className="w-3 h-3" /></div>
-                        <div className="text-[11px] font-bold text-slate-600 tracking-tight">{agent.phone || 'N/A'}</div>
+                        <div className="flex h-6 w-6 items-center justify-center rounded border border-gray-200 bg-white text-gray-400">
+                          <Phone className="h-3 w-3" />
+                        </div>
+                        <span className="text-xs font-medium text-gray-700">{agent.phone || 'N/A'}</span>
                       </div>
                     </td>
-                    <td className="px-4 py-3.5 whitespace-nowrap">
+                    <td className="whitespace-nowrap px-4 py-2.5">
                       <button
                         onClick={() => handleToggleAgent(agent._id)}
                         className={`inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all active:scale-95 min-w-[85px] border shadow-sm ${agent.isActive
@@ -1054,18 +1052,18 @@ export default function Agencies() {
                         {agent.isActive ? 'Active' : 'Inactive'}
                       </button>
                     </td>
-                    <td className="px-4 py-3.5 whitespace-nowrap">
+                    <td className="whitespace-nowrap px-4 py-2.5">
                       <button
                         onClick={() => {
                           setSelectedAgent(agent)
                           setIsKycModalOpen(true)
                         }}
-                        className="active:scale-95 transition-transform"
+                        className="transition-transform active:scale-95"
                       >
                         {getStatusBadge(agent.kyc?.status)}
                       </button>
                     </td>
-                    <td className="px-4 py-3.5 text-right whitespace-nowrap pr-6">
+                    <td className="whitespace-nowrap px-4 py-2.5 pr-5 text-right">
                       <div className="flex items-center justify-end gap-2">
                         <button
                           onClick={() => {
@@ -1100,22 +1098,37 @@ export default function Agencies() {
                 ))}
               </tbody>
             </table>
-          </div>
-
-          {/* Pagination Footer */}
-          {totalPages > 1 && (
-            <div className="bg-slate-50/50 border-t border-slate-100 px-6 py-4 flex items-center justify-between">
-              <div className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
-                Page <span className="text-slate-900 mx-1">{page}</span> of <span className="text-slate-900 mx-1">{totalPages}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="h-8 w-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-white hover:shadow-sm disabled:opacity-20 transition-all"><ChevronLeft className="w-4 h-4" /></button>
-                <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="h-8 w-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-white hover:shadow-sm disabled:opacity-20 transition-all"><ChevronRight className="w-4 h-4" /></button>
-              </div>
             </div>
-          )}
-        </div>
-      )}
+
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between border-t border-gray-200 bg-gray-50 px-4 py-3">
+                <p className="text-xs text-gray-500">
+                  Page <span className="font-medium text-gray-900">{page}</span> of{' '}
+                  <span className="font-medium text-gray-900">{totalPages}</span>
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={page === 1}
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 bg-white text-gray-600 transition-colors hover:bg-gray-50 disabled:opacity-40"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={page === totalPages}
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 bg-white text-gray-600 transition-colors hover:bg-gray-50 disabled:opacity-40"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </div>
 
       {/* Add Agency Modal */}
       <AddAgencyModal
