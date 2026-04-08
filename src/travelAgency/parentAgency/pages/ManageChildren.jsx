@@ -184,7 +184,17 @@ export default function ManageChildren() {
     setHistoryLoading(true)
     try {
       const { data } = await getSentNotifications()
-      if (data.success) setHistory(data.data.notifications || [])
+      if (data.success) {
+        const notifications = data.data.notifications || []
+        // Parent history: only notifications sent to direct child agents
+        setHistory(
+          notifications.filter((n) =>
+            Array.isArray(n.recipients)
+              ? n.recipients.some((r) => r?.receiverType === 'User' && r?.receiver?.role === 'child_agent')
+              : false
+          )
+        )
+      }
     } catch (err) {
       toast.error('Failed to load notification history')
     } finally {
@@ -485,6 +495,39 @@ export default function ManageChildren() {
                   <div>
                     <div className="text-sm font-semibold text-gray-900">{item.subject}</div>
                     <div className="mt-1 text-xs text-gray-500 line-clamp-2">{item.message}</div>
+                      <div className="mt-2 text-[11px] text-gray-600">
+                        <span className="font-semibold">Sent to:</span>{' '}
+                        {(item.recipients || [])
+                          .map((r) => r?.receiver?.email || r?.receiver?.name)
+                          .filter(Boolean)
+                          .slice(0, 4)
+                          .join(', ')}
+                        {(item.recipients || []).length > 4 ? '…' : ''}
+                      </div>
+
+                      {Array.isArray(item.attachments) && item.attachments.length > 0 && (
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {item.attachments
+                            .filter((a) => a?.filename)
+                            .map((a) =>
+                              a?.url ? (
+                                <a
+                                  key={`${item._id}-${a.filename}`}
+                                  href={a.url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="rounded-full bg-white px-2 py-0.5 text-[11px] font-semibold text-primary-700 ring-1 ring-inset ring-primary-200 hover:bg-primary-50"
+                                >
+                                  {a.filename}
+                                </a>
+                              ) : (
+                                <span key={`${item._id}-${a.filename}`} className="rounded-full bg-gray-50 px-2 py-0.5 text-[11px] font-semibold text-gray-700 ring-1 ring-inset ring-gray-200">
+                                  {a.filename}
+                                </span>
+                              )
+                            )}
+                        </div>
+                      )}
                   </div>
                   <div className="text-[11px] text-gray-400 whitespace-nowrap">
                     {new Date(item.createdAt).toLocaleString()}
