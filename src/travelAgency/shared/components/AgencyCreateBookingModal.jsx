@@ -267,9 +267,7 @@ export default function AgencyCreateBookingModal({
       normalizePhone(customerPhone) &&
       travelDate &&
       totalAmount &&
-      (offerType === 'package'
-        ? packageId && availablePackages?.length
-        : whitelabelId && activeWhitelabels.length)
+      (whitelabelId || packageId)
   )
 
   const footer = (
@@ -316,39 +314,8 @@ export default function AgencyCreateBookingModal({
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="New booking" footer={footer} size="lg">
       <form id="agency-create-booking-form" onSubmit={handleSubmit} className="space-y-5">
-        <div>
-          <span className="mb-2 block text-sm font-medium text-gray-700">What are you selling?</span>
-          <div className="flex flex-wrap gap-4 text-sm">
-            <label className="flex cursor-pointer items-center gap-2">
-              <input
-                type="radio"
-                name="offerType"
-                checked={offerType === 'whitelabel'}
-                onChange={() => setOfferType('whitelabel')}
-                disabled={!activeWhitelabels.length}
-              />
-              My white-label package
-            </label>
-            <label className="flex cursor-pointer items-center gap-2">
-              <input
-                type="radio"
-                name="offerType"
-                checked={offerType === 'package'}
-                onChange={() => setOfferType('package')}
-                disabled={!availablePackages?.length}
-              />
-              Parent package (direct)
-            </label>
-          </div>
-          {!activeWhitelabels.length && offerType === 'whitelabel' ? (
-            <p className="mt-2 text-xs text-amber-700">Create an active white-label under Packages first.</p>
-          ) : null}
-          {!availablePackages?.length && offerType === 'package' ? (
-            <p className="mt-2 text-xs text-amber-700">No parent packages available.</p>
-          ) : null}
-        </div>
 
-        {offerType === 'whitelabel' && activeWhitelabels.length > 0 ? (
+        {activeWhitelabels.length > 0 ? (
           <div>
             <label htmlFor="bk-wl" className="mb-1 block text-sm font-medium text-gray-700">
               White-label offer
@@ -357,8 +324,8 @@ export default function AgencyCreateBookingModal({
               id="bk-wl"
               className="input-field w-full"
               value={whitelabelId}
-              onChange={(e) => setWhitelabelId(e.target.value)}
-              required
+              onChange={(e) => { setWhitelabelId(e.target.value); setOfferType('whitelabel') }}
+              required={offerType === 'whitelabel'}
             >
               {activeWhitelabels.map((w) => (
                 <option key={w._id} value={w._id}>
@@ -370,7 +337,7 @@ export default function AgencyCreateBookingModal({
           </div>
         ) : null}
 
-        {offerType === 'package' && availablePackages?.length > 0 ? (
+        {availablePackages?.length > 0 ? (
           <div>
             <label htmlFor="bk-pkg" className="mb-1 block text-sm font-medium text-gray-700">
               Package
@@ -379,8 +346,8 @@ export default function AgencyCreateBookingModal({
               id="bk-pkg"
               className="input-field w-full"
               value={packageId}
-              onChange={(e) => setPackageId(e.target.value)}
-              required
+              onChange={(e) => { setPackageId(e.target.value); setOfferType('package') }}
+              required={offerType === 'package'}
             >
               {availablePackages.map((p) => (
                 <option key={p._id} value={p._id}>
@@ -390,6 +357,10 @@ export default function AgencyCreateBookingModal({
               ))}
             </select>
           </div>
+        ) : null}
+
+        {!activeWhitelabels.length && !availablePackages?.length ? (
+          <p className="text-xs text-amber-700">No packages available. Create a white-label under Packages first.</p>
         ) : null}
 
         <div className="rounded-xl border border-gray-200 bg-gray-50/80 p-4">
@@ -412,23 +383,25 @@ export default function AgencyCreateBookingModal({
               <UserPlus className="h-3.5 w-3.5" />
               New / enter details
             </button>
-            <button
-              type="button"
-              onClick={() => {
-                setCustomerMode('existing')
-                setLookupMeta(null)
-                setSelectedExistingId('')
-                setExistingSearchQuery('')
-              }}
-              className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold transition ${
-                customerMode === 'existing'
-                  ? 'bg-primary-600 text-white shadow-sm'
-                  : 'bg-white text-gray-700 ring-1 ring-gray-200 hover:bg-gray-50'
-              }`}
-            >
-              <Users className="h-3.5 w-3.5" />
-              Choose existing
-            </button>
+            {agencyCustomers.length > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  setCustomerMode('existing')
+                  setLookupMeta(null)
+                  setSelectedExistingId('')
+                  setExistingSearchQuery('')
+                }}
+                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold transition ${
+                  customerMode === 'existing'
+                    ? 'bg-primary-600 text-white shadow-sm'
+                    : 'bg-white text-gray-700 ring-1 ring-gray-200 hover:bg-gray-50'
+                }`}
+              >
+                <Users className="h-3.5 w-3.5" />
+                Choose existing
+              </button>
+            )}
           </div>
 
           {customerMode === 'existing' ? (
