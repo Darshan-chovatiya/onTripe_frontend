@@ -31,4 +31,9 @@ export const routeConfig = [
   { path: '/customer/profile', allowedRoles: [ROLES.CUSTOMER] },
 ]
 
-export const publicPaths = ['/login', '/forgot-password', '/unauthorized']
+export const publicPaths = [
+  '/login',
+  '/customer/login',
+  '/forgot-password',
+  '/unauthorized',
+]

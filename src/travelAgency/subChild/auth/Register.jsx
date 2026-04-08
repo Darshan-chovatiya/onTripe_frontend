@@ -42,7 +42,7 @@ export default function SubChildRegister() {
     const res = await registerAgent(submitData)
     if (res.success) {
       toast.success('Application submitted! Our team will review your KYC documents soon.')
-      setTimeout(() => navigate('/travelAgency/subchild/login'), 2500)
+      setTimeout(() => navigate('/login'), 2500)
     } else {
       toast.error(res.message || 'Registration failed')
     }
@@ -192,7 +192,7 @@ export default function SubChildRegister() {
 
         <div className="mt-8 text-center text-sm">
           <span className="text-gray-600">Already have an account? </span>
-          <Link to="/travelAgency/subchild/login" className="font-semibold text-primary-600 hover:underline">
+          <Link to="/login" className="font-semibold text-primary-600 hover:underline">
             Sign In Here
           </Link>
         </div>

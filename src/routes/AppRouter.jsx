@@ -3,20 +3,16 @@ import ProtectedRoute from '@/routes/ProtectedRoute.jsx'
 import AgencyPermissionRoute from '@/routes/AgencyPermissionRoute.jsx'
 import AgencyLegacyRedirect from '@/routes/AgencyLegacyRedirect.jsx'
 
-import Login from '@/auth/pages/Login.jsx'
+import AgentAdminLogin from '@/auth/pages/AgentAdminLogin.jsx'
+import CustomerLogin from '@/auth/pages/Login.jsx'
 import ForgotPassword from '@/auth/pages/ForgotPassword.jsx'
 import Unauthorized from '@/pages/Unauthorized.jsx'
 import Landing from '@/pages/Landing.jsx'
 
-import ChildAgentLogin from '@/travelAgency/childAgency/auth/Login.jsx'
 import ChildAgentRegister from '@/travelAgency/childAgency/auth/Register.jsx'
-import SubChildLogin from '@/travelAgency/subChild/auth/Login.jsx'
 import SubChildRegister from '@/travelAgency/subChild/auth/Register.jsx'
 
-import ParentAgentLogin from '@/travelAgency/parentAgency/auth/Login.jsx'
 import ParentAgentRegister from '@/travelAgency/parentAgency/auth/Register.jsx'
-
-import AdminLogin from '@/admin/auth/Login.jsx'
 
 import AdminLayout from '@/admin/components/AdminLayout.jsx'
 import AdminDashboard from '@/admin/pages/Dashboard.jsx'
@@ -54,21 +50,23 @@ export default function AppRouter() {
     <Routes>
       <Route path="/" element={<Landing />} />
 
-      <Route path="/login" element={<Login />} />
+      <Route path="/login" element={<AgentAdminLogin />} />
+      <Route path="/customer/login" element={<CustomerLogin />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/unauthorized" element={<Unauthorized />} />
 
-      <Route path="/admin/login" element={<AdminLogin />} />
+      <Route path="/admin/login" element={<Navigate to="/login" replace />} />
 
       {/* Child and Sub-child Auth Routes */}
-      <Route path="/travelAgency/child/login" element={<ChildAgentLogin />} />
+      <Route path="/travelAgency/child/login" element={<Navigate to="/login" replace />} />
       <Route path="/travelAgency/child/register" element={<ChildAgentRegister />} />
-      <Route path="/travelAgency/subchild/login" element={<SubChildLogin />} />
+      <Route path="/travelAgency/subchild/login" element={<Navigate to="/login" replace />} />
       <Route path="/travelAgency/subchild/register" element={<SubChildRegister />} />
 
       {/* Parent Auth Routes */}
-      <Route path="/travelAgency/parent/login" element={<ParentAgentLogin />} />
+      <Route path="/travelAgency/parent/login" element={<Navigate to="/login" replace />} />
       <Route path="/travelAgency/parent/register" element={<ParentAgentRegister />} />
+      <Route path="/agency/login" element={<Navigate to="/login" replace />} />
 
       <Route
         path="/admin"
