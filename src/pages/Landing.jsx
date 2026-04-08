@@ -22,6 +22,12 @@ const PANELS = [
     path: '/customer/booking',
     signInPath: '/customer/login',
   },
+  {
+    name: 'Vendor',
+    description: 'View assigned activities, customer details and trip dates',
+    path: '/vendor/dashboard',
+    signInPath: '/vendor/login',
+  },
 ]
 
 export default function Landing() {

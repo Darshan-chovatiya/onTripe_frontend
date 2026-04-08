@@ -44,6 +44,9 @@ import CustomerLayout from '@/customer/components/CustomerLayout.jsx'
 import CustomerBooking from '@/customer/pages/Booking.jsx'
 import CustomerTripHistory from '@/customer/pages/TripHistory.jsx'
 import CustomerProfile from '@/customer/pages/Profile.jsx'
+import VendorLogin from '@/vendor/auth/Login.jsx'
+import VendorDashboard from '@/vendor/pages/Dashboard.jsx'
+import VendorPackageDetails from '@/vendor/pages/PackageDetails.jsx'
 
 export default function AppRouter() {
   return (
@@ -52,6 +55,7 @@ export default function AppRouter() {
 
       <Route path="/login" element={<AgentAdminLogin />} />
       <Route path="/customer/login" element={<CustomerLogin />} />
+      <Route path="/vendor/login" element={<VendorLogin />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/unauthorized" element={<Unauthorized />} />
 
@@ -201,6 +205,24 @@ export default function AppRouter() {
         <Route path="profile" element={<Navigate to="/agency/customers" replace />} />
         <Route path="settings" element={<AgencySettings />} />
       </Route>
+
+      <Route path="/vendor" element={<Navigate to="/vendor/dashboard" replace />} />
+      <Route
+        path="/vendor/dashboard"
+        element={
+          <ProtectedRoute>
+            <VendorDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/vendor/package/:packageId"
+        element={
+          <ProtectedRoute>
+            <VendorPackageDetails />
+          </ProtectedRoute>
+        }
+      />
 
       <Route
         path="/customer"

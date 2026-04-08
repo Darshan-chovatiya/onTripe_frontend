@@ -28,6 +28,7 @@ function normalizeUser(raw, loginRoleHint) {
     sub_child: ROLES.SUB_CHILD,
     sub_child_agent: ROLES.SUB_CHILD,
     subchild: ROLES.SUB_CHILD,
+    vendor: ROLES.VENDOR,
     organizer: loginRoleHint || ROLES.PARENT_AGENCY,
   }
 
@@ -253,6 +254,41 @@ export function AuthProvider({ children }) {
     [applySession]
   )
 
+  const requestVendorOtp = useCallback(
+    async (phone) => {
+      setIsLoading(true)
+      try {
+        const { data } = await axiosInstance.post('/auth/otp/vendor', { phone })
+        return { success: data?.success, message: data?.message }
+      } catch (e) {
+        return { success: false, message: e?.response?.data?.message || 'Failed to send OTP' }
+      } finally {
+        setIsLoading(false)
+      }
+    },
+    []
+  )
+
+  const loginVendor = useCallback(
+    async (phone, otp) => {
+      setIsLoading(true)
+      try {
+        const { data } = await axiosInstance.post('/auth/login/vendor', { phone, otp })
+        if (data?.success && data?.data?.token && data?.data?.user) {
+          const u = normalizeUser(data.data.user)
+          applySession(u, data.data.token)
+          return { success: true, role: u.role, message: data.message }
+        }
+        return { success: false, message: data?.message || 'Login failed' }
+      } catch (e) {
+        return { success: false, message: e?.response?.data?.message || 'Login failed' }
+      } finally {
+        setIsLoading(false)
+      }
+    },
+    [applySession]
+  )
+
   const value = useMemo(
     () => ({
       user,
@@ -268,8 +304,10 @@ export function AuthProvider({ children }) {
       registerParent,
       loginCustomer,
       requestCustomerOtp,
+      loginVendor,
+      requestVendorOtp,
     }),
-    [user, token, isCheckingAuth, isLoading, login, logout, checkAuth, setUser, registerAgent, registerParent, loginCustomer, requestCustomerOtp]
+    [user, token, isCheckingAuth, isLoading, login, logout, checkAuth, setUser, registerAgent, registerParent, loginCustomer, requestCustomerOtp, loginVendor, requestVendorOtp]
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
