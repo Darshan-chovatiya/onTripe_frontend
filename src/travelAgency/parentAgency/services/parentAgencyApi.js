@@ -110,3 +110,13 @@ export function updateProfile(data) {
 export function changePassword(data) {
   return axiosInstance.patch('/parent-agent/change-password', data)
 }
+
+// Notifications (parent-scoped, reuse global notification endpoints)
+export function sendNotification(data) {
+  // data: { users: string[], customers: string[], subject: string, message: string }
+  return axiosInstance.post('/notifications/send', data)
+}
+
+export function getSentNotifications() {
+  return axiosInstance.get('/notifications/sent')
+}
