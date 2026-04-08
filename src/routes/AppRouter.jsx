@@ -40,6 +40,7 @@ import AgencyBookings from '@/travelAgency/agency/pages/AgencyBookings.jsx'
 import AgencyMyBookings from '@/travelAgency/agency/pages/AgencyMyBookings.jsx'
 import AgencyManageDownstream from '@/travelAgency/agency/pages/AgencyManageDownstream.jsx'
 import AgencyCustomers from '@/travelAgency/agency/pages/AgencyCustomers.jsx'
+import AgencyCustomerTrips from '@/travelAgency/agency/pages/AgencyCustomerTrips.jsx'
 import AgencySettings from '@/travelAgency/agency/pages/AgencySettings.jsx'
 import { P } from '@/travelAgency/agency/rbac/agencyPermissions.js'
 
@@ -178,6 +179,14 @@ export default function AppRouter() {
           element={
             <AgencyPermissionRoute permission={P.CUSTOMERS}>
               <AgencyCustomers />
+            </AgencyPermissionRoute>
+          }
+        />
+        <Route
+          path="customers/:agencyCustomerId/trips"
+          element={
+            <AgencyPermissionRoute permission={P.CUSTOMERS}>
+              <AgencyCustomerTrips />
             </AgencyPermissionRoute>
           }
         />
