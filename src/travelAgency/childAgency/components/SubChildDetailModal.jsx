@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { FileText } from 'lucide-react'
 import Modal from '@/shared/components/Modal.jsx'
 import Button from '@/shared/components/Button.jsx'
 
@@ -51,10 +52,26 @@ export default function SubChildDetailModal({ isOpen, onClose, subId, fetchOne, 
   }, [isOpen, subId, fetchOne])
 
   const kyc = sub?.kyc || {}
+  const baseUrl = useMemo(() => {
+    const envUrl = import.meta.env.VITE_API_BASE_URL
+    const base = !envUrl || envUrl.includes('VITE_API_BASE_URL') ? 'http://localhost:5001' : envUrl.trim().replace(/\/+$/, '')
+    return base.endsWith('/api') ? base.slice(0, -4) : base
+  }, [])
+  const docHref = (pathValue) => (pathValue ? `${baseUrl}/${String(pathValue).replace(/^\/+/, '')}` : '')
+  const kycDocs = [
+    { label: 'Aadhar Front', path: kyc.aadharFront },
+    { label: 'Aadhar Back', path: kyc.aadharBack },
+    { label: 'PAN Card', path: kyc.panCard },
+    { label: 'Passport', path: kyc.passport },
+    { label: 'Visa', path: kyc.visaDoc },
+    ...(Array.isArray(kyc.otherDocs) ? kyc.otherDocs.map((pathValue, idx) => ({ label: `Other Doc ${idx + 1}`, path: pathValue })) : []),
+  ].filter((d) => d.path)
   const docCount = [
     kyc.aadharFront,
     kyc.aadharBack,
     kyc.panCard,
+    kyc.passport,
+    kyc.visaDoc,
     ...(Array.isArray(kyc.otherDocs) ? kyc.otherDocs : []),
   ].filter(Boolean).length
 
@@ -119,7 +136,29 @@ export default function SubChildDetailModal({ isOpen, onClose, subId, fetchOne, 
                 <span className="text-amber-800">{kyc.rejectionReason}</span>
               </Row>
             ) : null}
-            <Row label="Documents">{docCount ? `${docCount} file(s) on record` : 'None listed'}</Row>
+            <Row label="Documents">
+              {docCount ? (
+                <div className="space-y-2">
+                  <div>{docCount} file(s) on record</div>
+                  <div className="flex flex-wrap gap-2">
+                    {kycDocs.map((doc) => (
+                      <a
+                        key={`${doc.label}-${doc.path}`}
+                        href={docHref(doc.path)}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                      >
+                        <FileText size={12} />
+                        {doc.label}
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                'None listed'
+              )}
+            </Row>
             <Row label="Registered">{formatDt(sub.createdAt)}</Row>
             <Row label="Last updated">{formatDt(sub.updatedAt)}</Row>
           </dl>
