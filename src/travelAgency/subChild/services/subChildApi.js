@@ -36,6 +36,14 @@ export function getCustomerByPhone(phone) {
   return axiosInstance.get('/sub-child-agent/customers/by-phone', { params: { phone } })
 }
 
+export function updateAgencyCustomer(id, body) {
+  return axiosInstance.patch(`/sub-child-agent/customers/${id}`, body)
+}
+
+export function toggleAgencyCustomerActive(id) {
+  return axiosInstance.patch(`/sub-child-agent/customers/${id}/toggle-active`)
+}
+
 export function getSubChildProfile() {
   return axiosInstance.get('/sub-child-agent/profile')
 }
@@ -57,6 +65,8 @@ export default {
   updateWhitelabel,
   listCustomers,
   getCustomerByPhone,
+  updateAgencyCustomer,
+  toggleAgencyCustomerActive,
   getSubChildProfile,
   updateSubChildProfile,
   changeSubChildPassword,

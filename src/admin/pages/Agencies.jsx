@@ -13,6 +13,7 @@ import {
   FileCheck,
   FileText,
   Mail,
+  Package,
   Pencil,
   Phone,
   Plus,
@@ -20,6 +21,7 @@ import {
   ShieldAlert,
   ShieldCheck,
   Trash2,
+  UserCircle,
   Users,
   XCircle,
 } from 'lucide-react'
@@ -36,6 +38,8 @@ const getFileUrl = (path) => {
   const cleanBase = baseUrl.trim().replace(/\/api$/, '')
   return `${cleanBase}/${path.replace(/\\/g, '/')}`
 }
+
+const isPdfPath = (path) => typeof path === 'string' && /\.pdf$/i.test(path)
 
 // Internal component for Sub-Child Agency Listing inside nested Modal
 const SubChildAgenciesModal = ({ isOpen, onClose, parentAgency, onToggleStatus, getStatusBadge }) => {
@@ -466,99 +470,258 @@ const AddAgencyModal = ({ isOpen, onClose, onRefresh }) => {
     }
   }
 
-  const FileSlot = ({ label, id, currentFile }) => (
-    <div className="flex-1 min-w-0">
-      <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 ml-1">{label}</label>
-      <label className={`relative group cursor-pointer flex items-center gap-2 p-2.5 bg-gray-50 border border-dash-2 border-gray-200 rounded-xl transition-all hover:bg-white hover:border-blue-300 ${currentFile ? 'bg-emerald-50/30 border-emerald-200 border-solid' : 'border-dashed'}`}>
-        <div className={`h-7 w-7 rounded-lg flex items-center justify-center shrink-0 ${currentFile ? 'bg-emerald-100 text-emerald-600' : 'bg-white border border-gray-100 text-gray-300'}`}>
-          {currentFile ? <CheckCircle size={14} /> : <FileText size={14} />}
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className={`text-[11px] font-bold truncate ${currentFile ? 'text-emerald-700' : 'text-gray-400'}`}>
-            {currentFile ? currentFile.name : 'Select File'}
+  const FileSlot = ({ label, id, currentFile }) => {
+    const [previewUrl, setPreviewUrl] = useState(null)
+
+    useEffect(() => {
+      if (!currentFile) {
+        setPreviewUrl(null)
+        return
+      }
+      const isImage = currentFile.type?.startsWith('image/')
+      if (isImage) {
+        const url = URL.createObjectURL(currentFile)
+        setPreviewUrl(url)
+        return () => URL.revokeObjectURL(url)
+      }
+      setPreviewUrl(null)
+      return undefined
+    }, [currentFile])
+
+    const isPdf =
+      currentFile &&
+      (currentFile.type === 'application/pdf' || currentFile.name?.toLowerCase().endsWith('.pdf'))
+
+    return (
+      <div className="min-w-0 space-y-2">
+        <label className="ml-1 block text-[10px] font-semibold uppercase tracking-wide text-gray-500">{label}</label>
+        <label
+          htmlFor={id}
+          className={`group relative flex cursor-pointer flex-col gap-2 rounded-xl border p-3 transition-colors ${
+            currentFile ? 'border-gray-300 bg-gray-50' : 'border-dashed border-gray-200 bg-gray-50 hover:border-gray-300 hover:bg-white'
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            <div
+              className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
+                currentFile ? 'bg-gray-200 text-gray-700' : 'border border-gray-100 bg-white text-gray-400'
+              }`}
+            >
+              {currentFile ? <CheckCircle size={16} strokeWidth={2} /> : <FileText size={16} strokeWidth={2} />}
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className={`truncate text-xs font-medium ${currentFile ? 'text-gray-900' : 'text-gray-500'}`}>
+                {currentFile ? currentFile.name : 'Click to upload'}
+              </div>
+              {currentFile && (
+                <div className="mt-0.5 text-[10px] font-medium text-gray-600">Ready to submit</div>
+              )}
+            </div>
           </div>
-          {currentFile && <div className="text-[8px] font-bold text-emerald-600 uppercase tracking-widest mt-0.5">Ready for Vault</div>}
-        </div>
-        <input type="file" id={id} className="hidden" accept="image/*,.pdf" onChange={(e) => handleFileChange(e, id)} />
-      </label>
-    </div>
-  )
+          {previewUrl && (
+            <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+              <img src={previewUrl} alt="" className="max-h-40 w-full object-contain" />
+            </div>
+          )}
+          {currentFile && isPdf && (
+            <div className="flex items-center gap-2 rounded-lg border border-gray-100 bg-white px-3 py-2 text-xs text-gray-600">
+              <FileText className="h-4 w-4 shrink-0 text-gray-400" />
+              <span className="truncate font-medium">{currentFile.name}</span>
+              <span className="text-gray-400">(PDF)</span>
+            </div>
+          )}
+          <input
+            type="file"
+            id={id}
+            className="sr-only"
+            accept="image/*,.pdf,application/pdf"
+            onChange={(e) => handleFileChange(e, id)}
+          />
+        </label>
+      </div>
+    )
+  }
 
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Add New Agency"
+      title="Add parent agency"
       size="lg"
       footer={
-        <div className="flex items-center justify-end gap-3 p-6 bg-slate-50/50">
-          <button onClick={onClose} type="button" className="px-5 py-2.5 text-sm font-bold text-slate-400 hover:text-slate-600 transition-colors pointer-events-auto">Cancel</button>
+        <div className="flex items-center justify-end gap-3 border-t border-gray-100 bg-gray-50/80 px-6 py-4">
+          <button onClick={onClose} type="button" className="rounded-lg px-4 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900">
+            Cancel
+          </button>
           <button
             onClick={handleSubmit}
             disabled={loading}
             type="button"
-            className="px-8 py-3 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-bold text-sm shadow-xl shadow-primary-600/20 flex items-center gap-2 transition-all active:scale-95 disabled:opacity-50 pointer-events-auto"
+            className="inline-flex items-center gap-2 rounded-lg bg-zinc-900 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-zinc-800 disabled:opacity-50"
           >
-            {loading ? <Loader size="sm" color="white" /> : <><Plus size={18} /> Add Agency</>}
+            {loading ? <Loader size="sm" color="white" /> : <><Plus size={18} strokeWidth={2} /> Add agency</>}
           </button>
         </div>
       }
     >
-      <div className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Section 1: Identity */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-2 px-1">
-              <div className="h-6 w-6 rounded-lg bg-gray-50 flex items-center justify-center text-gray-500"><Users size={14} /></div>
-              <h3 className="text-[10px] font-bold text-zinc-900 uppercase tracking-widest">Agency Information</h3>
+      <div className="mx-auto w-full max-w-4xl space-y-5 px-1 py-1">
+        <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+          <div className="mb-4 flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-100 text-gray-600">
+              <Users size={16} strokeWidth={2} />
             </div>
-            <div className="space-y-3.5 p-5 rounded-2xl bg-white border border-gray-200 shadow-sm">
-              <div>
-                <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1.5 ml-1 leading-none ${errors.name ? 'text-red-500' : 'text-gray-400'}`}>Full Name</label>
-                <input required type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className={`w-full border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500/20 transition-all outline-none ${errors.name ? 'border-red-500' : 'bg-white border-gray-200 focus:border-blue-500'}`} placeholder="Company or Individual Name" />
-                {errors.name && <div className="text-[9px] text-red-500 font-bold mt-1 ml-1 flex items-center gap-1"><AlertCircle size={10} /> {errors.name}</div>}
-              </div>
-              <div>
-                <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1.5 ml-1 leading-none ${errors.email ? 'text-red-500' : 'text-gray-400'}`}>Email Address</label>
-                <input required type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} className={`w-full border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500/20 transition-all outline-none ${errors.email ? 'border-red-500' : 'bg-white border-gray-200 focus:border-blue-500'}`} placeholder="contact@agency.com" />
-                {errors.email && <div className="text-[9px] text-red-500 font-bold mt-1 ml-1 flex items-center gap-1"><AlertCircle size={10} /> {errors.email}</div>}
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1.5 ml-1 leading-none ${errors.phone ? 'text-red-500' : 'text-gray-400'}`}>Phone Number</label>
-                  <input required type="tel" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} className={`w-full border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500/20 transition-all outline-none ${errors.phone ? 'border-red-500' : 'bg-white border-gray-200 focus:border-blue-500'}`} placeholder="+91" />
-                  {errors.phone && <div className="text-[9px] text-red-500 font-bold mt-1 ml-1 flex items-center gap-1"><AlertCircle size={10} /> {errors.phone}</div>}
-                </div>
-                <div>
-                  <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1.5 ml-1 leading-none ${errors.password ? 'text-red-500' : 'text-gray-400'}`}>Password</label>
-                  <input required type="password" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} className={`w-full border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500/20 transition-all outline-none ${errors.password ? 'border-red-500' : 'bg-white border-gray-200 focus:border-blue-500'}`} placeholder="Min. 8 characters" />
-                  {errors.password && <div className="text-[9px] text-red-500 font-bold mt-1 ml-1 flex items-center gap-1"><AlertCircle size={10} /> {errors.password}</div>}
-                </div>
-              </div>
+            <div>
+              <h3 className="text-sm font-semibold text-gray-900">Agency details</h3>
+              <p className="text-xs text-gray-500">Fill the core profile and login info</p>
             </div>
           </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="sm:col-span-2">
+              <label className={`mb-1.5 ml-1 block text-xs font-medium ${errors.name ? 'text-red-500' : 'text-gray-600'}`}>Full name</label>
+              <input required type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className={`h-11 w-full rounded-xl border px-4 text-sm outline-none transition ${errors.name ? 'border-red-500' : 'border-gray-200 bg-gray-50/50 focus:border-gray-400 focus:bg-white'}`} placeholder="Company or individual name" />
+              {errors.name && <div className="mt-1 ml-1 flex items-center gap-1 text-[11px] font-medium text-red-500"><AlertCircle size={11} /> {errors.name}</div>}
+            </div>
+            <div className="sm:col-span-2">
+              <label className={`mb-1.5 ml-1 block text-xs font-medium ${errors.email ? 'text-red-500' : 'text-gray-600'}`}>Email address</label>
+              <input required type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} className={`h-11 w-full rounded-xl border px-4 text-sm outline-none transition ${errors.email ? 'border-red-500' : 'border-gray-200 bg-gray-50/50 focus:border-gray-400 focus:bg-white'}`} placeholder="contact@agency.com" />
+              {errors.email && <div className="mt-1 ml-1 flex items-center gap-1 text-[11px] font-medium text-red-500"><AlertCircle size={11} /> {errors.email}</div>}
+            </div>
+            <div>
+              <label className={`mb-1.5 ml-1 block text-xs font-medium ${errors.phone ? 'text-red-500' : 'text-gray-600'}`}>Phone number</label>
+              <input required type="tel" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} className={`h-11 w-full rounded-xl border px-4 text-sm outline-none transition ${errors.phone ? 'border-red-500' : 'border-gray-200 bg-gray-50/50 focus:border-gray-400 focus:bg-white'}`} placeholder="+91XXXXXXXXXX" />
+              {errors.phone && <div className="mt-1 ml-1 flex items-center gap-1 text-[11px] font-medium text-red-500"><AlertCircle size={11} /> {errors.phone}</div>}
+            </div>
+            <div>
+              <label className={`mb-1.5 ml-1 block text-xs font-medium ${errors.password ? 'text-red-500' : 'text-gray-600'}`}>Password</label>
+              <input required type="password" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} className={`h-11 w-full rounded-xl border px-4 text-sm outline-none transition ${errors.password ? 'border-red-500' : 'border-gray-200 bg-gray-50/50 focus:border-gray-400 focus:bg-white'}`} placeholder="Minimum 8 characters" />
+              {errors.password && <div className="mt-1 ml-1 flex items-center gap-1 text-[11px] font-medium text-red-500"><AlertCircle size={11} /> {errors.password}</div>}
+            </div>
+          </div>
+        </section>
 
-          {/* Section 2: Documents */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-2 px-1">
-              <div className="h-6 w-6 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600"><ShieldCheck size={14} /></div>
-              <h3 className="text-[10px] font-bold text-zinc-900 uppercase tracking-widest">KYC Documents</h3>
+        <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+          <div className="mb-4 flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-100 text-gray-600">
+              <ShieldCheck size={16} strokeWidth={2} />
             </div>
-            <div className="flex flex-col justify-between h-auto min-h-[234px] space-y-3 p-5 rounded-2xl bg-emerald-50/10 border border-emerald-100/50">
-              <div className="space-y-3">
-                <FileSlot label="Aadhar Front" id="aadharFront" currentFile={files.aadharFront} />
-                <FileSlot label="Aadhar Back" id="aadharBack" currentFile={files.aadharBack} />
-                <FileSlot label="PAN Card" id="panCard" currentFile={files.panCard} />
-              </div>
-              <div className="flex items-start gap-2 bg-emerald-50/80 p-2.5 rounded-lg border border-emerald-200 text-emerald-800">
-                <ShieldCheck size={12} className="mt-0.5 shrink-0" />
-                <p className="text-[9px] font-bold uppercase tracking-tight leading-tight">Fast Track: Any agency you add here is approved automatically.</p>
-              </div>
+            <div>
+              <h3 className="text-sm font-semibold text-gray-900">KYC documents</h3>
+              <p className="text-xs text-gray-500">Upload all three documents for quick verification</p>
             </div>
           </div>
-        </div>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            <FileSlot label="Aadhar front" id="aadharFront" currentFile={files.aadharFront} />
+            <FileSlot label="Aadhar back" id="aadharBack" currentFile={files.aadharBack} />
+            <FileSlot label="PAN card" id="panCard" currentFile={files.panCard} />
+          </div>
+          <div className="mt-4 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-600">
+            Agencies created from admin are auto-marked as KYC approved.
+          </div>
+        </section>
       </div>
     </Modal>
+  )
+}
+
+/** Single KYC file row in edit modal — previews new or existing file with cleanup for blob URLs */
+const EditKycDocRow = ({ doc, existingUrl, newFile, onFileChange }) => {
+  const [blobUrl, setBlobUrl] = useState(null)
+  const [pdfBlobUrl, setPdfBlobUrl] = useState(null)
+
+  useEffect(() => {
+    if (newFile?.type?.startsWith('image/')) {
+      const u = URL.createObjectURL(newFile)
+      setBlobUrl(u)
+      return () => URL.revokeObjectURL(u)
+    }
+    setBlobUrl(null)
+    return undefined
+  }, [newFile])
+
+  const isNewPdf = Boolean(
+    newFile && (newFile.type === 'application/pdf' || newFile.name?.toLowerCase().endsWith('.pdf'))
+  )
+
+  useEffect(() => {
+    if (newFile && isNewPdf) {
+      const u = URL.createObjectURL(newFile)
+      setPdfBlobUrl(u)
+      return () => {
+        URL.revokeObjectURL(u)
+        setPdfBlobUrl(null)
+      }
+    }
+    setPdfBlobUrl(null)
+    return undefined
+  }, [newFile, isNewPdf])
+
+  const serverUrl = existingUrl && !newFile ? getFileUrl(existingUrl) : null
+  const displayUrl = blobUrl || serverUrl
+  const isExistingPdf = existingUrl && !newFile && isPdfPath(existingUrl)
+  const showImage =
+    displayUrl && (newFile ? newFile.type?.startsWith('image/') : existingUrl && !isPdfPath(existingUrl))
+
+  return (
+    <div>
+      <label className="mb-1.5 ml-1 block text-xs font-medium text-gray-600">{doc.label}</label>
+      <div className="relative rounded-xl border border-dashed border-gray-200 bg-gray-50/50 transition-colors hover:border-gray-300 hover:bg-white">
+        <input
+          type="file"
+          onChange={onFileChange}
+          className="absolute inset-0 z-10 cursor-pointer opacity-0"
+          accept="image/*,.pdf,application/pdf"
+        />
+        <div className="p-3">
+          <div className="flex items-center gap-3">
+            {newFile ? (
+              <CheckCircle size={16} className="shrink-0 text-gray-700" strokeWidth={2} />
+            ) : existingUrl ? (
+              <FileCheck size={16} className="shrink-0 text-gray-600" strokeWidth={2} />
+            ) : (
+              <FileText size={16} className="shrink-0 text-gray-300" strokeWidth={2} />
+            )}
+            <span className="min-w-0 flex-1 truncate text-xs font-medium text-gray-800">
+              {newFile ? newFile.name : existingUrl ? 'Document on file — click to replace' : 'Click to upload'}
+            </span>
+            {existingUrl && (
+              <a
+                href={getFileUrl(existingUrl)}
+                target="_blank"
+                rel="noreferrer"
+                className="relative z-20 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 shadow-sm hover:text-gray-800"
+                onClick={(e) => e.stopPropagation()}
+                title="Open in new tab"
+              >
+                <ExternalLink size={14} strokeWidth={2} />
+              </a>
+            )}
+          </div>
+          {showImage && displayUrl && (
+            <div className="mt-3 overflow-hidden rounded-lg border border-gray-100 bg-white">
+              <img src={displayUrl} alt={doc.label} className="max-h-44 w-full object-contain" />
+            </div>
+          )}
+          {(isNewPdf || isExistingPdf) && (
+            <div className="mt-3 flex items-center justify-between gap-2 rounded-lg border border-gray-100 bg-white px-3 py-2 text-xs text-gray-600">
+              <span className="flex min-w-0 items-center gap-2 font-medium">
+                <FileText className="h-4 w-4 shrink-0 text-gray-400" />
+                <span className="truncate">{newFile ? newFile.name : 'PDF document'}</span>
+              </span>
+              {pdfBlobUrl && (
+                <a href={pdfBlobUrl} target="_blank" rel="noreferrer" className="shrink-0 font-medium text-gray-700 hover:underline">
+                  Open
+                </a>
+              )}
+              {!pdfBlobUrl && serverUrl && isExistingPdf && (
+                <a href={serverUrl} target="_blank" rel="noreferrer" className="shrink-0 font-medium text-gray-700 hover:underline">
+                  Open
+                </a>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
   )
 }
 
@@ -654,128 +817,82 @@ const EditAgencyModal = ({ isOpen, onClose, agent, onRefresh }) => {
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Edit Agency Profile"
+      title="Edit parent agency"
       size="lg"
       footer={
-        <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-100">
-          <button onClick={onClose} type="button" className="px-5 py-2 text-sm font-bold text-gray-400 hover:text-gray-600 transition-colors">Cancel</button>
-          <button form="edit-agency-form" type="submit" disabled={loading} className="px-8 py-2.5 bg-zinc-900 hover:bg-zinc-800 text-white rounded-lg font-bold text-sm shadow-sm flex items-center gap-2 transition-all active:scale-95 disabled:opacity-50">
-            {loading ? <Loader size="sm" color="white" /> : 'Update Agency'}
+        <div className="flex items-center justify-end gap-3 border-t border-gray-100 bg-gray-50/80 px-6 py-4">
+          <button onClick={onClose} type="button" className="rounded-lg px-4 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900">
+            Cancel
+          </button>
+          <button
+            form="edit-agency-form"
+            type="submit"
+            disabled={loading}
+            className="inline-flex items-center gap-2 rounded-lg bg-zinc-900 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-zinc-800 disabled:opacity-50"
+          >
+            {loading ? <Loader size="sm" color="white" /> : 'Save changes'}
           </button>
         </div>
       }
     >
-      <form id="edit-agency-form" onSubmit={handleSubmit} className="p-1">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* Section 1: Identity & Contacts */}
-          <div className="space-y-6">
-            <div className="flex items-center gap-3">
-              <div className="h-8 w-8 rounded-lg bg-gray-50 flex items-center justify-center text-gray-500"><Users size={16} /></div>
-              <div>
-                <h3 className="text-sm font-bold text-zinc-900 leading-none">Account Identity</h3>
-                <p className="text-[10px] text-gray-400 mt-1 font-bold">Update core contact and branding data</p>
-              </div>
+      <form id="edit-agency-form" onSubmit={handleSubmit} className="mx-auto w-full max-w-4xl space-y-5 px-1 py-1">
+        <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+          <div className="mb-4 flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-100 text-gray-600">
+              <Users size={16} strokeWidth={2} />
             </div>
-
-            <div className="space-y-4 p-5 rounded-2xl bg-white border border-gray-200 shadow-sm">
-              <div>
-                <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1.5 ml-1 leading-none ${errors.name ? 'text-red-500' : 'text-gray-400'}`}>Agency Name</label>
-                <input required type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className={`w-full border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500/20 transition-all outline-none ${errors.name ? 'border-red-500' : 'border-gray-200 focus:border-blue-500'}`} placeholder="Company Name" />
-                {errors.name && <div className="text-[9px] text-red-500 font-bold mt-1 ml-1 flex items-center gap-1"><AlertCircle size={10} /> {errors.name}</div>}
-              </div>
-              <div>
-                <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1.5 ml-1 leading-none ${errors.email ? 'text-red-500' : 'text-gray-400'}`}>Email Address</label>
-                <input required type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} className={`w-full border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500/20 transition-all outline-none ${errors.email ? 'border-red-500' : 'border-gray-200 focus:border-blue-500'}`} placeholder="contact@agency.com" />
-                {errors.email && <div className="text-[9px] text-red-500 font-bold mt-1 ml-1 flex items-center gap-1"><AlertCircle size={10} /> {errors.email}</div>}
-              </div>
-              <div>
-                <label className={`block text-[10px] font-bold uppercase tracking-widest mb-1.5 ml-1 leading-none ${errors.phone ? 'text-red-500' : 'text-gray-400'}`}>Phone Number</label>
-                <input required type="tel" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} className={`w-full border rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500/20 transition-all outline-none ${errors.phone ? 'border-red-500' : 'border-gray-200 focus:border-blue-500'}`} placeholder="+91" />
-                {errors.phone && <div className="text-[9px] text-red-500 font-bold mt-1 ml-1 flex items-center gap-1"><AlertCircle size={10} /> {errors.phone}</div>}
-              </div>
+            <div>
+              <h3 className="text-sm font-semibold text-gray-900">Account details</h3>
+              <p className="text-xs text-gray-500">Update name, email, and phone in one place</p>
             </div>
           </div>
 
-          {/* Section 2: Documents */}
-          <div className="space-y-6">
-            <div className="flex items-center gap-3">
-              <div className="h-8 w-8 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600 shadow-sm"><ShieldCheck size={16} /></div>
-              <div>
-                <h3 className="text-sm font-bold text-zinc-900 leading-none">Compliance Vault</h3>
-                <p className="text-[10px] text-gray-400 mt-1 font-bold">Update and refresh identity documentation</p>
-              </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="sm:col-span-2">
+              <label className={`mb-1.5 ml-1 block text-xs font-medium ${errors.name ? 'text-red-500' : 'text-gray-600'}`}>Agency name</label>
+              <input required type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className={`h-11 w-full rounded-xl border px-4 text-sm outline-none transition ${errors.name ? 'border-red-500' : 'border-gray-200 bg-gray-50/50 focus:border-gray-400 focus:bg-white'}`} placeholder="Company name" />
+              {errors.name && <div className="mt-1 ml-1 flex items-center gap-1 text-[11px] font-medium text-red-500"><AlertCircle size={11} /> {errors.name}</div>}
             </div>
-
-            <div className="space-y-4 p-5 rounded-2xl bg-white border border-gray-200 shadow-sm">
-              {[
-                { id: 'aadharFront', label: 'Aadhar Front Identity', icon: FileText },
-                { id: 'aadharBack', label: 'Aadhar Back Identity', icon: FileText },
-                { id: 'panCard', label: 'PAN Card Verification', icon: ShieldCheck }
-              ].map((doc) => {
-                const existingUrl = agent?.kyc?.[doc.id];
-                const newFile = files[doc.id];
-
-                return (
-                  <div key={doc.id}>
-                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5 ml-1 leading-none">{doc.label}</label>
-                    <div className="relative group">
-                      <input
-                        type="file"
-                        onChange={(e) => handleFileChange(e, doc.id)}
-                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                        accept="image/*"
-                      />
-                      <div className={`w-full h-auto min-h-[48px] border border-dashed rounded-lg flex flex-col p-3 transition-all ${newFile ? 'border-emerald-200 bg-emerald-50/30' : existingUrl ? 'border-blue-100 bg-blue-50/20' : 'border-gray-200 bg-gray-50/30 group-hover:border-blue-400 group-hover:bg-white'}`}>
-                        <div className="flex items-center gap-3">
-                          {newFile ? (
-                            <CheckCircle size={14} className="text-emerald-500" />
-                          ) : existingUrl ? (
-                            <FileCheck size={14} className="text-blue-500" />
-                          ) : (
-                            <doc.icon size={14} className="text-gray-300" />
-                          )}
-                          <span className={`text-xs font-bold truncate flex-1 ${(newFile || existingUrl) ? 'text-zinc-900' : 'text-gray-400'}`}>
-                            {newFile ? newFile.name : existingUrl ? 'Registry Document Loaded' : `Update ${doc.label.split(' ')[0]}...`}
-                          </span>
-                          <div className="flex items-center gap-2">
-                            {existingUrl && (
-                              <a
-                                href={getFileUrl(existingUrl)}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="h-6 w-6 flex items-center justify-center bg-white border border-gray-100 text-gray-400 hover:text-primary-600 rounded-md transition-all shadow-sm z-20"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                <ExternalLink size={10} />
-                              </a>
-                            )}
-                            <Plus size={14} className={newFile ? 'text-emerald-400' : 'text-gray-300'} />
-                          </div>
-                        </div>
-
-                        {/* Preview Section */}
-                        {(newFile || existingUrl) && (
-                          <div className="mt-3 relative aspect-[16/9] w-full rounded-lg overflow-hidden border border-gray-100 bg-white group/preview">
-                            <img
-                              src={newFile ? URL.createObjectURL(newFile) : getFileUrl(existingUrl)}
-                              alt={doc.label}
-                              className="w-full h-full object-contain"
-                            />
-                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/preview:opacity-100 transition-opacity flex items-center justify-center">
-                              <span className="text-[10px] font-black text-white uppercase tracking-widest bg-zinc-900/50 px-3 py-1.5 rounded-full backdrop-blur-sm">
-                                Click Card to Update
-                              </span>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
+            <div className="sm:col-span-2">
+              <label className={`mb-1.5 ml-1 block text-xs font-medium ${errors.email ? 'text-red-500' : 'text-gray-600'}`}>Email address</label>
+              <input required type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} className={`h-11 w-full rounded-xl border px-4 text-sm outline-none transition ${errors.email ? 'border-red-500' : 'border-gray-200 bg-gray-50/50 focus:border-gray-400 focus:bg-white'}`} placeholder="contact@agency.com" />
+              {errors.email && <div className="mt-1 ml-1 flex items-center gap-1 text-[11px] font-medium text-red-500"><AlertCircle size={11} /> {errors.email}</div>}
+            </div>
+            <div>
+              <label className={`mb-1.5 ml-1 block text-xs font-medium ${errors.phone ? 'text-red-500' : 'text-gray-600'}`}>Phone number</label>
+              <input required type="tel" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} className={`h-11 w-full rounded-xl border px-4 text-sm outline-none transition ${errors.phone ? 'border-red-500' : 'border-gray-200 bg-gray-50/50 focus:border-gray-400 focus:bg-white'}`} placeholder="+91XXXXXXXXXX" />
+              {errors.phone && <div className="mt-1 ml-1 flex items-center gap-1 text-[11px] font-medium text-red-500"><AlertCircle size={11} /> {errors.phone}</div>}
             </div>
           </div>
-        </div>
+        </section>
+
+        <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+          <div className="mb-4 flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-100 text-gray-600">
+              <ShieldCheck size={16} strokeWidth={2} />
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-gray-900">KYC documents</h3>
+              <p className="text-xs text-gray-500">Replace any document as needed</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            {[
+              { id: 'aadharFront', label: 'Aadhar front' },
+              { id: 'aadharBack', label: 'Aadhar back' },
+              { id: 'panCard', label: 'PAN card' },
+            ].map((doc) => (
+              <EditKycDocRow
+                key={doc.id}
+                doc={doc}
+                existingUrl={agent?.kyc?.[doc.id]}
+                newFile={files[doc.id]}
+                onFileChange={(e) => handleFileChange(e, doc.id)}
+              />
+            ))}
+          </div>
+        </section>
       </form>
     </Modal>
   )
@@ -791,6 +908,8 @@ export default function Agencies() {
   const [searchQuery, setSearchQuery] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
+  const [kycFilter, setKycFilter] = useState('all')
+  const [togglingId, setTogglingId] = useState(null)
 
   // KYC Modal State
   const [selectedAgent, setSelectedAgent] = useState(null)
@@ -804,14 +923,16 @@ export default function Agencies() {
   const [rejectionReason, setRejectionReason] = useState('')
   const [isActionLoading, setIsActionLoading] = useState(false)
 
-  // Debouncing search
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearch(searchQuery)
-      setPage(1)
-    }, 500)
+    }, 400)
     return () => clearTimeout(handler)
   }, [searchQuery])
+
+  useEffect(() => {
+    setPage(1)
+  }, [debouncedSearch, statusFilter, kycFilter])
 
   const fetchAgents = async () => {
     setLoading(true)
@@ -819,9 +940,10 @@ export default function Agencies() {
       const params = {
         page,
         limit: 10,
-        role: 'parent_agent', // Only Main View for Parents
-        isActive: statusFilter === 'all' ? undefined : (statusFilter === 'active' ? 'true' : 'false'),
-        search: debouncedSearch || undefined
+        role: 'parent_agent',
+        isActive: statusFilter === 'all' ? undefined : statusFilter === 'active' ? 'true' : 'false',
+        search: debouncedSearch || undefined,
+        kycStatus: kycFilter === 'all' ? undefined : kycFilter,
       }
       const { data } = await adminApi.listAgents(params)
       if (data?.success) {
@@ -837,7 +959,7 @@ export default function Agencies() {
 
   useEffect(() => {
     fetchAgents()
-  }, [page, debouncedSearch, statusFilter])
+  }, [page, debouncedSearch, statusFilter, kycFilter])
 
   const handleKycAction = async (action) => {
     if (!selectedAgent) return
@@ -868,6 +990,8 @@ export default function Agencies() {
   }
 
   const handleToggleAgent = async (id) => {
+    if (togglingId) return
+    setTogglingId(id)
     try {
       const { data } = await adminApi.toggleAgent(id)
       if (data.success) {
@@ -876,6 +1000,8 @@ export default function Agencies() {
       }
     } catch (error) {
       toast.error('Failed to toggle agent status')
+    } finally {
+      setTogglingId(null)
     }
   }
 
@@ -928,11 +1054,17 @@ export default function Agencies() {
     )
   }
 
-
   const statusOptions = [
-    { value: 'all', label: 'All Status' },
+    { value: 'all', label: 'All accounts' },
     { value: 'active', label: 'Active' },
-    { value: 'inactive', label: 'Inactive' }
+    { value: 'inactive', label: 'Inactive' },
+  ]
+
+  const kycStatusOptions = [
+    { value: 'all', label: 'All KYC' },
+    { value: 'pending', label: 'Pending' },
+    { value: 'approved', label: 'Approved' },
+    { value: 'rejected', label: 'Rejected' },
   ]
 
   return (
@@ -955,25 +1087,37 @@ export default function Agencies() {
       </div>
 
       <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
-        <div className="flex flex-col gap-3 border-b border-gray-200 px-4 py-3 sm:flex-row sm:items-center sm:gap-4">
-          <div className="relative min-w-0 flex-1 sm:max-w-xs">
+        <div className="flex flex-col gap-3 border-b border-gray-200 px-4 py-3 sm:flex-row sm:flex-wrap sm:items-center">
+          <div className="relative w-full min-w-0 flex-1">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" strokeWidth={2} />
             <input
-              type="text"
-              placeholder="Search agencies..."
+              type="search"
+              placeholder="Search name, email, or phone…"
+              autoComplete="off"
               className="w-full rounded-md border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-gray-300 focus:outline-none focus:ring-1 focus:ring-gray-300"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          <div className="w-full sm:w-44">
-            <CustomDropdown
-              value={statusFilter}
-              onChange={setStatusFilter}
-              options={statusOptions}
-              className="w-full"
-              buttonClassName="!py-2"
-            />
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-3 lg:flex lg:shrink-0 lg:gap-3">
+            <div className="w-full sm:min-w-[140px] lg:w-44">
+              <CustomDropdown
+                value={statusFilter}
+                onChange={setStatusFilter}
+                options={statusOptions}
+                className="w-full"
+                buttonClassName="!py-2"
+              />
+            </div>
+            <div className="w-full sm:min-w-[140px] lg:w-44">
+              <CustomDropdown
+                value={kycFilter}
+                onChange={setKycFilter}
+                options={kycStatusOptions}
+                className="w-full"
+                buttonClassName="!py-2"
+              />
+            </div>
           </div>
         </div>
 
@@ -986,18 +1130,19 @@ export default function Agencies() {
           <div className="px-4 py-14 text-center">
             <Building2 className="mx-auto h-8 w-8 text-gray-300" strokeWidth={1.5} />
             <p className="mt-3 text-sm font-medium text-gray-900">No agencies found</p>
-            <p className="mt-1 text-sm text-gray-500">Try adjusting search or status.</p>
+            <p className="mt-1 text-sm text-gray-500">Try adjusting search, account status, or KYC filter.</p>
           </div>
         ) : (
           <>
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[720px] text-sm">
+              <table className="w-full min-w-[880px] text-sm">
               <thead className="border-b border-gray-200 bg-gray-50">
                 <tr>
                   <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-600">Parent agency</th>
-                  <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-600">Child network</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-600">Children</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-600">Packages</th>
                   <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-600">Contact</th>
-                  <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-600">Status</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-600">Account</th>
                   <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-600">KYC</th>
                   <th className="px-4 py-2.5 text-right text-xs font-medium text-gray-600">Actions</th>
                 </tr>
@@ -1006,31 +1151,49 @@ export default function Agencies() {
                 {agents.map((agent) => (
                   <tr key={agent._id} className="group transition-colors hover:bg-gray-50/80">
                     <td className="px-4 py-2.5">
-                      <div className="flex items-center gap-2.5">
-                        <div className="h-9 w-9 flex-shrink-0 rounded-full bg-slate-100 flex items-center justify-center border border-slate-200 group-hover:scale-105 transition-transform"><Building2 className="h-4.5 w-4.5 text-slate-500" /></div>
+                      <div className="flex items-start gap-2.5">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-gray-200 bg-gray-50 text-gray-500 transition-transform group-hover:scale-[1.02]">
+                          <Building2 className="h-4 w-4" strokeWidth={2} />
+                        </div>
                         <div className="min-w-0">
-                          <div className="text-sm font-bold text-slate-900 truncate max-w-[160px] leading-tight">{agent.name}</div>
-                          <div className="flex flex-col gap-0.5 mt-1">
-                            <div className="text-[10px] text-slate-400 font-bold flex items-center gap-1 leading-none"><Mail className="w-2.5 h-2.5" /> {agent.email}</div>
-                            <div className="text-[9px] font-black text-primary-600 uppercase tracking-widest leading-none mt-0.5 flex items-center gap-1"><ShieldCheck className="w-2.5 h-2.5" /> {agent.agentCode || 'NO-CODE'}</div>
+                          <div className="truncate text-sm font-semibold text-gray-900">{agent.name}</div>
+                          <div className="mt-0.5 flex items-center gap-1 text-xs text-gray-500">
+                            <Mail className="h-3 w-3 shrink-0 text-gray-400" strokeWidth={2} />
+                            <span className="truncate">{agent.email}</span>
+                          </div>
+                          <div className="mt-1 inline-flex items-center gap-1 text-[11px] font-medium text-primary-700">
+                            <ShieldCheck className="h-3 w-3 shrink-0" strokeWidth={2} />
+                            {agent.agentCode || '—'}
                           </div>
                         </div>
                       </div>
                     </td>
-                    <td className="whitespace-nowrap px-4 py-2.5">
-                      <button
-                        onClick={() => navigate(`/admin/agencies/network/${agent._id}`)}
-                        className="group/h flex items-center gap-2"
-                      >
-                        <div className="h-9 px-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center gap-2 transition-all group-hover/h:bg-primary-50 group-hover/h:border-primary-200 group-hover/h:shadow-sm">
-                          <Users size={14} className="text-slate-400 group-hover/h:text-primary-600 transition-colors" />
-                          <span className="text-xs font-black text-slate-900">{agent.childCount || 0}</span>
-                          <div className="h-1.5 w-1.5 rounded-full bg-primary-500 animate-pulse hidden group-hover/h:block" />
+                    <td className="px-4 py-2.5">
+                      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+                        <button
+                          type="button"
+                          onClick={() => navigate(`/admin/child-agencies?parentRef=${agent._id}`)}
+                          className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-800 shadow-sm transition-colors hover:border-primary-200 hover:bg-primary-50/50 hover:text-primary-900"
+                          title="View child agencies"
+                        >
+                          <Users className="h-3.5 w-3.5 text-gray-500" strokeWidth={2} />
+                          <span>{agent.childCount ?? 0}</span>
+                          {/* <span className="text-gray-400">children</span>
+                          <ArrowRight className="h-3 w-3 text-gray-400" strokeWidth={2} /> */}
+                        </button>
+                      </div>
+                    </td>
+                    <td className="px-4 py-2.5">
+                      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+                        <div
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-gray-100 bg-gray-50 px-2.5 py-1.5 text-xs font-medium text-gray-700"
+                          title="Packages created by this agency"
+                        >
+                          <Package className="h-3.5 w-3.5 text-gray-500" strokeWidth={2} />
+                          <span>{agent.packageCount ?? 0}</span>
+                          {/* <span className="text-gray-400">packages</span> */}
                         </div>
-                        <div className="p-1 px-1.5 rounded bg-slate-50 text-[8px] font-black text-slate-400 uppercase tracking-widest opacity-0 group-hover/h:opacity-100 transition-all flex items-center gap-1 translate-x-[-10px] group-hover/h:translate-x-0">
-                          Explore <ArrowRight size={8} />
-                        </div>
-                      </button>
+                      </div>
                     </td>
                     <td className="whitespace-nowrap px-4 py-2.5">
                       <div className="flex items-center gap-2">
@@ -1042,55 +1205,69 @@ export default function Agencies() {
                     </td>
                     <td className="whitespace-nowrap px-4 py-2.5">
                       <button
+                        type="button"
+                        disabled={togglingId === agent._id}
                         onClick={() => handleToggleAgent(agent._id)}
-                        className={`inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all active:scale-95 min-w-[85px] border shadow-sm ${agent.isActive
-                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100/80 hover:shadow-emerald-500/10'
-                            : 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100/80 hover:shadow-red-500/10'
-                          }`}
+                        className={`inline-flex min-w-[88px] cursor-pointer items-center justify-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-wide transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 ${
+                          agent.isActive
+                            ? 'border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100/90'
+                            : 'border-red-200 bg-red-50 text-red-800 hover:bg-red-100/90'
+                        }`}
+                        title={agent.isActive ? 'Click to deactivate' : 'Click to activate'}
                       >
-                        <div className={`w-1 h-1 rounded-full ${agent.isActive ? 'bg-emerald-600 animate-pulse' : 'bg-red-600'}`} />
+                        <span
+                          className={`h-1.5 w-1.5 rounded-full ${agent.isActive ? 'bg-emerald-500' : 'bg-red-500'} ${agent.isActive ? 'animate-pulse' : ''}`}
+                        />
                         {agent.isActive ? 'Active' : 'Inactive'}
                       </button>
                     </td>
                     <td className="whitespace-nowrap px-4 py-2.5">
                       <button
+                        type="button"
                         onClick={() => {
                           setSelectedAgent(agent)
                           setIsKycModalOpen(true)
                         }}
-                        className="transition-transform active:scale-95"
+                        className="cursor-pointer transition-transform active:scale-95"
                       >
                         {getStatusBadge(agent.kyc?.status)}
                       </button>
                     </td>
                     <td className="whitespace-nowrap px-4 py-2.5 pr-5 text-right">
-                      <div className="flex items-center justify-end gap-2">
+                      <div className="flex items-center justify-end gap-1.5">
                         <button
+                          type="button"
                           onClick={() => {
                             setSelectedAgent(agent)
                             setIsKycModalOpen(true)
                           }}
-                          className="p-1.5 text-slate-400 hover:text-primary-600 hover:bg-white rounded-lg transition-all border border-slate-100 hover:border-primary-100 shadow-sm active:scale-90"
-                          title="View Details"
+                          className="inline-flex cursor-pointer rounded-lg border border-gray-200 bg-white p-2 text-gray-500 shadow-sm transition-colors hover:border-primary-200 hover:text-primary-700 active:scale-95"
+                          title="View agency"
+                          aria-label={`View ${agent.name}`}
                         >
-                          <Eye className="w-4 h-4" />
+                          <Eye className="h-4 w-4" strokeWidth={2} />
                         </button>
                         <button
+                          type="button"
                           onClick={() => {
                             setEditingAgency(agent)
                             setIsEditModalOpen(true)
                           }}
-                          className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-white rounded-lg transition-all border border-slate-100 hover:border-emerald-100 shadow-sm active:scale-90"
-                          title="Edit Profile"
+                          className="inline-flex cursor-pointer rounded-lg border border-gray-200 bg-white p-2 text-gray-500 shadow-sm transition-colors hover:border-emerald-200 hover:text-emerald-700 active:scale-95"
+                          title="Edit agency"
+                          aria-label={`Edit ${agent.name}`}
                         >
-                          <Pencil className="w-4 h-4" />
+                          <Pencil className="h-4 w-4" strokeWidth={2} />
                         </button>
                         <button
+                          type="button"
                           onClick={() => handleDeleteAgent(agent)}
-                          className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-white rounded-lg transition-all border border-slate-100 hover:border-rose-100 shadow-sm active:scale-90"
-                          title="Terminate Agency"
+                          disabled={isActionLoading}
+                          className="inline-flex cursor-pointer rounded-lg border border-gray-200 bg-white p-2 text-gray-500 shadow-sm transition-colors hover:border-rose-200 hover:text-rose-700 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+                          title="Delete agency"
+                          aria-label={`Delete ${agent.name}`}
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="h-4 w-4" strokeWidth={2} />
                         </button>
                       </div>
                     </td>
@@ -1145,91 +1322,161 @@ export default function Agencies() {
         onRefresh={fetchAgents}
       />
 
-      {/* KYC Review Modal */}
       <Modal
         isOpen={isKycModalOpen}
-        onClose={() => setIsKycModalOpen(false)}
-        title={selectedAgent ? `KYC Review: ${selectedAgent.name}` : 'KYC Review'}
+        onClose={() => {
+          setIsKycModalOpen(false)
+          setRejectionReason('')
+        }}
+        title={selectedAgent ? 'Agency overview' : 'Agency'}
         size="lg"
       >
         {selectedAgent && (
           <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 p-6 rounded-2xl bg-slate-50/50 border border-slate-100 shadow-inner">
-              <div className="space-y-1.5">
-                <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Corporate Identity</label>
-                <div className="text-lg font-bold text-slate-900 tracking-tight leading-none">{selectedAgent.name}</div>
+            <div>
+              <p className="text-lg font-semibold text-gray-900">{selectedAgent.name}</p>
+              <p className="mt-1 text-sm text-gray-500">Parent agency profile, child counts, and KYC documents</p>
+            </div>
+
+            <div className="grid grid-cols-3 gap-3">
+              <div className="rounded-xl border border-gray-200 bg-gray-50/80 px-4 py-3 text-center">
+                <div className="flex items-center justify-center gap-1.5 text-xs font-medium text-gray-500">
+                  <Users className="h-3.5 w-3.5" strokeWidth={2} />
+                  Children
+                </div>
+                <p className="mt-1 text-xl font-semibold tabular-nums text-gray-900">{selectedAgent.childCount ?? 0}</p>
               </div>
-              <div className="space-y-1.5">
-                <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Agent Professional Code</label>
-                <div className="text-sm font-black text-primary-600 flex items-center gap-2"><ShieldCheck size={14} className="text-primary-500" /> {selectedAgent.agentCode || 'PENDING ASSIGNMENT'}</div>
+              <div className="rounded-xl border border-gray-200 bg-gray-50/80 px-4 py-3 text-center">
+                <div className="flex items-center justify-center gap-1.5 text-xs font-medium text-gray-500">
+                  <Package className="h-3.5 w-3.5" strokeWidth={2} />
+                  Packages
+                </div>
+                <p className="mt-1 text-xl font-semibold tabular-nums text-gray-900">{selectedAgent.packageCount ?? 0}</p>
               </div>
-              <div className="space-y-1.5">
-                <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Audit State</label>
-                <div>{getStatusBadge(selectedAgent.kyc?.status)}</div>
-              </div>
-              <div className="space-y-1.5 pt-2 border-t border-slate-100 md:border-0 md:pt-0">
-                <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Contact Primary</label>
-                <div className="text-sm font-bold text-slate-700 flex items-center gap-2 font-mono">{selectedAgent.email}</div>
-              </div>
-              <div className="space-y-1.5 pt-2 border-t border-slate-100 md:border-0 md:pt-0">
-                <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Phone Identity</label>
-                <div className="text-sm font-bold text-slate-700 tracking-tighter">{selectedAgent.phone || 'N/A'}</div>
+              <div className="rounded-xl border border-gray-200 bg-gray-50/80 px-4 py-3 text-center">
+                <div className="flex items-center justify-center gap-1.5 text-xs font-medium text-gray-500">
+                  <UserCircle className="h-3.5 w-3.5" strokeWidth={2} />
+                  Customers
+                </div>
+                <p className="mt-1 text-xl font-semibold tabular-nums text-gray-900">{selectedAgent.customerCount ?? 0}</p>
               </div>
             </div>
 
-            <div className="space-y-4">
-              <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest flex items-center gap-2"><FileText size={16} className="text-primary-500" /> Credentials Vault</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid gap-4 rounded-xl border border-gray-200 bg-white p-4 sm:grid-cols-2">
+              <div>
+                <p className="text-xs font-medium text-gray-500">Agent code</p>
+                <p className="mt-0.5 flex items-center gap-1.5 text-sm font-semibold text-primary-700">
+                  <ShieldCheck className="h-4 w-4" strokeWidth={2} />
+                  {selectedAgent.agentCode || '—'}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs font-medium text-gray-500">KYC status</p>
+                <div className="mt-1">{getStatusBadge(selectedAgent.kyc?.status)}</div>
+              </div>
+              <div className="sm:col-span-2">
+                <p className="text-xs font-medium text-gray-500">Email</p>
+                <p className="mt-0.5 break-all text-sm text-gray-900">{selectedAgent.email}</p>
+              </div>
+              <div>
+                <p className="text-xs font-medium text-gray-500">Phone</p>
+                <p className="mt-0.5 text-sm text-gray-900">{selectedAgent.phone || '—'}</p>
+              </div>
+            </div>
+
+            <div>
+              <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-900">
+                <FileText className="h-4 w-4 text-gray-500" strokeWidth={2} />
+                KYC documents
+              </h3>
+              <div className="grid gap-4 sm:grid-cols-3">
                 {[
-                  { label: 'Aadhar Front', path: selectedAgent.kyc?.aadharFront },
-                  { label: 'Aadhar Back', path: selectedAgent.kyc?.aadharBack },
-                  { label: 'Pan Card', path: selectedAgent.kyc?.panCard }
-                ].map((doc, idx) => doc.path ? (
-                  <div key={idx} className="group relative rounded-xl border border-slate-200 overflow-hidden bg-white shadow-sm hover:shadow-md transition-all">
-                    <div className="aspect-[4/3] flex items-center justify-center p-2 bg-slate-50">
-                      {doc.path.match(/\.(jpg|jpeg|png|webp|gif)$/i) ? (
-                        <img src={getFileUrl(doc.path)} className="h-full w-full object-cover rounded-lg group-hover:scale-110 transition-transform duration-500" />
-                      ) : <FileText size={32} className="text-slate-200" />}
+                  { label: 'Aadhar front', path: selectedAgent.kyc?.aadharFront },
+                  { label: 'Aadhar back', path: selectedAgent.kyc?.aadharBack },
+                  { label: 'PAN card', path: selectedAgent.kyc?.panCard },
+                ].map((doc) => (
+                  <div
+                    key={doc.label}
+                    className="overflow-hidden rounded-xl border border-gray-200 bg-gray-50/50"
+                  >
+                    <div className="flex aspect-[4/3] items-center justify-center bg-white p-2">
+                      {doc.path ? (
+                        isPdfPath(doc.path) ? (
+                          <div className="flex flex-col items-center gap-2 p-4 text-center">
+                            <FileText className="h-10 w-10 text-gray-300" strokeWidth={1.5} />
+                            <span className="text-xs font-medium text-gray-600">PDF document</span>
+                            <a
+                              href={getFileUrl(doc.path)}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-xs font-medium text-primary-600 hover:underline"
+                            >
+                              Open file
+                            </a>
+                          </div>
+                        ) : (
+                          <img
+                            src={getFileUrl(doc.path)}
+                            alt={doc.label}
+                            className="max-h-44 w-full rounded-lg object-contain"
+                          />
+                        )
+                      ) : (
+                        <div className="flex flex-col items-center gap-1 text-gray-400">
+                          <XCircle className="h-8 w-8 opacity-40" strokeWidth={1.5} />
+                          <span className="text-xs">Not uploaded</span>
+                        </div>
+                      )}
                     </div>
-                    <div className="p-3 bg-white border-t border-slate-50 flex items-center justify-between">
-                      <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{doc.label}</span>
-                      <a href={getFileUrl(doc.path)} target="_blank" rel="noreferrer" className="h-7 w-7 flex items-center justify-center bg-primary-50 text-primary-600 rounded-lg hover:bg-primary-600 hover:text-white transition-all shadow-sm"><ExternalLink size={12} /></a>
+                    <div className="flex items-center justify-between border-t border-gray-100 bg-white px-3 py-2">
+                      <span className="text-xs font-medium text-gray-600">{doc.label}</span>
+                      {doc.path ? (
+                        <a
+                          href={getFileUrl(doc.path)}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex rounded-lg p-1.5 text-gray-500 transition-colors hover:bg-gray-100 hover:text-primary-700"
+                          title="Open in new tab"
+                        >
+                          <ExternalLink className="h-4 w-4" strokeWidth={2} />
+                        </a>
+                      ) : null}
                     </div>
-                  </div>
-                ) : (
-                  <div key={idx} className="aspect-[4/3] flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-100 bg-slate-50/50 text-slate-300">
-                    <XCircle size={24} className="opacity-20" />
-                    <span className="text-[9px] font-black uppercase mt-2">{doc.label} Missing</span>
                   </div>
                 ))}
               </div>
             </div>
 
             {selectedAgent.kyc?.status === 'pending' && (
-              <div className="space-y-4 pt-6 border-t border-slate-100">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Compliance Audit Feedback</label>
+              <div className="space-y-4 border-t border-gray-100 pt-6">
+                <div>
+                  <label className="mb-1.5 block text-xs font-medium text-gray-600" htmlFor="kyc-reject-reason">
+                    Rejection reason (required to reject)
+                  </label>
                   <textarea
-                    className="w-full rounded-xl border border-slate-200 p-4 text-sm focus:outline-none focus:ring-4 focus:ring-primary-500/5 focus:border-primary-500/50 bg-slate-50/50 transition-all min-h-[100px] resize-none"
-                    placeholder="Provide specific reasons for compliance failure..."
+                    id="kyc-reject-reason"
+                    className="min-h-[96px] w-full resize-none rounded-xl border border-gray-200 bg-gray-50/50 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-200"
+                    placeholder="Explain what is missing or incorrect…"
                     value={rejectionReason}
                     onChange={(e) => setRejectionReason(e.target.value)}
                   />
                 </div>
-                <div className="flex gap-4">
+                <div className="flex flex-col gap-3 sm:flex-row">
                   <button
+                    type="button"
                     onClick={() => handleKycAction('approve')}
                     disabled={isActionLoading}
-                    className="flex-1 h-12 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-sm shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-50"
+                    className="inline-flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    {isActionLoading ? <Loader size="sm" color="white" /> : <><ShieldCheck size={18} /> Approve Agency</>}
+                    {isActionLoading ? <Loader size="sm" color="white" /> : <><ShieldCheck className="h-4 w-4" strokeWidth={2} /> Approve KYC</>}
                   </button>
                   <button
+                    type="button"
                     onClick={() => handleKycAction('reject')}
                     disabled={isActionLoading}
-                    className="flex-1 h-12 bg-white border border-red-200 text-red-600 hover:bg-red-50 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-50"
+                    className="inline-flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-3 text-sm font-semibold text-red-700 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    {isActionLoading ? <Loader size="sm" /> : <><ShieldAlert size={18} /> Reject Credentials</>}
+                    {isActionLoading ? <Loader size="sm" /> : <><ShieldAlert className="h-4 w-4" strokeWidth={2} /> Reject KYC</>}
                   </button>
                 </div>
               </div>

@@ -129,6 +129,7 @@ export default function SubChildPackages() {
         ) : null}
       </section>
 
+      {(loading || availablePackages.length > 0) && (
       <section className="space-y-4">
         <div className="flex items-center gap-2 border-b border-gray-100 pb-2">
           <Tags className="h-5 w-5 text-primary-600" />
@@ -163,6 +164,7 @@ export default function SubChildPackages() {
           </div>
         ) : null}
       </section>
+      )}
 
       <WhitelabelModal
         isOpen={modal.open}

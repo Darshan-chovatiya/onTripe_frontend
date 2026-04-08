@@ -73,6 +73,27 @@ export function getCustomerByPhone(phone) {
   return axiosInstance.get('/child-agent/customers/by-phone', { params: { phone } })
 }
 
+export function updateAgencyCustomer(id, body) {
+  return axiosInstance.patch(`/child-agent/customers/${id}`, body)
+}
+
+export function toggleAgencyCustomerActive(id) {
+  return axiosInstance.patch(`/child-agent/customers/${id}/toggle-active`)
+}
+
+// Notifications (reuse global notification endpoints)
+export function sendNotification(data) {
+  return axiosInstance.post('/notifications/send', data)
+}
+
+export function getSentNotifications() {
+  return axiosInstance.get('/notifications/sent')
+}
+
+export function getNotificationPreview(id) {
+  return axiosInstance.get(`/notifications/${id}/preview`)
+}
+
 export default {
   listBookings,
   createBooking,
@@ -90,4 +111,9 @@ export default {
   changeChildPassword,
   listCustomers,
   getCustomerByPhone,
+  updateAgencyCustomer,
+  toggleAgencyCustomerActive,
+  sendNotification,
+  getSentNotifications,
+  getNotificationPreview,
 }

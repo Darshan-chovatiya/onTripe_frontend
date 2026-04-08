@@ -73,12 +73,12 @@ const PAYMENT_BADGE = {
   refunded: 'bg-violet-50 text-violet-900 ring-violet-100',
 }
 
-const emptyTraveler = () => ({ name: '', age: '', idProof: '' })
+const emptyTraveler = () => ({ name: '', age: '', gender: 'male' })
 
 const PAYMENT = ['pending', 'partial', 'paid', 'refunded']
 const BOOKING = ['confirmed', 'ongoing', 'completed', 'cancelled']
 
-export default function BookingDetailModal({ isOpen, onClose, bookingId, fetchBooking, updateBooking }) {
+export default function BookingDetailModal({ isOpen, onClose, bookingId, fetchBooking, updateBooking, openInEdit = false }) {
   const [booking, setBooking] = useState(null)
   const [loadErr, setLoadErr] = useState(null)
   const [loading, setLoading] = useState(false)
@@ -109,7 +109,8 @@ export default function BookingDetailModal({ isOpen, onClose, bookingId, fetchBo
         const data = await fetchBooking(bookingId)
         if (!cancelled) {
           setBooking(data)
-          setEditing(false)
+          setEditing(openInEdit)
+          if (openInEdit) syncFormFromBooking(data)
         }
       } catch {
         if (!cancelled) {
@@ -138,7 +139,7 @@ export default function BookingDetailModal({ isOpen, onClose, bookingId, fetchBo
       (b.travelers || []).map((t) => ({
         name: t.name || '',
         age: t.age != null ? String(t.age) : '',
-        idProof: t.idProof || '',
+        gender: t.gender || 'male',
       }))
     )
   }
@@ -169,7 +170,7 @@ export default function BookingDetailModal({ isOpen, onClose, bookingId, fetchBo
       .map((r) => ({
         name: r.name.trim(),
         age: Number(r.age),
-        ...(r.idProof.trim() ? { idProof: r.idProof.trim() } : {}),
+        gender: r.gender,
       }))
 
     setSaving(true)
@@ -578,17 +579,17 @@ export default function BookingDetailModal({ isOpen, onClose, bookingId, fetchBo
                 <span className="text-sm font-medium text-gray-700">Additional travelers</span>
                 <Button type="button" variant="secondary" className="py-1.5 text-xs" onClick={addTraveler}>
                   <Plus className="mr-1 inline h-3.5 w-3.5" />
-                  Add
+                  Add traveler
                 </Button>
               </div>
               {travelers.length === 0 ? (
-                <p className="text-xs text-gray-400">Primary customer is separate; list extra travelers here.</p>
+                <p className="text-xs text-gray-400">Optional. Primary customer counts toward capacity.</p>
               ) : (
                 <ul className="space-y-2">
                   {travelers.map((row, i) => (
                     <li key={i} className="flex flex-wrap items-end gap-2 rounded-lg border border-gray-100 p-3">
                       <input
-                        className="input-field min-w-[6rem] flex-1"
+                        className="input-field min-w-[8rem] flex-1"
                         placeholder="Name"
                         value={row.name}
                         onChange={(e) => setT(i, 'name', e.target.value)}
@@ -601,12 +602,15 @@ export default function BookingDetailModal({ isOpen, onClose, bookingId, fetchBo
                         value={row.age}
                         onChange={(e) => setT(i, 'age', e.target.value)}
                       />
-                      <input
-                        className="input-field min-w-[6rem] flex-1"
-                        placeholder="ID proof note (optional)"
-                        value={row.idProof}
-                        onChange={(e) => setT(i, 'idProof', e.target.value)}
-                      />
+                      <select
+                        className="input-field w-28"
+                        value={row.gender}
+                        onChange={(e) => setT(i, 'gender', e.target.value)}
+                      >
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                        <option value="other">Other</option>
+                      </select>
                       <button
                         type="button"
                         className="rounded-lg p-2 text-gray-400 hover:bg-red-50 hover:text-red-600"

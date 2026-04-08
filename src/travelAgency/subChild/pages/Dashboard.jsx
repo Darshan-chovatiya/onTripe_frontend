@@ -4,7 +4,7 @@ import { useAuth } from '@/shared/context/AuthContext.jsx'
 import { getAnalytics } from '@/travelAgency/subChild/services/subChildApi.js'
 
 const STATS_CONFIG = [
-  { key: 'totalPackages',  label: 'Total Packages', icon: Package,      color: 'bg-blue-50 text-blue-600' },
+  { key: 'totalPackages',  label: 'White Label Packages', icon: Package,      color: 'bg-blue-50 text-blue-600' },
   { key: 'totalBookings',  label: 'Total Bookings', icon: BookOpen,     color: 'bg-green-50 text-green-600' },
   { key: 'totalCustomers', label: 'Total Customers', icon: ContactRound, color: 'bg-orange-50 text-orange-600' },
 ]
