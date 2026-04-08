@@ -113,30 +113,38 @@ export default function AgencyCustomers() {
           bookingMapByAgencyCustomer.set(agencyCustomerKey, existing)
         })
         if (cancelled) return
-        setRows(
-          customers.map((item) => ({
-            // Backend notification endpoint expects Customer `_id` (not AgencyCustomer `_id`)
-            id: item.customer?._id || item._id,
-            agencyCustomerId: item._id,
-            name: item.name || item.customer?.name || '—',
-            phone: item.phone || item.customer?.phone || '—',
-            email: item.email || item.customer?.email || '—',
-            notes: item.notes || '',
-            dob: item.dob || null,
-            gender: item.gender || '',
-            nationality: item.nationality || '',
-            address: item.address || '',
-            aadharNumber: item.aadharNumber || '',
-            passportNumber: item.passportNumber || '',
-            docs: item.docs || {},
-            tripsData: bookingMapByAgencyCustomer.get(String(item._id)) || [],
-            trips: (bookingMapByAgencyCustomer.get(String(item._id)) || []).length,
-            lastActivity: item.updatedAt || item.createdAt,
-            isActive: item.isActive !== false,
-            createdAt: item.createdAt || null,
-            updatedAt: item.updatedAt || null,
-          }))
-        )
+        const normalizedRows = customers.map((item) => ({
+          // Backend notification endpoint expects Customer `_id` (not AgencyCustomer `_id`)
+          id: item.customer?._id || item._id,
+          agencyCustomerId: item._id,
+          name: item.name || item.customer?.name || '—',
+          phone: item.phone || item.customer?.phone || '—',
+          email: item.email || item.customer?.email || '—',
+          notes: item.notes || '',
+          dob: item.dob || null,
+          gender: item.gender || '',
+          nationality: item.nationality || '',
+          address: item.address || '',
+          aadharNumber: item.aadharNumber || '',
+          passportNumber: item.passportNumber || '',
+          docs: item.docs || {},
+          tripsData: bookingMapByAgencyCustomer.get(String(item._id)) || [],
+          trips: (bookingMapByAgencyCustomer.get(String(item._id)) || []).length,
+          lastActivity: item.updatedAt || item.createdAt,
+          isActive: item.isActive !== false,
+          createdAt: item.createdAt || null,
+          updatedAt: item.updatedAt || null,
+        }))
+
+        // Keep table order stable across reloads; do not depend on backend updatedAt ordering.
+        normalizedRows.sort((a, b) => {
+          const aCreated = a.createdAt ? new Date(a.createdAt).getTime() : 0
+          const bCreated = b.createdAt ? new Date(b.createdAt).getTime() : 0
+          if (aCreated !== bCreated) return aCreated - bCreated
+          return String(a.agencyCustomerId || '').localeCompare(String(b.agencyCustomerId || ''))
+        })
+
+        setRows(normalizedRows)
       } catch (err) {
         if (!cancelled) toastRef.current.error(getApiErrorMessage(err))
       } finally {
