@@ -85,6 +85,10 @@ export default function AppRouter() {
         <Route path="agencies" element={<AdminAgencies />} />
         <Route path="agencies/network/:parentId" element={<AdminAgencyNetwork />} />
         <Route path="child-agencies" element={<AdminChildAgencies />} />
+        <Route
+          path="sub-child-agencies"
+          element={<AdminChildAgencies agentRole="sub_child_agent" pageTitle="Sub-child Agencies" />}
+        />
         <Route path="notifications" element={<AdminNotifications />} />
         <Route path="settings" element={<AdminSettings />} />
       </Route>

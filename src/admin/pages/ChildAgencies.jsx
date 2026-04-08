@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { 
   Building2, 
   Search, 
@@ -8,7 +9,11 @@ import {
   Users,
   Building,
   ArrowRight,
-  UserRound
+  UserRound,
+  CheckCircle,
+  Clock,
+  XCircle,
+  Package
 } from 'lucide-react'
 import adminApi from '@/admin/services/adminApi'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
@@ -16,8 +21,11 @@ import Loader from '@/shared/components/Loader.jsx'
 import CustomDropdown from '@/shared/components/CustomDropdown.jsx'
 import Modal from '@/shared/components/Modal.jsx'
 
-export default function ChildAgencies() {
+export default function ChildAgencies({ agentRole = 'child_agent', pageTitle = 'Child Agencies' }) {
   const { toast } = useToast()
+  const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const initialParentRef = searchParams.get('parentRef')
   const [agents, setAgents] = useState([])
   const [loading, setLoading] = useState(true)
   const [page, setPage] = useState(1)
@@ -25,25 +33,35 @@ export default function ChildAgencies() {
   const [searchQuery, setSearchQuery] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
+  const [kycFilter, setKycFilter] = useState('all')
+  const [parentFilter, setParentFilter] = useState(initialParentRef || 'all')
+  const [parentOptions, setParentOptions] = useState([{ value: 'all', label: 'All parents' }])
+  const [togglingId, setTogglingId] = useState(null)
 
   // Modal States
   const [selectedAgent, setSelectedAgent] = useState(null)
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
-  const [isSubChildModalOpen, setIsSubChildModalOpen] = useState(false)
-  const [subChildren, setSubChildren] = useState([])
-  const [loadingSubChildren, setLoadingSubChildren] = useState(false)
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false)
   const [agencyCustomers, setAgencyCustomers] = useState([])
   const [loadingCustomers, setLoadingCustomers] = useState(false)
 
-  // Debouncing search
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearch(searchQuery)
-      setPage(1)
-    }, 500)
+    }, 400)
     return () => clearTimeout(handler)
   }, [searchQuery])
+
+  useEffect(() => {
+    const parentRefFromUrl = searchParams.get('parentRef')
+    if (parentRefFromUrl && parentRefFromUrl !== parentFilter) {
+      setParentFilter(parentRefFromUrl)
+    }
+  }, [searchParams, parentFilter])
+
+  useEffect(() => {
+    setPage(1)
+  }, [debouncedSearch, statusFilter, kycFilter, parentFilter, agentRole])
 
   const fetchAgents = async () => {
     setLoading(true)
@@ -51,9 +69,11 @@ export default function ChildAgencies() {
       const params = {
         page,
         limit: 10,
-        role: 'child_agent',
+        role: agentRole,
         isActive: statusFilter === 'all' ? undefined : (statusFilter === 'active' ? 'true' : 'false'),
-        search: debouncedSearch || undefined
+        search: debouncedSearch || undefined,
+        kycStatus: kycFilter === 'all' ? undefined : kycFilter,
+        parentRef: parentFilter === 'all' ? undefined : parentFilter,
       }
       const { data } = await adminApi.listAgents(params)
       if (data?.success) {
@@ -61,7 +81,7 @@ export default function ChildAgencies() {
         setTotalPages(data.data.totalPages)
       }
     } catch (error) {
-      toast.error('Failed to fetch child agencies')
+      toast.error(`Failed to fetch ${agentRole === 'sub_child_agent' ? 'sub-child' : 'child'} agencies`)
     } finally {
       setLoading(false)
     }
@@ -69,9 +89,30 @@ export default function ChildAgencies() {
 
   useEffect(() => {
     fetchAgents()
-  }, [page, debouncedSearch, statusFilter])
+  }, [page, debouncedSearch, statusFilter, kycFilter, parentFilter, agentRole])
+
+  useEffect(() => {
+    const loadParents = async () => {
+      try {
+        const roleForParents = agentRole === 'sub_child_agent' ? 'child_agent' : 'parent_agent'
+        const { data } = await adminApi.listAgents({ role: roleForParents, limit: 200 })
+        if (data?.success) {
+          const opts = [
+            { value: 'all', label: agentRole === 'sub_child_agent' ? 'All child agencies' : 'All parents' },
+            ...data.data.agents.map((a) => ({ value: a._id, label: a.name })),
+          ]
+          setParentOptions(opts)
+        }
+      } catch {
+        setParentOptions([{ value: 'all', label: agentRole === 'sub_child_agent' ? 'All child agencies' : 'All parents' }])
+      }
+    }
+    loadParents()
+  }, [agentRole])
 
   const handleToggleStatus = async (agentId) => {
+    if (togglingId) return
+    setTogglingId(agentId)
     try {
       const { data } = await adminApi.toggleAgent(agentId)
       if (data.success) {
@@ -80,24 +121,25 @@ export default function ChildAgencies() {
       }
     } catch (error) {
       toast.error(error.response?.data?.message || 'Action failed')
+    } finally {
+      setTogglingId(null)
     }
   }
 
-  const handleFetchSubChildren = async (agent) => {
-    setSelectedAgent(agent)
-    setLoadingSubChildren(true)
-    setIsSubChildModalOpen(true)
-    try {
-      // Fetch sub-child agents for this parent
-      const { data } = await adminApi.listAgents({ parentRef: agent._id, role: 'sub_child_agent' })
-      if (data?.success) {
-        setSubChildren(data.data.agents)
-      }
-    } catch (error) {
-      toast.error('Failed to resolve sub-hierarchy')
-    } finally {
-      setLoadingSubChildren(false)
+  const getStatusBadge = (status) => {
+    const badges = {
+      approved: { icon: CheckCircle, color: 'bg-emerald-50 text-emerald-700 border-emerald-200', label: 'Approved' },
+      pending: { icon: Clock, color: 'bg-amber-50 text-amber-700 border-amber-200', label: 'Pending' },
+      rejected: { icon: XCircle, color: 'bg-red-50 text-red-700 border-red-200', label: 'Rejected' },
     }
+    const badge = badges[status] || badges.pending
+    const Icon = badge.icon
+    return (
+      <span className={`inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest border min-w-[90px] shadow-sm ${badge.color}`}>
+        <Icon className="w-3 h-3" />
+        {badge.label}
+      </span>
+    )
   }
 
   const handleFetchCustomers = async (agent) => {
@@ -120,101 +162,59 @@ export default function ChildAgencies() {
     <Modal
       isOpen={isDetailModalOpen}
       onClose={() => setIsDetailModalOpen(false)}
-      title="Agency Identity Detail"
+      title="Agency overview"
       size="lg"
     >
       {selectedAgent && (
         <div className="space-y-6">
-          <div className="flex items-center gap-4 bg-gray-50 p-4 rounded-2xl border border-gray-100">
-             <div className="h-16 w-16 bg-white rounded-2xl border border-gray-200 flex items-center justify-center shadow-sm">
-                <Building2 size={32} className="text-primary-500" />
-             </div>
-             <div>
-                <h3 className="text-xl font-black text-zinc-900 leading-tight">{selectedAgent.name}</h3>
-                <div className="text-[10px] font-bold text-primary-600 uppercase tracking-widest mt-1">Agent Code: {selectedAgent.agentCode || 'N/A'}</div>
-             </div>
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900">{selectedAgent.name}</h3>
+            <p className="mt-1 text-sm text-gray-500">
+              {agentRole === 'sub_child_agent' ? 'Sub-child agency details' : 'Child agency details'}
+            </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-             <div className="p-4 rounded-xl border border-gray-100 bg-white space-y-1">
-                <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Email Address</div>
-                <div className="text-sm font-bold text-zinc-900">{selectedAgent.email}</div>
-             </div>
-             <div className="p-4 rounded-xl border border-gray-100 bg-white space-y-1">
-                <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Contact Number</div>
-                <div className="text-sm font-bold text-zinc-900">{selectedAgent.phone || 'N/A'}</div>
-             </div>
-             <div className="p-4 rounded-xl border border-gray-100 bg-white space-y-1">
-                <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Account Created</div>
-                <div className="text-sm font-bold text-zinc-900">{new Date(selectedAgent.createdAt).toLocaleDateString(undefined, { dateStyle: 'long' })}</div>
-             </div>
-             <div className="p-4 rounded-xl border border-gray-100 bg-white space-y-1">
-                <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Parent Entity</div>
-                <div className="text-sm font-bold text-zinc-900">{selectedAgent.parentName || 'Direct Platform Agent'}</div>
-             </div>
-          </div>
-
-          {selectedAgent.kyc && (
-            <div className="p-4 rounded-xl border border-amber-100 bg-amber-50/30">
-               <h4 className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-2">Internal Notes / KYC Status</h4>
-               <p className="text-xs text-amber-800 font-medium italic opacity-80">This node is currently under {selectedAgent.kyc.status} status within the distribution network.</p>
+          <div className="grid grid-cols-3 gap-3">
+            <div className="rounded-xl border border-gray-200 bg-gray-50/80 px-4 py-3 text-center">
+              <div className="text-xs font-medium text-gray-500">Sub-child</div>
+              <p className="mt-1 text-xl font-semibold text-gray-900">{selectedAgent.childCount ?? 0}</p>
             </div>
-          )}
+            <div className="rounded-xl border border-gray-200 bg-gray-50/80 px-4 py-3 text-center">
+              <div className="text-xs font-medium text-gray-500">Whitelabels</div>
+              <p className="mt-1 text-xl font-semibold text-gray-900">{selectedAgent.whitelabelCount ?? 0}</p>
+            </div>
+            <div className="rounded-xl border border-gray-200 bg-gray-50/80 px-4 py-3 text-center">
+              <div className="text-xs font-medium text-gray-500">Customers</div>
+              <p className="mt-1 text-xl font-semibold text-gray-900">{selectedAgent.customerCount ?? 0}</p>
+            </div>
+          </div>
+
+          <div className="grid gap-4 rounded-xl border border-gray-200 bg-white p-4 sm:grid-cols-2">
+            <div>
+              <p className="text-xs font-medium text-gray-500">Agent code</p>
+              <p className="mt-1 text-sm font-semibold text-gray-900">{selectedAgent.agentCode || '—'}</p>
+            </div>
+            <div>
+              <p className="text-xs font-medium text-gray-500">KYC status</p>
+              <div className="mt-1">{getStatusBadge(selectedAgent.kyc?.status)}</div>
+            </div>
+            <div className="sm:col-span-2">
+              <p className="text-xs font-medium text-gray-500">Email</p>
+              <p className="mt-1 break-all text-sm text-gray-900">{selectedAgent.email}</p>
+            </div>
+            <div>
+              <p className="text-xs font-medium text-gray-500">Phone</p>
+              <p className="mt-1 text-sm text-gray-900">{selectedAgent.phone || 'N/A'}</p>
+            </div>
+            <div>
+              <p className="text-xs font-medium text-gray-500">Parent agency</p>
+              <p className="mt-1 text-sm text-gray-900">
+                {selectedAgent.parentName || (agentRole === 'sub_child_agent' ? 'Direct child agency link unavailable' : 'Direct node')}
+              </p>
+            </div>
+          </div>
         </div>
       )}
-    </Modal>
-  )
-
-  const SubChildModal = () => (
-    <Modal
-      isOpen={isSubChildModalOpen}
-      onClose={() => setIsSubChildModalOpen(false)}
-      title={`Sub-Agency Network: ${selectedAgent?.name}`}
-      size="lg"
-    >
-      <div className="space-y-4">
-        <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">Hierarchy Layer: Sub-Distributors</p>
-        
-        <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
-           {loadingSubChildren ? (
-              <div className="p-12 flex flex-col items-center justify-center">
-                 <Loader size="md" />
-                 <p className="text-[10px] font-bold text-gray-400 mt-4 tracking-widest uppercase">Fetching Network Nodes...</p>
-              </div>
-           ) : subChildren.length === 0 ? (
-              <div className="p-12 text-center">
-                 <p className="text-sm text-gray-400 font-medium italic">No sub-child agencies identified for this parent node.</p>
-              </div>
-           ) : (
-              <table className="w-full text-left">
-                 <thead className="bg-gray-50 border-b border-gray-100">
-                     <tr>
-                        <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest">Identity</th>
-                        <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest">Details</th>
-                        <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest text-right pr-6">Status</th>
-                     </tr>
-                 </thead>
-                 <tbody className="divide-y divide-gray-50">
-                    {subChildren.map(sub => (
-                      <tr key={sub._id} className="hover:bg-gray-50/50 transition-colors">
-                         <td className="px-6 py-4">
-                            <div className="text-sm font-bold text-zinc-900">{sub.name}</div>
-                            <div className="text-[9px] font-black text-primary-600 uppercase tracking-widest">{sub.agentCode}</div>
-                         </td>
-                         <td className="px-6 py-4">
-                            <div className="text-xs text-gray-500 font-medium">{sub.email}</div>
-                         </td>
-                         <td className="px-6 py-4 text-right">
-                             <span className={`inline-block w-2 h-2 rounded-full mr-2 ${sub.isActive ? 'bg-emerald-500' : 'bg-red-500'}`} />
-                             <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">{sub.isActive ? 'Active' : 'Inactive'}</span>
-                         </td>
-                      </tr>
-                    ))}
-                 </tbody>
-              </table>
-           )}
-        </div>
-      </div>
     </Modal>
   )
 
@@ -274,178 +274,242 @@ export default function ChildAgencies() {
   )
 
   return (
-    <div className="space-y-6">
-      {/* Header Section with Search and Filter */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="animate-fade-in space-y-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900">Child Agencies</h1>
-          <p className="text-gray-500 text-sm">Manage and monitor secondary distribution nodes and sub-agencies</p>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input 
-              type="text"
-              placeholder="Search agencies..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 w-64 shadow-sm shadow-gray-100/50"
-            />
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <div className="text-xs font-bold text-gray-400 uppercase tracking-widest hidden lg:block">Status:</div>
-            <CustomDropdown
-              value={statusFilter}
-              onChange={setStatusFilter}
-              options={[
-                { value: 'all', label: 'All Status' },
-                { value: 'active', label: 'Active' },
-                { value: 'inactive', label: 'Inactive' }
-              ]}
-              className="w-44"
-              buttonClassName="!py-2"
-            />
-          </div>
+          <h1 className="text-xl font-semibold tracking-tight text-gray-900 sm:text-2xl">{pageTitle}</h1>
+          <p className="mt-1 text-sm text-gray-500">
+            {agentRole === 'sub_child_agent'
+              ? 'Manage and monitor tertiary distribution entities.'
+              : 'Manage and monitor secondary distribution entities.'}
+          </p>
         </div>
       </div>
 
-      {/* Main Table Container */}
-      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
-        <div className="overflow-x-auto min-h-[400px]">
-          {loading ? (
-            <div className="flex flex-col items-center justify-center p-32">
-              <Loader size="lg" />
-              <p className="text-[10px] font-bold text-gray-400 mt-4 tracking-widest uppercase italic font-black">Syncing Data...</p>
+      <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+        <div className="flex flex-col gap-3 border-b border-gray-200 px-4 py-3 sm:flex-row sm:flex-wrap sm:items-center">
+          <div className="relative w-full min-w-0 flex-1">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" strokeWidth={2} />
+            <input
+              type="search"
+              placeholder="Search name, email, or phone…"
+              autoComplete="off"
+              className="w-full rounded-md border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-gray-300 focus:outline-none focus:ring-1 focus:ring-gray-300"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 lg:flex lg:gap-3">
+            <div className="w-full sm:min-w-[140px] lg:w-44">
+              <CustomDropdown
+                value={statusFilter}
+                onChange={setStatusFilter}
+                options={[
+                  { value: 'all', label: 'All accounts' },
+                  { value: 'active', label: 'Active' },
+                  { value: 'inactive', label: 'Inactive' },
+                ]}
+                className="w-full"
+                buttonClassName="!py-2"
+              />
             </div>
-          ) : agents.length === 0 ? (
-            <div className="flex flex-col items-center justify-center p-32 text-center">
-              <h4 className="text-sm font-bold text-zinc-900 leading-none">No agencies found</h4>
-              <p className="text-xs text-gray-500 mt-1 font-medium italic">Adjust your search or filters to see more results.</p>
+            <div className="w-full sm:min-w-[140px] lg:w-44">
+              <CustomDropdown
+                value={kycFilter}
+                onChange={setKycFilter}
+                options={[
+                  { value: 'all', label: 'All KYC' },
+                  { value: 'pending', label: 'Pending' },
+                  { value: 'approved', label: 'Approved' },
+                  { value: 'rejected', label: 'Rejected' },
+                ]}
+                className="w-full"
+                buttonClassName="!py-2"
+              />
             </div>
-          ) : (
-            <table className="w-full text-left">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest">Child Agency</th>
-                  <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest">Contact Info</th>
-                  <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest">Parent Agency</th>
-                  <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest text-center">Hierarchy</th>
-                  <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest text-center">Customers</th>
-                  <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest text-center">Status</th>
-                  <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest text-right pr-6">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {agents.map((agent) => (
-                  <tr key={agent._id} className="hover:bg-gray-50 transition-colors group">
-                    <td className="px-6 py-5">
-                      <div className="text-sm font-bold text-zinc-900 leading-tight truncate max-w-[150px]">{agent.name}</div>
-                      <div className="text-[10px] text-gray-400 font-bold uppercase tracking-tight mt-0.5">ID: {agent._id.slice(-6).toUpperCase()}</div>
-                    </td>
-                    <td className="px-6 py-5 whitespace-nowrap">
-                      <div className="text-[11px] font-bold text-gray-600 flex flex-col gap-0.5">
-                        <div className="flex items-center gap-1.5"><Mail size={12} className="text-gray-300" /> {agent.email}</div>
-                        <div className="flex items-center gap-2 text-primary-500 font-bold uppercase tracking-tighter">
-                           <Phone size={10} /> {agent.phone || 'N/A'}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-5 whitespace-nowrap">
-                        {agent.parentName ? (
-                            <div className="flex flex-col gap-0.5">
-                                <div className="text-sm font-bold text-zinc-900 flex items-center gap-1.5">
-                                    <Building size={12} className="text-gray-300" />
-                                    {agent.parentName}
-                                </div>
-                                <div className="text-[9px] font-bold text-blue-600 uppercase tracking-widest">
-                                    Code: {agent.parentCode || 'N/A'}
-                                </div>
-                            </div>
-                        ) : (
-                            <div className="text-gray-300 text-[10px] font-bold uppercase tracking-widest border border-dashed border-gray-200 px-2 py-1 rounded w-fit">Direct Node</div>
-                        )}
-                    </td>
-                    <td className="px-6 py-5 whitespace-nowrap text-center">
-                        <button 
-                          onClick={() => handleFetchSubChildren(agent)}
-                          className="inline-flex items-center justify-center p-2 rounded-lg bg-gray-50 border border-gray-200 gap-2 min-w-[45px] hover:bg-primary-50 hover:border-primary-200 group-hover:shadow-sm transition-all shadow-sm"
-                        >
-                             <Users size={12} className="text-gray-400 group-hover:text-primary-600" />
-                             <span className="text-xs font-black text-zinc-900">{agent.childCount || 0}</span>
-                        </button>
-                    </td>
-                    <td className="px-6 py-5 whitespace-nowrap text-center">
-                        <button 
-                          onClick={() => handleFetchCustomers(agent)}
-                          className="inline-flex items-center justify-center p-2 rounded-lg bg-gray-50 border border-gray-200 gap-2 min-w-[45px] hover:bg-emerald-50 hover:border-emerald-200 group-hover:shadow-sm transition-all shadow-sm"
-                        >
-                             <UserRound size={12} className="text-gray-400 group-hover:text-emerald-600" />
-                             <span className="text-xs font-black text-zinc-900">{agent.customerCount || 0}</span>
-                        </button>
-                    </td>
-                    <td className="px-6 py-5 whitespace-nowrap text-center">
-                         <button 
-                           onClick={() => handleToggleStatus(agent._id)}
-                           className={`inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest border transition-all active:scale-95 shadow-sm min-w-[85px] ${
-                             agent.isActive 
-                             ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100/50' 
-                             : 'bg-red-50 text-red-700 border-red-100 hover:bg-red-100/50'
-                           }`}
-                         >
-                           <div className={`w-1 h-1 rounded-full ${agent.isActive ? 'bg-emerald-600 animate-pulse' : 'bg-red-600'}`} />
-                           {agent.isActive ? 'Active' : 'Inactive'}
-                         </button>
-                    </td>
-                    <td className="px-6 py-5 whitespace-nowrap text-right pr-6">
-                         <button 
-                           onClick={() => {
-                             setSelectedAgent(agent)
-                             setIsDetailModalOpen(true)
-                           }}
-                           className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all border border-gray-100 hover:border-blue-100 shadow-sm active:scale-90"
-                           title="View Full Profile"
-                         >
-                           <Eye size={16} />
-                         </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
-
-        {/* Improved Pagination */}
-        {totalPages > 1 && (
-          <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between">
-            <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">
-              Page {page} of {totalPages}
-            </div>
-            <div className="flex items-center gap-2">
-              <button 
-                onClick={() => setPage(p => Math.max(1, p - 1))}
-                disabled={page === 1}
-                className="px-4 py-1.5 rounded-lg border border-gray-200 text-xs font-bold hover:bg-gray-50 disabled:opacity-30 transition-all font-bold"
-              >
-                Prev
-              </button>
-              <button 
-                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                disabled={page === totalPages}
-                className="px-4 py-1.5 rounded-lg border border-gray-200 text-xs font-bold hover:bg-gray-50 disabled:opacity-30 transition-all font-bold"
-              >
-                Next
-              </button>
+            <div className="w-full sm:min-w-[180px] lg:w-56">
+              <CustomDropdown
+                value={parentFilter}
+                onChange={setParentFilter}
+                options={parentOptions}
+                className="w-full"
+                buttonClassName="!py-2"
+              />
             </div>
           </div>
+        </div>
+
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-16">
+            <Loader size="lg" />
+            <p className="mt-4 text-xs text-gray-500">Loading agencies…</p>
+          </div>
+        ) : agents.length === 0 ? (
+          <div className="px-4 py-14 text-center">
+            <Building2 className="mx-auto h-8 w-8 text-gray-300" strokeWidth={1.5} />
+            <p className="mt-3 text-sm font-medium text-gray-900">No agencies found</p>
+            <p className="mt-1 text-sm text-gray-500">Try adjusting search or status filter.</p>
+          </div>
+        ) : (
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[1100px] text-sm">
+                <thead className="border-b border-gray-200 bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-600">
+                      {agentRole === 'sub_child_agent' ? 'Sub-child agency' : 'Child agency'}
+                    </th>
+                    <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-600">
+                      {agentRole === 'sub_child_agent' ? 'Child agency' : 'Parent agency'}
+                    </th>
+                    <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-600">Contact</th>
+                    <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-600">Sub-child</th>
+                    <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-600">Whitelabels</th>
+                    <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-600">Customers</th>
+                    <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-600">Status</th>
+                    <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-600">KYC</th>
+                    <th className="px-4 py-2.5 text-right text-xs font-medium text-gray-600">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {agents.map((agent) => (
+                    <tr key={agent._id} className="group transition-colors hover:bg-gray-50/80">
+                      <td className="px-4 py-2.5">
+                        <div className="flex items-start gap-2.5">
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-gray-200 bg-gray-50 text-gray-500 transition-transform group-hover:scale-[1.02]">
+                            <Building2 className="h-4 w-4" strokeWidth={2} />
+                          </div>
+                          <div className="min-w-0">
+                            <div className="truncate text-sm font-semibold text-gray-900">{agent.name}</div>
+                            <div className="mt-0.5 flex items-center gap-1 text-xs text-gray-500">
+                              <Mail className="h-3 w-3 shrink-0 text-gray-400" strokeWidth={2} />
+                              <span className="truncate">{agent.email}</span>
+                            </div>
+                            <div className="mt-1 text-[11px] font-medium text-primary-700">
+                              {agent.agentCode || '—'}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-2.5">
+                        {agent.parentName ? (
+                          <div>
+                            <p className="text-xs font-medium text-gray-900">{agent.parentName}</p>
+                            <p className="text-[11px] text-gray-500">Code: {agent.parentCode || '—'}</p>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-gray-400">Direct node</span>
+                        )}
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-2.5">
+                        <div className="flex items-center gap-2">
+                          <div className="flex h-6 w-6 items-center justify-center rounded border border-gray-200 bg-white text-gray-400">
+                            <Phone className="h-3 w-3" />
+                          </div>
+                          <span className="text-xs font-medium text-gray-700">{agent.phone || 'N/A'}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-2.5">
+                        {agentRole === 'sub_child_agent' ? (
+                          <span className="text-xs text-gray-400">—</span>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => navigate(`/admin/sub-child-agencies?parentRef=${agent._id}`)}
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-800 shadow-sm transition-colors hover:border-primary-200 hover:bg-primary-50/50 hover:text-primary-900"
+                          >
+                            <Users className="h-3.5 w-3.5 text-gray-500" strokeWidth={2} />
+                            <span>{agent.childCount || 0}</span>
+                            {/* <span className="text-gray-400">nodes</span> */}
+                            {/* <ArrowRight className="h-3 w-3 text-gray-400" strokeWidth={2} /> */}
+                          </button>
+                        )}
+                      </td>
+                      <td className="px-4 py-2.5">
+                        <div className="inline-flex items-center gap-1.5 rounded-lg border border-gray-100 bg-gray-50 px-2.5 py-1.5 text-xs font-medium text-gray-700">
+                          <Package className="h-3.5 w-3.5 text-gray-500" strokeWidth={2} />
+                          <span>{agent.whitelabelCount ?? 0}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-2.5">
+                        <button
+                          type="button"
+                          onClick={() => handleFetchCustomers(agent)}
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-gray-100 bg-gray-50 px-2.5 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:border-gray-200 hover:bg-white"
+                        >
+                          <UserRound className="h-3.5 w-3.5 text-gray-500" strokeWidth={2} />
+                          <span>{agent.customerCount || 0}</span>
+                        </button>
+                      </td>
+                      <td className="px-4 py-2.5">
+                        <button
+                          type="button"
+                          disabled={togglingId === agent._id}
+                          onClick={() => handleToggleStatus(agent._id)}
+                          className={`inline-flex min-w-[88px] cursor-pointer items-center justify-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-wide transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 ${
+                            agent.isActive
+                              ? 'border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100/90'
+                              : 'border-red-200 bg-red-50 text-red-800 hover:bg-red-100/90'
+                          }`}
+                        >
+                          <span className={`h-1.5 w-1.5 rounded-full ${agent.isActive ? 'bg-emerald-500' : 'bg-red-500'} ${agent.isActive ? 'animate-pulse' : ''}`} />
+                          {agent.isActive ? 'Active' : 'Inactive'}
+                        </button>
+                      </td>
+                      <td className="px-4 py-2.5">
+                        {getStatusBadge(agent.kyc?.status)}
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-2.5 pr-5 text-right">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedAgent(agent)
+                            setIsDetailModalOpen(true)
+                          }}
+                          className="inline-flex rounded-lg border border-gray-200 bg-white p-2 text-gray-500 shadow-sm transition-colors hover:border-primary-200 hover:text-primary-700 active:scale-95"
+                          title="View agency"
+                        >
+                          <Eye className="h-4 w-4" strokeWidth={2} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between border-t border-gray-200 bg-gray-50 px-4 py-3">
+                <p className="text-xs text-gray-500">
+                  Page <span className="font-medium text-gray-900">{page}</span> of{' '}
+                  <span className="font-medium text-gray-900">{totalPages}</span>
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={page === 1}
+                    className="inline-flex h-8 items-center justify-center rounded-md border border-gray-200 bg-white px-3 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50 disabled:opacity-40"
+                  >
+                    Prev
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={page === totalPages}
+                    className="inline-flex h-8 items-center justify-center rounded-md border border-gray-200 bg-white px-3 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50 disabled:opacity-40"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
 
       {/* Pop-up Modals */}
       <AgentDetailModal />
-      <SubChildModal />
       <CustomerModal />
     </div>
   )

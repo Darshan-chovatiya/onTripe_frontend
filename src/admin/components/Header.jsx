@@ -12,6 +12,7 @@ const PAGE_TITLES = [
   { match: '/admin/agencies/network', title: 'Agency network' },
   { match: '/admin/agencies', title: 'Agencies' },
   { match: '/admin/child-agencies', title: 'Child agencies' },
+  { match: '/admin/sub-child-agencies', title: 'Sub-child agencies' },
   { match: '/admin/notifications', title: 'Notifications' },
   { match: '/admin/settings', title: 'Settings' },
 ]
