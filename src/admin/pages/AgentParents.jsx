@@ -42,19 +42,25 @@ export default function AgentParents() {
       }
       setAgent(agentPayload)
 
-      // Resolve all approved parents
       const approvedIds = Array.isArray(agentPayload.approvedParents)
-        ? agentPayload.approvedParents.map((p) => (typeof p === 'object' ? p._id : p))
+        ? agentPayload.approvedParents.map((p) => (typeof p === 'object' ? String(p._id) : String(p)))
+        : []
+      const pendingIds = Array.isArray(agentPayload.pendingParents)
+        ? agentPayload.pendingParents.map((p) => (typeof p === 'object' ? String(p._id) : String(p)))
+        : []
+      const rejectedIds = Array.isArray(agentPayload.rejectedParents)
+        ? agentPayload.rejectedParents.map((p) => (typeof p === 'object' ? String(p._id) : String(p)))
         : []
 
-      // Also include primaryRef if not already in approvedParents
       const primaryId = agentPayload.parentRef
-        ? (typeof agentPayload.parentRef === 'object' ? agentPayload.parentRef._id : agentPayload.parentRef)
+        ? String(typeof agentPayload.parentRef === 'object' ? agentPayload.parentRef._id : agentPayload.parentRef)
         : null
 
       const allIds = [...new Set([
-        ...(primaryId ? [String(primaryId)] : []),
-        ...approvedIds.map(String),
+        ...(primaryId ? [primaryId] : []),
+        ...approvedIds,
+        ...pendingIds,
+        ...rejectedIds,
       ])]
 
       if (allIds.length === 0) {
@@ -63,11 +69,19 @@ export default function AgentParents() {
         return
       }
 
-      // Fetch each parent
       const results = await Promise.allSettled(allIds.map((id) => adminApi.getAgent(id)))
+      const expectedRole = agentPayload.role === 'sub_child_agent' ? 'child_agent' : 'parent_agent'
       const resolved = results
         .filter((r) => r.status === 'fulfilled' && r.value.data?.success)
-        .map((r) => r.value.data.data.agent)
+        .map((r) => {
+          const p = r.value.data.data.agent
+          const pid = String(p._id)
+          const approvalStatus = approvedIds.includes(pid) ? 'approved'
+            : rejectedIds.includes(pid) ? 'rejected'
+            : 'pending'
+          return { ...p, approvalStatus }
+        })
+        .filter((p) => p.role === expectedRole)
       setParents(resolved)
     } catch {
       toastRef.current.error('Could not load parent agencies')
@@ -118,12 +132,9 @@ export default function AgentParents() {
 
       <div>
         <h1 className="text-xl font-semibold tracking-tight text-gray-900 sm:text-2xl">{parentLabel}</h1>
-        <p className="mt-1 text-sm text-gray-500">
-          All {parentLabel.toLowerCase()} linked to this agency.
-        </p>
+        <p className="mt-1 text-sm text-gray-500">All {parentLabel.toLowerCase()} linked to this agency.</p>
       </div>
 
-      {/* Agent info card */}
       {agent ? (
         <section className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm">
           <div className="flex flex-wrap items-center gap-2 border-b border-gray-100 bg-gray-50/80 px-3 py-2 sm:px-4">
@@ -161,7 +172,6 @@ export default function AgentParents() {
         </section>
       ) : null}
 
-      {/* Parents list */}
       <section>
         <div className="mb-2 flex items-center justify-between gap-2">
           <h2 className="text-base font-semibold text-gray-900">{parentLabel}</h2>
@@ -227,13 +237,19 @@ export default function AgentParents() {
                         </div>
                       </td>
                       <td className="px-4 py-2.5">
-                        <span className={`inline-flex items-center gap-1 rounded-lg border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
-                          p.kyc?.status === 'approved' ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
-                          : p.kyc?.status === 'rejected' ? 'border-red-200 bg-red-50 text-red-800'
-                          : 'border-amber-200 bg-amber-50 text-amber-800'
-                        }`}>
-                          {p.kyc?.status || 'pending'}
-                        </span>
+                        {(() => {
+                          const s = p.approvalStatus
+                          const cfg = {
+                            approved: 'border-emerald-200 bg-emerald-50 text-emerald-800',
+                            rejected: 'border-red-200 bg-red-50 text-red-800',
+                            pending: 'border-amber-200 bg-amber-50 text-amber-800',
+                          }
+                          return (
+                            <span className={`inline-flex items-center rounded-md border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${cfg[s] || cfg.pending}`}>
+                              {s === 'approved' ? 'Approved' : s === 'rejected' ? 'Rejected' : 'Pending'}
+                            </span>
+                          )
+                        })()}
                       </td>
                       <td className="px-4 py-2.5">
                         <span className={`inline-flex items-center gap-1.5 rounded-lg border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
