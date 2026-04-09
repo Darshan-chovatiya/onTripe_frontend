@@ -20,10 +20,13 @@ function titleForPath(pathname) {
   if (/^\/admin\/packages\/[^/]+\/whitelabels$/.test(pathname)) return 'Package whitelabels'
   if (/^\/admin\/packages\/[^/]+\/bookings$/.test(pathname)) return 'Package bookings'
   if (/^\/admin\/packages\/[^/]+\/community$/.test(pathname)) return 'Package chat'
+  if (/^\/admin\/packages\/[^/]+\/reviews$/.test(pathname)) return 'Package reviews'
   if (/^\/admin\/child-agencies\/[^/]+\/whitelabels$/.test(pathname)) return 'Agent whitelabels'
   if (/^\/admin\/sub-child-agencies\/[^/]+\/whitelabels$/.test(pathname)) return 'Agent whitelabels'
   if (/^\/admin\/child-agencies\/[^/]+\/customers$/.test(pathname)) return 'Agency customers'
   if (/^\/admin\/sub-child-agencies\/[^/]+\/customers$/.test(pathname)) return 'Agency customers'
+  if (/^\/admin\/child-agencies\/[^/]+\/parents$/.test(pathname)) return 'Parent agencies'
+  if (/^\/admin\/sub-child-agencies\/[^/]+\/parents$/.test(pathname)) return 'Child agencies'
   const hit = PAGE_TITLES.find((e) => pathname === e.match || pathname.startsWith(e.match + '/'))
   if (hit) return hit.title
   if (pathname.startsWith('/admin')) return 'Admin'
@@ -45,7 +48,7 @@ export default function Header({ onMenuClick }) {
   useEffect(() => {
     if (!menuOpen) return
     const onDocDown = (e) => {
-      if (menuRef.current && !menuRef.current.contains(/** @type {Node} */ (e.target))) {
+      if (menuRef.current && !menuRef.current.contains(/** @type {Node} */(e.target))) {
         setMenuOpen(false)
       }
     }

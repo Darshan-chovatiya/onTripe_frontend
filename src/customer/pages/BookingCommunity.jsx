@@ -75,20 +75,6 @@ export default function BookingCommunity() {
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col pb-24">
-      <nav className="mb-3 flex flex-wrap items-center gap-1 text-sm text-gray-500" aria-label="Breadcrumb">
-        <Link
-          to={`/customer/booking/${bookingId}`}
-          className="font-medium text-primary-700 transition-colors hover:text-primary-800"
-        >
-          My trip
-        </Link>
-        <ChevronRight className="h-4 w-4 shrink-0 text-gray-400" strokeWidth={2} aria-hidden />
-        <span className="max-w-[min(100vw-8rem,200px)] truncate font-medium text-gray-800" title={tripTitle}>
-          {tripTitle}
-        </span>
-        <ChevronRight className="h-4 w-4 shrink-0 text-gray-400" strokeWidth={2} aria-hidden />
-        <span className="font-semibold text-gray-900">Chat</span>
-      </nav>
 
       <div className="h-[calc(100vh-14rem)] min-h-[360px] overflow-hidden sm:h-[calc(100vh-12rem)]">
         <CommunityChat packageId={packageId} customerId={customerId || user?.id} layout="page" />

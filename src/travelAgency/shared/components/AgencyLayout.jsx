@@ -5,6 +5,25 @@ import { useAuth } from '@/shared/context/AuthContext.jsx'
 import ConfirmDialog from '@/shared/components/ConfirmDialog.jsx'
 import { useAgencyPermissions } from '@/travelAgency/agency/hooks/useAgencyPermissions.js'
 
+// Map path segments to readable page titles
+function usePageTitle() {
+  const { pathname } = useLocation()
+  const segment = pathname.split('/').filter(Boolean).pop() || ''
+  const titles = {
+    dashboard: 'Dashboard',
+    packages: 'Packages',
+    vendors: 'Vendors',
+    bookings: 'Bookings',
+    'manage-children': 'Manage Children',
+    'manage-downstream': 'Manage network',
+    settings: 'Settings',
+    'manage-sub-children': 'Manage Sub-Children',
+    'my-bookings': 'My Bookings',
+    customers: 'Customers',
+    reviews: 'Package Reviews',
+  }
+  return titles[segment] || segment.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) || 'Dashboard'
+}
 /** Same route→title idea as admin Header; paths under `/agency`. */
 function titleForPath(pathname) {
   if (/^\/agency\/packages\/[^/]+\/community$/.test(pathname)) return 'Package chat'

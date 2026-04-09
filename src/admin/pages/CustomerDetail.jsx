@@ -19,12 +19,71 @@ import {
   Clock,
   MapPin,
   Download,
+  Paperclip,
+  X,
 } from 'lucide-react'
 import adminApi from '@/admin/services/adminApi'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
 import Loader from '@/shared/components/Loader.jsx'
 import ExcelJS from 'exceljs'
 import { saveAs } from 'file-saver'
+
+const getFileUrl = (path) => {
+  if (!path) return null
+  if (path.startsWith('http')) return path
+  const base = import.meta.env.VITE_API_BASE_URL?.replace('/api', '').replace(/\/$/, '') || 'http://localhost:5001'
+  return `${base}/${String(path).replace(/^\//, '')}`
+}
+
+function TicketsPopup({ tickets, bookingId, onClose }) {
+  if (!tickets || tickets.length === 0) return null
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+      <div className="relative z-10 w-full max-w-lg rounded-2xl border border-gray-200 bg-white shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+          <div className="flex items-center gap-2">
+            <Paperclip className="h-4 w-4 text-primary-600" strokeWidth={2} />
+            <h3 className="text-sm font-semibold text-gray-900">Tickets</h3>
+            {bookingId && <span className="font-mono text-xs text-gray-400">{bookingId}</span>}
+          </div>
+          <button type="button" onClick={onClose} className="rounded-lg p-1.5 text-gray-400 transition hover:bg-gray-100 hover:text-gray-700">
+            <X className="h-4 w-4" strokeWidth={2} />
+          </button>
+        </div>
+        <ul className="max-h-[60vh] divide-y divide-gray-100 overflow-y-auto px-5 py-3">
+          {tickets.map((t, i) => {
+            const url = getFileUrl(t.fileUrl)
+            const isPdf = t.fileUrl && /\.pdf$/i.test(t.fileUrl)
+            const isImg = !isPdf && t.fileUrl && /\.(jpe?g|png|gif|webp|svg)$/i.test(t.fileUrl)
+            return (
+              <li key={i} className="py-3">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-gray-200 bg-gray-50">
+                    {isImg ? (
+                      <img src={url} alt={t.name} className="h-full w-full object-cover" onError={(e) => { e.currentTarget.style.display = 'none' }} />
+                    ) : (
+                      <FileText className="h-6 w-6 text-rose-400" strokeWidth={1.75} />
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-gray-900">{t.name || `Ticket ${i + 1}`}</p>
+                    {t.uploadedAt && <p className="mt-0.5 text-xs text-gray-400">{new Date(t.uploadedAt).toLocaleString()}</p>}
+                    <a href={url} target="_blank" rel="noreferrer"
+                      className="mt-1.5 inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-gray-50 px-2.5 py-1 text-xs font-medium text-gray-700 transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-800">
+                      <ExternalLink className="h-3 w-3" strokeWidth={2} />
+                      Open
+                    </a>
+                  </div>
+                </div>
+              </li>
+            )
+          })}
+        </ul>
+      </div>
+    </div>
+  )
+}
 
 function roleBadgeClass(role) {
   if (!role) return 'bg-gray-100 text-gray-700 border-gray-200'
@@ -249,6 +308,7 @@ export default function CustomerDetail() {
   const [bookings, setBookings] = useState([])
   const [bookingsLoading, setBookingsLoading] = useState(true)
   const [exportLoading, setExportLoading] = useState(false)
+  const [ticketPopup, setTicketPopup] = useState(null)
 
   const load = useCallback(async () => {
     if (!customerId) return
@@ -587,20 +647,12 @@ export default function CustomerDetail() {
                       <Ticket className="h-4 w-4 shrink-0 text-primary-600" strokeWidth={2} />
                       <span className="font-mono text-sm font-semibold text-gray-900">{b.bookingId || '—'}</span>
                     </div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className={`inline-flex items-center gap-1 rounded-lg border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
-                        b.paymentStatus === 'paid' ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
-                        : b.paymentStatus === 'partial' ? 'border-sky-200 bg-sky-50 text-sky-800'
-                        : b.paymentStatus === 'refunded' ? 'border-violet-200 bg-violet-50 text-violet-800'
-                        : 'border-amber-200 bg-amber-50 text-amber-800'
-                      }`}>{b.paymentStatus || 'pending'}</span>
-                      <span className={`inline-flex items-center gap-1 rounded-lg border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
-                        b.bookingStatus === 'confirmed' ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
-                        : b.bookingStatus === 'ongoing' ? 'border-sky-200 bg-sky-50 text-sky-800'
-                        : b.bookingStatus === 'completed' ? 'border-gray-200 bg-gray-100 text-gray-700'
-                        : 'border-red-200 bg-red-50 text-red-800'
-                      }`}>{b.bookingStatus || 'confirmed'}</span>
-                    </div>
+                    <span className={`inline-flex items-center gap-1 rounded-lg border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
+                      b.bookingStatus === 'confirmed' ? 'border-blue-200 bg-blue-50 text-blue-800'
+                      : b.bookingStatus === 'ongoing'   ? 'border-sky-200 bg-sky-50 text-sky-800'
+                      : b.bookingStatus === 'completed' ? 'border-gray-200 bg-gray-100 text-gray-700'
+                      : 'border-red-200 bg-red-50 text-red-800'
+                    }`}>{b.bookingStatus || 'confirmed'}</span>
                   </div>
 
                   <div className="p-4 space-y-4">
@@ -619,6 +671,14 @@ export default function CustomerDetail() {
                       </DetailRow>
                       <DetailRow label="Total Amount">
                         <span className="inline-flex items-center gap-1 font-semibold tabular-nums"><IndianRupee className="h-3.5 w-3.5 text-gray-400" strokeWidth={2} />{Number(b.totalAmount || 0).toLocaleString('en-IN')}</span>
+                      </DetailRow>
+                      <DetailRow label="Payment">
+                        <span className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
+                          b.paymentStatus === 'paid'     ? 'bg-emerald-100 text-emerald-800'
+                          : b.paymentStatus === 'partial'  ? 'bg-sky-100 text-sky-800'
+                          : b.paymentStatus === 'refunded' ? 'bg-violet-100 text-violet-800'
+                          : 'bg-amber-100 text-amber-900'
+                        }`}>{b.paymentStatus || 'pending'}</span>
                       </DetailRow>
                       <DetailRow label="Travelers">
                         <span className="inline-flex items-center gap-1"><Users className="h-3.5 w-3.5 text-gray-400" strokeWidth={2} />{b.travelerCount ?? travelers.length}</span>
@@ -658,6 +718,19 @@ export default function CustomerDetail() {
                         </div>
                       </div>
                     )}
+
+                    {Array.isArray(b.tickets) && b.tickets.length > 0 && (
+                      <div className="flex items-center gap-2 border-t border-gray-100 pt-3">
+                        <button
+                          type="button"
+                          onClick={() => setTicketPopup({ tickets: b.tickets, bookingId: b.bookingId })}
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs font-medium text-gray-700 transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-800"
+                        >
+                          <Paperclip className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
+                          {b.tickets.length} ticket{b.tickets.length !== 1 ? 's' : ''}
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </article>
               )
@@ -665,6 +738,14 @@ export default function CustomerDetail() {
           </div>
         )}
       </section>
+
+      {ticketPopup && (
+        <TicketsPopup
+          tickets={ticketPopup.tickets}
+          bookingId={ticketPopup.bookingId}
+          onClose={() => setTicketPopup(null)}
+        />
+      )}
     </div>
   )
 }

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   RefreshCw,
   Users,
@@ -23,7 +24,6 @@ import {
   toggleChildAgentStatus,
   approveChildKyc,
   sendNotification,
-  getSentNotifications,
   listPendingRequests,
   approveParentRequest,
   rejectParentRequest,
@@ -52,6 +52,7 @@ const KYC_ICONS = {
 const PAGE_SIZE = 10
 
 export default function ManageChildren() {
+  const navigate = useNavigate()
   const [children, setChildren] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -70,9 +71,6 @@ export default function ManageChildren() {
   const [notifyOpen, setNotifyOpen] = useState(false)
   const [notifyBusy, setNotifyBusy] = useState(false)
   const [notifyForm, setNotifyForm] = useState({ subject: '', message: '', attachments: [] })
-  const [historyOpen, setHistoryOpen] = useState(false)
-  const [historyLoading, setHistoryLoading] = useState(false)
-  const [history, setHistory] = useState([])
 
   const fetchChildren = useCallback(async () => {
     setLoading(true)
@@ -199,7 +197,6 @@ export default function ManageChildren() {
     }
     setNotifyOpen(true)
   }
-
   const sendNotify = async () => {
     if (selectedIds.size === 0) {
       toast.error('Select at least one child agent')
@@ -233,29 +230,6 @@ export default function ManageChildren() {
     }
   }
 
-  const openHistory = async () => {
-    setHistoryOpen(true)
-    setHistoryLoading(true)
-    try {
-      const { data } = await getSentNotifications()
-      if (data.success) {
-        const notifications = data.data.notifications || []
-        // Parent history: only notifications sent to direct child agents
-        setHistory(
-          notifications.filter((n) =>
-            Array.isArray(n.recipients)
-              ? n.recipients.some((r) => r?.receiverType === 'User' && r?.receiver?.role === 'child_agent')
-              : false
-          )
-        )
-      }
-    } catch (err) {
-      toast.error('Failed to load notification history')
-    } finally {
-      setHistoryLoading(false)
-    }
-  }
-
   return (
     <div className="animate-fade-in space-y-4">
       {/* Header */}
@@ -276,8 +250,8 @@ export default function ManageChildren() {
           </button>
           <button
             type="button"
-            onClick={openHistory}
-            className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-gray-200 bg-white px-3.5 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50"
+            onClick={() => navigate('/agency/manage-downstream/notification-history')}
+            className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
           >
             <History size={15} />
             History
@@ -586,76 +560,6 @@ export default function ManageChildren() {
               {notifyBusy ? 'Sending…' : 'Send'}
             </button>
           </div>
-        </div>
-      </Modal>
-
-      <Modal isOpen={historyOpen} onClose={() => setHistoryOpen(false)} title="Notification history" size="lg">
-        <div className="max-h-[60vh] overflow-y-auto divide-y divide-gray-100">
-          {historyLoading ? (
-            <div className="p-10 text-center text-sm text-gray-500">Loading…</div>
-          ) : history.length === 0 ? (
-            <div className="p-10 text-center text-sm text-gray-500">No notifications sent yet.</div>
-          ) : (
-            history.map((item) => (
-              <div key={item._id} className="p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <div className="text-sm font-semibold text-gray-900">{item.subject}</div>
-                    <div className="mt-1 text-xs text-gray-500 line-clamp-2">{item.message}</div>
-                      <div className="mt-2 text-[11px] text-gray-600">
-                        <span className="font-semibold">Sent to:</span>{' '}
-                        {(item.recipients || [])
-                          .map((r) => r?.receiver?.email || r?.receiver?.name)
-                          .filter(Boolean)
-                          .slice(0, 4)
-                          .join(', ')}
-                        {(item.recipients || []).length > 4 ? '…' : ''}
-                      </div>
-
-                      {Array.isArray(item.attachments) && item.attachments.length > 0 && (
-                        <div className="mt-2 flex flex-wrap gap-2">
-                          {item.attachments
-                            .filter((a) => a?.filename)
-                            .map((a) =>
-                              a?.url ? (
-                                <a
-                                  key={`${item._id}-${a.filename}`}
-                                  href={a.url}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="rounded-full bg-white px-2 py-0.5 text-[11px] font-semibold text-primary-700 ring-1 ring-inset ring-primary-200 hover:bg-primary-50"
-                                >
-                                  {a.filename}
-                                </a>
-                              ) : (
-                                <span key={`${item._id}-${a.filename}`} className="rounded-full bg-gray-50 px-2 py-0.5 text-[11px] font-semibold text-gray-700 ring-1 ring-inset ring-gray-200">
-                                  {a.filename}
-                                </span>
-                              )
-                            )}
-                        </div>
-                      )}
-                  </div>
-                  <div className="text-[11px] text-gray-400 whitespace-nowrap">
-                    {new Date(item.createdAt).toLocaleString()}
-                  </div>
-                </div>
-                <div className="mt-2 flex flex-wrap gap-2 text-[10px] font-semibold">
-                  <span className="rounded-full bg-gray-100 px-2 py-0.5 text-gray-700">
-                    {item.recipients?.length || 0} recipients
-                  </span>
-                  <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-emerald-700">
-                    {(item.recipients || []).filter((r) => r.status === 'sent').length} sent
-                  </span>
-                  {(item.recipients || []).some((r) => r.status === 'failed') && (
-                    <span className="rounded-full bg-rose-50 px-2 py-0.5 text-rose-700">
-                      {(item.recipients || []).filter((r) => r.status === 'failed').length} failed
-                    </span>
-                  )}
-                </div>
-              </div>
-            ))
-          )}
         </div>
       </Modal>
 

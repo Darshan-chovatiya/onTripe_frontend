@@ -79,11 +79,16 @@ export function getNotificationRecipients() {
 }
 
 export function sendNotification(data) {
-  return axiosInstance.post('/notifications/send', data)
+  const isFormData = data instanceof FormData
+  return axiosInstance.post('/notifications/send', data, isFormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : {})
 }
 
 export function getSentNotifications() {
   return axiosInstance.get('/notifications/sent')
+}
+
+export function getNotificationPreview(id) {
+  return axiosInstance.get(`/notifications/${id}/preview`)
 }
 
 const adminApi = {
@@ -111,7 +116,9 @@ const adminApi = {
   rejectPackage: (id, rejectionReason) => axiosInstance.patch(`/admin/packages/reject/${id}`, { rejectionReason }),
   getNotificationRecipients,
   sendNotification,
-  getSentNotifications
+  getSentNotifications,
+  getNotificationPreview,
+  syncBookingStatus: () => axiosInstance.post('/admin/bookings/sync-status'),
 }
 
 export default adminApi

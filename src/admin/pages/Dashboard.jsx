@@ -11,6 +11,7 @@ import {
   ShieldCheck,
   Clock,
   ChevronRight,
+  RefreshCw,
 } from 'lucide-react'
 import adminApi from '@/admin/services/adminApi.js'
 import { getApiErrorMessage } from '@/shared/services/apiHelpers.js'
@@ -40,6 +41,8 @@ export default function Dashboard() {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [syncing, setSyncing] = useState(false)
+  const [syncMsg, setSyncMsg] = useState(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -71,6 +74,25 @@ export default function Dashboard() {
   const parentAgents = countInAgg(data?.agentsByRole, 'parent_agent')
   const childAgents = countInAgg(data?.agentsByRole, 'child_agent')
   const subChildAgents = countInAgg(data?.agentsByRole, 'sub_child_agent')
+
+  const bookingConfirmed  = countInAgg(data?.bookingsByStatus, 'confirmed')
+  const bookingOngoing    = countInAgg(data?.bookingsByStatus, 'ongoing')
+  const bookingCompleted  = countInAgg(data?.bookingsByStatus, 'completed')
+  const bookingCancelled  = countInAgg(data?.bookingsByStatus, 'cancelled')
+
+  const handleSyncStatus = async () => {
+    setSyncing(true)
+    setSyncMsg(null)
+    try {
+      await adminApi.syncBookingStatus()
+      setSyncMsg({ type: 'ok', text: 'Booking statuses synced successfully.' })
+      load() // refresh analytics
+    } catch (e) {
+      setSyncMsg({ type: 'err', text: getApiErrorMessage(e) || 'Sync failed.' })
+    } finally {
+      setSyncing(false)
+    }
+  }
 
   const stats = [
     {
@@ -255,6 +277,50 @@ export default function Dashboard() {
                 <span className="font-medium tabular-nums text-gray-900">{subChildAgents}</span>
               </li>
             </ul>
+          </section>
+
+          <section className="rounded-xl border border-gray-200 bg-white p-5">
+            <div className="flex items-center justify-between gap-2">
+              <div>
+                <h2 className="text-sm font-semibold text-gray-900">Booking status</h2>
+                <p className="mt-0.5 text-xs text-gray-500">Auto-synced daily at 00:05 IST</p>
+              </div>
+              <button
+                type="button"
+                onClick={handleSyncStatus}
+                disabled={syncing}
+                title="Manually trigger status sync"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-700 transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-800 disabled:opacity-50"
+              >
+                <RefreshCw className={`h-3.5 w-3.5 ${syncing ? 'animate-spin' : ''}`} strokeWidth={2} />
+                {syncing ? 'Syncing…' : 'Sync now'}
+              </button>
+            </div>
+
+            {syncMsg && (
+              <p className={`mt-2 rounded-lg px-3 py-2 text-xs font-medium ${syncMsg.type === 'ok' ? 'bg-emerald-50 text-emerald-800' : 'bg-red-50 text-red-800'}`}>
+                {syncMsg.text}
+              </p>
+            )}
+
+            <div className="mt-4 grid grid-cols-2 gap-2 text-center">
+              <div className="rounded-lg bg-sky-50 py-3">
+                <p className="text-lg font-semibold text-sky-800">{bookingConfirmed}</p>
+                <p className="text-[10px] font-medium uppercase tracking-wide text-sky-700/80">Confirmed</p>
+              </div>
+              <div className="rounded-lg bg-amber-50 py-3">
+                <p className="text-lg font-semibold text-amber-900">{bookingOngoing}</p>
+                <p className="text-[10px] font-medium uppercase tracking-wide text-amber-800/90">Ongoing</p>
+              </div>
+              <div className="rounded-lg bg-emerald-50 py-3">
+                <p className="text-lg font-semibold text-emerald-800">{bookingCompleted}</p>
+                <p className="text-[10px] font-medium uppercase tracking-wide text-emerald-700/80">Completed</p>
+              </div>
+              <div className="rounded-lg bg-red-50 py-3">
+                <p className="text-lg font-semibold text-red-800">{bookingCancelled}</p>
+                <p className="text-[10px] font-medium uppercase tracking-wide text-red-700/80">Cancelled</p>
+              </div>
+            </div>
           </section>
 
           <section className="rounded-xl border border-gray-200 bg-white p-5">

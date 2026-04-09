@@ -360,13 +360,17 @@ export default function SubChildPackages() {
                   const t = wl.customTitle || (typeof wl.originalPackage === 'object' && wl.originalPackage?.title) || 'Package'
                   navigate(`/agency/packages/${pid}/community?title=${encodeURIComponent(t)}`)
                 }}
+                onRating={(it) => {
+                  const pid = it.originalPackage?._id || it.originalPackage
+                  navigate(`/agency/packages/${pid}/reviews?readOnly=true`)
+                }}
                 hasBooking={bookedWhiteLabelIds.has(String(wl._id))}
                 disabled={isWhitelabelFromInactiveParent(wl)}
               />
             ))}
           </div>
         ) : null}
-      </section>
+        </section>
       )}
 
       <WhitelabelModal

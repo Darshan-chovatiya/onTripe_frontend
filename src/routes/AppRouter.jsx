@@ -29,7 +29,9 @@ import AdminAgencyNetwork from '@/admin/pages/AgencyNetwork.jsx'
 import AdminChildAgencies from '@/admin/pages/ChildAgencies.jsx'
 import AdminAgentWhitelabels from '@/admin/pages/AgentWhitelabels.jsx'
 import AdminAgentCustomers from '@/admin/pages/AgentCustomers.jsx'
+import AdminAgentParents from '@/admin/pages/AgentParents.jsx'
 import AdminNotifications from '@/admin/pages/Notifications.jsx'
+import AdminNotificationHistory from '@/admin/pages/NotificationHistory.jsx'
 
 import AgencyLayout from '@/travelAgency/shared/components/AgencyLayout.jsx'
 import AgencyPanelSidebar from '@/travelAgency/agency/components/AgencyPanelSidebar.jsx'
@@ -41,6 +43,18 @@ import AgencyVendors from '@/travelAgency/agency/pages/AgencyVendors.jsx'
 import AgencyBookings from '@/travelAgency/agency/pages/AgencyBookings.jsx'
 import AgencyMyBookings from '@/travelAgency/agency/pages/AgencyMyBookings.jsx'
 import AgencyManageDownstream from '@/travelAgency/agency/pages/AgencyManageDownstream.jsx'
+import ParentNotificationHistory from '@/travelAgency/parentAgency/pages/ParentNotificationHistory.jsx'
+import ChildNotificationHistory from '@/travelAgency/childAgency/pages/ChildNotificationHistory.jsx'
+import AgencyCustomerNotificationHistory from '@/travelAgency/agency/pages/AgencyCustomerNotificationHistory.jsx'
+import { useAgencyPermissions } from '@/travelAgency/agency/hooks/useAgencyPermissions.js'
+import { ROLES } from '@/shared/utils/constants.js'
+
+function ManageDownstreamNotificationHistory() {
+  const { role } = useAgencyPermissions()
+  if (role === ROLES.PARENT_AGENCY) return <ParentNotificationHistory />
+  if (role === ROLES.CHILD_AGENCY) return <ChildNotificationHistory />
+  return null
+}
 import AgencyCustomers from '@/travelAgency/agency/pages/AgencyCustomers.jsx'
 import AgencyCustomerTrips from '@/travelAgency/agency/pages/AgencyCustomerTrips.jsx'
 import AgencySettings from '@/travelAgency/agency/pages/AgencySettings.jsx'
@@ -51,9 +65,11 @@ import CustomerBooking from '@/customer/pages/Booking.jsx'
 import BookingCommunity from '@/customer/pages/BookingCommunity.jsx'
 import CustomerTripHistory from '@/customer/pages/TripHistory.jsx'
 import CustomerProfile from '@/customer/pages/Profile.jsx'
+import CustomerCommunity from '@/customer/pages/Community.jsx'
 import VendorLogin from '@/vendor/auth/Login.jsx'
 import VendorDashboard from '@/vendor/pages/Dashboard.jsx'
 import VendorPackageDetails from '@/vendor/pages/PackageDetails.jsx'
+import PackageReviewsPage from '@/shared/pages/PackageReviewsPage.jsx'
 
 export default function AppRouter() {
   return (
@@ -94,6 +110,7 @@ export default function AppRouter() {
         <Route path="packages/:packageId/whitelabels" element={<AdminPackageWhitelabels />} />
         <Route path="packages/:packageId/bookings" element={<AdminPackageBookings />} />
         <Route path="packages/:packageId/community" element={<AdminPackageCommunity />} />
+        <Route path="packages/:packageId/reviews" element={<PackageReviewsPage />} />
         <Route path="packages" element={<AdminPackages />} />
         <Route path="agencies" element={<AdminAgencies />} />
         <Route path="agencies/network/:parentId" element={<AdminAgencyNetwork />} />
@@ -101,6 +118,8 @@ export default function AppRouter() {
         <Route path="sub-child-agencies/:agentId/whitelabels" element={<AdminAgentWhitelabels />} />
         <Route path="child-agencies/:agentId/customers" element={<AdminAgentCustomers />} />
         <Route path="sub-child-agencies/:agentId/customers" element={<AdminAgentCustomers />} />
+        <Route path="child-agencies/:agentId/parents" element={<AdminAgentParents />} />
+        <Route path="sub-child-agencies/:agentId/parents" element={<AdminAgentParents />} />
         <Route path="child-agencies" element={<AdminChildAgencies key="admin-child-agencies" />} />
         <Route
           path="sub-child-agencies"
@@ -113,6 +132,7 @@ export default function AppRouter() {
           }
         />
         <Route path="notifications" element={<AdminNotifications />} />
+        <Route path="notifications/history" element={<AdminNotificationHistory />} />
         <Route path="settings" element={<AdminSettings />} />
       </Route>
 
@@ -169,6 +189,14 @@ export default function AppRouter() {
           }
         />
         <Route
+          path="packages/:packageId/reviews"
+          element={
+            <AgencyPermissionRoute anyOf={[P.PACKAGES_FULL, P.PACKAGES_CLONE]}>
+              <PackageReviewsPage />
+            </AgencyPermissionRoute>
+          }
+        />
+        <Route
           path="packages/:id"
           element={
             <AgencyPermissionRoute permission={P.PACKAGES_FULL}>
@@ -205,6 +233,22 @@ export default function AppRouter() {
           element={
             <AgencyPermissionRoute anyOf={[P.NETWORK_CHILDREN, P.NETWORK_SUBCHILDREN]}>
               <AgencyManageDownstream />
+            </AgencyPermissionRoute>
+          }
+        />
+        <Route
+          path="manage-downstream/notification-history"
+          element={
+            <AgencyPermissionRoute anyOf={[P.NETWORK_CHILDREN, P.NETWORK_SUBCHILDREN]}>
+              <ManageDownstreamNotificationHistory />
+            </AgencyPermissionRoute>
+          }
+        />
+        <Route
+          path="customers/notification-history"
+          element={
+            <AgencyPermissionRoute permission={P.CUSTOMERS}>
+              <AgencyCustomerNotificationHistory />
             </AgencyPermissionRoute>
           }
         />
@@ -256,8 +300,10 @@ export default function AppRouter() {
       >
         <Route index element={<Navigate to="booking" replace />} />
         <Route path="booking/:bookingId/community" element={<BookingCommunity />} />
+        <Route path="booking/:bookingId/reviews/:packageId" element={<PackageReviewsPage />} />
         <Route path="booking/:bookingId?" element={<CustomerBooking />} />
         <Route path="trip-history" element={<CustomerTripHistory />} />
+        <Route path="community" element={<CustomerCommunity />} />
         <Route path="profile" element={<CustomerProfile />} />
       </Route>
 

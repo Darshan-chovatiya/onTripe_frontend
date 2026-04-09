@@ -183,6 +183,7 @@ export default function Packages() {
                 onChat={(p) =>
                   navigate(`/agency/packages/${p._id}/community?title=${encodeURIComponent(p.title || 'Package')}`)
                 }
+                onRating={(p) => navigate(`/agency/packages/${p._id}/reviews?readOnly=true`)}
               />
             ))}
           </div>
