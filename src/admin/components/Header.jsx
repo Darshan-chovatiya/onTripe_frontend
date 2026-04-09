@@ -19,6 +19,7 @@ const PAGE_TITLES = [
 function titleForPath(pathname) {
   if (/^\/admin\/packages\/[^/]+\/whitelabels$/.test(pathname)) return 'Package whitelabels'
   if (/^\/admin\/packages\/[^/]+\/bookings$/.test(pathname)) return 'Package bookings'
+  if (/^\/admin\/packages\/[^/]+\/community$/.test(pathname)) return 'Package chat'
   if (/^\/admin\/child-agencies\/[^/]+\/whitelabels$/.test(pathname)) return 'Agent whitelabels'
   if (/^\/admin\/sub-child-agencies\/[^/]+\/whitelabels$/.test(pathname)) return 'Agent whitelabels'
   if (/^\/admin\/child-agencies\/[^/]+\/customers$/.test(pathname)) return 'Agency customers'

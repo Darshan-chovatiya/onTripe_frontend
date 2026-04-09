@@ -24,6 +24,7 @@ import AdminCustomerDetail from '@/admin/pages/CustomerDetail.jsx'
 import AdminPackages from '@/admin/pages/Packages.jsx'
 import AdminPackageWhitelabels from '@/admin/pages/PackageWhitelabels.jsx'
 import AdminPackageBookings from '@/admin/pages/PackageBookings.jsx'
+import AdminPackageCommunity from '@/admin/pages/PackageCommunity.jsx'
 import AdminAgencyNetwork from '@/admin/pages/AgencyNetwork.jsx'
 import AdminChildAgencies from '@/admin/pages/ChildAgencies.jsx'
 import AdminAgentWhitelabels from '@/admin/pages/AgentWhitelabels.jsx'
@@ -35,6 +36,7 @@ import AgencyPanelSidebar from '@/travelAgency/agency/components/AgencyPanelSide
 import AgencyDashboard from '@/travelAgency/agency/pages/AgencyDashboard.jsx'
 import AgencyPackages from '@/travelAgency/agency/pages/AgencyPackages.jsx'
 import AgencyPackageDetail from '@/travelAgency/agency/pages/AgencyPackageDetail.jsx'
+import AgencyPackageCommunity from '@/travelAgency/agency/pages/AgencyPackageCommunity.jsx'
 import AgencyVendors from '@/travelAgency/agency/pages/AgencyVendors.jsx'
 import AgencyBookings from '@/travelAgency/agency/pages/AgencyBookings.jsx'
 import AgencyMyBookings from '@/travelAgency/agency/pages/AgencyMyBookings.jsx'
@@ -46,6 +48,7 @@ import { P } from '@/travelAgency/agency/rbac/agencyPermissions.js'
 
 import CustomerLayout from '@/customer/components/CustomerLayout.jsx'
 import CustomerBooking from '@/customer/pages/Booking.jsx'
+import BookingCommunity from '@/customer/pages/BookingCommunity.jsx'
 import CustomerTripHistory from '@/customer/pages/TripHistory.jsx'
 import CustomerProfile from '@/customer/pages/Profile.jsx'
 import VendorLogin from '@/vendor/auth/Login.jsx'
@@ -90,6 +93,7 @@ export default function AppRouter() {
         <Route path="customers/:customerId" element={<AdminCustomerDetail />} />
         <Route path="packages/:packageId/whitelabels" element={<AdminPackageWhitelabels />} />
         <Route path="packages/:packageId/bookings" element={<AdminPackageBookings />} />
+        <Route path="packages/:packageId/community" element={<AdminPackageCommunity />} />
         <Route path="packages" element={<AdminPackages />} />
         <Route path="agencies" element={<AdminAgencies />} />
         <Route path="agencies/network/:parentId" element={<AdminAgencyNetwork />} />
@@ -153,6 +157,14 @@ export default function AppRouter() {
           element={
             <AgencyPermissionRoute anyOf={[P.PACKAGES_FULL, P.PACKAGES_CLONE]}>
               <AgencyPackages />
+            </AgencyPermissionRoute>
+          }
+        />
+        <Route
+          path="packages/:packageId/community"
+          element={
+            <AgencyPermissionRoute anyOf={[P.PACKAGES_FULL, P.PACKAGES_CLONE]}>
+              <AgencyPackageCommunity />
             </AgencyPermissionRoute>
           }
         />
@@ -243,6 +255,7 @@ export default function AppRouter() {
         }
       >
         <Route index element={<Navigate to="booking" replace />} />
+        <Route path="booking/:bookingId/community" element={<BookingCommunity />} />
         <Route path="booking/:bookingId?" element={<CustomerBooking />} />
         <Route path="trip-history" element={<CustomerTripHistory />} />
         <Route path="profile" element={<CustomerProfile />} />

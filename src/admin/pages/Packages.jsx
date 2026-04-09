@@ -17,8 +17,6 @@ import { useToast } from '@/shared/components/ToastContainer.jsx'
 import Loader from '@/shared/components/Loader.jsx'
 import Modal from '@/shared/components/Modal.jsx'
 import CustomDropdown from '@/shared/components/CustomDropdown.jsx'
-import CommunityChat from '@/customer/components/CommunityChat.jsx'
-import { useAuth } from '@/shared/context/AuthContext.jsx'
 import Pagination from '@/admin/components/Pagination.jsx'
 
 /** Neutral count pill — matches other admin tables (gray border / soft bg) */
@@ -286,7 +284,6 @@ export default function Packages() {
   const { toast } = useToast()
   const toastRef = useRef(toast)
   toastRef.current = toast
-  const { user } = useAuth()
   const [packages, setPackages] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchInput, setSearchInput] = useState('')
@@ -299,7 +296,6 @@ export default function Packages() {
   const [parentOptions, setParentOptions] = useState([{ value: 'all', label: 'All parent agencies' }])
   const [selectedPkg, setSelectedPkg] = useState(null)
   const [isDetailOpen, setIsDetailOpen] = useState(false)
-  const [chatContext, setChatContext] = useState(null)
 
   /** Ignore stale listPackages responses when parent/page/search changes quickly (e.g. deep link from Agencies). */
   const packagesFetchIdRef = useRef(0)
@@ -420,11 +416,13 @@ export default function Packages() {
     setSelectedPkg(null)
   }, [])
 
-  const openChat = useCallback((pkg) => {
-    setChatContext({ id: String(pkg._id), title: pkg.title || 'Package' })
-  }, [])
-
-  const closeChat = useCallback(() => setChatContext(null), [])
+  const openChat = useCallback(
+    (pkg) => {
+      const title = encodeURIComponent(pkg.title || 'Package')
+      navigate(`/admin/packages/${String(pkg._id)}/community?title=${title}`)
+    },
+    [navigate]
+  )
 
   return (
     <div className="animate-fade-in space-y-4">
@@ -608,23 +606,6 @@ export default function Packages() {
 
       <PackageDetailModal isOpen={isDetailOpen} onClose={closeDetail} pkg={selectedPkg} />
 
-      <Modal
-        isOpen={!!chatContext}
-        onClose={closeChat}
-        title={chatContext ? `Community chat · ${chatContext.title}` : 'Community chat'}
-        size="xl"
-      >
-        {chatContext ? (
-          <div className="-m-2 min-h-0 sm:-m-3">
-            <CommunityChat
-              key={chatContext.id}
-              packageId={chatContext.id}
-              currentUserId={user?.id}
-              embedded
-            />
-          </div>
-        ) : null}
-      </Modal>
     </div>
   )
 }

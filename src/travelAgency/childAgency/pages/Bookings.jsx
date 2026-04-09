@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { CalendarDays, Eye, IndianRupee, Plus, Ticket, MessageSquare, Pencil } from 'lucide-react'
 import { useChildBookings } from '@/travelAgency/childAgency/hooks/useChildBookings.js'
 import { useChildPackages } from '@/travelAgency/childAgency/hooks/useChildPackages.js'
@@ -40,7 +41,6 @@ export default function Bookings() {
   const [modalOpen, setModalOpen] = useState(false)
   const [detailId, setDetailId] = useState(null)
   const [detailOpenEdit, setDetailOpenEdit] = useState(false)
-  const [chatPackageId, setChatPackageId] = useState(null)
   const [submitting, setSubmitting] = useState(false)
 
   const sorted = useMemo(
@@ -209,7 +209,11 @@ export default function Bookings() {
                         </button>
                         <button
                           type="button"
-                          onClick={() => communityPackageId && setChatPackageId(communityPackageId)}
+                          onClick={() => {
+                            if (!communityPackageId) return
+                            const title = encodeURIComponent(bookingOfferLabel(b))
+                            navigate(`/agency/packages/${communityPackageId}/community?title=${title}`)
+                          }}
                           disabled={!communityPackageId}
                           title={communityPackageId ? 'Open community chat' : 'Community chat not available'}
                           className={`ml-2 inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium transition-colors ${
