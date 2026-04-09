@@ -212,8 +212,6 @@ export default function Settings() {
         </div>
       </div>
 
-      <KycDocumentsSection kyc={kyc} />
-
       <ParentManagement
         listParents={listParents}
         addParent={addParent}
