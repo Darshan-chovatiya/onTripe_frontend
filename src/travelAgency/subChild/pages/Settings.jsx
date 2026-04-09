@@ -6,7 +6,7 @@ import {
   changeSubChildPassword,
   getSubChildProfile,
   listParents,
-  removeParent,
+  toggleParentActive,
   updateSubChildProfile,
 } from '@/travelAgency/subChild/services/subChildApi.js'
 import Button from '@/shared/components/Button.jsx'
@@ -152,7 +152,7 @@ export default function Settings() {
       <ParentManagement
         listParents={listParents}
         addParent={addParent}
-        removeParent={removeParent}
+        toggleParentActive={toggleParentActive}
         label="Parent child agencies"
       />
     </div>

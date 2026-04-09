@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { PackageOpen, Layers, Tags } from 'lucide-react'
 import { useSubChildPackages } from '@/travelAgency/subChild/hooks/useSubChildPackages.js'
@@ -10,12 +10,25 @@ import Button from '@/shared/components/Button.jsx'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
 import { getApiErrorMessage } from '@/shared/services/apiHelpers.js'
 import { mapWhitelabelByOriginalPackageId } from '@/travelAgency/childAgency/utils/whitelabelHelpers.js'
+import { listParents } from '@/travelAgency/subChild/services/subChildApi.js'
 export default function SubChildPackages() {
   const navigate = useNavigate()
   const { availablePackages, whitelabels, loading, error, createWhitelabel, updateWhitelabel } = useSubChildPackages()
   const { bookings } = useSubChildBookings()
   const { toast } = useToast()
   const [submitting, setSubmitting] = useState(false)
+  const [inactiveParentIds, setInactiveParentIds] = useState(new Set())
+
+  useEffect(() => {
+    listParents().then(({ data }) => {
+      const ids = new Set(
+        (data?.data?.parents ?? [])
+          .filter(p => p.status === 'approved' && !p.isActive)
+          .map(p => String(p._id))
+      )
+      setInactiveParentIds(ids)
+    }).catch(() => {})
+  }, [])
 
   // Calculate which packages have bookings
   const bookedWhiteLabelIds = useMemo(() => {
@@ -121,6 +134,7 @@ export default function SubChildPackages() {
                 existingWhitelabel={whitelabelByPackageId.get(String(pkg._id)) ?? null}
                 onCreateWhiteLabel={(p) => openCreate(p)}
                 onEditWhiteLabel={openEdit}
+                disabled={inactiveParentIds.has(String(pkg.createdBy?._id || pkg.createdBy))}
               />
             ))}
           </div>
@@ -162,6 +176,7 @@ export default function SubChildPackages() {
                   navigate(`/agency/packages/${pid}/community?title=${encodeURIComponent(t)}`)
                 }}
                 hasBooking={bookedWhiteLabelIds.has(String(wl._id))}
+                disabled={inactiveParentIds.has(String(wl.ownedByParent?._id || wl.ownedByParent))}
               />
             ))}
           </div>
