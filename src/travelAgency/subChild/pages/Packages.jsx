@@ -1,16 +1,19 @@
 import { useEffect, useMemo, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { PackageOpen, Layers, Tags } from 'lucide-react'
+import {
+  PackageOpen, Layers, Tags, Search, Package, Tag, CheckCircle2, Plus,
+} from 'lucide-react'
 import { useSubChildPackages } from '@/travelAgency/subChild/hooks/useSubChildPackages.js'
 import { useSubChildBookings } from '@/travelAgency/subChild/hooks/useSubChildBookings.js'
 import AvailablePackageCard from '@/travelAgency/childAgency/components/AvailablePackageCard.jsx'
 import WhitelabelPackageCard from '@/travelAgency/childAgency/components/WhitelabelPackageCard.jsx'
 import WhitelabelModal from '@/travelAgency/childAgency/components/WhitelabelModal.jsx'
-import Button from '@/shared/components/Button.jsx'
+import Loader from '@/shared/components/Loader.jsx'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
 import { getApiErrorMessage } from '@/shared/services/apiHelpers.js'
 import { mapWhitelabelByOriginalPackageId } from '@/travelAgency/childAgency/utils/whitelabelHelpers.js'
 import { listParents } from '@/travelAgency/subChild/services/subChildApi.js'
+
 export default function SubChildPackages() {
   const navigate = useNavigate()
   const { availablePackages, whitelabels, loading, error, createWhitelabel, updateWhitelabel } = useSubChildPackages()
@@ -18,41 +21,28 @@ export default function SubChildPackages() {
   const { toast } = useToast()
   const [submitting, setSubmitting] = useState(false)
   const [inactiveParentIds, setInactiveParentIds] = useState(new Set())
-  const [loadingParents, setLoadingParents] = useState(true)
   const [parents, setParents] = useState([])
-  const [selectedParentFilter, setSelectedParentFilter] = useState('all')
+  const [parentFilter, setParentFilter] = useState('all')
+  const [search, setSearch] = useState('')
+  const [activeTab, setActiveTab] = useState('available')
+  const [modal, setModal] = useState({ open: false, mode: 'create', sourcePackage: null, whitelabel: null })
 
   useEffect(() => {
-    setLoadingParents(true)
     listParents().then(({ data }) => {
-      const ids = new Set()
       const parentsList = data?.data?.parents ?? []
-      
-      console.log('[SubChild Packages] All parents:', parentsList.map(p => ({
-        id: p._id,
-        name: p.name,
-        childAgencyId: p.childAgency?._id || p.childAgency,
-        status: p.status,
-        isActive: p.isActive
-      })))
-      
+      const ids = new Set()
       parentsList.forEach(p => {
         if (p.status === 'approved' && !p.isActive) {
-          // Add the child agency ID (the actual parent agency that owns packages)
           if (p.childAgency?._id) ids.add(String(p.childAgency._id))
           else if (p.childAgency) ids.add(String(p.childAgency))
-          // Also add the parent record ID as fallback
           ids.add(String(p._id))
         }
       })
-      
-      console.log('[SubChild Packages] Inactive parent IDs:', Array.from(ids))
       setInactiveParentIds(ids)
       setParents(parentsList.filter(p => p.status === 'approved'))
-    }).catch(() => {}).finally(() => setLoadingParents(false))
+    }).catch(() => {})
   }, [])
 
-  // Calculate which packages have bookings
   const bookedWhiteLabelIds = useMemo(() => {
     const ids = new Set()
     bookings.forEach((b) => {
@@ -62,297 +52,236 @@ export default function SubChildPackages() {
     return ids
   }, [bookings])
 
-  // Helper to check if a package is from an inactive parent
   const isFromInactiveParent = useCallback((pkg) => {
-    if (loadingParents || inactiveParentIds.size === 0) return false
-    
-    // Check the parent whitelabel owner (the child agency who created the whitelabel we're viewing)
+    if (inactiveParentIds.size === 0) return false
     const parentWlOwnerId = pkg.__parentWhitelabelOwnerId
-    if (parentWlOwnerId && inactiveParentIds.has(String(parentWlOwnerId))) {
-      console.log('[SubChild Packages] Package disabled - parent WL owner match:', {
-        packageId: pkg._id,
-        packageTitle: pkg.title,
-        parentWlOwnerId,
-        inactiveParentIds: Array.from(inactiveParentIds)
-      })
-      return true
-    }
-    
-    // Also check package creator as fallback
     const creatorId = pkg.createdBy?._id || pkg.createdBy
-    if (creatorId && inactiveParentIds.has(String(creatorId))) {
-      console.log('[SubChild Packages] Package disabled - creator match:', {
-        packageId: pkg._id,
-        packageTitle: pkg.title,
-        creatorId,
-        inactiveParentIds: Array.from(inactiveParentIds)
-      })
-      return true
-    }
-    
-    return false
-  }, [inactiveParentIds, loadingParents])
+    return (parentWlOwnerId && inactiveParentIds.has(String(parentWlOwnerId))) ||
+           (creatorId && inactiveParentIds.has(String(creatorId)))
+  }, [inactiveParentIds])
 
-  // Helper to check if a whitelabel is from an inactive parent
   const isWhitelabelFromInactiveParent = useCallback((wl) => {
-    if (loadingParents || inactiveParentIds.size === 0) return false
-    
-    // Check the parent who owns this whitelabel
+    if (inactiveParentIds.size === 0) return false
     const parentId = wl.ownedByParent?._id || wl.ownedByParent
-    if (parentId && inactiveParentIds.has(String(parentId))) return true
-    
-    // Also check the original package creator
     const creatorId = wl.originalPackage?.createdBy?._id || wl.originalPackage?.createdBy
-    if (creatorId && inactiveParentIds.has(String(creatorId))) return true
-    
-    return false
-  }, [inactiveParentIds, loadingParents])
-  const [modal, setModal] = useState({
-    open: false,
-    mode: 'create',
-    sourcePackage: null,
-    whitelabel: null,
-  })
-
-  const openCreate = (pkg = null) => {
-    setModal({ open: true, mode: 'create', sourcePackage: pkg, whitelabel: null })
-  }
-  const openEdit = (item) => {
-    setModal({ open: true, mode: 'edit', sourcePackage: null, whitelabel: item })
-  }
-  const closeModal = () => setModal((m) => ({ ...m, open: false }))
+    return (parentId && inactiveParentIds.has(String(parentId))) ||
+           (creatorId && inactiveParentIds.has(String(creatorId)))
+  }, [inactiveParentIds])
 
   const whitelabelByPackageId = useMemo(() => mapWhitelabelByOriginalPackageId(whitelabels), [whitelabels])
-  
-  // Filter packages by selected parent
-  const filteredAvailablePackages = useMemo(() => {
-    if (selectedParentFilter === 'all') return availablePackages
-    
-    return availablePackages.filter(pkg => {
-      const parentWlOwnerId = pkg.__parentWhitelabelOwnerId
-      const creatorId = pkg.createdBy?._id || pkg.createdBy
-      
-      // Match against the selected parent's child agency ID
-      const selectedParent = parents.find(p => String(p._id) === selectedParentFilter)
-      if (!selectedParent) return false
-      
-      const selectedParentChildAgencyId = String(selectedParent.childAgency?._id || selectedParent.childAgency || selectedParent._id)
-      
-      return String(parentWlOwnerId) === selectedParentChildAgencyId || String(creatorId) === selectedParentChildAgencyId
-    })
-  }, [availablePackages, selectedParentFilter, parents])
-  
-  // Filter whitelabels by selected parent
-  const filteredWhitelabels = useMemo(() => {
-    if (selectedParentFilter === 'all') return whitelabels
-    
-    return whitelabels.filter(wl => {
-      const parentId = wl.ownedByParent?._id || wl.ownedByParent
-      const creatorId = wl.originalPackage?.createdBy?._id || wl.originalPackage?.createdBy
-      
-      // Match against the selected parent's child agency ID
-      const selectedParent = parents.find(p => String(p._id) === selectedParentFilter)
-      if (!selectedParent) return false
-      
-      const selectedParentChildAgencyId = String(selectedParent.childAgency?._id || selectedParent.childAgency || selectedParent._id)
-      
-      return String(parentId) === selectedParentChildAgencyId || String(creatorId) === selectedParentChildAgencyId
-    })
-  }, [whitelabels, selectedParentFilter, parents])
-  
-  const packagesEligibleForNewWhitelabel = useMemo(
-    () => filteredAvailablePackages.filter((p) => !whitelabelByPackageId.has(String(p._id))),
-    [filteredAvailablePackages, whitelabelByPackageId]
-  )
-  
-  // Get unique parents who have packages or whitelabels
-  const parentsWithPackages = useMemo(() => {
-    const parentIds = new Set()
-    
-    // Check available packages
+
+  // Parent options for filter
+  const parentOptions = useMemo(() => {
+    const map = new Map()
     availablePackages.forEach(pkg => {
       const parentWlOwnerId = pkg.__parentWhitelabelOwnerId
       const creatorId = pkg.createdBy?._id || pkg.createdBy
-      
       parents.forEach(p => {
-        const parentChildAgencyId = String(p.childAgency?._id || p.childAgency || p._id)
-        if (String(parentWlOwnerId) === parentChildAgencyId || String(creatorId) === parentChildAgencyId) {
-          parentIds.add(String(p._id))
+        const pChildId = String(p.childAgency?._id || p.childAgency || p._id)
+        if (String(parentWlOwnerId) === pChildId || String(creatorId) === pChildId) {
+          map.set(String(p._id), p.name || p.email || 'Parent')
         }
       })
     })
-    
-    // Check whitelabels
-    whitelabels.forEach(wl => {
-      const parentId = wl.ownedByParent?._id || wl.ownedByParent
-      const creatorId = wl.originalPackage?.createdBy?._id || wl.originalPackage?.createdBy
-      
-      parents.forEach(p => {
-        const parentChildAgencyId = String(p.childAgency?._id || p.childAgency || p._id)
-        if (String(parentId) === parentChildAgencyId || String(creatorId) === parentChildAgencyId) {
-          parentIds.add(String(p._id))
-        }
-      })
+    return Array.from(map.entries()).map(([id, name]) => ({ id, name }))
+  }, [availablePackages, parents])
+
+  const filteredAvailable = useMemo(() => {
+    let list = availablePackages
+    if (parentFilter !== 'all') {
+      const selectedParent = parents.find(p => String(p._id) === parentFilter)
+      if (selectedParent) {
+        const pChildId = String(selectedParent.childAgency?._id || selectedParent.childAgency || selectedParent._id)
+        list = list.filter(pkg => {
+          const parentWlOwnerId = pkg.__parentWhitelabelOwnerId
+          const creatorId = pkg.createdBy?._id || pkg.createdBy
+          return String(parentWlOwnerId) === pChildId || String(creatorId) === pChildId
+        })
+      }
+    }
+    const q = search.trim().toLowerCase()
+    if (q) list = list.filter(p => (p.title || '').toLowerCase().includes(q) || (p.destination || '').toLowerCase().includes(q))
+    return list
+  }, [availablePackages, parentFilter, parents, search])
+
+  const filteredWhitelabels = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    if (!q) return whitelabels
+    return whitelabels.filter(wl => {
+      const title = wl.customTitle || wl.originalPackage?.title || ''
+      return title.toLowerCase().includes(q)
     })
-    
-    return parents.filter(p => parentIds.has(String(p._id)))
-  }, [availablePackages, whitelabels, parents])
+  }, [whitelabels, search])
+
+  const packagesEligibleForNewWhitelabel = useMemo(
+    () => filteredAvailable.filter((p) => !whitelabelByPackageId.has(String(p._id))),
+    [filteredAvailable, whitelabelByPackageId]
+  )
+
+  const stats = useMemo(() => ({
+    available: availablePackages.length,
+    whitelabels: whitelabels.length,
+    active: whitelabels.filter(w => w.isActive).length,
+  }), [availablePackages, whitelabels])
 
   const handleModalSubmit = async (...args) => {
     setSubmitting(true)
     try {
-      if (modal.mode === 'create') {
-        await createWhitelabel(args[0])
-        toast.success('White-label package created')
-      } else {
-        await updateWhitelabel(args[0], args[1])
-        toast.success('White-label package updated')
-      }
-      closeModal()
-    } catch (err) {
-      toast.error(getApiErrorMessage(err))
-    } finally {
-      setSubmitting(false)
-    }
+      if (modal.mode === 'create') { await createWhitelabel(args[0]); toast.success('White-label created') }
+      else { await updateWhitelabel(args[0], args[1]); toast.success('White-label updated') }
+      setModal(m => ({ ...m, open: false }))
+    } catch (err) { toast.error(getApiErrorMessage(err)) }
+    finally { setSubmitting(false) }
   }
 
   const handleToggleActive = async (item) => {
     try {
       await updateWhitelabel(item._id, { isActive: !item.isActive })
-      toast.success(item.isActive ? 'Offer deactivated' : 'Offer activated')
-    } catch (err) {
-      toast.error(getApiErrorMessage(err))
-    }
+      toast.success(item.isActive ? 'Offer paused' : 'Offer activated')
+    } catch (err) { toast.error(getApiErrorMessage(err)) }
   }
 
   return (
-    <div className="animate-fade-in space-y-10">
-      <header>
-        <h1 className="text-2xl font-bold text-gray-900">Packages</h1>
-        <p className="mt-1 text-sm text-gray-500">
-          Browse packages shared by your parent network, then create and manage your white-label offers.
-        </p>
-      </header>
+    <div className="animate-fade-in space-y-6 pb-10">
+      {/* Header */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-gray-900">Packages</h1>
+          <p className="mt-1 text-sm text-gray-500">Browse packages from your parent network and manage your white-label offers.</p>
+        </div>
+        {packagesEligibleForNewWhitelabel.length > 0 && (
+          <button
+            type="button"
+            onClick={() => setModal({ open: true, mode: 'create', sourcePackage: null, whitelabel: null })}
+            className="inline-flex items-center gap-2 rounded-xl bg-primary-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-700"
+          >
+            <Plus className="h-4 w-4" strokeWidth={2.5} />
+            New white-label
+          </button>
+        )}
+      </div>
 
-      {error ? <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
-
-      <section className="space-y-4">
-        <div className="flex items-center justify-between gap-4 border-b border-gray-100 pb-2">
-          <div className="flex items-center gap-2">
-            <Layers className="h-5 w-5 text-primary-600" />
-            <h2 className="text-lg font-semibold text-gray-900">Packages from parent agencies</h2>
-          </div>
-          
-          {/* Parent filter dropdown */}
-          {parentsWithPackages.length > 1 && (
-            <div className="flex items-center gap-2">
-              <label htmlFor="parent-filter" className="text-sm text-gray-600">Filter by parent:</label>
-              <select
-                id="parent-filter"
-                value={selectedParentFilter}
-                onChange={(e) => setSelectedParentFilter(e.target.value)}
-                className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 shadow-sm transition hover:border-gray-300 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
-              >
-                <option value="all">All parents</option>
-                {parentsWithPackages.map(p => (
-                  <option key={p._id} value={p._id}>
-                    {p.name || p.email || 'Unnamed parent'}
-                  </option>
-                ))}
-              </select>
+      {/* Stats */}
+      <div className="grid grid-cols-3 gap-3">
+        {[
+          { label: 'Available packages', value: stats.available, icon: Package, color: 'text-primary-700', bg: 'bg-primary-50' },
+          { label: 'My white-labels', value: stats.whitelabels, icon: Tag, color: 'text-violet-700', bg: 'bg-violet-50' },
+          { label: 'Active offers', value: stats.active, icon: CheckCircle2, color: 'text-emerald-700', bg: 'bg-emerald-50' },
+        ].map(({ label, value, icon: Icon, color, bg }) => (
+          <div key={label} className="flex items-center gap-3 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+            <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${bg}`}>
+              <Icon className={`h-4 w-4 ${color}`} strokeWidth={2} />
             </div>
-          )}
+            <div>
+              <p className="text-[11px] font-medium text-gray-500">{label}</p>
+              <p className="text-lg font-bold tabular-nums text-gray-900">{value}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {error && <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
+
+      {/* Tabs + search + filter */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="flex rounded-xl border border-gray-200 bg-white p-1 shadow-sm">
+          <button
+            type="button"
+            onClick={() => setActiveTab('available')}
+            className={`flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-semibold transition ${
+              activeTab === 'available' ? 'bg-primary-600 text-white shadow-sm' : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            <Layers className="h-3.5 w-3.5" strokeWidth={2} />
+            From parents
+            <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${activeTab === 'available' ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-600'}`}>
+              {stats.available}
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('whitelabels')}
+            className={`flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-semibold transition ${
+              activeTab === 'whitelabels' ? 'bg-primary-600 text-white shadow-sm' : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            <Tags className="h-3.5 w-3.5" strokeWidth={2} />
+            My white-labels
+            <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${activeTab === 'whitelabels' ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-600'}`}>
+              {stats.whitelabels}
+            </span>
+          </button>
         </div>
 
-        {loading && availablePackages.length === 0 ? (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm animate-pulse">
-                <div className="h-44 bg-gray-200" />
-                <div className="space-y-3 p-4">
-                  <div className="h-4 w-3/4 rounded bg-gray-200" />
-                  <div className="h-3 w-1/2 rounded bg-gray-200" />
-                </div>
-              </div>
-            ))}
+        <div className="flex flex-1 gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" strokeWidth={2} />
+            <input
+              type="search"
+              placeholder="Search packages…"
+              className="w-full rounded-xl border border-gray-200 bg-white py-2.5 pl-10 pr-4 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm focus:border-primary-300 focus:outline-none focus:ring-2 focus:ring-primary-100"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
           </div>
-        ) : null}
-
-        {!loading && filteredAvailablePackages.length === 0 && availablePackages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-gray-200 bg-gray-50/80 py-16 text-center">
-            <PackageOpen className="mb-3 h-12 w-12 text-gray-300" />
-            <p className="text-sm font-medium text-gray-600">No packages available yet</p>
-          </div>
-        ) : null}
-
-        {!loading && filteredAvailablePackages.length === 0 && availablePackages.length > 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-gray-200 bg-gray-50/80 py-16 text-center">
-            <PackageOpen className="mb-3 h-12 w-12 text-gray-300" />
-            <p className="text-sm font-medium text-gray-600">No packages from selected parent</p>
-            <button
-              onClick={() => setSelectedParentFilter('all')}
-              className="mt-3 text-sm text-primary-600 hover:text-primary-700 underline"
+          {activeTab === 'available' && parentOptions.length > 1 && (
+            <select
+              value={parentFilter}
+              onChange={(e) => setParentFilter(e.target.value)}
+              className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-700 shadow-sm focus:border-primary-300 focus:outline-none"
             >
-              Show all packages
-            </button>
-          </div>
-        ) : null}
+              <option value="all">All parents</option>
+              {parentOptions.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+            </select>
+          )}
+        </div>
+      </div>
 
-        {filteredAvailablePackages.length > 0 ? (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {filteredAvailablePackages.map((pkg) => (
+      {/* Content */}
+      {loading ? (
+        <div className="flex flex-col items-center justify-center py-20">
+          <Loader size="lg" />
+          <p className="mt-4 text-sm text-gray-400">Loading packages…</p>
+        </div>
+      ) : activeTab === 'available' ? (
+        filteredAvailable.length === 0 ? (
+          <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-gray-200 bg-gray-50/60 py-20 text-center">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary-100 text-primary-600">
+              <PackageOpen className="h-7 w-7" strokeWidth={1.5} />
+            </div>
+            <h3 className="mt-4 text-sm font-semibold text-gray-900">No packages available</h3>
+            <p className="mt-1 max-w-xs text-xs text-gray-500">Your parent network must share packages before they appear here.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
+            {filteredAvailable.map((pkg) => (
               <AvailablePackageCard
                 key={`${pkg._id}-${pkg.__parentWhitelabelId || 'pkg'}`}
                 pkg={pkg}
                 existingWhitelabel={whitelabelByPackageId.get(String(pkg._id)) ?? null}
-                onCreateWhiteLabel={(p) => openCreate(p)}
-                onEditWhiteLabel={openEdit}
+                onCreateWhiteLabel={(p) => setModal({ open: true, mode: 'create', sourcePackage: p, whitelabel: null })}
+                onEditWhiteLabel={(wl) => setModal({ open: true, mode: 'edit', sourcePackage: null, whitelabel: wl })}
                 disabled={isFromInactiveParent(pkg)}
               />
             ))}
           </div>
-        ) : null}
-      </section>
-
-      {(loading || availablePackages.length > 0) && (
-      <section className="space-y-4">
-        <div className="flex items-center gap-2 border-b border-gray-100 pb-2">
-          <Tags className="h-5 w-5 text-primary-600" />
-          <h2 className="text-lg font-semibold text-gray-900">Your white-label packages</h2>
-        </div>
-        {!loading && filteredWhitelabels.length === 0 && whitelabels.length === 0 ? (
-          <div className="rounded-2xl border border-gray-100 bg-white py-12 text-center shadow-sm">
-            <p className="text-sm text-gray-500">You have not created any white-label packages yet.</p>
-            <Button
-              type="button"
-              className="mt-4"
-              variant="secondary"
-              onClick={() => openCreate(null)}
-              disabled={!packagesEligibleForNewWhitelabel.length}
-            >
-              Create your first white-label
-            </Button>
+        )
+      ) : (
+        filteredWhitelabels.length === 0 ? (
+          <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-gray-200 bg-gray-50/60 py-20 text-center">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-violet-100 text-violet-600">
+              <Tags className="h-7 w-7" strokeWidth={1.5} />
+            </div>
+            <h3 className="mt-4 text-sm font-semibold text-gray-900">No white-labels yet</h3>
+            <p className="mt-1 max-w-xs text-xs text-gray-500">Create a white-label from any available package to start selling.</p>
           </div>
-        ) : null}
-        {!loading && filteredWhitelabels.length === 0 && whitelabels.length > 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-gray-200 bg-gray-50/80 py-12 text-center">
-            <Tags className="mb-3 h-10 w-10 text-gray-300" />
-            <p className="text-sm font-medium text-gray-600">No white-label packages from selected parent</p>
-            <button
-              onClick={() => setSelectedParentFilter('all')}
-              className="mt-3 text-sm text-primary-600 hover:text-primary-700 underline"
-            >
-              Show all white-label packages
-            </button>
-          </div>
-        ) : null}
-        {filteredWhitelabels.length > 0 ? (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        ) : (
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
             {filteredWhitelabels.map((wl) => (
               <WhitelabelPackageCard
                 key={wl._id}
                 item={wl}
-                onEdit={openEdit}
+                onEdit={(item) => setModal({ open: true, mode: 'edit', sourcePackage: null, whitelabel: item })}
                 onToggleActive={handleToggleActive}
                 onChat={() => {
                   const pid = wl.originalPackage?._id || wl.originalPackage
@@ -369,13 +298,12 @@ export default function SubChildPackages() {
               />
             ))}
           </div>
-        ) : null}
-        </section>
+        )
       )}
 
       <WhitelabelModal
         isOpen={modal.open}
-        onClose={closeModal}
+        onClose={() => setModal(m => ({ ...m, open: false }))}
         mode={modal.mode}
         sourcePackage={modal.sourcePackage}
         whitelabel={modal.whitelabel}
@@ -383,7 +311,6 @@ export default function SubChildPackages() {
         onSubmit={handleModalSubmit}
         loading={submitting}
       />
-
     </div>
   )
 }

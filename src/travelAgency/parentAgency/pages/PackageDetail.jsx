@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, Link } from 'react-router-dom'
 import {
-  ArrowLeft,
+  ChevronRight,
   MapPin,
   Clock,
   Users,
@@ -22,6 +22,9 @@ import {
   PauseCircle,
   Link2,
   Video,
+  Edit2,
+  ImageIcon,
+  MessageSquare,
 } from 'lucide-react'
 import { AGENCY_PANEL_BASE } from '@/travelAgency/agency/constants.js'
 import { getPackageById } from '@/travelAgency/parentAgency/services/parentAgencyApi.js'
@@ -255,22 +258,52 @@ export default function PackageDetail() {
     pkg.status === 'approved' ? 'Approved' : pkg.status === 'pending' ? 'Pending review' : pkg.status === 'rejected' ? 'Rejected' : pkg.status || '—'
 
   return (
-    <div className="animate-fade-in space-y-8 pb-14">
-      {/* Back — matches list pages; no edit in header */}
-      <div className="flex items-center">
-        <button
-          type="button"
-          onClick={() => navigate(`${AGENCY_PANEL_BASE}/packages`)}
-          className="group inline-flex items-center gap-2 text-sm font-medium text-gray-600 transition hover:text-primary-800"
-        >
-          <ArrowLeft size={18} className="transition group-hover:-translate-x-0.5" />
-          Back to packages
-        </button>
+    <div className="animate-fade-in space-y-6 pb-14">
+      {/* Breadcrumb */}
+      <nav className="flex flex-wrap items-center gap-2 text-sm" aria-label="Breadcrumb">
+        <Link to={`${AGENCY_PANEL_BASE}/packages`} className="font-medium text-primary-700 hover:text-primary-900">
+          Packages
+        </Link>
+        <ChevronRight className="h-4 w-4 shrink-0 text-gray-400" aria-hidden />
+        <span className="truncate font-medium text-gray-900 max-w-[min(100%,280px)]" title={pkg.title}>
+          {pkg.title}
+        </span>
+      </nav>
+
+      {/* Page header */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="text-xl font-semibold tracking-tight text-gray-900 sm:text-2xl">{pkg.title}</h1>
+          {dest && (
+            <p className="mt-1 flex items-center gap-1 text-sm text-gray-500">
+              <MapPin className="h-3.5 w-3.5 shrink-0 text-gray-400" strokeWidth={2} />
+              {dest}
+            </p>
+          )}
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => navigate(`${AGENCY_PANEL_BASE}/packages`, { state: { editId: pkg._id } })}
+            className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50"
+          >
+            <Edit2 className="h-4 w-4" strokeWidth={2} />
+            Edit
+          </button>
+          <button
+            type="button"
+            onClick={() => navigate(`${AGENCY_PANEL_BASE}/packages/${pkg._id}/community?title=${encodeURIComponent(pkg.title || '')}`)}
+            className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50"
+          >
+            <MessageSquare className="h-4 w-4" strokeWidth={2} />
+            Community
+          </button>
+        </div>
       </div>
 
-      {/* Hero */}
-      <div className="overflow-hidden rounded-2xl border border-gray-200 bg-gray-900 shadow-lg">
-        <div className="relative aspect-[2/1] max-h-[min(420px,50vh)] min-h-[200px]">
+      {/* Hero cover */}
+      <div className="overflow-hidden rounded-xl border border-gray-200 bg-gray-900 shadow-sm">
+        <div className="relative aspect-[2/1] max-h-[min(380px,45vh)] min-h-[180px]">
           {cover ? (
             <img src={cover} alt="" className="h-full w-full object-cover" />
           ) : (
@@ -279,48 +312,29 @@ export default function PackageDetail() {
               <span className="text-sm font-medium">No cover image</span>
             </div>
           )}
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-transparent" />
-          <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-8">
-            <div className="mb-3 flex flex-wrap items-center gap-2">
-              <span
-                className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide ${
-                  pkg.isActive ? 'bg-emerald-500 text-white' : 'bg-white/95 text-red-600 ring-1 ring-white/50'
-                }`}
-              >
-                {pkg.isActive ? (
-                  <>
-                    <BadgeCheck className="h-3.5 w-3.5" />
-                    Active listing
-                  </>
-                ) : (
-                  <>
-                    <PauseCircle className="h-3.5 w-3.5" />
-                    Paused
-                  </>
-                )}
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+          <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6">
+            <div className="flex flex-wrap gap-2">
+              <span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide ${
+                pkg.isActive ? 'bg-emerald-500 text-white' : 'bg-white/95 text-red-600 ring-1 ring-white/50'
+              }`}>
+                {pkg.isActive ? <><BadgeCheck className="h-3.5 w-3.5" />Active</> : <><PauseCircle className="h-3.5 w-3.5" />Paused</>}
               </span>
               {adminStatus && (
                 <span className="rounded-full bg-amber-400/95 px-2.5 py-0.5 text-[10px] font-bold uppercase text-amber-950">
                   Review: {adminStatus}
                 </span>
               )}
-            </div>
-            <h1 className="text-2xl font-bold leading-tight tracking-tight text-white drop-shadow-sm sm:text-3xl md:text-4xl">
-              {pkg.title}
-            </h1>
-            <div className="mt-4 flex flex-wrap gap-3 text-sm text-white/95">
-              <span className="inline-flex items-center gap-1.5 rounded-lg bg-white/15 px-3 py-1.5 backdrop-blur-sm">
-                <Clock className="h-4 w-4 text-white/80" />
-                {pkg.totalDays} days
+              <span className="inline-flex items-center gap-1.5 rounded-lg bg-white/15 px-3 py-1 text-xs text-white/95 backdrop-blur-sm">
+                <Clock className="h-3.5 w-3.5" />{pkg.totalDays} days
               </span>
-              <span className="inline-flex items-center gap-1.5 rounded-lg bg-white/15 px-3 py-1.5 backdrop-blur-sm">
-                <Users className="h-4 w-4 text-white/80" />
-                Max {pkg.maxCapacity} guests
+              <span className="inline-flex items-center gap-1.5 rounded-lg bg-white/15 px-3 py-1 text-xs text-white/95 backdrop-blur-sm">
+                <Users className="h-3.5 w-3.5" />Max {pkg.maxCapacity}
               </span>
-              <span className="inline-flex items-center gap-1.5 rounded-lg bg-white/20 px-3 py-1.5 font-semibold tabular-nums backdrop-blur-sm">
-                <IndianRupee className="h-4 w-4" />
+              <span className="inline-flex items-center gap-1.5 rounded-lg bg-white/20 px-3 py-1 text-xs font-semibold tabular-nums text-white backdrop-blur-sm">
+                <IndianRupee className="h-3.5 w-3.5" />
                 {Number(pkg.basePrice).toLocaleString('en-IN')}
-                {pkg.currency && <span className="ml-1 text-xs font-normal opacity-90">{pkg.currency}</span>}
+                {pkg.currency && <span className="ml-1 text-[10px] font-normal opacity-90">{pkg.currency}</span>}
               </span>
             </div>
           </div>
