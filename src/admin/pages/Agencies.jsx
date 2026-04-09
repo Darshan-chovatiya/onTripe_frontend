@@ -8,6 +8,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Clock,
+  Download,
   Eye,
   ExternalLink,
   FileCheck,
@@ -32,6 +33,7 @@ import Loader from '@/shared/components/Loader.jsx'
 import Modal from '@/shared/components/Modal.jsx'
 import CustomDropdown from '@/shared/components/CustomDropdown.jsx'
 import Pagination from '@/admin/components/Pagination.jsx'
+import { exportToExcel } from '@/admin/utils/exportExcel.js'
 
 const getFileUrl = (path) => {
   if (!path) return '#'
@@ -924,6 +926,7 @@ export default function Agencies() {
 
   const [rejectionReason, setRejectionReason] = useState('')
   const [isActionLoading, setIsActionLoading] = useState(false)
+  const [exportLoading, setExportLoading] = useState(false)
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -1070,6 +1073,30 @@ export default function Agencies() {
     { value: 'rejected', label: 'Rejected' },
   ]
 
+  const handleExport = async () => {
+    setExportLoading(true)
+    try {
+      const { data } = await adminApi.listAgents({
+        role: 'parent_agent', limit: 10000, page: 1,
+        isActive: statusFilter === 'all' ? undefined : statusFilter === 'active' ? 'true' : 'false',
+        search: debouncedSearch || undefined,
+        kycStatus: kycFilter === 'all' ? undefined : kycFilter,
+      })
+      await exportToExcel(
+        (data?.data?.agents ?? []).map((a) => ({
+          Name: a.name, Email: a.email, Phone: a.phone || '',
+          'Agent Code': a.agentCode || '', 'KYC Status': a.kyc?.status || 'pending',
+          'Account Status': a.isActive ? 'Active' : 'Inactive',
+          Children: a.childCount ?? 0, Packages: a.packageCount ?? 0,
+          Customers: a.customerCount ?? 0,
+          'Joined On': a.createdAt ? new Date(a.createdAt).toLocaleDateString() : '',
+        })),
+        'parent-agencies', 'Parent Agencies'
+      )
+    } catch { toast.error('Export failed') }
+    finally { setExportLoading(false) }
+  }
+
   return (
     <div className="animate-fade-in space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -1079,14 +1106,25 @@ export default function Agencies() {
             Manage tier-1 travel distribution entities and corporate identities
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => setIsAddModalOpen(true)}
-          className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-zinc-800 sm:w-auto sm:self-auto"
-        >
-          <Plus size={18} strokeWidth={2} />
-          Add Agency
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleExport}
+            disabled={exportLoading}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 disabled:opacity-50 sm:w-auto"
+          >
+            {exportLoading ? <Loader size="sm" /> : <Download size={16} strokeWidth={2} />}
+            Export
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsAddModalOpen(true)}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-zinc-800 sm:w-auto sm:self-auto"
+          >
+            <Plus size={18} strokeWidth={2} />
+            Add Agency
+          </button>
+        </div>
       </div>
 
       <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">

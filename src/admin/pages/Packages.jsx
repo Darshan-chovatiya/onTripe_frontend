@@ -7,6 +7,7 @@ import {
   Clock,
   Search,
   Eye,
+  Download,
   MessageSquare,
   Calendar,
   Layers,
@@ -20,6 +21,7 @@ import CustomDropdown from '@/shared/components/CustomDropdown.jsx'
 import CommunityChat from '@/customer/components/CommunityChat.jsx'
 import { useAuth } from '@/shared/context/AuthContext.jsx'
 import Pagination from '@/admin/components/Pagination.jsx'
+import { exportToExcel } from '@/admin/utils/exportExcel.js'
 
 /** Neutral count pill — matches other admin tables (gray border / soft bg) */
 const countPillClass =
@@ -300,6 +302,7 @@ export default function Packages() {
   const [selectedPkg, setSelectedPkg] = useState(null)
   const [isDetailOpen, setIsDetailOpen] = useState(false)
   const [chatContext, setChatContext] = useState(null)
+  const [exportLoading, setExportLoading] = useState(false)
 
   /** Ignore stale listPackages responses when parent/page/search changes quickly (e.g. deep link from Agencies). */
   const packagesFetchIdRef = useRef(0)
@@ -426,6 +429,32 @@ export default function Packages() {
 
   const closeChat = useCallback(() => setChatContext(null), [])
 
+  const handleExport = async () => {
+    setExportLoading(true)
+    try {
+      const { data } = await adminApi.listPackages({
+        page: 1, limit: 10000,
+        ...(debouncedSearch ? { search: debouncedSearch } : {}),
+        ...(statusFilter !== 'all' ? { status: statusFilter } : {}),
+        ...(parentFilter !== 'all' ? { parentAgencyId: parentFilter } : {}),
+      })
+      await exportToExcel(
+        (data?.data?.packages ?? []).map((p) => ({
+          Title: p.title || '', Destination: p.destination || '',
+          'Total Days': p.totalDays ?? '', 'Base Price (INR)': Number(p.basePrice) || 0,
+          Currency: p.currency || 'INR', 'Max Capacity': p.maxCapacity ?? '',
+          Status: p.isActive ? 'Active' : 'Inactive',
+          'Agency Name': p.createdBy?.name || '', 'Agency Code': p.createdBy?.agentCode || '',
+          'Agency Email': p.createdBy?.email || '',
+          Whitelabels: Number(p.whitelabelCount) || 0, Bookings: Number(p.bookingCount) || 0,
+          'Created On': p.createdAt ? new Date(p.createdAt).toLocaleDateString() : '',
+        })),
+        'packages', 'Packages'
+      )
+    } catch { toastRef.current.error('Export failed') }
+    finally { setExportLoading(false) }
+  }
+
   return (
     <div className="animate-fade-in space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -435,6 +464,15 @@ export default function Packages() {
             Inventory from parent agencies (including packages created by their network). Status is active or inactive.
           </p>
         </div>
+        <button
+          type="button"
+          onClick={handleExport}
+          disabled={exportLoading}
+          className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 disabled:opacity-50 sm:w-auto"
+        >
+          {exportLoading ? <Loader size="sm" /> : <Download size={16} strokeWidth={2} />}
+          Export
+        </button>
       </div>
 
       <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">

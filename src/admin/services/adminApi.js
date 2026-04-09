@@ -106,6 +106,7 @@ const adminApi = {
   listWhitelabelsByAgent,
   getAgent,
   getAgencyCustomers: (id) => axiosInstance.get(`/admin/agents/${id}/customers`),
+  getCustomerBookings: (id) => axiosInstance.get(`/admin/customers/${id}/bookings`),
   approvePackage: (id) => axiosInstance.patch(`/admin/packages/approve/${id}`),
   rejectPackage: (id, rejectionReason) => axiosInstance.patch(`/admin/packages/reject/${id}`, { rejectionReason }),
   getNotificationRecipients,

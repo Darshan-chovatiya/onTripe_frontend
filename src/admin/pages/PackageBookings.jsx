@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import {
   ChevronRight,
+  Download,
   Loader2,
   Ticket,
   User,
@@ -13,6 +14,7 @@ import {
 } from 'lucide-react'
 import adminApi from '@/admin/services/adminApi'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
+import { exportBookingsExcel } from '@/admin/utils/exportExcel.js'
 
 const getFileUrl = (path) => {
   if (!path) return null
@@ -64,6 +66,7 @@ export default function PackageBookings() {
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
+  const [exportLoading, setExportLoading] = useState(false)
   const limit = 50
 
   const load = useCallback(async () => {
@@ -98,6 +101,20 @@ export default function PackageBookings() {
   }, [load])
 
   const coverUrl = pkg?.coverImage ? getFileUrl(pkg.coverImage) : null
+
+  const handleExport = async () => {
+    if (!pkg) return
+    setExportLoading(true)
+    try {
+      const { data } = await adminApi.listBookingsByPackage(packageId, { page: 1, limit: 10000 })
+      await exportBookingsExcel(
+        data?.data?.package ?? pkg,
+        data?.data?.bookings ?? [],
+        `bookings-${pkg.title || 'package'}`
+      )
+    } catch { toastRef.current.error('Export failed') }
+    finally { setExportLoading(false) }
+  }
 
   if (loading && !pkg) {
     return (
@@ -230,9 +247,22 @@ export default function PackageBookings() {
                 )}
               </p>
             </div>
-            <div className="flex shrink-0 items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
-              <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-500">Total</span>
-              <span className="text-sm font-semibold tabular-nums text-gray-900">{total}</span>
+            <div className="flex shrink-0 items-center gap-2">
+              <div className="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
+                <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-500">Total</span>
+                <span className="text-sm font-semibold tabular-nums text-gray-900">{total}</span>
+              </div>
+              <button
+                type="button"
+                onClick={handleExport}
+                disabled={exportLoading || !pkg || total === 0}
+                className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 disabled:opacity-50"
+              >
+                {exportLoading
+                  ? <Loader2 className="h-4 w-4 animate-spin" strokeWidth={2} />
+                  : <Download className="h-4 w-4" strokeWidth={2} />}
+                Export Excel
+              </button>
             </div>
           </div>
         </div>

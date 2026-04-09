@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Users, Search, Mail, Phone, Building2 } from 'lucide-react'
+import { Users, Search, Mail, Phone, Building2, Download } from 'lucide-react'
 import adminApi from '@/admin/services/adminApi'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
 import Loader from '@/shared/components/Loader.jsx'
 import Pagination from '@/admin/components/Pagination.jsx'
+import { exportToExcel } from '@/admin/utils/exportExcel.js'
 
 export default function Customers() {
   const navigate = useNavigate()
@@ -18,6 +19,7 @@ export default function Customers() {
   const { toast } = useToast()
   const toastRef = useRef(toast)
   toastRef.current = toast
+  const [exportLoading, setExportLoading] = useState(false)
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(searchInput.trim()), 400)
@@ -64,6 +66,22 @@ export default function Customers() {
 
   const profileCount = (c) => (Array.isArray(c.agencyProfiles) ? c.agencyProfiles.length : 0)
 
+  const handleExport = async () => {
+    setExportLoading(true)
+    try {
+      const { data } = await adminApi.listCustomers({ page: 1, limit: 10000, ...(debouncedSearch ? { search: debouncedSearch } : {}) })
+      await exportToExcel(
+        (data?.data?.customers ?? []).map((c) => ({
+          Name: c.name || '', Email: c.email || '', Phone: c.phone || '',
+          'Agency Profiles': Array.isArray(c.agencyProfiles) ? c.agencyProfiles.length : 0,
+          'Joined On': c.createdAt ? new Date(c.createdAt).toLocaleDateString() : '',
+        })),
+        'customers', 'Customers'
+      )
+    } catch { toastRef.current.error('Export failed') }
+    finally { setExportLoading(false) }
+  }
+
   return (
     <div className="animate-fade-in space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -71,6 +89,15 @@ export default function Customers() {
           <h1 className="text-xl font-semibold tracking-tight text-gray-900 sm:text-2xl">Customers</h1>
           <p className="mt-1 text-sm text-gray-500">Platform traveler registry — search by name, email, or phone.</p>
         </div>
+        <button
+          type="button"
+          onClick={handleExport}
+          disabled={exportLoading}
+          className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 disabled:opacity-50 sm:w-auto"
+        >
+          {exportLoading ? <Loader size="sm" /> : <Download size={16} strokeWidth={2} />}
+          Export
+        </button>
       </div>
 
       <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
