@@ -19,6 +19,7 @@ import Modal from '@/shared/components/Modal.jsx'
 import CustomDropdown from '@/shared/components/CustomDropdown.jsx'
 import CommunityChat from '@/customer/components/CommunityChat.jsx'
 import { useAuth } from '@/shared/context/AuthContext.jsx'
+import Pagination from '@/admin/components/Pagination.jsx'
 
 /** Neutral count pill — matches other admin tables (gray border / soft bg) */
 const countPillClass =
@@ -385,7 +386,7 @@ export default function Packages() {
     try {
       const params = {
         page,
-        limit: 12,
+        limit: 10,
         ...(debouncedSearch ? { search: debouncedSearch } : {}),
         ...(statusFilter !== 'all' ? { status: statusFilter } : {}),
         ...(parentFilter !== 'all' ? { parentAgencyId: parentFilter } : {}),
@@ -594,40 +595,13 @@ export default function Packages() {
               </table>
             </div>
 
-            <div className="flex flex-col gap-3 border-t border-gray-100 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-              <span className="text-xs text-gray-500">
-                {total > 0 ? (
-                  <>
-                    Page <span className="font-medium text-gray-800">{page}</span> of{' '}
-                    <span className="font-medium text-gray-800">{totalPages}</span>
-                    <span className="text-gray-400"> · </span>
-                    {total} package{total === 1 ? '' : 's'}
-                  </>
-                ) : (
-                  'No results'
-                )}
-              </span>
-              {totalPages > 1 ? (
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setPage((p) => Math.max(1, p - 1))}
-                    disabled={page === 1}
-                    className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-800 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
-                  >
-                    Previous
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                    disabled={page === totalPages}
-                    className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-800 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40"
-                  >
-                    Next
-                  </button>
-                </div>
-              ) : null}
-            </div>
+            <Pagination
+              page={page}
+              totalPages={totalPages}
+              total={total}
+              limit={10}
+              onPageChange={setPage}
+            />
           </>
         )}
       </div>
