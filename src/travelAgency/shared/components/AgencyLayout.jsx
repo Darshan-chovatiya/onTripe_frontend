@@ -23,6 +23,7 @@ function usePageTitle() {
     reviews: 'Package Reviews',
   }
   return titles[segment] || segment.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) || 'Dashboard'
+}
 /** Same route→title idea as admin Header; paths under `/agency`. */
 function titleForPath(pathname) {
   if (/^\/agency\/packages\/[^/]+\/community$/.test(pathname)) return 'Package chat'
