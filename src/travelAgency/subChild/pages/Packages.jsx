@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { PackageOpen, Layers, Tags } from 'lucide-react'
 import { useSubChildPackages } from '@/travelAgency/subChild/hooks/useSubChildPackages.js'
@@ -18,16 +18,38 @@ export default function SubChildPackages() {
   const { toast } = useToast()
   const [submitting, setSubmitting] = useState(false)
   const [inactiveParentIds, setInactiveParentIds] = useState(new Set())
+  const [loadingParents, setLoadingParents] = useState(true)
+  const [parents, setParents] = useState([])
+  const [selectedParentFilter, setSelectedParentFilter] = useState('all')
 
   useEffect(() => {
+    setLoadingParents(true)
     listParents().then(({ data }) => {
-      const ids = new Set(
-        (data?.data?.parents ?? [])
-          .filter(p => p.status === 'approved' && !p.isActive)
-          .map(p => String(p._id))
-      )
+      const ids = new Set()
+      const parentsList = data?.data?.parents ?? []
+      
+      console.log('[SubChild Packages] All parents:', parentsList.map(p => ({
+        id: p._id,
+        name: p.name,
+        childAgencyId: p.childAgency?._id || p.childAgency,
+        status: p.status,
+        isActive: p.isActive
+      })))
+      
+      parentsList.forEach(p => {
+        if (p.status === 'approved' && !p.isActive) {
+          // Add the child agency ID (the actual parent agency that owns packages)
+          if (p.childAgency?._id) ids.add(String(p.childAgency._id))
+          else if (p.childAgency) ids.add(String(p.childAgency))
+          // Also add the parent record ID as fallback
+          ids.add(String(p._id))
+        }
+      })
+      
+      console.log('[SubChild Packages] Inactive parent IDs:', Array.from(ids))
       setInactiveParentIds(ids)
-    }).catch(() => {})
+      setParents(parentsList.filter(p => p.status === 'approved'))
+    }).catch(() => {}).finally(() => setLoadingParents(false))
   }, [])
 
   // Calculate which packages have bookings
@@ -39,6 +61,52 @@ export default function SubChildPackages() {
     })
     return ids
   }, [bookings])
+
+  // Helper to check if a package is from an inactive parent
+  const isFromInactiveParent = useCallback((pkg) => {
+    if (loadingParents || inactiveParentIds.size === 0) return false
+    
+    // Check the parent whitelabel owner (the child agency who created the whitelabel we're viewing)
+    const parentWlOwnerId = pkg.__parentWhitelabelOwnerId
+    if (parentWlOwnerId && inactiveParentIds.has(String(parentWlOwnerId))) {
+      console.log('[SubChild Packages] Package disabled - parent WL owner match:', {
+        packageId: pkg._id,
+        packageTitle: pkg.title,
+        parentWlOwnerId,
+        inactiveParentIds: Array.from(inactiveParentIds)
+      })
+      return true
+    }
+    
+    // Also check package creator as fallback
+    const creatorId = pkg.createdBy?._id || pkg.createdBy
+    if (creatorId && inactiveParentIds.has(String(creatorId))) {
+      console.log('[SubChild Packages] Package disabled - creator match:', {
+        packageId: pkg._id,
+        packageTitle: pkg.title,
+        creatorId,
+        inactiveParentIds: Array.from(inactiveParentIds)
+      })
+      return true
+    }
+    
+    return false
+  }, [inactiveParentIds, loadingParents])
+
+  // Helper to check if a whitelabel is from an inactive parent
+  const isWhitelabelFromInactiveParent = useCallback((wl) => {
+    if (loadingParents || inactiveParentIds.size === 0) return false
+    
+    // Check the parent who owns this whitelabel
+    const parentId = wl.ownedByParent?._id || wl.ownedByParent
+    if (parentId && inactiveParentIds.has(String(parentId))) return true
+    
+    // Also check the original package creator
+    const creatorId = wl.originalPackage?.createdBy?._id || wl.originalPackage?.createdBy
+    if (creatorId && inactiveParentIds.has(String(creatorId))) return true
+    
+    return false
+  }, [inactiveParentIds, loadingParents])
   const [modal, setModal] = useState({
     open: false,
     mode: 'create',
@@ -55,10 +123,80 @@ export default function SubChildPackages() {
   const closeModal = () => setModal((m) => ({ ...m, open: false }))
 
   const whitelabelByPackageId = useMemo(() => mapWhitelabelByOriginalPackageId(whitelabels), [whitelabels])
+  
+  // Filter packages by selected parent
+  const filteredAvailablePackages = useMemo(() => {
+    if (selectedParentFilter === 'all') return availablePackages
+    
+    return availablePackages.filter(pkg => {
+      const parentWlOwnerId = pkg.__parentWhitelabelOwnerId
+      const creatorId = pkg.createdBy?._id || pkg.createdBy
+      
+      // Match against the selected parent's child agency ID
+      const selectedParent = parents.find(p => String(p._id) === selectedParentFilter)
+      if (!selectedParent) return false
+      
+      const selectedParentChildAgencyId = String(selectedParent.childAgency?._id || selectedParent.childAgency || selectedParent._id)
+      
+      return String(parentWlOwnerId) === selectedParentChildAgencyId || String(creatorId) === selectedParentChildAgencyId
+    })
+  }, [availablePackages, selectedParentFilter, parents])
+  
+  // Filter whitelabels by selected parent
+  const filteredWhitelabels = useMemo(() => {
+    if (selectedParentFilter === 'all') return whitelabels
+    
+    return whitelabels.filter(wl => {
+      const parentId = wl.ownedByParent?._id || wl.ownedByParent
+      const creatorId = wl.originalPackage?.createdBy?._id || wl.originalPackage?.createdBy
+      
+      // Match against the selected parent's child agency ID
+      const selectedParent = parents.find(p => String(p._id) === selectedParentFilter)
+      if (!selectedParent) return false
+      
+      const selectedParentChildAgencyId = String(selectedParent.childAgency?._id || selectedParent.childAgency || selectedParent._id)
+      
+      return String(parentId) === selectedParentChildAgencyId || String(creatorId) === selectedParentChildAgencyId
+    })
+  }, [whitelabels, selectedParentFilter, parents])
+  
   const packagesEligibleForNewWhitelabel = useMemo(
-    () => availablePackages.filter((p) => !whitelabelByPackageId.has(String(p._id))),
-    [availablePackages, whitelabelByPackageId]
+    () => filteredAvailablePackages.filter((p) => !whitelabelByPackageId.has(String(p._id))),
+    [filteredAvailablePackages, whitelabelByPackageId]
   )
+  
+  // Get unique parents who have packages or whitelabels
+  const parentsWithPackages = useMemo(() => {
+    const parentIds = new Set()
+    
+    // Check available packages
+    availablePackages.forEach(pkg => {
+      const parentWlOwnerId = pkg.__parentWhitelabelOwnerId
+      const creatorId = pkg.createdBy?._id || pkg.createdBy
+      
+      parents.forEach(p => {
+        const parentChildAgencyId = String(p.childAgency?._id || p.childAgency || p._id)
+        if (String(parentWlOwnerId) === parentChildAgencyId || String(creatorId) === parentChildAgencyId) {
+          parentIds.add(String(p._id))
+        }
+      })
+    })
+    
+    // Check whitelabels
+    whitelabels.forEach(wl => {
+      const parentId = wl.ownedByParent?._id || wl.ownedByParent
+      const creatorId = wl.originalPackage?.createdBy?._id || wl.originalPackage?.createdBy
+      
+      parents.forEach(p => {
+        const parentChildAgencyId = String(p.childAgency?._id || p.childAgency || p._id)
+        if (String(parentId) === parentChildAgencyId || String(creatorId) === parentChildAgencyId) {
+          parentIds.add(String(p._id))
+        }
+      })
+    })
+    
+    return parents.filter(p => parentIds.has(String(p._id)))
+  }, [availablePackages, whitelabels, parents])
 
   const handleModalSubmit = async (...args) => {
     setSubmitting(true)
@@ -99,9 +237,31 @@ export default function SubChildPackages() {
       {error ? <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
 
       <section className="space-y-4">
-        <div className="flex items-center gap-2 border-b border-gray-100 pb-2">
-          <Layers className="h-5 w-5 text-primary-600" />
-          <h2 className="text-lg font-semibold text-gray-900">Packages from parent agencies</h2>
+        <div className="flex items-center justify-between gap-4 border-b border-gray-100 pb-2">
+          <div className="flex items-center gap-2">
+            <Layers className="h-5 w-5 text-primary-600" />
+            <h2 className="text-lg font-semibold text-gray-900">Packages from parent agencies</h2>
+          </div>
+          
+          {/* Parent filter dropdown */}
+          {parentsWithPackages.length > 1 && (
+            <div className="flex items-center gap-2">
+              <label htmlFor="parent-filter" className="text-sm text-gray-600">Filter by parent:</label>
+              <select
+                id="parent-filter"
+                value={selectedParentFilter}
+                onChange={(e) => setSelectedParentFilter(e.target.value)}
+                className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 shadow-sm transition hover:border-gray-300 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20"
+              >
+                <option value="all">All parents</option>
+                {parentsWithPackages.map(p => (
+                  <option key={p._id} value={p._id}>
+                    {p.name || p.email || 'Unnamed parent'}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
 
         {loading && availablePackages.length === 0 ? (
@@ -118,23 +278,36 @@ export default function SubChildPackages() {
           </div>
         ) : null}
 
-        {!loading && availablePackages.length === 0 ? (
+        {!loading && filteredAvailablePackages.length === 0 && availablePackages.length === 0 ? (
           <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-gray-200 bg-gray-50/80 py-16 text-center">
             <PackageOpen className="mb-3 h-12 w-12 text-gray-300" />
             <p className="text-sm font-medium text-gray-600">No packages available yet</p>
           </div>
         ) : null}
 
-        {availablePackages.length > 0 ? (
+        {!loading && filteredAvailablePackages.length === 0 && availablePackages.length > 0 ? (
+          <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-gray-200 bg-gray-50/80 py-16 text-center">
+            <PackageOpen className="mb-3 h-12 w-12 text-gray-300" />
+            <p className="text-sm font-medium text-gray-600">No packages from selected parent</p>
+            <button
+              onClick={() => setSelectedParentFilter('all')}
+              className="mt-3 text-sm text-primary-600 hover:text-primary-700 underline"
+            >
+              Show all packages
+            </button>
+          </div>
+        ) : null}
+
+        {filteredAvailablePackages.length > 0 ? (
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {availablePackages.map((pkg) => (
+            {filteredAvailablePackages.map((pkg) => (
               <AvailablePackageCard
                 key={`${pkg._id}-${pkg.__parentWhitelabelId || 'pkg'}`}
                 pkg={pkg}
                 existingWhitelabel={whitelabelByPackageId.get(String(pkg._id)) ?? null}
                 onCreateWhiteLabel={(p) => openCreate(p)}
                 onEditWhiteLabel={openEdit}
-                disabled={inactiveParentIds.has(String(pkg.createdBy?._id || pkg.createdBy))}
+                disabled={isFromInactiveParent(pkg)}
               />
             ))}
           </div>
@@ -147,7 +320,7 @@ export default function SubChildPackages() {
           <Tags className="h-5 w-5 text-primary-600" />
           <h2 className="text-lg font-semibold text-gray-900">Your white-label packages</h2>
         </div>
-        {!loading && whitelabels.length === 0 ? (
+        {!loading && filteredWhitelabels.length === 0 && whitelabels.length === 0 ? (
           <div className="rounded-2xl border border-gray-100 bg-white py-12 text-center shadow-sm">
             <p className="text-sm text-gray-500">You have not created any white-label packages yet.</p>
             <Button
@@ -161,9 +334,21 @@ export default function SubChildPackages() {
             </Button>
           </div>
         ) : null}
-        {whitelabels.length > 0 ? (
+        {!loading && filteredWhitelabels.length === 0 && whitelabels.length > 0 ? (
+          <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-gray-200 bg-gray-50/80 py-12 text-center">
+            <Tags className="mb-3 h-10 w-10 text-gray-300" />
+            <p className="text-sm font-medium text-gray-600">No white-label packages from selected parent</p>
+            <button
+              onClick={() => setSelectedParentFilter('all')}
+              className="mt-3 text-sm text-primary-600 hover:text-primary-700 underline"
+            >
+              Show all white-label packages
+            </button>
+          </div>
+        ) : null}
+        {filteredWhitelabels.length > 0 ? (
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {whitelabels.map((wl) => (
+            {filteredWhitelabels.map((wl) => (
               <WhitelabelPackageCard
                 key={wl._id}
                 item={wl}
@@ -176,7 +361,7 @@ export default function SubChildPackages() {
                   navigate(`/agency/packages/${pid}/community?title=${encodeURIComponent(t)}`)
                 }}
                 hasBooking={bookedWhiteLabelIds.has(String(wl._id))}
-                disabled={inactiveParentIds.has(String(wl.ownedByParent?._id || wl.ownedByParent))}
+                disabled={isWhitelabelFromInactiveParent(wl)}
               />
             ))}
           </div>

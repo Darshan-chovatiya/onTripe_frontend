@@ -1,7 +1,7 @@
 import axiosInstance from '@/shared/services/axiosInstance.js'
 
-export function listChildAgencies() {
-  return axiosInstance.get('/parent-agent/children')
+export function listChildAgencies(params = {}) {
+  return axiosInstance.get('/parent-agent/children', { params })
 }
 
 export function getChildAgent(id) {
@@ -98,8 +98,8 @@ export default {
 }
 
 // Bookings
-export function listBookings() {
-  return axiosInstance.get('/parent-agent/bookings')
+export function listBookings(params = {}) {
+  return axiosInstance.get('/parent-agent/bookings', { params })
 }
 
 export function getBooking(id) {
@@ -115,6 +115,10 @@ export function updateBooking(id, data) {
 }
 
 // Settings
+export function getProfile() {
+  return axiosInstance.get('/parent-agent/profile')
+}
+
 export function updateProfile(data) {
   return axiosInstance.patch('/parent-agent/profile', data)
 }

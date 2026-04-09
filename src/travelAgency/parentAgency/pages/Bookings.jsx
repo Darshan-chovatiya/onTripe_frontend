@@ -1,10 +1,12 @@
 import { useState, useEffect, useCallback } from 'react'
-import { BookOpen, Calendar, User, IndianRupee, Hash, Eye, Ticket } from 'lucide-react'
+import { BookOpen, Calendar, User, IndianRupee, Hash, Eye, Ticket, Download, RefreshCw } from 'lucide-react'
 import { listBookings } from '@/travelAgency/parentAgency/services/parentAgencyApi.js'
 import { getApiErrorMessage } from '@/shared/services/apiHelpers.js'
 import BookingDetailModal from '@/travelAgency/parentAgency/components/BookingDetailModal.jsx'
 import { useAuth } from '@/shared/context/AuthContext.jsx'
 import BookingTicketsModal from '@/travelAgency/parentAgency/components/BookingTicketsModal.jsx'
+import Pagination from '@/admin/components/Pagination.jsx'
+import { exportToExcel } from '@/admin/utils/exportExcel.js'
 
 const STATUS_STYLES = {
   confirmed: 'bg-blue-50 text-blue-700',
@@ -20,6 +22,8 @@ const PAYMENT_STYLES = {
   refunded: 'bg-purple-50 text-purple-700',
 }
 
+const PAGE_SIZE = 10
+
 export default function Bookings() {
   const [bookings, setBookings] = useState([])
   const [loading, setLoading] = useState(false)
@@ -29,38 +33,99 @@ export default function Bookings() {
   const [viewId, setViewId] = useState(null)
   const { user } = useAuth()
   const [ticketsBooking, setTicketsBooking] = useState(null)
+  const [page, setPage] = useState(1)
+  const [pagination, setPagination] = useState({ page: 1, totalPages: 1, totalCount: 0 })
+  const [exportLoading, setExportLoading] = useState(false)
 
   const fetchBookings = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
-      const res = await listBookings()
-      setBookings(res.data?.data?.bookings || [])
+      const res = await listBookings({
+        page,
+        limit: PAGE_SIZE,
+        search: search.trim(),
+        status: statusFilter === 'all' ? undefined : statusFilter,
+      })
+      const bookingsData = res.data?.data?.bookings || []
+      const paginationData = res.data?.data?.pagination || { page: 1, totalPages: 1, totalCount: bookingsData.length }
+      
+      console.log('[Bookings] Pagination data:', paginationData)
+      
+      setBookings(bookingsData)
+      setPagination({
+        page: paginationData.page || 1,
+        totalPages: paginationData.totalPages || Math.ceil(bookingsData.length / PAGE_SIZE),
+        totalCount: paginationData.totalCount || bookingsData.length,
+      })
     } catch (err) {
       setError(getApiErrorMessage(err))
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [page, search, statusFilter])
 
   useEffect(() => { fetchBookings() }, [fetchBookings])
 
-  const filtered = bookings.filter(b => {
-    const matchSearch = !search ||
-      b.bookingId?.toLowerCase().includes(search.toLowerCase()) ||
-      b.customer?.name?.toLowerCase().includes(search.toLowerCase()) ||
-      b.customer?.phone?.includes(search) ||
-      b.package?.title?.toLowerCase().includes(search.toLowerCase())
-    const matchStatus = statusFilter === 'all' || b.bookingStatus === statusFilter
-    return matchSearch && matchStatus
-  })
+  useEffect(() => {
+    setPage(1)
+  }, [search, statusFilter])
+
+  const handleExport = async () => {
+    setExportLoading(true)
+    try {
+      const res = await listBookings({
+        page: 1,
+        limit: 10000,
+        search: search.trim(),
+        status: statusFilter === 'all' ? undefined : statusFilter,
+      })
+      const rows = res.data?.data?.bookings || []
+      await exportToExcel(
+        rows.map((b, idx) => ({
+          '#': idx + 1,
+          'Booking ID': b.bookingId || '',
+          'Package': b.package?.title || b.whitelabelPackage?.customTitle || '',
+          'Customer': b.customer?.name || '',
+          'Phone': b.customer?.phone || '',
+          'Travel Date': b.travelDate ? new Date(b.travelDate).toLocaleDateString('en-IN') : '',
+          'Amount': b.totalAmount || 0,
+          'Payment Status': b.paymentStatus || '',
+          'Booking Status': b.bookingStatus || '',
+          'Booked By': b.bookedBy?.name || b.bookedBy?.email || '',
+        })),
+        'bookings',
+        'Bookings'
+      )
+    } catch {
+      setError('Export failed')
+    } finally {
+      setExportLoading(false)
+    }
+  }
 
   return (
     <div className="animate-fade-in space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Bookings</h1>
-        <p className="mt-0.5 text-sm text-gray-500">All bookings across your network</p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Bookings</h1>
+          <p className="mt-0.5 text-sm text-gray-500">All bookings across your network</p>
+        </div>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={handleExport}
+            disabled={exportLoading}
+            className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-3.5 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 disabled:opacity-50"
+          >
+            {exportLoading ? <RefreshCw size={15} className="animate-spin" /> : <Download size={15} />}
+            Export Excel
+          </button>
+          <button onClick={fetchBookings} className="p-2.5 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors" aria-label="Refresh">
+            <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
+          </button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -81,14 +146,9 @@ export default function Bookings() {
       </div>
 
       {/* Stats */}
-      {bookings.length > 0 && (
+      {pagination.totalCount > 0 && (
         <div className="flex flex-wrap gap-4 text-sm">
-          <span className="text-gray-500">Total: <span className="font-semibold text-gray-800">{bookings.length}</span></span>
-          {['confirmed','ongoing','completed','cancelled'].map(s => (
-            <span key={s} className="text-gray-500 capitalize">
-              {s}: <span className="font-semibold text-gray-800">{bookings.filter(b => b.bookingStatus === s).length}</span>
-            </span>
-          ))}
+          <span className="text-gray-500">Total: <span className="font-semibold text-gray-800">{pagination.totalCount}</span></span>
         </div>
       )}
 
@@ -111,18 +171,18 @@ export default function Bookings() {
       )}
 
       {/* Empty */}
-      {!loading && filtered.length === 0 && !error && (
+      {!loading && bookings.length === 0 && !error && (
         <div className="flex flex-col items-center justify-center py-20 text-center">
           <BookOpen className="h-14 w-14 text-gray-300 mb-4" />
           <h3 className="text-lg font-semibold text-gray-700">
-            {bookings.length === 0 ? 'No bookings yet' : 'No bookings match your search'}
+            {pagination.totalCount === 0 ? 'No bookings yet' : 'No bookings match your search'}
           </h3>
-          {bookings.length === 0 && <p className="text-sm text-gray-400 mt-1">No bookings created in your network yet.</p>}
+          {pagination.totalCount === 0 && <p className="text-sm text-gray-400 mt-1">No bookings created in your network yet.</p>}
         </div>
       )}
 
       {/* Table */}
-      {filtered.length > 0 && (
+      {bookings.length > 0 && (
         <div className="rounded-2xl border border-gray-100 bg-white shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -140,7 +200,7 @@ export default function Bookings() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {filtered.map((b) => {
+                {bookings.map((b) => {
                   return (
                   <tr key={b._id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-5 py-3.5">
@@ -229,6 +289,16 @@ export default function Bookings() {
             </table>
           </div>
         </div>
+      )}
+
+      {bookings.length > 0 && (
+        <Pagination
+          page={pagination.page}
+          totalPages={pagination.totalPages}
+          total={pagination.totalCount}
+          limit={PAGE_SIZE}
+          onPageChange={setPage}
+        />
       )}
 
       <BookingDetailModal isOpen={!!viewId} onClose={() => setViewId(null)} bookingId={viewId} />

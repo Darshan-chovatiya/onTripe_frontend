@@ -35,6 +35,7 @@ export function useSubChildPackages() {
           _id: packageId,
           basePrice: wl.finalPrice ?? pkg.basePrice,
           __parentWhitelabelId: wl._id,
+          __parentWhitelabelOwnerId: wl.createdBy?._id || wl.createdBy,
         })
       }
 

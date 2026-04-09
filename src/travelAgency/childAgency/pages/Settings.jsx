@@ -12,6 +12,7 @@ import {
 import Button from '@/shared/components/Button.jsx'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
 import ParentManagement from '@/travelAgency/shared/components/ParentManagement.jsx'
+import KycDocumentsSection from '@/travelAgency/shared/components/KycDocumentsSection.jsx'
 
 function errMessage(err) {
   const data = /** @type {{ message?: string; errors?: string[] }} */ (err?.response?.data)
@@ -31,6 +32,7 @@ export default function Settings() {
 
   const [loadingProfile, setLoadingProfile] = useState(true)
   const [kycStatus, setKycStatus] = useState(null)
+  const [kyc, setKyc] = useState(null)
 
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
@@ -55,6 +57,7 @@ export default function Settings() {
           setEmail(u.email || '')
           setPhone(u.phone || '')
           setKycStatus(u.kycStatus || null)
+          if (u.kyc) setKyc(u.kyc)
         }
       } catch {
         if (!cancelled) {
@@ -182,10 +185,9 @@ export default function Settings() {
         ) : (
           <form onSubmit={handleProfileSubmit} className="space-y-4">
             {kycStatus ? (
-              <div className="rounded-lg border border-gray-100 bg-gray-50 px-3 py-2 text-sm">
+              <div className="rounded-lg border border-gray-100 bg-gray-50 px-3 py-3 text-sm">
                 <span className="text-gray-500">KYC status: </span>
                 <span className="font-medium capitalize text-gray-800">{KYC_LABEL[kycStatus] || kycStatus}</span>
-                <p className="mt-1 text-xs text-gray-400">KYC documents are reviewed by the platform separately.</p>
               </div>
             ) : null}
 
@@ -305,6 +307,8 @@ export default function Settings() {
         </form>
       </section>
       </div>
+
+      <KycDocumentsSection kyc={kyc} />
 
       <ParentManagement
         listParents={listParents}

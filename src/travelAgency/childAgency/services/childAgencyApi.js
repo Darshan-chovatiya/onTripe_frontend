@@ -37,8 +37,8 @@ export function updateWhitelabel(id, body) {
   return axiosInstance.patch(`/child-agent/whitelabels/${id}`, body)
 }
 
-export function listSubChildren() {
-  return axiosInstance.get('/child-agent/sub-children')
+export function listSubChildren(params) {
+  return axiosInstance.get('/child-agent/sub-children', { params })
 }
 
 export function getSubChild(id) {
@@ -93,8 +93,8 @@ export function changeChildPassword(body) {
   return axiosInstance.post('/child-agent/change-password', body)
 }
 
-export function listCustomers() {
-  return axiosInstance.get('/child-agent/customers')
+export function listCustomers(params) {
+  return axiosInstance.get('/child-agent/customers', { params })
 }
 
 export function getCustomerByPhone(phone) {

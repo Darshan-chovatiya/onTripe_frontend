@@ -12,6 +12,7 @@ import {
 import Button from '@/shared/components/Button.jsx'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
 import ParentManagement from '@/travelAgency/shared/components/ParentManagement.jsx'
+import KycDocumentsSection from '@/travelAgency/shared/components/KycDocumentsSection.jsx'
 
 function errMessage(err) {
   const data = err?.response?.data
@@ -27,6 +28,7 @@ export default function Settings() {
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
   const [kycStatus, setKycStatus] = useState(null)
+  const [kyc, setKyc] = useState(null)
   const [profileSaving, setProfileSaving] = useState(false)
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
@@ -45,6 +47,7 @@ export default function Settings() {
           setEmail(u.email || '')
           setPhone(u.phone || '')
           setKycStatus(u.kyc?.status || u.kycStatus || null)
+          if (u.kyc) setKyc(u.kyc)
         }
       } catch {
         if (!cancelled) {
@@ -103,18 +106,24 @@ export default function Settings() {
         <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
         <p className="mt-1 text-sm text-gray-500">Manage your sub-child account profile and password.</p>
       </header>
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:items-stretch">
+        <section className="flex h-full flex-col rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
           <div className="mb-4 flex items-center gap-3 border-b border-gray-100 pb-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-100 text-primary-700"><User className="h-5 w-5" /></div>
-            <h2 className="text-lg font-semibold text-gray-900">Update profile</h2>
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-100 text-primary-700">
+              <User className="h-5 w-5" />
+            </div>
+            <div className="min-w-0">
+              <h2 className="text-lg font-semibold text-gray-900">Update profile</h2>
+              <p className="text-xs text-gray-500">Name, email, and phone for sign-in and notifications.</p>
+            </div>
           </div>
-          {loadingProfile ? <div className="flex items-center gap-2 py-8 text-sm text-gray-500"><Loader2 className="h-5 w-5 animate-spin" />Loading profile…</div> : (
+          {loadingProfile ? (
+            <div className="flex items-center gap-2 py-8 text-sm text-gray-500">
+              <Loader2 className="h-5 w-5 animate-spin" />
+              Loading profile…
+            </div>
+          ) : (
             <form onSubmit={handleProfileSubmit} className="space-y-4">
-              <input className="input-field w-full" value={name} onChange={(e) => setName(e.target.value)} placeholder="Full name" />
-              <input type="email" className="input-field w-full" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" />
-              <input className="input-field w-full" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Phone" />
-
               {/* KYC Status */}
               {kycStatus && (() => {
                 const map = {
@@ -124,30 +133,132 @@ export default function Settings() {
                 }
                 const { icon: Icon, label, cls } = map[kycStatus] || map.pending
                 return (
-                  <div className={`flex items-center gap-2 rounded-xl border px-4 py-3 text-sm font-medium ${cls}`}>
-                    <Icon size={15} /> {label}
+                  <div className={`flex items-center gap-2 rounded-lg border px-4 py-3 text-sm font-medium ${cls}`}>
+                    <Icon size={16} /> {label}
                   </div>
                 )
               })()}
 
-              <Button type="submit" disabled={profileSaving}>{profileSaving ? 'Saving…' : 'Save profile'}</Button>
+              <div>
+                <label htmlFor="set-name" className="mb-1 block text-sm font-medium text-gray-700">
+                  Full name
+                </label>
+                <input
+                  id="set-name"
+                  className="input-field w-full"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Full name"
+                  required
+                  autoComplete="name"
+                />
+              </div>
+              <div>
+                <label htmlFor="set-email" className="mb-1 block text-sm font-medium text-gray-700">
+                  Email
+                </label>
+                <input
+                  id="set-email"
+                  type="email"
+                  className="input-field w-full"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  autoComplete="email"
+                />
+                <p className="mt-1 text-xs text-gray-400">Used to sign in. Clear the field to remove email from your account.</p>
+              </div>
+              <div>
+                <label htmlFor="set-phone" className="mb-1 block text-sm font-medium text-gray-700">
+                  Phone
+                </label>
+                <input
+                  id="set-phone"
+                  type="tel"
+                  className="input-field w-full"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="+91 …"
+                  autoComplete="tel"
+                />
+                <p className="mt-1 text-xs text-gray-400">5–20 characters: digits, spaces, hyphens, or leading +.</p>
+              </div>
+
+              <div className="pt-2">
+                <Button type="submit" disabled={profileSaving}>
+                  {profileSaving ? 'Saving…' : 'Save profile'}
+                </Button>
+              </div>
             </form>
           )}
         </section>
 
-        <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+        <section className="flex h-full flex-col rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
           <div className="mb-4 flex items-center gap-3 border-b border-gray-100 pb-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 text-amber-800"><Shield className="h-5 w-5" /></div>
-            <h2 className="text-lg font-semibold text-gray-900">Change password</h2>
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-800">
+              <Shield className="h-5 w-5" />
+            </div>
+            <div className="min-w-0">
+              <h2 className="text-lg font-semibold text-gray-900">Change password</h2>
+              <p className="text-xs text-gray-500">Use a strong password you do not reuse elsewhere.</p>
+            </div>
           </div>
           <form onSubmit={handlePasswordSubmit} className="space-y-4">
-            <input type="password" className="input-field w-full" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} placeholder="Current password" />
-            <input type="password" className="input-field w-full" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="New password" />
-            <input type="password" className="input-field w-full" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Confirm new password" />
-            <Button type="submit" variant="secondary" disabled={passwordSaving}>{passwordSaving ? 'Updating…' : 'Change password'}</Button>
+            <div>
+              <label htmlFor="set-current-pw" className="mb-1 block text-sm font-medium text-gray-700">
+                Current password
+              </label>
+              <input
+                id="set-current-pw"
+                type="password"
+                className="input-field w-full"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                placeholder="Current password"
+                autoComplete="current-password"
+              />
+            </div>
+            <div>
+              <label htmlFor="set-new-pw" className="mb-1 block text-sm font-medium text-gray-700">
+                New password
+              </label>
+              <input
+                id="set-new-pw"
+                type="password"
+                className="input-field w-full"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="New password"
+                autoComplete="new-password"
+                minLength={8}
+              />
+              <p className="mt-1 text-xs text-gray-400">At least 8 characters.</p>
+            </div>
+            <div>
+              <label htmlFor="set-confirm-pw" className="mb-1 block text-sm font-medium text-gray-700">
+                Confirm new password
+              </label>
+              <input
+                id="set-confirm-pw"
+                type="password"
+                className="input-field w-full"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Confirm new password"
+                autoComplete="new-password"
+              />
+            </div>
+
+            <div className="pt-2">
+              <Button type="submit" variant="secondary" disabled={passwordSaving}>
+                {passwordSaving ? 'Updating…' : 'Change password'}
+              </Button>
+            </div>
           </form>
         </section>
       </div>
+
+      <KycDocumentsSection kyc={kyc} />
 
       <ParentManagement
         listParents={listParents}

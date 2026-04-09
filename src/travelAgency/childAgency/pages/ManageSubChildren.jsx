@@ -1,16 +1,20 @@
-import { useMemo, useState } from 'react'
-import { Eye, RefreshCw, Users, UserCheck, UserX, Bell, Send, History, Check } from 'lucide-react'
+import { useMemo, useState, useEffect } from 'react'
+import { Eye, RefreshCw, Users, UserCheck, UserX, Bell, Send, History, Check, Search, Download } from 'lucide-react'
 import { useManageSubChildren } from '@/travelAgency/childAgency/hooks/useManageSubChildren.js'
 import SubChildDetailModal from '@/travelAgency/childAgency/components/SubChildDetailModal.jsx'
 import ConfirmDialog from '@/shared/components/ConfirmDialog.jsx'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
 import { getApiErrorMessage } from '@/shared/services/apiHelpers.js'
-import { approveSubChildKyc, sendNotification, getSentNotifications, getNotificationPreview, listPendingRequests, approveParentRequest, rejectParentRequest } from '@/travelAgency/childAgency/services/childAgencyApi.js'
+import { approveSubChildKyc, sendNotification, getSentNotifications, getNotificationPreview, listPendingRequests, approveParentRequest, rejectParentRequest, listSubChildren } from '@/travelAgency/childAgency/services/childAgencyApi.js'
 import Modal from '@/shared/components/Modal.jsx'
 import PendingRequestsSection from '@/travelAgency/shared/components/PendingRequestsSection.jsx'
+import Pagination from '@/admin/components/Pagination.jsx'
+import { exportToExcel } from '@/admin/utils/exportExcel.js'
+
+const PAGE_SIZE = 10
 
 export default function ManageSubChildren() {
-  const { subChildren, loading, error, refresh, fetchOne, setActive } = useManageSubChildren()
+  const { subChildren, loading, error, fetchSubChildren, fetchOne, setActive, pagination } = useManageSubChildren()
   const { toast } = useToast()
   const [detailId, setDetailId] = useState(null)
   const [busyId, setBusyId] = useState(null)
@@ -28,8 +32,36 @@ export default function ManageSubChildren() {
   const [previewLoading, setPreviewLoading] = useState(false)
   const [previewHtml, setPreviewHtml] = useState('')
   const [previewMeta, setPreviewMeta] = useState(null)
+  const [search, setSearch] = useState('')
+  const [kycFilter, setKycFilter] = useState('all')
+  const [page, setPage] = useState(1)
+  const [exportLoading, setExportLoading] = useState(false)
 
   const attachmentUrl = (attachment) => attachment?.url || ''
+
+  // Reset page when filters change
+  useEffect(() => {
+    setPage(1)
+  }, [search, kycFilter])
+
+  // Fetch sub-children with pagination
+  useEffect(() => {
+    fetchSubChildren({
+      page,
+      limit: PAGE_SIZE,
+      search: search.trim(),
+      kycStatus: kycFilter === 'all' ? undefined : kycFilter
+    })
+  }, [fetchSubChildren, page, search, kycFilter])
+
+  const refresh = () => {
+    fetchSubChildren({
+      page,
+      limit: PAGE_SIZE,
+      search: search.trim(),
+      kycStatus: kycFilter === 'all' ? undefined : kycFilter
+    })
+  }
 
   const runToggle = async (sub, nextActive) => {
     setBusyId(sub._id)
@@ -96,6 +128,38 @@ export default function ManageSubChildren() {
       return next
     })
   }
+
+  const handleExport = async () => {
+    setExportLoading(true)
+    try {
+      const { data } = await listSubChildren({
+        page: 1,
+        limit: 10000,
+        search: search.trim(),
+        kycStatus: kycFilter === 'all' ? undefined : kycFilter
+      })
+      const rows = data?.data?.subChildren || []
+      await exportToExcel(
+        rows.map((s, idx) => ({
+          '#': idx + 1,
+          'Name': s.name || '',
+          'Email': s.email || '',
+          'Phone': s.phone || '',
+          'KYC Status': s.kyc?.status || 'pending',
+          'Status': s.isActive ? 'Active' : 'Inactive',
+          'Link Status': s.linkStatus || 'approved'
+        })),
+        'sub-children',
+        'Sub-Child Agencies'
+      )
+    } catch {
+      toast.error('Export failed')
+    } finally {
+      setExportLoading(false)
+    }
+  }
+
+  console.log('Sub-children pagination:', pagination)
 
   const openNotify = () => {
     if (selectedIds.size === 0) {
@@ -185,11 +249,19 @@ export default function ManageSubChildren() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Manage sub-children</h1>
           <p className="mt-1 text-sm text-gray-500">
-            Sub-child agencies registered with your invitation codes. Review their profile, then activate or
-            deactivate access as needed.
+            Sub-child agencies registered with your invitation codes.
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleExport}
+            disabled={exportLoading}
+            className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+          >
+            {exportLoading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+            Export Excel
+          </button>
           <button
             type="button"
             onClick={openHistory}
@@ -208,15 +280,6 @@ export default function ManageSubChildren() {
             <Bell className="h-4 w-4" />
             Notify
           </button>
-          <button
-            type="button"
-            onClick={() => refresh()}
-            disabled={loading}
-            className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-          >
-            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-            Refresh
-          </button>
         </div>
       </header>
 
@@ -225,6 +288,7 @@ export default function ManageSubChildren() {
         approveRequest={approveParentRequest}
         rejectRequest={rejectParentRequest}
         label="sub-child agency"
+        onAction={refresh}
       />
 
       {error ? (
@@ -255,6 +319,29 @@ export default function ManageSubChildren() {
 
       {subChildren.length > 0 ? (
         <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+          {/* Filters */}
+          <div className="flex flex-col gap-3 border-b border-gray-200 px-4 py-3 sm:flex-row sm:items-center">
+            <div className="relative min-w-0 flex-1">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" strokeWidth={2} />
+              <input
+                className="w-full rounded-md border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-gray-300 focus:outline-none focus:ring-1 focus:ring-gray-300"
+                placeholder="Search by name, email, or phone..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+            <select
+              className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:border-gray-300 focus:outline-none focus:ring-1 focus:ring-gray-300 sm:w-48"
+              value={kycFilter}
+              onChange={(e) => setKycFilter(e.target.value)}
+            >
+              <option value="all">All KYC statuses</option>
+              <option value="pending">Pending</option>
+              <option value="approved">Approved</option>
+              <option value="rejected">Rejected</option>
+            </select>
+          </div>
+
           <div className="overflow-x-auto">
             <table className="min-w-full text-left text-sm">
               <thead className="border-b border-gray-100 bg-gray-50/80">
@@ -287,33 +374,46 @@ export default function ManageSubChildren() {
                 {subChildren.map((sub) => {
                   const isSelected = selectedIds.has(sub._id)
                   return (
-                  <tr key={sub._id} className="hover:bg-gray-50/80">
+                  <tr key={sub._id} className={`hover:bg-gray-50/80 ${sub.linkStatus === 'rejected' ? 'bg-red-50/40' : ''}`}>
                     <td className="px-4 py-3">
                       <button
                         type="button"
                         onClick={() => toggleSelect(sub._id)}
+                        disabled={sub.linkStatus === 'rejected'}
                         className={`flex h-7 w-7 items-center justify-center rounded-lg border text-xs transition-colors ${
                           isSelected ? 'border-primary-600 bg-primary-600 text-white' : 'border-gray-200 bg-white text-transparent hover:border-primary-400'
-                        }`}
+                        } disabled:opacity-40 disabled:cursor-not-allowed`}
                         title={isSelected ? 'Selected' : 'Select'}
                       >
                         <Check className="h-3 w-3" strokeWidth={4} />
                       </button>
                     </td>
-                    <td className="px-4 py-3 font-medium text-gray-900">{sub.name}</td>
+                    <td className="px-4 py-3 font-medium text-gray-900">
+                      {sub.name}
+                    </td>
                     <td className="px-4 py-3 text-gray-600">{sub.email || '—'}</td>
                     <td className="px-4 py-3 text-gray-600">{sub.phone || '—'}</td>
                     <td className="px-4 py-3">
-                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium capitalize ${
-                        sub.kyc?.status === 'approved' ? 'bg-green-50 text-green-700' :
-                        sub.kyc?.status === 'rejected' ? 'bg-red-50 text-red-700' :
-                        'bg-yellow-50 text-yellow-700'
-                      }`}>
-                        {sub.kyc?.status || 'pending'}
-                      </span>
+                      {sub.linkStatus === 'rejected' ? (
+                        <span className="rounded-full bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700">
+                          Not verified
+                        </span>
+                      ) : (
+                        <span className={`rounded-full px-2 py-0.5 text-xs font-medium capitalize ${
+                          sub.kyc?.status === 'approved' ? 'bg-green-50 text-green-700' :
+                          sub.kyc?.status === 'rejected' ? 'bg-red-50 text-red-700' :
+                          'bg-yellow-50 text-yellow-700'
+                        }`}>
+                          {sub.kyc?.status || 'pending'}
+                        </span>
+                      )}
                     </td>
                     <td className="px-4 py-3">
-                      {sub.isActive ? (
+                      {sub.linkStatus === 'rejected' ? (
+                        <span className="inline-flex items-center gap-1 text-xs font-semibold text-red-500">
+                          <UserX className="h-3.5 w-3.5" /> Rejected
+                        </span>
+                      ) : sub.isActive ? (
                         <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700">
                           <UserCheck className="h-3.5 w-3.5" /> Active
                         </span>
@@ -324,6 +424,16 @@ export default function ManageSubChildren() {
                       )}
                     </td>
                     <td className="px-4 py-3 text-right">
+                      {sub.linkStatus === 'rejected' ? (
+                        <button
+                          type="button"
+                          onClick={() => setDetailId(sub._id)}
+                          className="inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                        >
+                          <Eye className="h-3.5 w-3.5" />
+                          View
+                        </button>
+                      ) : (
                       <div className="flex flex-wrap justify-end gap-2">
                         <button
                           type="button"
@@ -356,12 +466,21 @@ export default function ManageSubChildren() {
                           {sub.isActive ? 'Deactivate' : 'Activate'}
                         </button>
                       </div>
+                      )}
                     </td>
                   </tr>
                 )})}
               </tbody>
             </table>
           </div>
+
+          <Pagination
+            page={pagination.page}
+            totalPages={pagination.totalPages}
+            total={pagination.totalCount}
+            limit={PAGE_SIZE}
+            onPageChange={setPage}
+          />
         </div>
       ) : null}
 

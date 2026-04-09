@@ -15,6 +15,7 @@ import {
   Send,
   History,
   Check,
+  Download,
 } from 'lucide-react'
 import {
   listChildAgencies,
@@ -32,6 +33,8 @@ import ConfirmDialog from '@/shared/components/ConfirmDialog.jsx'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
 import Modal from '@/shared/components/Modal.jsx'
 import PendingRequestsSection from '@/travelAgency/shared/components/PendingRequestsSection.jsx'
+import Pagination from '@/admin/components/Pagination.jsx'
+import { exportToExcel } from '@/admin/utils/exportExcel.js'
 
 const KYC_STYLES = {
   approved: 'bg-green-50 text-green-700',
@@ -45,6 +48,8 @@ const KYC_ICONS = {
   rejected: XCircle,
 }
 
+const PAGE_SIZE = 10
+
 export default function ManageChildren() {
   const [children, setChildren] = useState([])
   const [loading, setLoading] = useState(false)
@@ -56,6 +61,9 @@ export default function ManageChildren() {
   const [toggling, setToggling] = useState(false)
   const [kycTarget, setKycTarget] = useState(null)
   const { toast } = useToast()
+  const [page, setPage] = useState(1)
+  const [pagination, setPagination] = useState({ page: 1, totalPages: 1, totalCount: 0 })
+  const [exportLoading, setExportLoading] = useState(false)
 
   const [selectedIds, setSelectedIds] = useState(() => new Set())
   const [notifyOpen, setNotifyOpen] = useState(false)
@@ -69,16 +77,35 @@ export default function ManageChildren() {
     setLoading(true)
     setError(null)
     try {
-      const res = await listChildAgencies()
-      setChildren(res.data?.data?.children || [])
+      const res = await listChildAgencies({
+        page,
+        limit: PAGE_SIZE,
+        search: search.trim(),
+        kycStatus: kycFilter === 'all' ? undefined : kycFilter,
+      })
+      const childrenData = res.data?.data?.children || []
+      const paginationData = res.data?.data?.pagination || { page: 1, totalPages: 1, totalCount: childrenData.length }
+      
+      console.log('[ManageChildren] Pagination data:', paginationData)
+      
+      setChildren(childrenData)
+      setPagination({
+        page: paginationData.page || 1,
+        totalPages: paginationData.totalPages || Math.ceil(childrenData.length / PAGE_SIZE),
+        totalCount: paginationData.totalCount || childrenData.length,
+      })
     } catch (err) {
       setError(getApiErrorMessage(err))
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [page, search, kycFilter])
 
   useEffect(() => { fetchChildren() }, [fetchChildren])
+
+  useEffect(() => {
+    setPage(1)
+  }, [search, kycFilter])
 
   const handleToggle = async () => {
     if (!toggleTarget) return
@@ -108,20 +135,40 @@ export default function ManageChildren() {
     }
   }
 
-  const filtered = children.filter(c => {
-    const matchSearch = !search ||
-      c.name?.toLowerCase().includes(search.toLowerCase()) ||
-      c.email?.toLowerCase().includes(search.toLowerCase()) ||
-      c.phone?.includes(search)
-    const matchKyc = kycFilter === 'all' || c.kyc?.status === kycFilter
-    return matchSearch && matchKyc
-  })
+  const handleExport = async () => {
+    setExportLoading(true)
+    try {
+      const res = await listChildAgencies({
+        page: 1,
+        limit: 10000,
+        search: search.trim(),
+        kycStatus: kycFilter === 'all' ? undefined : kycFilter,
+      })
+      const rows = res.data?.data?.children || []
+      await exportToExcel(
+        rows.map((c, idx) => ({
+          '#': idx + 1,
+          'Name': c.name || '',
+          'Email': c.email || '',
+          'Phone': c.phone || '',
+          'KYC Status': c.kyc?.status || 'pending',
+          'Account Status': c.isActive ? 'Active' : 'Deactivated',
+          'Link Status': c.linkStatus || '',
+        })),
+        'child-agents',
+        'Child Agents'
+      )
+    } catch {
+      toast.error('Export failed')
+    } finally {
+      setExportLoading(false)
+    }
+  }
 
-  const selectedCount = selectedIds.size
   const allFilteredSelected = useMemo(() => {
-    if (filtered.length === 0) return false
-    return filtered.every((c) => selectedIds.has(c._id))
-  }, [filtered, selectedIds])
+    if (children.length === 0) return false
+    return children.every((c) => selectedIds.has(c._id))
+  }, [children, selectedIds])
 
   const toggleSelect = (id) => {
     setSelectedIds((prev) => {
@@ -135,12 +182,14 @@ export default function ManageChildren() {
   const toggleSelectAllFiltered = () => {
     setSelectedIds((prev) => {
       const next = new Set(prev)
-      const shouldDeselect = filtered.length > 0 && filtered.every((c) => next.has(c._id))
-      if (shouldDeselect) filtered.forEach((c) => next.delete(c._id))
-      else filtered.forEach((c) => next.add(c._id))
+      const shouldDeselect = children.length > 0 && children.every((c) => next.has(c._id))
+      if (shouldDeselect) children.forEach((c) => next.delete(c._id))
+      else children.forEach((c) => next.add(c._id))
       return next
     })
   }
+
+  const selectedCount = selectedIds.size
 
   const openNotify = () => {
     if (selectedIds.size === 0) {
@@ -217,6 +266,15 @@ export default function ManageChildren() {
         <div className="flex items-center gap-2">
           <button
             type="button"
+            onClick={handleExport}
+            disabled={exportLoading}
+            className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+          >
+            {exportLoading ? <RefreshCw size={16} className="animate-spin" /> : <Download size={16} />}
+            Export
+          </button>
+          <button
+            type="button"
             onClick={openHistory}
             className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
           >
@@ -245,6 +303,7 @@ export default function ManageChildren() {
         approveRequest={approveParentRequest}
         rejectRequest={rejectParentRequest}
         label="child agency"
+        onAction={fetchChildren}
       />
 
       {/* Filters */}
@@ -264,12 +323,9 @@ export default function ManageChildren() {
       </div>
 
       {/* Stats */}
-      {children.length > 0 && (
+      {pagination.totalCount > 0 && (
         <div className="flex flex-wrap gap-4 text-sm">
-          <span className="text-gray-500">Total: <span className="font-semibold text-gray-800">{children.length}</span></span>
-          <span className="text-gray-500">Approved: <span className="font-semibold text-gray-800">{children.filter(c => c.kyc?.status === 'approved').length}</span></span>
-          <span className="text-gray-500">Pending: <span className="font-semibold text-gray-800">{children.filter(c => c.kyc?.status === 'pending').length}</span></span>
-          <span className="text-gray-500">Rejected: <span className="font-semibold text-gray-800">{children.filter(c => c.kyc?.status === 'rejected').length}</span></span>
+          <span className="text-gray-500">Total: <span className="font-semibold text-gray-800">{pagination.totalCount}</span></span>
         </div>
       )}
 
@@ -292,20 +348,20 @@ export default function ManageChildren() {
       )}
 
       {/* Empty */}
-      {!loading && filtered.length === 0 && !error && (
+      {!loading && children.length === 0 && !error && (
         <div className="flex flex-col items-center justify-center py-20 text-center">
           <Users className="h-14 w-14 text-gray-300 mb-4" />
           <h3 className="text-lg font-semibold text-gray-700">
-            {children.length === 0 ? 'No child agents yet' : 'No agents match your search'}
+            {pagination.totalCount === 0 ? 'No child agents yet' : 'No agents match your search'}
           </h3>
-          {children.length === 0 && (
+          {pagination.totalCount === 0 && (
             <p className="text-sm text-gray-400 mt-1">Share your agent code so child agents can link to you.</p>
           )}
         </div>
       )}
 
       {/* Table */}
-      {filtered.length > 0 && (
+      {children.length > 0 && (
         <div className="rounded-2xl border border-gray-100 bg-white shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -336,20 +392,22 @@ export default function ManageChildren() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {filtered.map(child => {
+                {children.map(child => {
                   const kycStatus = child.kyc?.status || 'pending'
                   const KycIcon = KYC_ICONS[kycStatus] || Clock
                   const isSelected = selectedIds.has(child._id)
+                  const isRejected = child.linkStatus === 'rejected'
 
                   return (
-                    <tr key={child._id} className="hover:bg-gray-50 transition-colors">
+                    <tr key={child._id} className={`transition-colors ${isRejected ? 'bg-red-50/40 hover:bg-red-50/60' : 'hover:bg-gray-50'}`}>
                       <td className="px-5 py-3.5">
                         <button
                           type="button"
                           onClick={() => toggleSelect(child._id)}
+                          disabled={isRejected}
                           className={`flex h-8 w-8 items-center justify-center rounded-lg border transition-colors ${
                             isSelected ? 'border-primary-600 bg-primary-600 text-white' : 'border-gray-200 bg-white text-transparent hover:border-primary-400'
-                          }`}
+                          } disabled:opacity-40 disabled:cursor-not-allowed`}
                           title={isSelected ? 'Selected' : 'Select'}
                         >
                           <Check size={14} strokeWidth={4} />
@@ -361,7 +419,9 @@ export default function ManageChildren() {
                             <User size={14} />
                           </div>
                           <div>
-                            <p className="font-semibold text-gray-900">{child.name}</p>
+                            <p className="font-semibold text-gray-900">
+                              {child.name}
+                            </p>
                             <p className="text-xs text-gray-400">Agent ID: {child._id.slice(-6).toUpperCase()}</p>
                           </div>
                         </div>
@@ -371,27 +431,39 @@ export default function ManageChildren() {
                         {child.phone && <p className="flex items-center gap-1.5 text-xs text-gray-400 mt-0.5"><Phone size={11} className="text-gray-400" />{child.phone}</p>}
                       </td>
                       <td className="px-5 py-3.5">
-                        <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${KYC_STYLES[kycStatus]}`}>
-                          <KycIcon size={12} />
-                          {kycStatus}
-                        </span>
+                        {isRejected ? (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2.5 py-0.5 text-xs font-medium text-red-700">
+                            Not verified
+                          </span>
+                        ) : (
+                          <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${KYC_STYLES[kycStatus]}`}>
+                            <KycIcon size={12} />
+                            {kycStatus}
+                          </span>
+                        )}
                       </td>
                       <td className="px-5 py-3.5">
-                        <button
-                          onClick={() => setToggleTarget(child)}
-                          className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium transition-all hover:ring-2 hover:ring-offset-1 ${
-                            child.isActive 
-                              ? 'bg-green-50 text-green-700 hover:ring-green-200' 
-                              : 'bg-red-50 text-red-700 hover:ring-red-200'
-                          }`}
-                          title={child.isActive ? 'Click to Deactivate' : 'Click to Activate'}
-                        >
-                          <ShieldCheck size={12} />
-                          {child.isActive ? 'Active' : 'Deactivated'}
-                        </button>
+                        {isRejected ? (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2.5 py-0.5 text-xs font-medium text-red-700">
+                            Rejected
+                          </span>
+                        ) : (
+                          <button
+                            onClick={() => setToggleTarget(child)}
+                            className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium transition-all hover:ring-2 hover:ring-offset-1 ${
+                              child.isActive 
+                                ? 'bg-green-50 text-green-700 hover:ring-green-200' 
+                                : 'bg-red-50 text-red-700 hover:ring-red-200'
+                            }`}
+                            title={child.isActive ? 'Click to Deactivate' : 'Click to Activate'}
+                          >
+                            <ShieldCheck size={12} />
+                            {child.isActive ? 'Active' : 'Deactivated'}
+                          </button>
+                        )}
                       </td>
                       <td className="px-5 py-3.5 text-right">
-                        <div className="inline-flex items-center gap-3">
+                        {isRejected ? (
                           <button 
                             onClick={() => setViewId(child._id)} 
                             className="p-1.5 rounded-lg text-gray-400 hover:text-gray-900 hover:bg-gray-100 transition-all" 
@@ -399,17 +471,26 @@ export default function ManageChildren() {
                           >
                             <Eye size={16} />
                           </button>
-                          
-                          {child.kyc?.status === 'pending' && (
-                            <button
-                              onClick={() => setKycTarget(child)}
-                              className="p-1.5 rounded-lg text-blue-500 hover:text-blue-700 hover:bg-blue-50 transition-all"
-                              title="Approve KYC"
+                        ) : (
+                          <div className="inline-flex items-center gap-3">
+                            <button 
+                              onClick={() => setViewId(child._id)} 
+                              className="p-1.5 rounded-lg text-gray-400 hover:text-gray-900 hover:bg-gray-100 transition-all" 
+                              title="View Details"
                             >
-                              <UserCheck size={18} />
+                              <Eye size={16} />
                             </button>
-                          )}
-                        </div>
+                            {child.kyc?.status === 'pending' && (
+                              <button
+                                onClick={() => setKycTarget(child)}
+                                className="p-1.5 rounded-lg text-blue-500 hover:text-blue-700 hover:bg-blue-50 transition-all"
+                                title="Approve KYC"
+                              >
+                                <UserCheck size={18} />
+                              </button>
+                            )}
+                          </div>
+                        )}
                       </td>
                     </tr>
                   )
@@ -418,6 +499,16 @@ export default function ManageChildren() {
             </table>
           </div>
         </div>
+      )}
+
+      {children.length > 0 && (
+        <Pagination
+          page={pagination.page}
+          totalPages={pagination.totalPages}
+          total={pagination.totalCount}
+          limit={PAGE_SIZE}
+          onPageChange={setPage}
+        />
       )}
 
       <Modal isOpen={notifyOpen} onClose={() => !notifyBusy && setNotifyOpen(false)} title="Send notification" size="lg">

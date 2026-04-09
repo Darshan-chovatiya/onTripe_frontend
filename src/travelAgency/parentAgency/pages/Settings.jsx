@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { User, Lock, CheckCircle, Clock, XCircle } from 'lucide-react'
 import { useAuth } from '@/shared/context/AuthContext.jsx'
-import { updateProfile, changePassword } from '@/travelAgency/parentAgency/services/parentAgencyApi.js'
+import { getProfile, updateProfile, changePassword } from '@/travelAgency/parentAgency/services/parentAgencyApi.js'
 import { getApiErrorMessage } from '@/shared/services/apiHelpers.js'
 import Button from '@/shared/components/Button.jsx'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
+import KycDocumentsSection from '@/travelAgency/shared/components/KycDocumentsSection.jsx'
 
 export default function Settings() {
   const { user, setUser } = useAuth()
@@ -18,6 +19,14 @@ export default function Settings() {
   })
   const [profileLoading, setProfileLoading] = useState(false)
   const [profileErrors, setProfileErrors] = useState({})
+  const [kyc, setKyc] = useState(user?.kyc || null)
+
+  useEffect(() => {
+    getProfile().then(({ data }) => {
+      const u = data?.data?.user
+      if (u?.kyc) setKyc(u.kyc)
+    }).catch(() => {})
+  }, [])
 
   // Password form
   const [pwd, setPwd] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' })
@@ -230,6 +239,8 @@ export default function Settings() {
         </div>
 
       </div>
+
+      <KycDocumentsSection kyc={kyc} />
     </div>
   )
 }
