@@ -225,10 +225,29 @@ export default function ChildAgencies({ agentRole = 'child_agent', pageTitle = '
               <p className="mt-1 text-sm text-gray-900">{selectedAgent.phone || 'N/A'}</p>
             </div>
             <div>
-              <p className="text-xs font-medium text-gray-500">Parent agency</p>
-              <p className="mt-1 text-sm text-gray-900">
-                {selectedAgent.parentName || (agentRole === 'sub_child_agent' ? 'Direct child agency link unavailable' : 'Direct node')}
+              <p className="text-xs font-medium text-gray-500">
+                {agentRole === 'sub_child_agent' ? 'Child agencies' : 'Parent agencies'}
               </p>
+              {(() => {
+                const parents = Array.isArray(selectedAgent.allParents) && selectedAgent.allParents.length > 0
+                  ? selectedAgent.allParents
+                  : selectedAgent.parentName
+                    ? [{ name: selectedAgent.parentName, agentCode: selectedAgent.parentCode, email: selectedAgent.parentEmail }]
+                    : []
+                if (parents.length === 0) {
+                  return <p className="mt-1 text-sm text-gray-400">{agentRole === 'sub_child_agent' ? 'Direct child agency link unavailable' : 'Direct node'}</p>
+                }
+                return (
+                  <div className="mt-1 space-y-1">
+                    {parents.map((p, i) => (
+                      <div key={i} className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-gray-900">{p.name}</span>
+                        {p.agentCode && <span className="rounded bg-primary-50 px-1.5 py-0.5 font-mono text-[10px] text-primary-700">{p.agentCode}</span>}
+                      </div>
+                    ))}
+                  </div>
+                )
+              })()}
             </div>
           </div>
         </div>
@@ -248,17 +267,30 @@ export default function ChildAgencies({ agentRole = 'child_agent', pageTitle = '
       })
       const isSubChild = agentRole === 'sub_child_agent'
       await exportToExcel(
-        (data?.data?.agents ?? []).map((a) => ({
-          Name: a.name, Email: a.email, Phone: a.phone || '',
-          'Agent Code': a.agentCode || '',
-          [isSubChild ? 'Child Agency' : 'Parent Agency']: a.parentName || '',
-          'Parent Code': a.parentCode || '',
-          'KYC Status': a.kyc?.status || 'pending',
-          'Account Status': a.isActive ? 'Active' : 'Inactive',
-          ...(isSubChild ? {} : { 'Sub-Child Count': a.childCount ?? 0 }),
-          Whitelabels: a.whitelabelCount ?? 0, Customers: a.customerCount ?? 0,
-          'Joined On': a.createdAt ? new Date(a.createdAt).toLocaleDateString() : '',
-        })),
+        (data?.data?.agents ?? []).map((a) => {
+          const parents = Array.isArray(a.allParents) && a.allParents.length > 0
+            ? a.allParents
+            : a.parentName ? [{ name: a.parentName, agentCode: a.parentCode, email: a.parentEmail }] : []
+
+          const parentCols = {}
+          parents.forEach((p, i) => {
+            const label = isSubChild ? `Child Agency ${i + 1}` : `Parent Agency ${i + 1}`
+            parentCols[label] = p.name || ''
+            parentCols[`${label} Code`] = p.agentCode || ''
+            parentCols[`${label} Email`] = p.email || ''
+          })
+
+          return {
+            Name: a.name, Email: a.email, Phone: a.phone || '',
+            'Agent Code': a.agentCode || '',
+            ...parentCols,
+            'KYC Status': a.kyc?.status || 'pending',
+            'Account Status': a.isActive ? 'Active' : 'Inactive',
+            ...(isSubChild ? {} : { 'Sub-Child Count': a.childCount ?? 0 }),
+            Whitelabels: a.whitelabelCount ?? 0, Customers: a.customerCount ?? 0,
+            'Joined On': a.createdAt ? new Date(a.createdAt).toLocaleDateString() : '',
+          }
+        }),
         isSubChild ? 'sub-child-agencies' : 'child-agencies',
         isSubChild ? 'Sub-Child Agencies' : 'Child Agencies'
       )
@@ -397,15 +429,35 @@ export default function ChildAgencies({ agentRole = 'child_agent', pageTitle = '
                           </div>
                         </div>
                       </td>
-                      <td className="whitespace-nowrap px-4 py-2.5">
-                        {agent.parentName ? (
-                          <div>
-                            <p className="text-xs font-medium text-gray-900">{agent.parentName}</p>
-                            <p className="text-[11px] text-gray-500">Code: {agent.parentCode || '—'}</p>
-                          </div>
-                        ) : (
-                          <span className="text-xs text-gray-400">Direct node</span>
-                        )}
+                      <td className="px-4 py-2.5">
+                        {(() => {
+                          const parents = Array.isArray(agent.allParents) && agent.allParents.length > 0
+                            ? agent.allParents
+                            : agent.parentName
+                              ? [{ name: agent.parentName, agentCode: agent.parentCode }]
+                              : []
+                          if (parents.length === 0) return <span className="text-xs text-gray-400">—</span>
+                          if (parents.length === 1) return (
+                            <div>
+                              <p className="text-xs font-medium text-gray-900 leading-tight">{parents[0].name}</p>
+                              <p className="text-[10px] text-gray-400">Code: {parents[0].agentCode || '—'}</p>
+                            </div>
+                          )
+                          const parentsPath = agentRole === 'sub_child_agent'
+                            ? `/admin/sub-child-agencies/${agent._id}/parents`
+                            : `/admin/child-agencies/${agent._id}/parents`
+                          return (
+                            <button
+                              type="button"
+                              onClick={() => navigate(parentsPath)}
+                              className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-800 transition-colors hover:border-primary-200 hover:bg-primary-50/50 hover:text-primary-900"
+                              title="View all parent agencies"
+                            >
+                              <Building2 className="h-3.5 w-3.5 text-gray-500" strokeWidth={2} />
+                              <span className="tabular-nums">{parents.length}</span>
+                            </button>
+                          )
+                        })()}
                       </td>
                       <td className="whitespace-nowrap px-4 py-2.5">
                         <div className="flex items-center gap-2">
