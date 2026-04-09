@@ -168,23 +168,6 @@ export default function Settings() {
             </div>
           ) : (
             <form onSubmit={handleProfileSubmit} className="space-y-4 p-6">
-              {kycStatus ? (
-                (() => {
-                  const map = {
-                    approved: { icon: CheckCircle, label: 'KYC Approved', cls: 'bg-green-50 border-green-200 text-green-700' },
-                    pending: { icon: Clock, label: 'KYC Pending', cls: 'bg-yellow-50 border-yellow-200 text-yellow-700' },
-                    rejected: { icon: XCircle, label: 'KYC Rejected', cls: 'bg-red-50 border-red-200 text-red-700' },
-                  }
-                  const { icon: Icon, label, cls } = map[kycStatus] || map.pending
-                  return (
-                    <div className={`flex items-center gap-2 rounded-xl border px-4 py-3 text-sm font-medium ${cls}`}>
-                      <Icon size={15} />
-                      {label}
-                    </div>
-                  )
-                })()
-              ) : null}
-
               <div>
                 <label htmlFor="set-name" className="mb-1 block text-sm font-medium text-gray-700">Full Name *</label>
                 <input
@@ -221,6 +204,29 @@ export default function Settings() {
                   placeholder="+91 XXXXX XXXXX"
                 />
               </div>
+
+              {kyc && (
+                <div className="border-t border-gray-100 pt-4 space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-sm font-semibold text-gray-700">KYC Documents</p>
+                    {kycStatus && (() => {
+                      const map = {
+                        approved: { icon: CheckCircle, label: 'KYC Approved', cls: 'bg-green-50 border-green-200 text-green-700' },
+                        pending:  { icon: Clock,        label: 'KYC Pending',  cls: 'bg-yellow-50 border-yellow-200 text-yellow-700' },
+                        rejected: { icon: XCircle,      label: 'KYC Rejected', cls: 'bg-red-50 border-red-200 text-red-700' },
+                      }
+                      const { icon: Icon, label, cls } = map[kycStatus] || map.pending
+                      return (
+                        <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium ${cls}`}>
+                          <Icon size={11} />
+                          {label}
+                        </span>
+                      )
+                    })()}
+                  </div>
+                  <KycDocumentsSection kyc={kyc} />
+                </div>
+              )}
 
               <div className="flex justify-end pt-2">
                 <Button type="submit" disabled={profileSaving}>
