@@ -143,25 +143,33 @@ export default function Settings() {
               {profileErrors.phone && <p className="mt-1 text-xs text-red-500">{profileErrors.phone}</p>}
             </div>
 
-            {/* KYC Status */}
-            {(() => {
-              const status = user?.kyc?.status || 'pending'
-              const map = {
-                approved: { icon: CheckCircle, label: 'KYC Approved', cls: 'bg-green-50 border-green-200 text-green-700' },
-                pending:  { icon: Clock,        label: 'KYC Pending',  cls: 'bg-yellow-50 border-yellow-200 text-yellow-700' },
-                rejected: { icon: XCircle,      label: 'KYC Rejected', cls: 'bg-red-50 border-red-200 text-red-700' },
-              }
-              const { icon: Icon, label, cls } = map[status] || map.pending
-              return (
-                <div className={`flex items-center gap-2 rounded-xl border px-4 py-3 text-sm font-medium ${cls}`}>
-                  <Icon size={15} />
-                  {label}
-                  {status === 'rejected' && user?.kyc?.rejectionReason && (
-                    <span className="ml-1 font-normal text-xs">— {user.kyc.rejectionReason}</span>
-                  )}
+            {/* KYC Documents */}
+            {kyc && (
+              <div className="border-t border-gray-100 pt-4 space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-sm font-semibold text-gray-700">KYC Documents</p>
+                  {(() => {
+                    const status = user?.kyc?.status || 'pending'
+                    const map = {
+                      approved: { icon: CheckCircle, label: 'KYC Approved', cls: 'bg-green-50 border-green-200 text-green-700' },
+                      pending:  { icon: Clock,        label: 'KYC Pending',  cls: 'bg-yellow-50 border-yellow-200 text-yellow-700' },
+                      rejected: { icon: XCircle,      label: 'KYC Rejected', cls: 'bg-red-50 border-red-200 text-red-700' },
+                    }
+                    const { icon: Icon, label, cls } = map[status] || map.pending
+                    return (
+                      <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium ${cls}`}>
+                        <Icon size={11} />
+                        {label}
+                        {status === 'rejected' && user?.kyc?.rejectionReason && (
+                          <span className="ml-0.5 font-normal">— {user.kyc.rejectionReason}</span>
+                        )}
+                      </span>
+                    )
+                  })()}
                 </div>
-              )
-            })()}
+                <KycDocumentsSection kyc={kyc} />
+              </div>
+            )}
 
             <div className="flex justify-end pt-2">
               <Button type="submit" disabled={profileLoading}>
@@ -170,7 +178,6 @@ export default function Settings() {
             </div>
           </form>
         </div>
-
         {/* Change Password */}
         <div className="rounded-2xl border border-gray-100 bg-white shadow-sm overflow-hidden">
           <div className="flex items-center gap-2 px-6 py-4 border-b border-gray-100">
@@ -240,7 +247,6 @@ export default function Settings() {
 
       </div>
 
-      <KycDocumentsSection kyc={kyc} />
     </div>
   )
 }

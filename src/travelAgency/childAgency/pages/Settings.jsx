@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Loader2, Shield, User } from 'lucide-react'
+import { Loader2, Shield, User, CheckCircle, Clock, XCircle } from 'lucide-react'
 import { useAuth } from '@/shared/context/AuthContext.jsx'
 import {
   addParent,
@@ -184,13 +184,6 @@ export default function Settings() {
           </div>
         ) : (
           <form onSubmit={handleProfileSubmit} className="space-y-4">
-            {kycStatus ? (
-              <div className="rounded-lg border border-gray-100 bg-gray-50 px-3 py-3 text-sm">
-                <span className="text-gray-500">KYC status: </span>
-                <span className="font-medium capitalize text-gray-800">{KYC_LABEL[kycStatus] || kycStatus}</span>
-              </div>
-            ) : null}
-
             <div>
               <label htmlFor="set-name" className="mb-1 block text-sm font-medium text-gray-700">
                 Full name
@@ -234,6 +227,29 @@ export default function Settings() {
               />
               <p className="mt-1 text-xs text-gray-400">5–20 characters: digits, spaces, hyphens, or leading +.</p>
             </div>
+
+            {kyc && (
+              <div className="border-t border-gray-100 pt-4 space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-sm font-semibold text-gray-700">KYC Documents</p>
+                  {kycStatus && (() => {
+                    const map = {
+                      approved: { icon: CheckCircle, label: 'KYC Approved', cls: 'bg-green-50 border-green-200 text-green-700' },
+                      pending:  { icon: Clock,        label: 'KYC Pending',  cls: 'bg-yellow-50 border-yellow-200 text-yellow-700' },
+                      rejected: { icon: XCircle,      label: 'KYC Rejected', cls: 'bg-red-50 border-red-200 text-red-700' },
+                    }
+                    const { icon: Icon, label, cls } = map[kycStatus] || map.pending
+                    return (
+                      <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium ${cls}`}>
+                        <Icon size={11} />
+                        {label}
+                      </span>
+                    )
+                  })()}
+                </div>
+                <KycDocumentsSection kyc={kyc} />
+              </div>
+            )}
 
             <div className="pt-2">
               <Button type="submit" disabled={profileSaving}>
@@ -307,8 +323,6 @@ export default function Settings() {
         </form>
       </section>
       </div>
-
-      <KycDocumentsSection kyc={kyc} />
 
       <ParentManagement
         listParents={listParents}

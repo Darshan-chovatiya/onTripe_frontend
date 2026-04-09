@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { Mail, Phone, Search, UserCircle, Bell, Send, History, Check, Download, RefreshCw } from 'lucide-react'
 import { ROLES } from '@/shared/utils/constants.js'
 import { useAgencyPermissions } from '@/travelAgency/agency/hooks/useAgencyPermissions.js'
+import ChildCustomers from '@/travelAgency/childAgency/pages/Customers.jsx'
+import SubChildCustomers from '@/travelAgency/subChild/pages/Customers.jsx'
 import {
   listCustomers as listChildCustomers,
   listBookings as listChildBookings,
@@ -29,6 +31,7 @@ import {
 } from '@/travelAgency/subChild/services/subChildApi.js'
 import Pagination from '@/admin/components/Pagination.jsx'
 import { exportToExcel } from '@/admin/utils/exportExcel.js'
+import CustomerDetailModal from '@/travelAgency/shared/components/CustomerDetailModal.jsx'
 
 const PAGE_SIZE = 10
 
@@ -37,6 +40,9 @@ export default function AgencyCustomers() {
   const { role, can, P } = useAgencyPermissions()
   const { toast } = useToast()
   const toastRef = useRef(toast)
+
+  if (role === ROLES.CHILD_AGENCY) return <ChildCustomers />
+  if (role === ROLES.SUB_CHILD) return <SubChildCustomers />
   const [q, setQ] = useState('')
   const [loading, setLoading] = useState(false)
   const [rows, setRows] = useState([])
@@ -622,90 +628,7 @@ export default function AgencyCustomers() {
       </div>
 
       {/* View customer details */}
-      <Modal isOpen={viewOpen} onClose={() => setViewOpen(false)} title="Customer details" size="xl">
-        {!viewTarget ? (
-          <div className="p-6 text-sm text-gray-500">No customer selected.</div>
-        ) : (
-          <div className="space-y-4">
-            <div className="rounded-xl border border-gray-100 bg-gray-50 px-4 py-3 text-sm text-gray-700">
-              <div>
-                <span className="font-semibold">Name:</span> {viewTarget.name || '—'}
-              </div>
-              <div>
-                <span className="font-semibold">Phone:</span> {viewTarget.phone || '—'}
-              </div>
-              <div>
-                <span className="font-semibold">Email:</span> {viewTarget.email || '—'}
-              </div>
-              <div>
-                <span className="font-semibold">Total Trips:</span> {viewTarget.trips || 0}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 text-sm">
-              <div className="rounded-lg border border-gray-100 bg-white px-3 py-2">
-                <span className="font-semibold text-gray-700">Status:</span>{' '}
-                <span className="text-gray-600">{viewTarget.isActive ? 'Active' : 'Inactive'}</span>
-              </div>
-              <div className="rounded-lg border border-gray-100 bg-white px-3 py-2">
-                <span className="font-semibold text-gray-700">Notes:</span>{' '}
-                <span className="text-gray-600">{viewTarget.notes || '—'}</span>
-              </div>
-            </div>
-
-            <div className="rounded-lg border border-gray-100 bg-white px-3 py-2 text-sm">
-              <div className="font-semibold text-gray-700 mb-2">Documents</div>
-              <div className="flex flex-wrap gap-2">
-                {viewTarget.docs?.aadharFront ? (
-                  <a href={fileHref(viewTarget.docs.aadharFront)} target="_blank" rel="noreferrer" className="rounded-full bg-gray-50 px-2 py-0.5 text-xs font-semibold text-gray-700 ring-1 ring-inset ring-gray-200 hover:bg-gray-100">Aadhar Front</a>
-                ) : null}
-                {viewTarget.docs?.aadharBack ? (
-                  <a href={fileHref(viewTarget.docs.aadharBack)} target="_blank" rel="noreferrer" className="rounded-full bg-gray-50 px-2 py-0.5 text-xs font-semibold text-gray-700 ring-1 ring-inset ring-gray-200 hover:bg-gray-100">Aadhar Back</a>
-                ) : null}
-                {viewTarget.docs?.panCard ? (
-                  <a href={fileHref(viewTarget.docs.panCard)} target="_blank" rel="noreferrer" className="rounded-full bg-gray-50 px-2 py-0.5 text-xs font-semibold text-gray-700 ring-1 ring-inset ring-gray-200 hover:bg-gray-100">PAN Card</a>
-                ) : null}
-                {viewTarget.docs?.passport ? (
-                  <a href={fileHref(viewTarget.docs.passport)} target="_blank" rel="noreferrer" className="rounded-full bg-gray-50 px-2 py-0.5 text-xs font-semibold text-gray-700 ring-1 ring-inset ring-gray-200 hover:bg-gray-100">Passport</a>
-                ) : null}
-                {viewTarget.docs?.visaDoc ? (
-                  <a href={fileHref(viewTarget.docs.visaDoc)} target="_blank" rel="noreferrer" className="rounded-full bg-gray-50 px-2 py-0.5 text-xs font-semibold text-gray-700 ring-1 ring-inset ring-gray-200 hover:bg-gray-100">Visa</a>
-                ) : null}
-                {(viewTarget.docs?.otherDocs || []).map((pathValue, idx) => (
-                  <a
-                    key={`${pathValue}-${idx}`}
-                    href={fileHref(pathValue)}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="rounded-full bg-gray-50 px-2 py-0.5 text-xs font-semibold text-gray-700 ring-1 ring-inset ring-gray-200 hover:bg-gray-100"
-                  >
-                    Other Doc {idx + 1}
-                  </a>
-                ))}
-                {!viewTarget.docs?.aadharFront &&
-                !viewTarget.docs?.aadharBack &&
-                !viewTarget.docs?.panCard &&
-                !viewTarget.docs?.passport &&
-                !viewTarget.docs?.visaDoc &&
-                (!Array.isArray(viewTarget.docs?.otherDocs) || viewTarget.docs.otherDocs.length === 0) ? (
-                  <span className="text-xs text-gray-500">No documents uploaded.</span>
-                ) : null}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 text-xs text-gray-500">
-              <div>
-                <span className="font-semibold">Created:</span>{' '}
-                {viewTarget.createdAt ? new Date(viewTarget.createdAt).toLocaleString() : '—'}
-              </div>
-              <div>
-                <span className="font-semibold">Last Updated:</span>{' '}
-                {viewTarget.updatedAt ? new Date(viewTarget.updatedAt).toLocaleString() : '—'}
-              </div>
-            </div>
-          </div>
-        )}
-      </Modal>
+      <CustomerDetailModal isOpen={viewOpen} onClose={() => setViewOpen(false)} customer={viewTarget} />
 
       {/* Edit customer */}
       <Modal
