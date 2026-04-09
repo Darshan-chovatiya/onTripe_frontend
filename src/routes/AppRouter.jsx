@@ -44,6 +44,17 @@ import AgencyBookings from '@/travelAgency/agency/pages/AgencyBookings.jsx'
 import AgencyMyBookings from '@/travelAgency/agency/pages/AgencyMyBookings.jsx'
 import AgencyManageDownstream from '@/travelAgency/agency/pages/AgencyManageDownstream.jsx'
 import ParentNotificationHistory from '@/travelAgency/parentAgency/pages/ParentNotificationHistory.jsx'
+import ChildNotificationHistory from '@/travelAgency/childAgency/pages/ChildNotificationHistory.jsx'
+import AgencyCustomerNotificationHistory from '@/travelAgency/agency/pages/AgencyCustomerNotificationHistory.jsx'
+import { useAgencyPermissions } from '@/travelAgency/agency/hooks/useAgencyPermissions.js'
+import { ROLES } from '@/shared/utils/constants.js'
+
+function ManageDownstreamNotificationHistory() {
+  const { role } = useAgencyPermissions()
+  if (role === ROLES.PARENT_AGENCY) return <ParentNotificationHistory />
+  if (role === ROLES.CHILD_AGENCY) return <ChildNotificationHistory />
+  return null
+}
 import AgencyCustomers from '@/travelAgency/agency/pages/AgencyCustomers.jsx'
 import AgencyCustomerTrips from '@/travelAgency/agency/pages/AgencyCustomerTrips.jsx'
 import AgencySettings from '@/travelAgency/agency/pages/AgencySettings.jsx'
@@ -228,8 +239,16 @@ export default function AppRouter() {
         <Route
           path="manage-downstream/notification-history"
           element={
-            <AgencyPermissionRoute permission={P.NETWORK_CHILDREN}>
-              <ParentNotificationHistory />
+            <AgencyPermissionRoute anyOf={[P.NETWORK_CHILDREN, P.NETWORK_SUBCHILDREN]}>
+              <ManageDownstreamNotificationHistory />
+            </AgencyPermissionRoute>
+          }
+        />
+        <Route
+          path="customers/notification-history"
+          element={
+            <AgencyPermissionRoute permission={P.CUSTOMERS}>
+              <AgencyCustomerNotificationHistory />
             </AgencyPermissionRoute>
           }
         />
