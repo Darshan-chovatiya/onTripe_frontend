@@ -1,13 +1,18 @@
 import { useState } from 'react'
-import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
-import { Mail, Lock, Eye, EyeOff, Ticket, Clock } from 'lucide-react'
+import { Link, Navigate, useNavigate } from 'react-router-dom'
+import { Mail, Lock, Eye, EyeOff, Clock } from 'lucide-react'
 import { useAuth } from '@/shared/context/AuthContext.jsx'
 import Loader from '@/shared/components/Loader.jsx'
 import { getRoleRedirectPath } from '@/shared/utils/roleHelpers.js'
 
+const REGISTRATION_LINKS = [
+  { to: '/travelAgency/parent/register', label: 'Parent agency' },
+  { to: '/travelAgency/child/register', label: 'Child agent' },
+  { to: '/travelAgency/subchild/register', label: 'Sub-child' },
+]
+
 export default function AgentAdminLogin() {
   const navigate = useNavigate()
-  const location = useLocation()
   const { isAuthenticated, isCheckingAuth, user, login, isLoading } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -44,91 +49,116 @@ export default function AgentAdminLogin() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
-      <div className="w-full max-w-md animate-scale-in rounded-xl border border-gray-200 bg-white p-8 shadow-sm">
-        <div className="mb-6 text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-xl bg-primary-600 shadow-lg">
-            <Ticket className="h-8 w-8 text-white" />
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900">Login</h1>
-          <p className="mt-1 text-sm text-gray-600">Sign in to continue</p>
-        </div>
+    <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 px-4 py-10">
+      <div className="w-full max-w-[400px] animate-fade-in">
+        <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+          <header className="bg-primary-700 px-8 py-7 text-center">
+            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-primary-200">OnTrip</p>
+            <h1 className="mt-3 text-xl font-semibold tracking-tight text-white sm:text-2xl">Sign in</h1>
+            <p className="mt-2 text-sm leading-snug text-primary-100">
+              Administrator and agency accounts. Use your registered email and password.
+            </p>
+          </header>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {kycPending && (
-            <div className="flex items-start gap-3 rounded-xl border border-yellow-200 bg-yellow-50 p-4">
-              <Clock className="mt-0.5 h-5 w-5 shrink-0 text-yellow-600" />
+          <div className="p-8">
+            <form onSubmit={handleSubmit} className="space-y-5">
+              {kycPending && (
+                <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4">
+                  <Clock className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" strokeWidth={2} />
+                  <div>
+                    <p className="text-sm font-semibold text-amber-900">KYC approval pending</p>
+                    <p className="mt-0.5 text-xs text-amber-800/90">
+                      Your account is under review. You can sign in once KYC is approved.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {error ? (
+                <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">{error}</div>
+              ) : null}
+
               <div>
-                <p className="text-sm font-semibold text-yellow-800">KYC Approval Pending</p>
-                <p className="mt-0.5 text-xs text-yellow-700">
-                  Your account is under review. You can log in once KYC is approved.
-                </p>
+                <label htmlFor="agency-email" className="mb-1.5 flex items-center gap-2 text-sm font-medium text-gray-700">
+                  <Mail className="h-4 w-4 text-primary-600" strokeWidth={2} />
+                  Email
+                </label>
+                <input
+                  id="agency-email"
+                  type="email"
+                  className="input-field"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="name@company.com"
+                  autoComplete="email"
+                  required
+                />
               </div>
-            </div>
-          )}
 
-          {error && <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div>}
+              <div>
+                <label htmlFor="agency-password" className="mb-1.5 flex items-center gap-2 text-sm font-medium text-gray-700">
+                  <Lock className="h-4 w-4 text-primary-600" strokeWidth={2} />
+                  Password
+                </label>
+                <div className="relative">
+                  <input
+                    id="agency-password"
+                    type={showPassword ? 'text' : 'password'}
+                    className="input-field pr-11"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Enter your password"
+                    autoComplete="current-password"
+                    required
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+                    onClick={() => setShowPassword((v) => !v)}
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" strokeWidth={2} /> : <Eye className="h-4 w-4" strokeWidth={2} />}
+                  </button>
+                </div>
+              </div>
 
-          <div>
-            <label className="mb-1 flex items-center gap-2 text-sm font-medium text-gray-700">
-              <Mail className="h-4 w-4 text-primary-500" /> Email address <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="email"
-              className="input-field"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="name@ontrip.com"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="mb-1 flex items-center gap-2 text-sm font-medium text-gray-700">
-              <Lock className="h-4 w-4 text-primary-500" /> Password <span className="text-red-500">*</span>
-            </label>
-            <div className="relative">
-              <input
-                type={showPassword ? 'text' : 'password'}
-                className="input-field pr-10"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                required
-              />
-              <button
-                type="button"
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-primary-500"
-                onClick={() => setShowPassword((v) => !v)}
-              >
-                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              <button type="submit" disabled={isLoading} className="btn-primary w-full py-3 text-sm font-semibold">
+                {isLoading ? (
+                  <span className="inline-flex items-center justify-center gap-2">
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                    Signing in…
+                  </span>
+                ) : (
+                  'Sign in'
+                )}
               </button>
+            </form>
+
+            <div className="mt-4">
+              <nav className="text-center" aria-label="Agency registration">
+                <p className="text-xs text-gray-500">New agency account</p>
+                <p className="mt-1 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-sm leading-relaxed text-gray-600">
+                  {REGISTRATION_LINKS.map((item, i) => (
+                    <span key={item.to} className="inline-flex items-center">
+                      {i > 0 ? <span className="mr-2 text-gray-300 select-none">·</span> : null}
+                      <Link
+                        to={item.to}
+                        className="font-medium text-primary-600 underline-offset-2 transition-colors hover:text-primary-700 hover:underline"
+                      >
+                        {item.label}
+                      </Link>
+                    </span>
+                  ))}
+                </p>
+              </nav>
             </div>
           </div>
-
-          <button type="submit" disabled={isLoading} className="btn-primary w-full">
-            {isLoading ? (
-              <div className="flex items-center justify-center gap-2">
-                <Loader size="sm" color="white" /> Signing in...
-              </div>
-            ) : (
-              'Sign In'
-            )}
-          </button>
-        </form>
-
-        <div className="mt-6 flex items-center justify-center gap-1 text-center text-sm text-gray-600">
-          <span className="whitespace-nowrap">Need an account?</span>
-          <Link to="/travelAgency/parent/register" className="whitespace-nowrap font-semibold text-primary-600 hover:underline">
-            Parent register
-          </Link>
-          <span className="text-gray-400">·</span>
-          <Link to="/travelAgency/child/register" className="whitespace-nowrap font-semibold text-primary-600 hover:underline">
-            Child/Sub-child register
-          </Link>
         </div>
+
+        <p className="mt-8 text-center text-xs text-gray-400">
+          © {new Date().getFullYear()} OnTrip. All rights reserved.
+        </p>
       </div>
     </div>
   )
 }
-
