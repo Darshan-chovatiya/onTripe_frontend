@@ -4,25 +4,14 @@ import {
   Clock,
   MapPin,
   Phone,
-  User,
   ChevronRight,
   ChevronLeft,
-  Ticket,
-  Hotel,
-  Car,
   Utensils,
   Activity,
   Info,
-  ExternalLink,
-  Home as HomeIcon,
-  Search,
-  History,
   LogOut,
-  CheckCircle2,
-  XCircle,
-  Building2,
-  Maximize2,
-  MessageSquare
+  MessageSquare,
+  Star
 } from 'lucide-react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '@/shared/context/AuthContext.jsx'
@@ -30,6 +19,7 @@ import { useToast } from '@/shared/components/ToastContainer.jsx'
 import axiosInstance from '@/shared/services/axiosInstance.js'
 import Loader from '@/shared/components/Loader.jsx'
 import CommunityChat from '../components/CommunityChat.jsx'
+import ReviewSection from '../components/ReviewSection.jsx'
 
 const BASE_IMG_URL = import.meta.env.VITE_API_BASE_URL?.replace('/api', '').replace(/\/$/, '') || 'http://localhost:5001'
 const getFullUrl = (path) => path ? `${BASE_IMG_URL}/${path.replace(/\\/g, '/')}` : null
@@ -37,7 +27,7 @@ const getFullUrl = (path) => path ? `${BASE_IMG_URL}/${path.replace(/\\/g, '/')}
 export default function Booking() {
   const navigate = useNavigate()
   const { bookingId: paramBookingId } = useParams()
-  const { user, logout } = useAuth()
+  const { logout } = useAuth()
   const { toast } = useToast()
 
   const [booking, setBooking] = useState(null)
@@ -203,18 +193,24 @@ export default function Booking() {
 
       {/* Main Experience Selector (Tabs) */}
       <div className="sticky top-4 z-50 px-4">
-         <div className="max-w-md mx-auto bg-white/80 dark:bg-gray-800/80 backdrop-blur-2xl p-1.5 rounded-[2rem] shadow-2xl border border-gray-100 dark:border-white/5 flex gap-2">
+         <div className="max-w-2xl mx-auto bg-white/80 dark:bg-gray-800/80 backdrop-blur-2xl p-1.5 rounded-[2rem] shadow-2xl border border-gray-100 dark:border-white/5 flex gap-2">
             <button 
               onClick={() => setActiveTab('itinerary')}
-              className={`flex-1 flex items-center justify-center gap-3 py-4 rounded-[1.5rem] font-black text-xs uppercase tracking-widest transition-all duration-500 ${activeTab === 'itinerary' ? 'bg-primary-600 text-white shadow-xl shadow-primary-200' : 'text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5'}`}
+              className={`flex-1 flex items-center justify-center gap-2 py-4 rounded-[1.5rem] font-black text-xs uppercase tracking-widest transition-all duration-500 ${activeTab === 'itinerary' ? 'bg-primary-600 text-white shadow-xl shadow-primary-200' : 'text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5'}`}
             >
-               <Calendar size={18} /> Itinerary
+               <Calendar size={16} /> Itinerary
             </button>
             <button 
               onClick={() => setActiveTab('community')}
-              className={`flex-1 flex items-center justify-center gap-3 py-4 rounded-[1.5rem] font-black text-xs uppercase tracking-widest transition-all duration-500 ${activeTab === 'community' ? 'bg-primary-600 text-white shadow-xl shadow-primary-200' : 'text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5'}`}
+              className={`flex-1 flex items-center justify-center gap-2 py-4 rounded-[1.5rem] font-black text-xs uppercase tracking-widest transition-all duration-500 ${activeTab === 'community' ? 'bg-primary-600 text-white shadow-xl shadow-primary-200' : 'text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5'}`}
             >
-               <MessageSquare size={18} /> Community
+               <MessageSquare size={16} /> Community
+            </button>
+            <button 
+              onClick={() => setActiveTab('reviews')}
+              className={`flex-1 flex items-center justify-center gap-2 py-4 rounded-[1.5rem] font-black text-xs uppercase tracking-widest transition-all duration-500 ${activeTab === 'reviews' ? 'bg-primary-600 text-white shadow-xl shadow-primary-200' : 'text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5'}`}
+            >
+               <Star size={16} /> Reviews
             </button>
          </div>
       </div>
@@ -240,7 +236,7 @@ export default function Booking() {
 
           {/* Active Day Content */}
           {activeDay ? (
-            <div className="w-full space-y-10 max-w-6xl mx-auto px-4">
+            <div className="w-full space-y-10 px-4">
               <div className="grid md:grid-cols-3 gap-6">
                 {/* Title Card */}
                 <div className="md:col-span-2 rounded-[2.5rem] bg-white dark:bg-gray-800 p-8 md:p-12 shadow-2xl shadow-gray-100/50 border border-gray-50 dark:border-white/5 relative overflow-hidden">
@@ -315,7 +311,7 @@ export default function Booking() {
             <div className="flex h-80 items-center justify-center rounded-[3rem] border-4 border-dashed border-gray-100 text-gray-300 font-black uppercase tracking-[0.3em] text-sm">Select A Day To Begin</div>
           )}
         </>
-      ) : (
+      ) : activeTab === 'community' ? (
         <div className="px-4">
            {booking.package?._id ? (
              <CommunityChat packageId={booking.package._id} customerId={booking.customer?._id} />
@@ -323,6 +319,12 @@ export default function Booking() {
              <div className="text-center p-20 opacity-40 uppercase font-black text-xs tracking-widest">Community Unavailable</div>
            )}
         </div>
+      ) : (
+        <ReviewSection
+          bookingId={booking.bookingId}
+          packageId={booking.package?._id}
+          bookingStatus={booking.bookingStatus}
+        />
       )}
     </div>
   )
