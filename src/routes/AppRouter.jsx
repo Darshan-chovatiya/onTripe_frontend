@@ -3,20 +3,16 @@ import ProtectedRoute from '@/routes/ProtectedRoute.jsx'
 import AgencyPermissionRoute from '@/routes/AgencyPermissionRoute.jsx'
 import AgencyLegacyRedirect from '@/routes/AgencyLegacyRedirect.jsx'
 
-import Login from '@/auth/pages/Login.jsx'
+import AgentAdminLogin from '@/auth/pages/AgentAdminLogin.jsx'
+import CustomerLogin from '@/auth/pages/Login.jsx'
 import ForgotPassword from '@/auth/pages/ForgotPassword.jsx'
 import Unauthorized from '@/pages/Unauthorized.jsx'
 import Landing from '@/pages/Landing.jsx'
 
-import ChildAgentLogin from '@/travelAgency/childAgency/auth/Login.jsx'
 import ChildAgentRegister from '@/travelAgency/childAgency/auth/Register.jsx'
-import SubChildLogin from '@/travelAgency/subChild/auth/Login.jsx'
 import SubChildRegister from '@/travelAgency/subChild/auth/Register.jsx'
 
-import ParentAgentLogin from '@/travelAgency/parentAgency/auth/Login.jsx'
 import ParentAgentRegister from '@/travelAgency/parentAgency/auth/Register.jsx'
-
-import AdminLogin from '@/admin/auth/Login.jsx'
 
 import AdminLayout from '@/admin/components/AdminLayout.jsx'
 import AdminDashboard from '@/admin/pages/Dashboard.jsx'
@@ -24,10 +20,15 @@ import AdminUsers from '@/admin/pages/Users.jsx'
 import AdminAgencies from '@/admin/pages/Agencies.jsx'
 import AdminSettings from '@/admin/pages/Settings.jsx'
 import AdminCustomers from '@/admin/pages/Customers.jsx'
+import AdminCustomerDetail from '@/admin/pages/CustomerDetail.jsx'
 import AdminPackages from '@/admin/pages/Packages.jsx'
-import AdminWhitelabels from '@/admin/pages/Whitelabels.jsx'
+import AdminPackageWhitelabels from '@/admin/pages/PackageWhitelabels.jsx'
+import AdminPackageBookings from '@/admin/pages/PackageBookings.jsx'
+import AdminPackageCommunity from '@/admin/pages/PackageCommunity.jsx'
 import AdminAgencyNetwork from '@/admin/pages/AgencyNetwork.jsx'
 import AdminChildAgencies from '@/admin/pages/ChildAgencies.jsx'
+import AdminAgentWhitelabels from '@/admin/pages/AgentWhitelabels.jsx'
+import AdminAgentCustomers from '@/admin/pages/AgentCustomers.jsx'
 import AdminNotifications from '@/admin/pages/Notifications.jsx'
 
 import AgencyLayout from '@/travelAgency/shared/components/AgencyLayout.jsx'
@@ -35,6 +36,7 @@ import AgencyPanelSidebar from '@/travelAgency/agency/components/AgencyPanelSide
 import AgencyDashboard from '@/travelAgency/agency/pages/AgencyDashboard.jsx'
 import AgencyPackages from '@/travelAgency/agency/pages/AgencyPackages.jsx'
 import AgencyPackageDetail from '@/travelAgency/agency/pages/AgencyPackageDetail.jsx'
+import AgencyPackageCommunity from '@/travelAgency/agency/pages/AgencyPackageCommunity.jsx'
 import AgencyVendors from '@/travelAgency/agency/pages/AgencyVendors.jsx'
 import AgencyBookings from '@/travelAgency/agency/pages/AgencyBookings.jsx'
 import AgencyMyBookings from '@/travelAgency/agency/pages/AgencyMyBookings.jsx'
@@ -46,30 +48,37 @@ import { P } from '@/travelAgency/agency/rbac/agencyPermissions.js'
 
 import CustomerLayout from '@/customer/components/CustomerLayout.jsx'
 import CustomerBooking from '@/customer/pages/Booking.jsx'
+import BookingCommunity from '@/customer/pages/BookingCommunity.jsx'
 import CustomerTripHistory from '@/customer/pages/TripHistory.jsx'
 import CustomerProfile from '@/customer/pages/Profile.jsx'
 import CustomerCommunity from '@/customer/pages/Community.jsx'
+import VendorLogin from '@/vendor/auth/Login.jsx'
+import VendorDashboard from '@/vendor/pages/Dashboard.jsx'
+import VendorPackageDetails from '@/vendor/pages/PackageDetails.jsx'
 
 export default function AppRouter() {
   return (
     <Routes>
       <Route path="/" element={<Landing />} />
 
-      <Route path="/login" element={<Login />} />
+      <Route path="/login" element={<AgentAdminLogin />} />
+      <Route path="/customer/login" element={<CustomerLogin />} />
+      <Route path="/vendor/login" element={<VendorLogin />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/unauthorized" element={<Unauthorized />} />
 
-      <Route path="/admin/login" element={<AdminLogin />} />
+      <Route path="/admin/login" element={<Navigate to="/login" replace />} />
 
       {/* Child and Sub-child Auth Routes */}
-      <Route path="/travelAgency/child/login" element={<ChildAgentLogin />} />
+      <Route path="/travelAgency/child/login" element={<Navigate to="/login" replace />} />
       <Route path="/travelAgency/child/register" element={<ChildAgentRegister />} />
-      <Route path="/travelAgency/subchild/login" element={<SubChildLogin />} />
+      <Route path="/travelAgency/subchild/login" element={<Navigate to="/login" replace />} />
       <Route path="/travelAgency/subchild/register" element={<SubChildRegister />} />
 
       {/* Parent Auth Routes */}
-      <Route path="/travelAgency/parent/login" element={<ParentAgentLogin />} />
+      <Route path="/travelAgency/parent/login" element={<Navigate to="/login" replace />} />
       <Route path="/travelAgency/parent/register" element={<ParentAgentRegister />} />
+      <Route path="/agency/login" element={<Navigate to="/login" replace />} />
 
       <Route
         path="/admin"
@@ -82,10 +91,17 @@ export default function AppRouter() {
         <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard" element={<AdminDashboard />} />
         <Route path="customers" element={<AdminCustomers />} />
+        <Route path="customers/:customerId" element={<AdminCustomerDetail />} />
+        <Route path="packages/:packageId/whitelabels" element={<AdminPackageWhitelabels />} />
+        <Route path="packages/:packageId/bookings" element={<AdminPackageBookings />} />
+        <Route path="packages/:packageId/community" element={<AdminPackageCommunity />} />
         <Route path="packages" element={<AdminPackages />} />
-        <Route path="whitelabels" element={<AdminWhitelabels />} />
         <Route path="agencies" element={<AdminAgencies />} />
         <Route path="agencies/network/:parentId" element={<AdminAgencyNetwork />} />
+        <Route path="child-agencies/:agentId/whitelabels" element={<AdminAgentWhitelabels />} />
+        <Route path="sub-child-agencies/:agentId/whitelabels" element={<AdminAgentWhitelabels />} />
+        <Route path="child-agencies/:agentId/customers" element={<AdminAgentCustomers />} />
+        <Route path="sub-child-agencies/:agentId/customers" element={<AdminAgentCustomers />} />
         <Route path="child-agencies" element={<AdminChildAgencies key="admin-child-agencies" />} />
         <Route
           path="sub-child-agencies"
@@ -142,6 +158,14 @@ export default function AppRouter() {
           element={
             <AgencyPermissionRoute anyOf={[P.PACKAGES_FULL, P.PACKAGES_CLONE]}>
               <AgencyPackages />
+            </AgencyPermissionRoute>
+          }
+        />
+        <Route
+          path="packages/:packageId/community"
+          element={
+            <AgencyPermissionRoute anyOf={[P.PACKAGES_FULL, P.PACKAGES_CLONE]}>
+              <AgencyPackageCommunity />
             </AgencyPermissionRoute>
           }
         />
@@ -205,6 +229,24 @@ export default function AppRouter() {
         <Route path="settings" element={<AgencySettings />} />
       </Route>
 
+      <Route path="/vendor" element={<Navigate to="/vendor/dashboard" replace />} />
+      <Route
+        path="/vendor/dashboard"
+        element={
+          <ProtectedRoute>
+            <VendorDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/vendor/package/:packageId"
+        element={
+          <ProtectedRoute>
+            <VendorPackageDetails />
+          </ProtectedRoute>
+        }
+      />
+
       <Route
         path="/customer"
         element={
@@ -214,6 +256,7 @@ export default function AppRouter() {
         }
       >
         <Route index element={<Navigate to="booking" replace />} />
+        <Route path="booking/:bookingId/community" element={<BookingCommunity />} />
         <Route path="booking/:bookingId?" element={<CustomerBooking />} />
         <Route path="trip-history" element={<CustomerTripHistory />} />
         <Route path="community" element={<CustomerCommunity />} />

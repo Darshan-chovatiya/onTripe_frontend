@@ -21,6 +21,7 @@ import { useToast } from '@/shared/components/ToastContainer.jsx'
 import Loader from '@/shared/components/Loader.jsx'
 import Modal from '@/shared/components/Modal.jsx'
 import CustomDropdown from '@/shared/components/CustomDropdown.jsx'
+import Pagination from '@/admin/components/Pagination.jsx'
 
 // Internal component for Sub-Child Agency Listing inside nested Modal
 const SubChildAgenciesModal = ({ isOpen, onClose, parentAgency, onToggleStatus, getStatusBadge }) => {
@@ -38,7 +39,7 @@ const SubChildAgenciesModal = ({ isOpen, onClose, parentAgency, onToggleStatus, 
     try {
       const params = {
         page,
-        limit: 5,
+        limit: 10,
         role: 'sub_child_agent',
         parentRef: parentAgency._id,
         isActive: status === 'all' ? undefined : (status === 'active' ? 'true' : 'false'),
@@ -296,6 +297,7 @@ const AgencyNetwork = () => {
   const [status, setStatus] = useState('all')
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
+  const [total, setTotal] = useState(0)
 
   const fetchParentAndChildren = async () => {
     setLoading(true)
@@ -319,6 +321,7 @@ const AgencyNetwork = () => {
       if (data?.success) {
         setChildren(data.data.agents)
         setTotalPages(data.data.totalPages)
+        setTotal(data.data.totalCount ?? 0)
       }
     } catch (error) {
       toast.error('Network synchronization failed')
@@ -532,15 +535,13 @@ const AgencyNetwork = () => {
            </table>
         </div>
 
-        {totalPages > 1 && (
-          <div className="px-8 py-5 border-t border-slate-50 flex items-center justify-between bg-slate-50/10">
-             <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Matrix P.{page} of {totalPages}</span>
-             <div className="flex gap-2">
-                <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="h-8 px-3 rounded-lg border border-slate-200 text-slate-500 font-black text-[10px] uppercase hover:bg-white disabled:opacity-30 transition-all"><ChevronLeft size={16} /></button>
-                <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="h-8 px-3 rounded-lg border border-slate-200 text-slate-500 font-black text-[10px] uppercase hover:bg-white disabled:opacity-30 transition-all"><ChevronRight size={16} /></button>
-             </div>
-          </div>
-        )}
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          total={total}
+          limit={10}
+          onPageChange={setPage}
+        />
       </div>
 
       {/* Re-implementing the Modal approach for sub-children as requested */}

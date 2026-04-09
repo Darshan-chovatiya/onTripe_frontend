@@ -50,8 +50,24 @@ export function listCustomers(params) {
   return axiosInstance.get('/admin/customers/detailed', { params })
 }
 
+export function getCustomer(customerId) {
+  return axiosInstance.get(`/admin/customers/${customerId}`)
+}
+
 export function listPackages(params) {
   return axiosInstance.get('/admin/packages', { params })
+}
+
+export function listWhitelabelsByPackage(packageId) {
+  return axiosInstance.get(`/admin/packages/${packageId}/whitelabels`)
+}
+
+export function listBookingsByPackage(packageId, params) {
+  return axiosInstance.get(`/admin/packages/${packageId}/bookings`, { params })
+}
+
+export function listWhitelabelsByAgent(agentId) {
+  return axiosInstance.get(`/admin/agents/${agentId}/whitelabels`)
 }
 
 export function getAgent(id) {
@@ -83,10 +99,14 @@ const adminApi = {
   updateAgent,
   deleteAgent,
   listCustomers,
+  getCustomer,
   listPackages,
-  listWhitelabelPackages: (params) => axiosInstance.get('/admin/whitelabels', { params }),
+  listWhitelabelsByPackage,
+  listBookingsByPackage,
+  listWhitelabelsByAgent,
   getAgent,
   getAgencyCustomers: (id) => axiosInstance.get(`/admin/agents/${id}/customers`),
+  getCustomerBookings: (id) => axiosInstance.get(`/admin/customers/${id}/bookings`),
   approvePackage: (id) => axiosInstance.patch(`/admin/packages/approve/${id}`),
   rejectPackage: (id, rejectionReason) => axiosInstance.patch(`/admin/packages/reject/${id}`, { rejectionReason }),
   getNotificationRecipients,

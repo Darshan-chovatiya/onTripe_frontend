@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { 
   Building2, 
+  Download,
   Search, 
   Eye, 
   Mail, 
@@ -13,13 +14,16 @@ import {
   CheckCircle,
   Clock,
   XCircle,
-  Package
+  Package,
+  Layers,
 } from 'lucide-react'
 import adminApi from '@/admin/services/adminApi'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
 import Loader from '@/shared/components/Loader.jsx'
 import CustomDropdown from '@/shared/components/CustomDropdown.jsx'
 import Modal from '@/shared/components/Modal.jsx'
+import Pagination from '@/admin/components/Pagination.jsx'
+import { exportToExcel } from '@/admin/utils/exportExcel.js'
 
 export default function ChildAgencies({ agentRole = 'child_agent', pageTitle = 'Child Agencies' }) {
   const { toast } = useToast()
@@ -30,6 +34,7 @@ export default function ChildAgencies({ agentRole = 'child_agent', pageTitle = '
   const [loading, setLoading] = useState(true)
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
+  const [total, setTotal] = useState(0)
   const [searchQuery, setSearchQuery] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
@@ -37,13 +42,11 @@ export default function ChildAgencies({ agentRole = 'child_agent', pageTitle = '
   const [parentFilter, setParentFilter] = useState(initialParentRef || 'all')
   const [parentOptions, setParentOptions] = useState([{ value: 'all', label: 'All parents' }])
   const [togglingId, setTogglingId] = useState(null)
+  const [exportLoading, setExportLoading] = useState(false)
 
   // Modal States
   const [selectedAgent, setSelectedAgent] = useState(null)
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
-  const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false)
-  const [agencyCustomers, setAgencyCustomers] = useState([])
-  const [loadingCustomers, setLoadingCustomers] = useState(false)
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -80,6 +83,7 @@ export default function ChildAgencies({ agentRole = 'child_agent', pageTitle = '
       if (data?.success) {
         setAgents(data.data.agents)
         setTotalPages(data.data.totalPages)
+        setTotal(data.data.totalCount ?? 0)
       }
     } catch (error) {
       toast.error(`Failed to fetch ${agentRole === 'sub_child_agent' ? 'sub-child' : 'child'} agencies`)
@@ -143,21 +147,10 @@ export default function ChildAgencies({ agentRole = 'child_agent', pageTitle = '
     )
   }
 
-  const handleFetchCustomers = async (agent) => {
-    setSelectedAgent(agent)
-    setLoadingCustomers(true)
-    setIsCustomerModalOpen(true)
-    try {
-      const { data } = await adminApi.getAgencyCustomers(agent._id)
-      if (data?.success) {
-        setAgencyCustomers(data.data.customers)
-      }
-    } catch (error) {
-      toast.error('Failed to retrieve associated traveler profiles')
-    } finally {
-      setLoadingCustomers(false)
-    }
-  }
+  const customersPathForAgent = (id) =>
+    agentRole === 'sub_child_agent'
+      ? `/admin/sub-child-agencies/${id}/customers`
+      : `/admin/child-agencies/${id}/customers`
 
   const AgentDetailModal = () => (
     <Modal
@@ -175,19 +168,43 @@ export default function ChildAgencies({ agentRole = 'child_agent', pageTitle = '
             </p>
           </div>
 
-          <div className="grid grid-cols-3 gap-3">
-            <div className="rounded-xl border border-gray-200 bg-gray-50/80 px-4 py-3 text-center">
-              <div className="text-xs font-medium text-gray-500">Sub-child</div>
-              <p className="mt-1 text-xl font-semibold text-gray-900">{selectedAgent.childCount ?? 0}</p>
-            </div>
-            <div className="rounded-xl border border-gray-200 bg-gray-50/80 px-4 py-3 text-center">
+          <div
+            className={`grid gap-3 ${agentRole === 'sub_child_agent' ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1 sm:grid-cols-3'}`}
+          >
+            {agentRole !== 'sub_child_agent' ? (
+              <div className="rounded-xl border border-gray-200 bg-gray-50/80 px-4 py-3 text-center">
+                <div className="text-xs font-medium text-gray-500">Sub-child</div>
+                <p className="mt-1 text-xl font-semibold text-gray-900">{selectedAgent.childCount ?? 0}</p>
+              </div>
+            ) : null}
+            <button
+              type="button"
+              onClick={() => {
+                setIsDetailModalOpen(false)
+                navigate(
+                  agentRole === 'sub_child_agent'
+                    ? `/admin/sub-child-agencies/${selectedAgent._id}/whitelabels`
+                    : `/admin/child-agencies/${selectedAgent._id}/whitelabels`
+                )
+              }}
+              className="rounded-xl border border-gray-200 bg-gray-50/80 px-4 py-3 text-center transition-colors hover:border-primary-200 hover:bg-primary-50/60"
+              title="View all whitelabel packages for this agent"
+            >
               <div className="text-xs font-medium text-gray-500">Whitelabels</div>
               <p className="mt-1 text-xl font-semibold text-gray-900">{selectedAgent.whitelabelCount ?? 0}</p>
-            </div>
-            <div className="rounded-xl border border-gray-200 bg-gray-50/80 px-4 py-3 text-center">
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setIsDetailModalOpen(false)
+                navigate(customersPathForAgent(selectedAgent._id))
+              }}
+              className="rounded-xl border border-gray-200 bg-gray-50/80 px-4 py-3 text-center transition-colors hover:border-primary-200 hover:bg-primary-50/60"
+              title="View customers for this agency and its network"
+            >
               <div className="text-xs font-medium text-gray-500">Customers</div>
               <p className="mt-1 text-xl font-semibold text-gray-900">{selectedAgent.customerCount ?? 0}</p>
-            </div>
+            </button>
           </div>
 
           <div className="grid gap-4 rounded-xl border border-gray-200 bg-white p-4 sm:grid-cols-2">
@@ -219,60 +236,35 @@ export default function ChildAgencies({ agentRole = 'child_agent', pageTitle = '
     </Modal>
   )
 
-  const CustomerModal = () => (
-    <Modal
-      isOpen={isCustomerModalOpen}
-      onClose={() => setIsCustomerModalOpen(false)}
-      title={`Customers List of ${selectedAgent?.name}`}
-      size="lg"
-    >
-      <div className="space-y-4">
-        <p className="text-xs text-gray-400 font-bold uppercase tracking-widest leading-none">Customers managed by this agency and its network</p>
-        
-        <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm min-h-[300px]">
-           {loadingCustomers ? (
-              <div className="p-12 flex flex-col items-center justify-center">
-                 <Loader size="md" />
-                 <p className="text-[10px] font-bold text-gray-400 mt-4 tracking-widest uppercase">Fetching Customer List...</p>
-              </div>
-           ) : agencyCustomers.length === 0 ? (
-              <div className="p-12 text-center">
-                 <p className="text-sm text-gray-400 font-medium italic">No customers found for this agency.</p>
-              </div>
-           ) : (
-              <table className="w-full text-left">
-                 <thead className="bg-gray-50 border-b border-gray-100">
-                     <tr>
-                        <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest">Customer Details</th>
-                        <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest">Account Type</th>
-                        <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest">Managed By</th>
-                     </tr>
-                 </thead>
-                 <tbody className="divide-y divide-gray-50">
-                    {agencyCustomers.map((ac, idx) => (
-                      <tr key={ac._id || idx} className="hover:bg-gray-50/50 transition-colors">
-                         <td className="px-6 py-4">
-                            <div className="text-sm font-bold text-zinc-900">{ac.customer?.name}</div>
-                            <div className="text-[9px] font-black text-gray-400 uppercase tracking-widest">{ac.customer?.email}</div>
-                         </td>
-                         <td className="px-6 py-4">
-                            <div className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full w-fit uppercase tracking-tighter">
-                               {ac.customer?.role === 'sub_child_agent' ? 'Sub-Agent' : (ac.customer?.role === 'child_agent' ? 'Child Agent' : 'Regular Customer')}
-                            </div>
-                         </td>
-                         <td className="px-6 py-4">
-                            <div className="text-xs text-gray-600 font-bold">{ac.managedBy?.name}</div>
-                            <div className="text-[9px] font-black text-gray-400 uppercase tracking-widest">{ac.managedBy?.role?.replace(/_/g, ' ')}</div>
-                         </td>
-                      </tr>
-                    ))}
-                 </tbody>
-              </table>
-           )}
-        </div>
-      </div>
-    </Modal>
-  )
+  const handleExport = async () => {
+    setExportLoading(true)
+    try {
+      const { data } = await adminApi.listAgents({
+        role: agentRole, limit: 10000, page: 1,
+        isActive: statusFilter === 'all' ? undefined : (statusFilter === 'active' ? 'true' : 'false'),
+        search: debouncedSearch || undefined,
+        kycStatus: kycFilter === 'all' ? undefined : kycFilter,
+        parentRef: parentFilter === 'all' ? undefined : parentFilter,
+      })
+      const isSubChild = agentRole === 'sub_child_agent'
+      await exportToExcel(
+        (data?.data?.agents ?? []).map((a) => ({
+          Name: a.name, Email: a.email, Phone: a.phone || '',
+          'Agent Code': a.agentCode || '',
+          [isSubChild ? 'Child Agency' : 'Parent Agency']: a.parentName || '',
+          'Parent Code': a.parentCode || '',
+          'KYC Status': a.kyc?.status || 'pending',
+          'Account Status': a.isActive ? 'Active' : 'Inactive',
+          ...(isSubChild ? {} : { 'Sub-Child Count': a.childCount ?? 0 }),
+          Whitelabels: a.whitelabelCount ?? 0, Customers: a.customerCount ?? 0,
+          'Joined On': a.createdAt ? new Date(a.createdAt).toLocaleDateString() : '',
+        })),
+        isSubChild ? 'sub-child-agencies' : 'child-agencies',
+        isSubChild ? 'Sub-Child Agencies' : 'Child Agencies'
+      )
+    } catch { toast.error('Export failed') }
+    finally { setExportLoading(false) }
+  }
 
   return (
     <div className="animate-fade-in space-y-4">
@@ -285,6 +277,15 @@ export default function ChildAgencies({ agentRole = 'child_agent', pageTitle = '
               : 'Manage and monitor secondary distribution entities.'}
           </p>
         </div>
+        <button
+          type="button"
+          onClick={handleExport}
+          disabled={exportLoading}
+          className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 disabled:opacity-50 sm:w-auto"
+        >
+          {exportLoading ? <Loader size="sm" /> : <Download size={16} strokeWidth={2} />}
+          Export
+        </button>
       </div>
 
       <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
@@ -354,7 +355,9 @@ export default function ChildAgencies({ agentRole = 'child_agent', pageTitle = '
         ) : (
           <>
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[1100px] text-sm">
+              <table
+                className={`w-full text-sm ${agentRole === 'sub_child_agent' ? 'min-w-[980px]' : 'min-w-[1100px]'}`}
+              >
                 <thead className="border-b border-gray-200 bg-gray-50">
                   <tr>
                     <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-600">
@@ -364,7 +367,9 @@ export default function ChildAgencies({ agentRole = 'child_agent', pageTitle = '
                       {agentRole === 'sub_child_agent' ? 'Child agency' : 'Parent agency'}
                     </th>
                     <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-600">Contact</th>
-                    <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-600">Sub-child</th>
+                    {agentRole !== 'sub_child_agent' ? (
+                      <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-600">Sub-child</th>
+                    ) : null}
                     <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-600">Whitelabels</th>
                     <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-600">Customers</th>
                     <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-600">Status</th>
@@ -410,33 +415,41 @@ export default function ChildAgencies({ agentRole = 'child_agent', pageTitle = '
                           <span className="text-xs font-medium text-gray-700">{agent.phone || 'N/A'}</span>
                         </div>
                       </td>
-                      <td className="px-4 py-2.5">
-                        {agentRole === 'sub_child_agent' ? (
-                          <span className="text-xs text-gray-400">—</span>
-                        ) : (
+                      {agentRole !== 'sub_child_agent' ? (
+                        <td className="px-4 py-2.5">
                           <button
                             type="button"
                             onClick={() => navigate(`/admin/sub-child-agencies?parentRef=${agent._id}`)}
-                            className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-800 shadow-sm transition-colors hover:border-primary-200 hover:bg-primary-50/50 hover:text-primary-900"
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-800 transition-colors hover:border-primary-200 hover:bg-primary-50/50 hover:text-primary-900"
                           >
                             <Users className="h-3.5 w-3.5 text-gray-500" strokeWidth={2} />
                             <span>{agent.childCount || 0}</span>
-                            {/* <span className="text-gray-400">nodes</span> */}
-                            {/* <ArrowRight className="h-3 w-3 text-gray-400" strokeWidth={2} /> */}
                           </button>
-                        )}
-                      </td>
+                        </td>
+                      ) : null}
                       <td className="px-4 py-2.5">
-                        <div className="inline-flex items-center gap-1.5 rounded-lg border border-gray-100 bg-gray-50 px-2.5 py-1.5 text-xs font-medium text-gray-700">
-                          <Package className="h-3.5 w-3.5 text-gray-500" strokeWidth={2} />
+                        <button
+                          type="button"
+                          onClick={() =>
+                            navigate(
+                              agentRole === 'sub_child_agent'
+                                ? `/admin/sub-child-agencies/${agent._id}/whitelabels`
+                                : `/admin/child-agencies/${agent._id}/whitelabels`
+                            )
+                          }
+                          className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-gray-200 bg-gray-50 px-2.5 py-1.5 text-xs font-medium tabular-nums text-gray-800 transition-colors hover:border-primary-200 hover:bg-primary-50/50 hover:text-primary-900"
+                          title="View all whitelabel packages for this agent"
+                        >
+                          <Layers className="h-3.5 w-3.5 text-gray-500" strokeWidth={2} />
                           <span>{agent.whitelabelCount ?? 0}</span>
-                        </div>
+                        </button>
                       </td>
                       <td className="px-4 py-2.5">
                         <button
                           type="button"
-                          onClick={() => handleFetchCustomers(agent)}
-                          className="inline-flex items-center gap-1.5 rounded-lg border border-gray-100 bg-gray-50 px-2.5 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:border-gray-200 hover:bg-white"
+                          onClick={() => navigate(customersPathForAgent(agent._id))}
+                          className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-gray-200 bg-gray-50 px-2.5 py-1.5 text-xs font-medium tabular-nums text-gray-800 transition-colors hover:border-primary-200 hover:bg-primary-50/50 hover:text-primary-900"
+                          title="View customers for this agency and its network"
                         >
                           <UserRound className="h-3.5 w-3.5 text-gray-500" strokeWidth={2} />
                           <span>{agent.customerCount || 0}</span>
@@ -467,7 +480,7 @@ export default function ChildAgencies({ agentRole = 'child_agent', pageTitle = '
                             setSelectedAgent(agent)
                             setIsDetailModalOpen(true)
                           }}
-                          className="inline-flex rounded-lg border border-gray-200 bg-white p-2 text-gray-500 shadow-sm transition-colors hover:border-primary-200 hover:text-primary-700 active:scale-95"
+                          className="inline-flex rounded-lg border border-gray-200 bg-white p-2 text-gray-500 transition-colors hover:border-primary-200 hover:text-primary-700 active:scale-95"
                           title="View agency"
                         >
                           <Eye className="h-4 w-4" strokeWidth={2} />
@@ -479,39 +492,18 @@ export default function ChildAgencies({ agentRole = 'child_agent', pageTitle = '
               </table>
             </div>
 
-            {totalPages > 1 && (
-              <div className="flex items-center justify-between border-t border-gray-200 bg-gray-50 px-4 py-3">
-                <p className="text-xs text-gray-500">
-                  Page <span className="font-medium text-gray-900">{page}</span> of{' '}
-                  <span className="font-medium text-gray-900">{totalPages}</span>
-                </p>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setPage((p) => Math.max(1, p - 1))}
-                    disabled={page === 1}
-                    className="inline-flex h-8 items-center justify-center rounded-md border border-gray-200 bg-white px-3 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50 disabled:opacity-40"
-                  >
-                    Prev
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                    disabled={page === totalPages}
-                    className="inline-flex h-8 items-center justify-center rounded-md border border-gray-200 bg-white px-3 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50 disabled:opacity-40"
-                  >
-                    Next
-                  </button>
-                </div>
-              </div>
-            )}
+            <Pagination
+              page={page}
+              totalPages={totalPages}
+              total={total}
+              limit={10}
+              onPageChange={setPage}
+            />
           </>
         )}
       </div>
 
-      {/* Pop-up Modals */}
       <AgentDetailModal />
-      <CustomerModal />
     </div>
   )
 }

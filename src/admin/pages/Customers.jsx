@@ -1,308 +1,209 @@
-import { useEffect, useState } from 'react'
-import { 
-  Users, 
-  Search, 
-  Mail, 
-  Phone, 
-  ChevronLeft, 
-  ChevronRight, 
-  Eye, 
-  Calendar,
-  ShieldCheck,
-  UserCheck,
-  ArrowRight,
-  Building2,
-  FileText,
-  Building,
-  ExternalLink,
-  MapPin,
-  CheckCircle2,
-  AlertCircle
-} from 'lucide-react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { Users, Search, Mail, Phone, Building2, Download } from 'lucide-react'
 import adminApi from '@/admin/services/adminApi'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
 import Loader from '@/shared/components/Loader.jsx'
-import Modal from '@/shared/components/Modal.jsx'
+import Pagination from '@/admin/components/Pagination.jsx'
+import { exportToExcel } from '@/admin/utils/exportExcel.js'
 
-const CustomerDetailModal = ({ isOpen, onClose, customer }) => {
-  if (!customer) return null
-
-  return (
-    <Modal 
-      isOpen={isOpen} 
-      onClose={onClose} 
-      title="Customer Profile View" 
-      size="lg"
-    >
-      <div className="space-y-6">
-        {/* SECTION 1: GLOBAL PROFILE (MASTER DATA) */}
-        <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 pb-6 border-b border-gray-100">
-           <div className="flex items-center gap-4">
-              <div className="h-16 w-16 rounded-xl bg-gray-50 border border-gray-200 flex items-center justify-center text-primary-600 shadow-sm shrink-0">
-                  <Users size={32} />
-              </div>
-              <div className="space-y-1">
-                 <h3 className="text-xl font-bold text-zinc-900 leading-tight">{customer.name}</h3>
-                 <div className="flex flex-wrap gap-x-4 gap-y-1">
-                    <span className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
-                       <Phone size={12} className="text-gray-400" /> {customer.phone}
-                    </span>
-                    <span className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
-                       <Mail size={12} className="text-gray-400" /> {customer.email || 'N/A'}
-                    </span>
-                 </div>
-              </div>
-           </div>
-           <div className="bg-gray-50 border border-gray-200 px-4 py-3 rounded-xl shrink-0 text-center min-w-[150px]">
-              <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 leading-none">Joined Platforms</div>
-              <div className="text-sm font-black text-zinc-900">{new Date(customer.createdAt).toLocaleDateString()}</div>
-              <div className="text-[10px] text-primary-600 mt-1 font-bold">Verified Link</div>
-           </div>
-        </div>
-
-        {/* SECTION 2: AGENCY-SPECIFIC PROFILES */}
-        <div className="space-y-4">
-           <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Agency Profiles</h4>
-
-           {!customer.agencyProfiles || customer.agencyProfiles.length === 0 ? (
-             <div className="p-8 text-center rounded-xl border border-gray-100 bg-gray-50/50">
-                <p className="text-sm text-gray-500 italic">No associated agency profiles identified.</p>
-             </div>
-           ) : (
-             <div className="space-y-4">
-                {customer.agencyProfiles.map((profile, idx) => (
-                  <div key={idx} className="border border-gray-200 rounded-xl overflow-hidden bg-white hover:border-blue-200 transition-all shadow-sm">
-                     {/* Agency Header - Unified style */}
-                     <div className="px-4 py-3 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                           <Building2 size={14} className="text-gray-400" />
-                           <div className="text-xs font-bold text-zinc-900 leading-none">{profile.managedBy?.name}</div>
-                           <div className="text-[9px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100 uppercase tracking-widest">
-                             {profile.managedBy?.agentCode}
-                           </div>
-                        </div>
-                        <span className={`text-[9px] font-bold uppercase tracking-widest ${profile.isActive ? 'text-emerald-600' : 'text-rose-600'}`}>
-                           {profile.isActive ? 'Active' : 'Inactive'}
-                        </span>
-                     </div>
-
-                     <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {/* Profile Info */}
-                        <div className="space-y-4">
-                           <div className="grid grid-cols-2 gap-x-4 gap-y-3">
-                              <div className="space-y-0.5">
-                                 <label className="text-[9px] font-bold text-gray-400 uppercase tracking-tight">Alias</label>
-                                 <div className="text-xs font-bold text-zinc-900">{profile.name || '-'}</div>
-                              </div>
-                              <div className="space-y-0.5">
-                                 <label className="text-[9px] font-bold text-gray-400 uppercase tracking-tight">Nationality</label>
-                                 <div className="text-xs font-bold text-zinc-900">{profile.nationality || '-'}</div>
-                              </div>
-                              <div className="space-y-0.5">
-                                 <label className="text-[9px] font-bold text-gray-400 uppercase tracking-tight">Identity No.</label>
-                                 <div className="text-xs font-bold text-zinc-900">{profile.aadharNumber || '-'}</div>
-                              </div>
-                              <div className="space-y-0.5">
-                                 <label className="text-[9px] font-bold text-gray-400 uppercase tracking-tight">Passport</label>
-                                 <div className="text-xs font-bold text-zinc-900">{profile.passportNumber || '-'}</div>
-                              </div>
-                           </div>
-                           
-                           {profile.notes && (
-                             <div className="p-3 bg-gray-50 rounded-lg border-l-2 border-gray-200 italic text-[11px] text-gray-600">
-                                {profile.notes}
-                             </div>
-                           )}
-                        </div>
-
-                        {/* Documents Vault */}
-                        <div className="space-y-3">
-                           <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Identity Docs</label>
-                           <div className="grid grid-cols-2 gap-2">
-                              {[
-                                { label: 'Aadhar F', path: profile.docs?.aadharFront },
-                                { label: 'Aadhar B', path: profile.docs?.aadharBack },
-                                { label: 'PAN Card', path: profile.docs?.panCard },
-                                { label: 'Passport', path: profile.docs?.passport }
-                              ].map((doc, dIdx) => (
-                                <div key={dIdx} className={`px-3 py-2 rounded-lg border flex items-center justify-between group/doc ${doc.path ? 'bg-white border-gray-100 hover:border-primary-100' : 'bg-gray-50 border-transparent opacity-50'}`}>
-                                   <div className="text-[10px] font-bold text-gray-500 uppercase">{doc.label}</div>
-                                   {doc.path && (
-                                      <a href={doc.path} target="_blank" rel="noreferrer" className="text-primary-500 hover:text-primary-700">
-                                         <ExternalLink size={12} />
-                                      </a>
-                                   )}
-                                </div>
-                              ))}
-                           </div>
-                        </div>
-                     </div>
-                  </div>
-                ))}
-             </div>
-           )}
-        </div>
-      </div>
-    </Modal>
-  )
-}
-
-const Customers = () => {
+export default function Customers() {
+  const navigate = useNavigate()
   const [customers, setCustomers] = useState([])
   const [loading, setLoading] = useState(true)
-  const [search, setSearch] = useState('')
+  const [searchInput, setSearchInput] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
-  const [selectedCustomer, setSelectedCustomer] = useState(null)
-  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [total, setTotal] = useState(0)
   const { toast } = useToast()
+  const toastRef = useRef(toast)
+  toastRef.current = toast
+  const [exportLoading, setExportLoading] = useState(false)
 
-  const fetchCustomers = async () => {
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(searchInput.trim()), 400)
+    return () => clearTimeout(t)
+  }, [searchInput])
+
+  useEffect(() => {
+    setPage(1)
+  }, [debouncedSearch])
+
+  const fetchCustomers = useCallback(async () => {
     setLoading(true)
     try {
       const { data } = await adminApi.listCustomers({
         page,
         limit: 10,
-        search: search || undefined
+        ...(debouncedSearch ? { search: debouncedSearch } : {}),
       })
-      if (data?.success) {
-        setCustomers(data.data.customers)
-        setTotalPages(data.data.totalPages)
+      const payload = data?.data
+      if (data?.success && payload) {
+        const rows = Array.isArray(payload.customers) ? payload.customers : []
+        setCustomers(rows)
+        const tp = payload.totalPages
+        setTotalPages(typeof tp === 'number' && tp > 0 ? tp : 1)
+        setTotal(typeof payload.totalCount === 'number' ? payload.totalCount : 0)
+      } else {
+        setCustomers([])
+        setTotalPages(1)
+        toastRef.current.error(data?.message || 'Could not load customers')
       }
-    } catch (error) {
-      toast.error('Failed to retrieve traveler registry')
+    } catch (err) {
+      setCustomers([])
+      setTotalPages(1)
+      const msg = err?.response?.data?.message || err?.message || 'Failed to load customers'
+      toastRef.current.error(msg)
     } finally {
       setLoading(false)
     }
-  }
+  }, [page, debouncedSearch])
 
   useEffect(() => {
-    const handler = setTimeout(fetchCustomers, 500)
-    return () => clearTimeout(handler)
-  }, [page, search])
+    fetchCustomers()
+  }, [fetchCustomers])
+
+  const profileCount = (c) => (Array.isArray(c.agencyProfiles) ? c.agencyProfiles.length : 0)
+
+  const handleExport = async () => {
+    setExportLoading(true)
+    try {
+      const { data } = await adminApi.listCustomers({ page: 1, limit: 10000, ...(debouncedSearch ? { search: debouncedSearch } : {}) })
+      await exportToExcel(
+        (data?.data?.customers ?? []).map((c) => ({
+          Name: c.name || '', Email: c.email || '', Phone: c.phone || '',
+          'Agency Profiles': Array.isArray(c.agencyProfiles) ? c.agencyProfiles.length : 0,
+          'Joined On': c.createdAt ? new Date(c.createdAt).toLocaleDateString() : '',
+        })),
+        'customers', 'Customers'
+      )
+    } catch { toastRef.current.error('Export failed') }
+    finally { setExportLoading(false) }
+  }
 
   return (
-    <div className="space-y-6">
-      {/* Header & Controls */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-         <div>
-            <h1 className="text-2xl font-bold text-zinc-900">Customer Management</h1>
-            <p className="text-gray-500 text-sm">Review platform travelers and manage traveler identity records</p>
-         </div>
-
-         <div className="flex flex-col sm:flex-row items-center gap-3">
-            <div className="relative w-full sm:w-64">
-               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-               <input
-                  type="text"
-                  placeholder="Name, email or phone..."
-                  className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 shadow-sm"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-               />
-            </div>
-         </div>
+    <div className="animate-fade-in space-y-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="text-xl font-semibold tracking-tight text-gray-900 sm:text-2xl">Customers</h1>
+          <p className="mt-1 text-sm text-gray-500">Platform traveler registry — search by name, email, or phone.</p>
+        </div>
+        <button
+          type="button"
+          onClick={handleExport}
+          disabled={exportLoading}
+          className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 disabled:opacity-50 sm:w-auto"
+        >
+          {exportLoading ? <Loader size="sm" /> : <Download size={16} strokeWidth={2} />}
+          Export
+        </button>
       </div>
 
-      {/* Main Table Content */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden min-h-[400px]">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-gray-50 border-b border-gray-200">
-               <tr>
-                 <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest">Traveler Identity</th>
-                 <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest text-center">Agency Profiles</th>
-                 <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest">Contact Details</th>
-                 <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest text-right pr-12">Actions</th>
-               </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-               {loading ? (
-                  Array(5).fill(0).map((_, i) => (
-                    <tr key={i} className="animate-pulse">
-                      <td colSpan={4} className="px-6 py-6"><div className="h-10 bg-gray-50 rounded" /></td>
-                    </tr>
-                  ))
-               ) : customers.length === 0 ? (
-                  <tr>
-                    <td colSpan={4} className="py-20 text-center text-gray-500 italic">No travelers identified in this registry.</td>
-                  </tr>
-               ) : (
-                 customers.map((customer) => (
-                   <tr key={customer._id} className="hover:bg-gray-50/50 transition-colors">
-                     <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                           <div className="h-10 w-10 rounded-lg bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-400">
-                              <Users size={18} />
-                           </div>
-                           <div>
-                              <div className="font-bold text-zinc-900 italic leading-none mb-1">{customer.name}</div>
-                              <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">ID: {customer._id.slice(-6).toUpperCase()}</div>
-                           </div>
-                        </div>
-                     </td>
-                     <td className="px-6 py-4 text-center">
-                        <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-gray-50 border border-gray-200">
-                           <Building size={10} className="text-gray-400" />
-                           <span className="text-xs font-bold text-zinc-900">{customer.agencyProfiles?.length || 0}</span>
-                        </div>
-                     </td>
-                     <td className="px-6 py-4">
-                         <div className="space-y-1">
-                            <div className="text-xs font-medium text-gray-600 flex items-center gap-1.5"><Mail size={12} className="text-gray-300" /> {customer.email || 'N/A'}</div>
-                            <div className="text-xs font-bold text-zinc-900 flex items-center gap-1.5"><Phone size={12} className="text-gray-300" /> {customer.phone}</div>
-                         </div>
-                     </td>
-                     <td className="px-6 py-4 text-right pr-6">
-                        <button 
-                          onClick={() => {
-                            setSelectedCustomer(customer)
-                            setIsModalOpen(true)
-                          }}
-                          className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all border border-gray-100 hover:border-blue-100 shadow-sm active:scale-90"
-                          title="View Details"
-                        >
-                          <Eye size={16} />
-                        </button>
-                     </td>
-                   </tr>
-                 ))
-               )}
-            </tbody>
-          </table>
+      <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+        <div className="flex flex-col gap-3 border-b border-gray-200 px-4 py-3 sm:flex-row sm:items-center">
+          <div className="relative min-w-0 flex-1">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" strokeWidth={2} />
+            <input
+              type="search"
+              placeholder="Search name, email, or phone…"
+              autoComplete="off"
+              className="w-full rounded-md border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-gray-300 focus:outline-none focus:ring-1 focus:ring-gray-300"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+            />
+          </div>
         </div>
 
-        {/* Pagination Panel */}
-        {totalPages > 1 && (
-          <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between bg-gray-50/30">
-             <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Page {page} of {totalPages}</span>
-             <div className="flex gap-2">
-                <button 
-                  onClick={() => setPage(p => Math.max(1, p - 1))}
-                  disabled={page === 1}
-                  className="h-8 px-3 rounded-lg border border-gray-200 text-gray-500 hover:bg-white disabled:opacity-30 transition-all font-bold text-[10px] uppercase"
-                >
-                  <ChevronLeft size={16} />
-                </button>
-                <button 
-                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                  disabled={page === totalPages}
-                  className="h-8 px-3 rounded-lg border border-gray-200 text-gray-500 hover:bg-white disabled:opacity-30 transition-all font-bold text-[10px] uppercase"
-                >
-                  <ChevronRight size={16} />
-                </button>
-             </div>
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-16">
+            <Loader size="lg" />
+            <p className="mt-4 text-xs text-gray-500">Loading customers…</p>
           </div>
+        ) : customers.length === 0 ? (
+          <div className="px-4 py-14 text-center">
+            <Users className="mx-auto h-8 w-8 text-gray-300" strokeWidth={1.5} />
+            <p className="mt-3 text-sm font-medium text-gray-900">No customers found</p>
+            <p className="mt-1 text-sm text-gray-500">Try another search.</p>
+          </div>
+        ) : (
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[760px] text-sm">
+                <thead className="border-b border-gray-200 bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-2.5 text-left align-middle text-xs font-medium text-gray-600">Customer</th>
+                    <th className="px-4 py-2.5 text-left align-middle text-xs font-medium text-gray-600">Email</th>
+                    <th className="px-4 py-2.5 text-left align-middle text-xs font-medium text-gray-600">Mobile</th>
+                    <th className="px-4 py-2.5 text-left align-middle text-xs font-medium text-gray-600">Joined</th>
+                    <th className="px-4 py-2.5 text-center align-middle text-xs font-medium text-gray-600">
+                      Agency profiles
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {customers.map((c) => (
+                    <tr key={c._id} className="group transition-colors hover:bg-gray-50/80">
+                      <td className="align-middle px-4 py-2.5">
+                        <div className="flex items-center gap-2.5">
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-gray-200 bg-gray-50 text-gray-500 transition-transform group-hover:scale-[1.02]">
+                            <Users className="h-4 w-4" strokeWidth={2} />
+                          </div>
+                          <div className="min-w-0">
+                            <div className="truncate text-sm font-semibold text-gray-900">{c.name || 'Unnamed'}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="max-w-[220px] align-middle px-4 py-2.5">
+                        <div className="flex items-center gap-2">
+                          <Mail className="h-3.5 w-3.5 shrink-0 text-gray-400" strokeWidth={2} />
+                          <span className="truncate text-xs text-gray-800" title={c.email || ''}>
+                            {c.email || '—'}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="align-middle px-4 py-2.5">
+                        <div className="flex items-center gap-2">
+                          <Phone className="h-3.5 w-3.5 shrink-0 text-gray-400" strokeWidth={2} />
+                          <span className="text-xs font-medium text-gray-900">{c.phone || '—'}</span>
+                        </div>
+                      </td>
+                      <td className="align-middle whitespace-nowrap px-4 py-2.5 text-center text-xs text-gray-600 sm:text-left">
+                        {c.createdAt
+                          ? new Date(c.createdAt).toLocaleDateString(undefined, {
+                              year: 'numeric',
+                              month: 'short',
+                              day: 'numeric',
+                            })
+                          : '—'}
+                      </td>
+                      <td className="align-middle px-4 py-2.5 text-center">
+                        <button
+                          type="button"
+                          onClick={() => navigate(`/admin/customers/${c._id}`)}
+                          className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-800 transition-colors hover:border-primary-200 hover:bg-primary-50/50 hover:text-primary-900"
+                          title="View agency profiles and full profile"
+                        >
+                          <Building2 className="h-3.5 w-3.5 text-gray-500" strokeWidth={2} />
+                          <span className="tabular-nums font-semibold">{profileCount(c)}</span>
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <Pagination
+              page={page}
+              totalPages={totalPages}
+              total={total}
+              limit={10}
+              onPageChange={setPage}
+            />
+          </>
         )}
       </div>
-
-      <CustomerDetailModal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
-        customer={selectedCustomer} 
-      />
     </div>
   )
 }
-
-export default Customers

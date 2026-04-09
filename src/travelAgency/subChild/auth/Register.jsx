@@ -1,9 +1,12 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { User, Mail, Lock, Phone, Key, Eye, EyeOff, Ticket, FileUp, ShieldCheck } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { User, Mail, Lock, Phone, Key, Eye, EyeOff } from 'lucide-react'
 import { useAuth } from '@/shared/context/AuthContext.jsx'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
-import Loader from '@/shared/components/Loader.jsx'
+import AgencyRegisterShell, { KycDocumentUploads } from '@/travelAgency/shared/components/AgencyRegisterShell.jsx'
+
+const KYC_NOTE =
+  'By submitting, you agree to our terms. Your account remains pending until KYC is approved.'
 
 export default function SubChildRegister() {
   const navigate = useNavigate()
@@ -14,12 +17,12 @@ export default function SubChildRegister() {
     email: '',
     phone: '',
     password: '',
-    parentCode: ''
+    parentCode: '',
   })
   const [files, setFiles] = useState({
     aadharFront: null,
     aadharBack: null,
-    panCard: null
+    panCard: null,
   })
   const [showPassword, setShowPassword] = useState(false)
 
@@ -28,175 +31,156 @@ export default function SubChildRegister() {
   }
 
   const handleFileChange = (e) => {
-    setFiles({ ...files, [e.target.name]: e.target.files[0] })
+    const f = e.target.files?.[0]
+    if (!f) return
+    setFiles((prev) => ({ ...prev, [e.target.name]: f }))
+  }
+
+  const removeKycFile = (name) => {
+    setFiles((prev) => ({ ...prev, [name]: null }))
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     const submitData = new FormData()
-    Object.keys(formData).forEach(key => submitData.append(key, formData[key]))
+    Object.keys(formData).forEach((key) => submitData.append(key, formData[key]))
     if (files.aadharFront) submitData.append('aadharFront', files.aadharFront)
     if (files.aadharBack) submitData.append('aadharBack', files.aadharBack)
     if (files.panCard) submitData.append('panCard', files.panCard)
 
     const res = await registerAgent(submitData)
     if (res.success) {
-      toast.success('Application submitted! Our team will review your KYC documents soon.')
-      setTimeout(() => navigate('/travelAgency/subchild/login'), 2500)
+      toast.success('Application submitted. Our team will review your KYC documents.')
+      setTimeout(() => navigate('/login'), 2500)
     } else {
       toast.error(res.message || 'Registration failed')
     }
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
-      <div className="w-full max-w-lg animate-scale-in rounded-xl border border-gray-200 bg-white p-8 shadow-sm">
-        <div className="mb-6 text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-xl bg-primary-600 shadow-lg">
-            <Ticket className="h-8 w-8 text-white" />
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900">Sub Agent Registration</h1>
-          <p className="mt-1 text-sm text-gray-600">Start your micro-agency business</p>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="mb-1 flex items-center gap-2 text-sm font-medium text-gray-700">
-                <User className="h-4 w-4 text-primary-500" /> Full Name <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                name="name"
-                className="input-field"
-                value={formData.name}
-                onChange={handleChange}
-                required
-              />
-            </div>
-            <div>
-              <label className="mb-1 flex items-center gap-2 text-sm font-medium text-gray-700">
-                <Mail className="h-4 w-4 text-primary-500" /> Email address <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="email"
-                name="email"
-                className="input-field"
-                value={formData.email}
-                onChange={handleChange}
-                required
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="mb-1 flex items-center gap-2 text-sm font-medium text-gray-700">
-                <Phone className="h-4 w-4 text-primary-500" /> Phone number <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="tel"
-                name="phone"
-                className="input-field"
-                value={formData.phone}
-                onChange={handleChange}
-                required
-              />
-            </div>
-            <div>
-              <label className="mb-1 flex items-center gap-2 text-sm font-medium text-gray-700">
-                <Lock className="h-4 w-4 text-primary-500" /> Password <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <input
-                  type={showPassword ? "text" : "password"}
-                  name="password"
-                  className="input-field pr-10"
-                  value={formData.password}
-                  onChange={handleChange}
-                  minLength="8"
-                  required
-                />
-                <button
-                  type="button"
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-primary-500"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
-              </div>
-            </div>
-          </div>
-
+    <AgencyRegisterShell
+      title="Sub-child agent registration"
+      subtitle="Use the invitation code from your child agency. KYC is required before your account is active."
+    >
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
           <div>
-            <label className="mb-1 flex items-center gap-2 text-sm font-medium text-gray-700">
-              <Key className="h-4 w-4 text-primary-500" /> Child Agency Invitation Code <span className="text-red-500">*</span>
+            <label htmlFor="sub-name" className="mb-1.5 flex items-center gap-2 text-sm font-medium text-gray-700">
+              <User className="h-4 w-4 text-primary-600" strokeWidth={2} />
+              Full name <span className="text-red-500">*</span>
             </label>
             <input
+              id="sub-name"
               type="text"
-              name="parentCode"
-              placeholder="Ex: ONTRIP-XXXXX"
+              name="name"
               className="input-field"
-              value={formData.parentCode}
+              value={formData.name}
               onChange={handleChange}
+              autoComplete="name"
               required
             />
           </div>
+          <div>
+            <label htmlFor="sub-email" className="mb-1.5 flex items-center gap-2 text-sm font-medium text-gray-700">
+              <Mail className="h-4 w-4 text-primary-600" strokeWidth={2} />
+              Email <span className="text-red-500">*</span>
+            </label>
+            <input
+              id="sub-email"
+              type="email"
+              name="email"
+              className="input-field"
+              value={formData.email}
+              onChange={handleChange}
+              autoComplete="email"
+              required
+            />
+          </div>
+        </div>
 
-          <div className="rounded-xl border border-primary-100 bg-primary-50/50 p-6">
-            <h2 className="mb-4 flex items-center gap-2 font-semibold text-primary-900 border-b border-primary-200 pb-2">
-              <ShieldCheck className="h-5 w-5 text-primary-600" /> KYC Verification Documents
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <div>
-                  <label className="mb-1 flex items-center gap-2 text-xs font-semibold uppercase text-gray-500">
-                    <FileUp className="h-3 w-3" /> Aadhar Front <span className="text-red-500">*</span>
-                  </label>
-                  <label className="relative flex cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-primary-200 bg-white p-3 text-center transition-all hover:border-primary-400 hover:bg-primary-50/20">
-                    <input type="file" name="aadharFront" className="hidden" onChange={handleFileChange} accept="image/*,.pdf" required />
-                    <span className="text-sm text-gray-600">{files.aadharFront?.name || 'Select File'}</span>
-                  </label>
-                </div>
-                <div>
-                  <label className="mb-1 flex items-center gap-2 text-xs font-semibold uppercase text-gray-500">
-                    <FileUp className="h-3 w-3" /> Aadhar Back <span className="text-red-500">*</span>
-                  </label>
-                  <label className="relative flex cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-primary-200 bg-white p-3 text-center transition-all hover:border-primary-400 hover:bg-primary-50/20">
-                    <input type="file" name="aadharBack" className="hidden" onChange={handleFileChange} accept="image/*,.pdf" required />
-                    <span className="text-sm text-gray-600">{files.aadharBack?.name || 'Select File'}</span>
-                  </label>
-                </div>
-              </div>
-              <div className="space-y-4">
-                <div>
-                  <label className="mb-1 flex items-center gap-2 text-xs font-semibold uppercase text-gray-500">
-                    <FileUp className="h-3 w-3" /> PAN Card <span className="text-red-500">*</span>
-                  </label>
-                  <label className="relative flex cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-primary-200 bg-white p-3 text-center transition-all hover:border-primary-400 hover:bg-primary-50/20">
-                    <input type="file" name="panCard" className="hidden" onChange={handleFileChange} accept="image/*,.pdf" required />
-                    <span className="text-sm text-gray-600">{files.panCard?.name || 'Select File'}</span>
-                  </label>
-                </div>
-                <div className="pt-2 text-[11px] leading-relaxed text-gray-500">
-                  By clicking Register, you agree to our terms and conditions. Your account will remain pending until KYC verification is completed.
-                </div>
-              </div>
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+          <div>
+            <label htmlFor="sub-phone" className="mb-1.5 flex items-center gap-2 text-sm font-medium text-gray-700">
+              <Phone className="h-4 w-4 text-primary-600" strokeWidth={2} />
+              Phone <span className="text-red-500">*</span>
+            </label>
+            <input
+              id="sub-phone"
+              type="tel"
+              name="phone"
+              className="input-field"
+              value={formData.phone}
+              onChange={handleChange}
+              autoComplete="tel"
+              required
+            />
+          </div>
+          <div>
+            <label htmlFor="sub-password" className="mb-1.5 flex items-center gap-2 text-sm font-medium text-gray-700">
+              <Lock className="h-4 w-4 text-primary-600" strokeWidth={2} />
+              Password <span className="text-red-500">*</span>
+            </label>
+            <div className="relative">
+              <input
+                id="sub-password"
+                type={showPassword ? 'text' : 'password'}
+                name="password"
+                className="input-field pr-11"
+                value={formData.password}
+                onChange={handleChange}
+                minLength={8}
+                autoComplete="new-password"
+                placeholder="At least 8 characters"
+                required
+              />
+              <button
+                type="button"
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+                onClick={() => setShowPassword((v) => !v)}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" strokeWidth={2} /> : <Eye className="h-4 w-4" strokeWidth={2} />}
+              </button>
             </div>
           </div>
-
-          <button type="submit" disabled={isLoading} className="btn-primary w-full py-3.5 shadow-primary-500/20">
-            {isLoading ? <div className="flex items-center justify-center gap-2"><Loader size="sm" color="white" /> Processing...</div> : 'Submit Registration'}
-          </button>
-        </form>
-
-        <div className="mt-8 text-center text-sm">
-          <span className="text-gray-600">Already have an account? </span>
-          <Link to="/travelAgency/subchild/login" className="font-semibold text-primary-600 hover:underline">
-            Sign In Here
-          </Link>
         </div>
-      </div>
-    </div>
+
+        <div>
+          <label htmlFor="sub-parent-code" className="mb-1.5 flex items-center gap-2 text-sm font-medium text-gray-700">
+            <Key className="h-4 w-4 text-primary-600" strokeWidth={2} />
+            Child agency invitation code <span className="text-red-500">*</span>
+          </label>
+          <input
+            id="sub-parent-code"
+            type="text"
+            name="parentCode"
+            placeholder="e.g. ONTRIP-XXXXX"
+            className="input-field"
+            value={formData.parentCode}
+            onChange={handleChange}
+            autoComplete="off"
+            required
+          />
+        </div>
+
+        <KycDocumentUploads
+          files={files}
+          onFileChange={handleFileChange}
+          onRemoveFile={removeKycFile}
+          disclaimer={KYC_NOTE}
+        />
+
+        <button type="submit" disabled={isLoading} className="btn-primary w-full py-3 text-sm font-semibold">
+          {isLoading ? (
+            <span className="inline-flex items-center justify-center gap-2">
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+              Submitting…
+            </span>
+          ) : (
+            'Submit registration'
+          )}
+        </button>
+      </form>
+    </AgencyRegisterShell>
   )
 }

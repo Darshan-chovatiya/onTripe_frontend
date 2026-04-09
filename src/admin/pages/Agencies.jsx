@@ -8,6 +8,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Clock,
+  Download,
   Eye,
   ExternalLink,
   FileCheck,
@@ -31,6 +32,8 @@ import { useToast } from '@/shared/components/ToastContainer.jsx'
 import Loader from '@/shared/components/Loader.jsx'
 import Modal from '@/shared/components/Modal.jsx'
 import CustomDropdown from '@/shared/components/CustomDropdown.jsx'
+import Pagination from '@/admin/components/Pagination.jsx'
+import { exportToExcel } from '@/admin/utils/exportExcel.js'
 
 const getFileUrl = (path) => {
   if (!path) return '#'
@@ -57,7 +60,7 @@ const SubChildAgenciesModal = ({ isOpen, onClose, parentAgency, onToggleStatus, 
     try {
       const params = {
         page,
-        limit: 5,
+        limit: 10,
         role: 'sub_child_agent',
         parentRef: parentAgency._id,
         isActive: status === 'all' ? undefined : (status === 'active' ? 'true' : 'false'),
@@ -210,7 +213,7 @@ const ChildAgenciesModal = ({ isOpen, onClose, parentAgency, onToggleStatus, get
     try {
       const params = {
         page,
-        limit: 5,
+        limit: 10,
         role: 'child_agent',
         parentRef: parentAgency._id,
         isActive: status === 'all' ? undefined : (status === 'active' ? 'true' : 'false'),
@@ -905,6 +908,7 @@ export default function Agencies() {
   const [loading, setLoading] = useState(true)
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
+  const [total, setTotal] = useState(0)
   const [searchQuery, setSearchQuery] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
@@ -922,6 +926,7 @@ export default function Agencies() {
 
   const [rejectionReason, setRejectionReason] = useState('')
   const [isActionLoading, setIsActionLoading] = useState(false)
+  const [exportLoading, setExportLoading] = useState(false)
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -949,6 +954,7 @@ export default function Agencies() {
       if (data?.success) {
         setAgents(data.data.agents)
         setTotalPages(data.data.totalPages)
+        setTotal(data.data.totalCount ?? 0)
       }
     } catch (error) {
       toast.error('Failed to fetch agencies')
@@ -1067,6 +1073,30 @@ export default function Agencies() {
     { value: 'rejected', label: 'Rejected' },
   ]
 
+  const handleExport = async () => {
+    setExportLoading(true)
+    try {
+      const { data } = await adminApi.listAgents({
+        role: 'parent_agent', limit: 10000, page: 1,
+        isActive: statusFilter === 'all' ? undefined : statusFilter === 'active' ? 'true' : 'false',
+        search: debouncedSearch || undefined,
+        kycStatus: kycFilter === 'all' ? undefined : kycFilter,
+      })
+      await exportToExcel(
+        (data?.data?.agents ?? []).map((a) => ({
+          Name: a.name, Email: a.email, Phone: a.phone || '',
+          'Agent Code': a.agentCode || '', 'KYC Status': a.kyc?.status || 'pending',
+          'Account Status': a.isActive ? 'Active' : 'Inactive',
+          Children: a.childCount ?? 0, Packages: a.packageCount ?? 0,
+          Customers: a.customerCount ?? 0,
+          'Joined On': a.createdAt ? new Date(a.createdAt).toLocaleDateString() : '',
+        })),
+        'parent-agencies', 'Parent Agencies'
+      )
+    } catch { toast.error('Export failed') }
+    finally { setExportLoading(false) }
+  }
+
   return (
     <div className="animate-fade-in space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -1076,14 +1106,25 @@ export default function Agencies() {
             Manage tier-1 travel distribution entities and corporate identities
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => setIsAddModalOpen(true)}
-          className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-zinc-800 sm:w-auto sm:self-auto"
-        >
-          <Plus size={18} strokeWidth={2} />
-          Add Agency
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleExport}
+            disabled={exportLoading}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 disabled:opacity-50 sm:w-auto"
+          >
+            {exportLoading ? <Loader size="sm" /> : <Download size={16} strokeWidth={2} />}
+            Export
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsAddModalOpen(true)}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-zinc-800 sm:w-auto sm:self-auto"
+          >
+            <Plus size={18} strokeWidth={2} />
+            Add Agency
+          </button>
+        </div>
       </div>
 
       <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
@@ -1173,7 +1214,7 @@ export default function Agencies() {
                         <button
                           type="button"
                           onClick={() => navigate(`/admin/child-agencies?parentRef=${agent._id}`)}
-                          className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-800 shadow-sm transition-colors hover:border-primary-200 hover:bg-primary-50/50 hover:text-primary-900"
+                          className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-800 transition-colors hover:border-primary-200 hover:bg-primary-50/50 hover:text-primary-900"
                           title="View child agencies"
                         >
                           <Users className="h-3.5 w-3.5 text-gray-500" strokeWidth={2} />
@@ -1185,14 +1226,15 @@ export default function Agencies() {
                     </td>
                     <td className="px-4 py-2.5">
                       <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
-                        <div
-                          className="inline-flex items-center gap-1.5 rounded-lg border border-gray-100 bg-gray-50 px-2.5 py-1.5 text-xs font-medium text-gray-700"
-                          title="Packages created by this agency"
+                        <button
+                          type="button"
+                          onClick={() => navigate(`/admin/packages?parentAgencyId=${agent._id}`)}
+                          className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-gray-200 bg-gray-50 px-2.5 py-1.5 text-xs font-medium tabular-nums text-gray-800 transition-colors hover:border-primary-200 hover:bg-primary-50/50 hover:text-primary-900"
+                          title="Open Packages Management filtered to this parent agency"
                         >
                           <Package className="h-3.5 w-3.5 text-gray-500" strokeWidth={2} />
                           <span>{agent.packageCount ?? 0}</span>
-                          {/* <span className="text-gray-400">packages</span> */}
-                        </div>
+                        </button>
                       </div>
                     </td>
                     <td className="whitespace-nowrap px-4 py-2.5">
@@ -1241,7 +1283,7 @@ export default function Agencies() {
                             setSelectedAgent(agent)
                             setIsKycModalOpen(true)
                           }}
-                          className="inline-flex cursor-pointer rounded-lg border border-gray-200 bg-white p-2 text-gray-500 shadow-sm transition-colors hover:border-primary-200 hover:text-primary-700 active:scale-95"
+                          className="inline-flex cursor-pointer rounded-lg border border-gray-200 bg-white p-2 text-gray-500 transition-colors hover:border-primary-200 hover:text-primary-700 active:scale-95"
                           title="View agency"
                           aria-label={`View ${agent.name}`}
                         >
@@ -1253,7 +1295,7 @@ export default function Agencies() {
                             setEditingAgency(agent)
                             setIsEditModalOpen(true)
                           }}
-                          className="inline-flex cursor-pointer rounded-lg border border-gray-200 bg-white p-2 text-gray-500 shadow-sm transition-colors hover:border-emerald-200 hover:text-emerald-700 active:scale-95"
+                          className="inline-flex cursor-pointer rounded-lg border border-gray-200 bg-white p-2 text-gray-500 transition-colors hover:border-emerald-200 hover:text-emerald-700 active:scale-95"
                           title="Edit agency"
                           aria-label={`Edit ${agent.name}`}
                         >
@@ -1263,7 +1305,7 @@ export default function Agencies() {
                           type="button"
                           onClick={() => handleDeleteAgent(agent)}
                           disabled={isActionLoading}
-                          className="inline-flex cursor-pointer rounded-lg border border-gray-200 bg-white p-2 text-gray-500 shadow-sm transition-colors hover:border-rose-200 hover:text-rose-700 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+                          className="inline-flex cursor-pointer rounded-lg border border-gray-200 bg-white p-2 text-gray-500 transition-colors hover:border-rose-200 hover:text-rose-700 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
                           title="Delete agency"
                           aria-label={`Delete ${agent.name}`}
                         >
@@ -1277,32 +1319,13 @@ export default function Agencies() {
             </table>
             </div>
 
-            {totalPages > 1 && (
-              <div className="flex items-center justify-between border-t border-gray-200 bg-gray-50 px-4 py-3">
-                <p className="text-xs text-gray-500">
-                  Page <span className="font-medium text-gray-900">{page}</span> of{' '}
-                  <span className="font-medium text-gray-900">{totalPages}</span>
-                </p>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setPage((p) => Math.max(1, p - 1))}
-                    disabled={page === 1}
-                    className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 bg-white text-gray-600 transition-colors hover:bg-gray-50 disabled:opacity-40"
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                    disabled={page === totalPages}
-                    className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-200 bg-white text-gray-600 transition-colors hover:bg-gray-50 disabled:opacity-40"
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-            )}
+            <Pagination
+              page={page}
+              totalPages={totalPages}
+              total={total}
+              limit={10}
+              onPageChange={setPage}
+            />
           </>
         )}
       </div>
@@ -1346,13 +1369,21 @@ export default function Agencies() {
                 </div>
                 <p className="mt-1 text-xl font-semibold tabular-nums text-gray-900">{selectedAgent.childCount ?? 0}</p>
               </div>
-              <div className="rounded-xl border border-gray-200 bg-gray-50/80 px-4 py-3 text-center">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsKycModalOpen(false)
+                  navigate(`/admin/packages?parentAgencyId=${selectedAgent._id}`)
+                }}
+                className="rounded-xl border border-gray-200 bg-gray-50/80 px-4 py-3 text-center transition-colors hover:border-primary-200 hover:bg-primary-50/60"
+                title="Open Packages Management filtered to this parent agency"
+              >
                 <div className="flex items-center justify-center gap-1.5 text-xs font-medium text-gray-500">
                   <Package className="h-3.5 w-3.5" strokeWidth={2} />
                   Packages
                 </div>
                 <p className="mt-1 text-xl font-semibold tabular-nums text-gray-900">{selectedAgent.packageCount ?? 0}</p>
-              </div>
+              </button>
               <div className="rounded-xl border border-gray-200 bg-gray-50/80 px-4 py-3 text-center">
                 <div className="flex items-center justify-center gap-1.5 text-xs font-medium text-gray-500">
                   <UserCircle className="h-3.5 w-3.5" strokeWidth={2} />

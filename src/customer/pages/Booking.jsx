@@ -13,7 +13,7 @@ import {
   MessageSquare,
   Star
 } from 'lucide-react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, NavLink, useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '@/shared/context/AuthContext.jsx'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
 import axiosInstance from '@/shared/services/axiosInstance.js'
@@ -86,7 +86,7 @@ export default function Booking() {
 
   const handleLogout = () => {
     logout()
-    navigate('/login', { replace: true })
+    navigate('/customer/login', { replace: true })
   }
 
   const pkg = booking?.package || {}
@@ -192,6 +192,24 @@ export default function Booking() {
             >
                <Calendar size={16} /> Itinerary
             </button>
+            {booking?.package?._id && booking?.bookingId ? (
+              <NavLink
+                to={`/customer/booking/${booking.bookingId}/community`}
+                className={({ isActive }) =>
+                  `flex flex-1 items-center justify-center gap-2 rounded-[1.5rem] py-4 font-black text-xs uppercase tracking-widest transition-all duration-500 ${
+                    isActive
+                      ? 'bg-primary-600 text-white shadow-xl shadow-primary-200'
+                      : 'text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5'
+                  }`
+                }
+              >
+                <MessageSquare size={16} /> Community
+              </NavLink>
+            ) : (
+              <span className="flex flex-1 cursor-not-allowed items-center justify-center gap-2 rounded-[1.5rem] py-4 font-black text-xs uppercase tracking-widest text-gray-300 dark:text-gray-600">
+                <MessageSquare size={16} /> Community
+              </span>
+            )}
             <button 
               onClick={() => setActiveTab('reviews')}
               className={`flex-1 flex items-center justify-center gap-2 py-4 rounded-[1.5rem] font-black text-xs uppercase tracking-widest transition-all duration-500 ${activeTab === 'reviews' ? 'bg-primary-600 text-white shadow-xl shadow-primary-200' : 'text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5'}`}

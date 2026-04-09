@@ -22,12 +22,16 @@ import {
   approveChildKyc,
   sendNotification,
   getSentNotifications,
+  listPendingRequests,
+  approveParentRequest,
+  rejectParentRequest,
 } from '@/travelAgency/parentAgency/services/parentAgencyApi.js'
 import { getApiErrorMessage } from '@/shared/services/apiHelpers.js'
 import ChildAgentDetailModal from '@/travelAgency/parentAgency/components/ChildAgentDetailModal.jsx'
 import ConfirmDialog from '@/shared/components/ConfirmDialog.jsx'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
 import Modal from '@/shared/components/Modal.jsx'
+import PendingRequestsSection from '@/travelAgency/shared/components/PendingRequestsSection.jsx'
 
 const KYC_STYLES = {
   approved: 'bg-green-50 text-green-700',
@@ -234,6 +238,14 @@ export default function ManageChildren() {
           </button>
         </div>
       </div>
+
+      {/* Pending requests */}
+      <PendingRequestsSection
+        listPendingRequests={listPendingRequests}
+        approveRequest={approveParentRequest}
+        rejectRequest={rejectParentRequest}
+        label="child agency"
+      />
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">

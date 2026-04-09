@@ -53,6 +53,30 @@ export function approveSubChildKyc(id) {
   return axiosInstance.patch(`/child-agent/sub-children/${id}/approve-kyc`)
 }
 
+export function listPendingRequests() {
+  return axiosInstance.get('/child-agent/pending-requests')
+}
+
+export function approveParentRequest(id) {
+  return axiosInstance.patch(`/child-agent/pending-requests/${id}/approve`)
+}
+
+export function rejectParentRequest(id) {
+  return axiosInstance.delete(`/child-agent/pending-requests/${id}`)
+}
+
+export function listParents() {
+  return axiosInstance.get('/child-agent/parents')
+}
+
+export function addParent(parentCode) {
+  return axiosInstance.post('/child-agent/parents', { parentCode })
+}
+
+export function removeParent(parentId) {
+  return axiosInstance.delete(`/child-agent/parents/${parentId}`)
+}
+
 export function getChildProfile() {
   return axiosInstance.get('/child-agent/profile')
 }

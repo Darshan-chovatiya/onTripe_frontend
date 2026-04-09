@@ -2,12 +2,16 @@ import { useEffect, useState } from 'react'
 import { Loader2, Shield, User, CheckCircle, Clock, XCircle } from 'lucide-react'
 import { useAuth } from '@/shared/context/AuthContext.jsx'
 import {
+  addParent,
   changeSubChildPassword,
   getSubChildProfile,
+  listParents,
+  removeParent,
   updateSubChildProfile,
 } from '@/travelAgency/subChild/services/subChildApi.js'
 import Button from '@/shared/components/Button.jsx'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
+import ParentManagement from '@/travelAgency/shared/components/ParentManagement.jsx'
 
 function errMessage(err) {
   const data = err?.response?.data
@@ -144,6 +148,13 @@ export default function Settings() {
           </form>
         </section>
       </div>
+
+      <ParentManagement
+        listParents={listParents}
+        addParent={addParent}
+        removeParent={removeParent}
+        label="Parent child agencies"
+      />
     </div>
   )
 }

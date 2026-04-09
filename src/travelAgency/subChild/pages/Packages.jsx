@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { PackageOpen, Layers, Tags } from 'lucide-react'
 import { useSubChildPackages } from '@/travelAgency/subChild/hooks/useSubChildPackages.js'
 import { useSubChildBookings } from '@/travelAgency/subChild/hooks/useSubChildBookings.js'
@@ -9,15 +10,12 @@ import Button from '@/shared/components/Button.jsx'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
 import { getApiErrorMessage } from '@/shared/services/apiHelpers.js'
 import { mapWhitelabelByOriginalPackageId } from '@/travelAgency/childAgency/utils/whitelabelHelpers.js'
-import Modal from '@/shared/components/Modal.jsx'
-import CommunityChat from '@/customer/components/CommunityChat.jsx'
-
 export default function SubChildPackages() {
-  const { availablePackages, whitelabels, loading, error, createWhitelabel, updateWhitelabel, currentUserId } = useSubChildPackages()
+  const navigate = useNavigate()
+  const { availablePackages, whitelabels, loading, error, createWhitelabel, updateWhitelabel } = useSubChildPackages()
   const { bookings } = useSubChildBookings()
   const { toast } = useToast()
   const [submitting, setSubmitting] = useState(false)
-  const [chatPackageId, setChatPackageId] = useState(null)
 
   // Calculate which packages have bookings
   const bookedWhiteLabelIds = useMemo(() => {
@@ -157,7 +155,12 @@ export default function SubChildPackages() {
                 item={wl}
                 onEdit={openEdit}
                 onToggleActive={handleToggleActive}
-                onChat={() => setChatPackageId(wl.originalPackage?._id || wl.originalPackage)}
+                onChat={() => {
+                  const pid = wl.originalPackage?._id || wl.originalPackage
+                  if (!pid) return
+                  const t = wl.customTitle || (typeof wl.originalPackage === 'object' && wl.originalPackage?.title) || 'Package'
+                  navigate(`/agency/packages/${pid}/community?title=${encodeURIComponent(t)}`)
+                }}
                 hasBooking={bookedWhiteLabelIds.has(String(wl._id))}
               />
             ))}
@@ -177,14 +180,6 @@ export default function SubChildPackages() {
         loading={submitting}
       />
 
-      <Modal
-        isOpen={!!chatPackageId}
-        onClose={() => setChatPackageId(null)}
-        title="Community chat"
-        size="xl"
-      >
-        {chatPackageId ? <CommunityChat packageId={chatPackageId} currentUserId={currentUserId} /> : null}
-      </Modal>
     </div>
   )
 }

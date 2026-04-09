@@ -8,7 +8,6 @@ const PAGE_TITLES = [
   { match: '/admin/dashboard', title: 'Dashboard' },
   { match: '/admin/customers', title: 'Customers' },
   { match: '/admin/packages', title: 'Packages' },
-  { match: '/admin/whitelabels', title: 'Whitelabels' },
   { match: '/admin/agencies/network', title: 'Agency network' },
   { match: '/admin/agencies', title: 'Agencies' },
   { match: '/admin/child-agencies', title: 'Child agencies' },
@@ -18,6 +17,13 @@ const PAGE_TITLES = [
 ]
 
 function titleForPath(pathname) {
+  if (/^\/admin\/packages\/[^/]+\/whitelabels$/.test(pathname)) return 'Package whitelabels'
+  if (/^\/admin\/packages\/[^/]+\/bookings$/.test(pathname)) return 'Package bookings'
+  if (/^\/admin\/packages\/[^/]+\/community$/.test(pathname)) return 'Package chat'
+  if (/^\/admin\/child-agencies\/[^/]+\/whitelabels$/.test(pathname)) return 'Agent whitelabels'
+  if (/^\/admin\/sub-child-agencies\/[^/]+\/whitelabels$/.test(pathname)) return 'Agent whitelabels'
+  if (/^\/admin\/child-agencies\/[^/]+\/customers$/.test(pathname)) return 'Agency customers'
+  if (/^\/admin\/sub-child-agencies\/[^/]+\/customers$/.test(pathname)) return 'Agency customers'
   const hit = PAGE_TITLES.find((e) => pathname === e.match || pathname.startsWith(e.match + '/'))
   if (hit) return hit.title
   if (pathname.startsWith('/admin')) return 'Admin'
@@ -71,7 +77,7 @@ export default function Header({ onMenuClick }) {
   const handleLogout = () => {
     setShowLogoutConfirm(false)
     logout()
-    navigate('/admin/login', { replace: true })
+    navigate('/login', { replace: true })
   }
 
   return (

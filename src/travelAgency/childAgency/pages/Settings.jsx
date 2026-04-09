@@ -2,12 +2,16 @@ import { useEffect, useState } from 'react'
 import { Loader2, Shield, User } from 'lucide-react'
 import { useAuth } from '@/shared/context/AuthContext.jsx'
 import {
+  addParent,
   changeChildPassword,
   getChildProfile,
+  listParents,
+  removeParent,
   updateChildProfile,
 } from '@/travelAgency/childAgency/services/childAgencyApi.js'
 import Button from '@/shared/components/Button.jsx'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
+import ParentManagement from '@/travelAgency/shared/components/ParentManagement.jsx'
 
 function errMessage(err) {
   const data = /** @type {{ message?: string; errors?: string[] }} */ (err?.response?.data)
@@ -301,6 +305,13 @@ export default function Settings() {
         </form>
       </section>
       </div>
+
+      <ParentManagement
+        listParents={listParents}
+        addParent={addParent}
+        removeParent={removeParent}
+        label="Parent agencies"
+      />
     </div>
   )
 }

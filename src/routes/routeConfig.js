@@ -29,6 +29,13 @@ export const routeConfig = [
   { path: '/customer/booking', allowedRoles: [ROLES.CUSTOMER] },
   { path: '/customer/trip-history', allowedRoles: [ROLES.CUSTOMER] },
   { path: '/customer/profile', allowedRoles: [ROLES.CUSTOMER] },
+  { path: '/vendor/dashboard', allowedRoles: [ROLES.VENDOR] },
 ]
 
-export const publicPaths = ['/login', '/forgot-password', '/unauthorized']
+export const publicPaths = [
+  '/login',
+  '/customer/login',
+  '/vendor/login',
+  '/forgot-password',
+  '/unauthorized',
+]

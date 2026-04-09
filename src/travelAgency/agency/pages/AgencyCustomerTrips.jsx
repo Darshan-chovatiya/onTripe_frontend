@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, CalendarDays, Eye } from 'lucide-react'
 import { ROLES } from '@/shared/utils/constants.js'
@@ -14,12 +14,14 @@ import {
 import { getApiErrorMessage } from '@/shared/services/apiHelpers.js'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
 import Modal from '@/shared/components/Modal.jsx'
+import { filePublicUrl, flattenDocPaths } from '@/travelAgency/shared/utils/bookingDetailHelpers.js'
 
 export default function AgencyCustomerTrips() {
   const { agencyCustomerId } = useParams()
   const navigate = useNavigate()
   const { role } = useAgencyPermissions()
   const { toast } = useToast()
+  const toastRef = useRef(toast)
   const [loading, setLoading] = useState(false)
   const [customer, setCustomer] = useState(null)
   const [trips, setTrips] = useState([])
@@ -55,7 +57,7 @@ export default function AgencyCustomerTrips() {
           .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
         setTrips(matched)
       } catch (err) {
-        if (!cancelled) toast.error(getApiErrorMessage(err) || 'Failed to load customer trips')
+        if (!cancelled) toastRef.current.error(getApiErrorMessage(err) || 'Failed to load customer trips')
       } finally {
         if (!cancelled) setLoading(false)
       }
@@ -63,7 +65,7 @@ export default function AgencyCustomerTrips() {
     return () => {
       cancelled = true
     }
-  }, [agencyCustomerId, role, toast])
+  }, [agencyCustomerId, role])
 
   const title = useMemo(() => {
     if (!customer) return 'Customer trips'
@@ -188,16 +190,44 @@ export default function AgencyCustomerTrips() {
               <div className="mb-2 font-semibold text-gray-700">Travelers</div>
               {Array.isArray(detailTrip.travelers) && detailTrip.travelers.length > 0 ? (
                 <div className="space-y-2">
-                  {detailTrip.travelers.map((traveler, idx) => (
-                    <div key={`${traveler.name || 'traveler'}-${idx}`} className="rounded-md border border-gray-100 bg-gray-50 px-2.5 py-2">
-                      <div className="text-xs font-semibold text-gray-800">
-                        {traveler.name || `Traveler ${idx + 1}`} {traveler.age ? `• Age ${traveler.age}` : ''}
+                  {detailTrip.travelers.map((traveler, idx) => {
+                    const docPaths = flattenDocPaths(traveler.docs)
+                    return (
+                      <div key={`${traveler.name || 'traveler'}-${idx}`} className="rounded-md border border-gray-100 bg-gray-50 px-2.5 py-2">
+                        <div className="text-xs font-semibold text-gray-800">
+                          {traveler.name || `Traveler ${idx + 1}`} {traveler.age ? `• Age ${traveler.age}` : ''}
+                        </div>
+                        <div className="mt-1 text-[11px] text-gray-600">
+                          {traveler.gender || '—'} {traveler.phone ? `• ${traveler.phone}` : ''}
+                        </div>
+                        {docPaths.length > 0 ? (
+                          <div className="mt-2 border-t border-gray-100 pt-2">
+                            <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-gray-400">Documents</div>
+                            <div className="flex flex-wrap gap-1.5">
+                              {docPaths.map((d) => {
+                                const href = filePublicUrl(d.path)
+                                return href ? (
+                                  <a
+                                    key={d.key}
+                                    href={href}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="rounded-full bg-primary-50 px-2 py-0.5 text-[11px] font-medium text-primary-700 ring-1 ring-inset ring-primary-100 hover:bg-primary-100"
+                                  >
+                                    {d.label}
+                                  </a>
+                                ) : (
+                                  <span key={d.key} className="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] text-gray-500">{d.label}</span>
+                                )
+                              })}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="mt-2 border-t border-gray-100 pt-2 text-[11px] text-gray-400">No documents uploaded.</div>
+                        )}
                       </div>
-                      <div className="mt-1 text-[11px] text-gray-600">
-                        {traveler.gender || '—'} {traveler.phone ? `• ${traveler.phone}` : ''}
-                      </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               ) : (
                 <div className="text-xs text-gray-500">No traveler details available.</div>

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { X, LogOut, LayoutDashboard, Settings, Building2, Users2, Package, Layers, Bell, ChevronDown } from 'lucide-react'
+import { X, LogOut, LayoutDashboard, Settings, Building2, Users2, Package, Bell, ChevronDown } from 'lucide-react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/shared/context/AuthContext.jsx'
 import ConfirmDialog from '@/shared/components/ConfirmDialog.jsx'
@@ -15,14 +15,13 @@ export default function Sidebar({ isOpen, onClose }) {
 
   const handleLogout = () => {
     logout()
-    navigate('/admin/login', { replace: true })
+    navigate('/login', { replace: true })
     if (window.innerWidth < 1024) onClose()
   }
 
   const dashboardItem = { path: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard' }
   const navItems = [
     { path: '/admin/packages', icon: Package, label: 'Packages' },
-    { path: '/admin/whitelabels', icon: Layers, label: 'Whitelabels' },
     { path: '/admin/customers', icon: Users2, label: 'Customers' },
     { path: '/admin/notifications', icon: Bell, label: 'Notifications' },
     { path: '/admin/settings', icon: Settings, label: 'Settings' },
@@ -43,11 +42,11 @@ export default function Sidebar({ isOpen, onClose }) {
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        <div className="flex h-14 flex-shrink-0 items-center border-b border-primary-800/30 bg-primary-700 px-4 sm:px-5">
+        <div className="flex h-14 shrink-0 items-center border-b border-primary-800/30 bg-primary-700 px-4 sm:px-5">
           <div className="flex w-full items-center justify-between gap-2">
             <div className="flex min-w-0 flex-1 items-center gap-2.5 sm:gap-3">
               <div
-                className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg ${
+                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${
                   logoError ? 'bg-white/20' : 'overflow-hidden bg-white ring-2 ring-white/25'
                 }`}
               >
@@ -153,7 +152,7 @@ export default function Sidebar({ isOpen, onClose }) {
           </div>
         </nav>
 
-        <div className="flex-shrink-0 border-t border-gray-200 bg-gray-50/80 px-3 py-3">
+        <div className="shrink-0 border-t border-gray-200 bg-gray-50/80 px-3 py-3">
           <button
             type="button"
             onClick={() => setShowLogoutConfirm(true)}

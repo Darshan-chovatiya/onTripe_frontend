@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { PackageOpen, Layers, Tags } from 'lucide-react'
 import { useChildPackages } from '@/travelAgency/childAgency/hooks/useChildPackages.js'
 import { useChildBookings } from '@/travelAgency/childAgency/hooks/useChildBookings.js'
@@ -9,17 +10,31 @@ import Button from '@/shared/components/Button.jsx'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
 import { getApiErrorMessage } from '@/shared/services/apiHelpers.js'
 import { mapWhitelabelByOriginalPackageId } from '@/travelAgency/childAgency/utils/whitelabelHelpers.js'
-import { useAuth } from '@/shared/context/AuthContext.jsx'
-import Modal from '@/shared/components/Modal.jsx'
-import CommunityChat from '@/customer/components/CommunityChat.jsx'
-
 export default function Packages() {
+  const navigate = useNavigate()
   const { availablePackages, whitelabels, loading, error, createWhitelabel, updateWhitelabel } = useChildPackages()
   const { bookings } = useChildBookings()
-  const { user } = useAuth()
   const { toast } = useToast()
   const [submitting, setSubmitting] = useState(false)
   const [chatPackageId, setChatPackageId] = useState(null)
+  const [parentFilter, setParentFilter] = useState('all')
+
+  // Derive unique parent list from available packages
+  const parentOptions = useMemo(() => {
+    const map = new Map()
+    availablePackages.forEach((p) => {
+      const id = p.createdBy?._id || p.createdBy
+      const name = p.createdBy?.name || p.createdBy?.email || String(id)
+      if (id) map.set(String(id), name)
+    })
+    return Array.from(map.entries()).map(([id, name]) => ({ id, name }))
+  }, [availablePackages])
+
+  // Filtered packages based on selected parent
+  const filteredPackages = useMemo(() => {
+    if (parentFilter === 'all') return availablePackages
+    return availablePackages.filter((p) => String(p.createdBy?._id || p.createdBy) === parentFilter)
+  }, [availablePackages, parentFilter])
 
   // Calculate which packages have bookings
   const bookedWhiteLabelIds = useMemo(() => {
@@ -99,9 +114,25 @@ export default function Packages() {
 
       {/* Parent-supplied packages */}
       <section className="space-y-4">
-        <div className="flex items-center gap-2 border-b border-gray-100 pb-2">
-          <Layers className="h-5 w-5 text-primary-600" />
-          <h2 className="text-lg font-semibold text-gray-900">Packages from parent agencies</h2>
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 pb-2">
+          <div className="flex items-center gap-2">
+            <Layers className="h-5 w-5 text-primary-600" />
+            <h2 className="text-lg font-semibold text-gray-900">Packages from parent agencies</h2>
+          </div>
+          {parentOptions.length > 1 && (
+            <select
+              className="input-field w-auto min-w-[180px] text-sm"
+              value={parentFilter}
+              onChange={(e) => setParentFilter(e.target.value)}
+            >
+              <option value="all">All parents ({availablePackages.length})</option>
+              {parentOptions.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name} ({availablePackages.filter(pkg => String(pkg.createdBy?._id || pkg.createdBy) === p.id).length})
+                </option>
+              ))}
+            </select>
+          )}
         </div>
         <p className="text-sm text-gray-500">
           These are active packages from parents you are linked with. Each package can have at most one white-label
@@ -125,19 +156,23 @@ export default function Packages() {
           </div>
         ) : null}
 
-        {!loading && availablePackages.length === 0 ? (
+        {!loading && filteredPackages.length === 0 ? (
           <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-gray-200 bg-gray-50/80 py-16 text-center">
             <PackageOpen className="mb-3 h-12 w-12 text-gray-300" />
-            <p className="text-sm font-medium text-gray-600">No packages available yet</p>
+            <p className="text-sm font-medium text-gray-600">
+              {parentFilter === 'all' ? 'No packages available yet' : 'No packages from this parent'}
+            </p>
             <p className="mt-1 max-w-md text-xs text-gray-400">
-              Your parent agency must approve your account and publish packages before they appear here.
+              {parentFilter === 'all'
+                ? 'Your parent agency must approve your account and publish packages before they appear here.'
+                : 'This parent has no active packages assigned to you.'}
             </p>
           </div>
         ) : null}
 
-        {availablePackages.length > 0 ? (
+        {filteredPackages.length > 0 ? (
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {availablePackages.map((pkg) => (
+            {filteredPackages.map((pkg) => (
               <AvailablePackageCard
                 key={pkg._id}
                 pkg={pkg}
@@ -202,7 +237,12 @@ export default function Packages() {
                 item={wl}
                 onEdit={openEdit}
                 onToggleActive={handleToggleActive}
-                onChat={() => setChatPackageId(wl.originalPackage?._id || wl.originalPackage)}
+                onChat={() => {
+                  const pid = wl.originalPackage?._id || wl.originalPackage
+                  if (!pid) return
+                  const t = wl.customTitle || (typeof wl.originalPackage === 'object' && wl.originalPackage?.title) || 'Package'
+                  navigate(`/agency/packages/${pid}/community?title=${encodeURIComponent(t)}`)
+                }}
                 hasBooking={bookedWhiteLabelIds.has(String(wl._id))}
               />
             ))}
@@ -222,14 +262,6 @@ export default function Packages() {
         loading={submitting}
       />
 
-      <Modal
-        isOpen={!!chatPackageId}
-        onClose={() => setChatPackageId(null)}
-        title="Community chat"
-        size="xl"
-      >
-        {chatPackageId ? <CommunityChat packageId={chatPackageId} currentUserId={user?.id} /> : null}
-      </Modal>
     </div>
   )
 }
