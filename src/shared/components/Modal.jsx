@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
 
 const sizeClasses = {
@@ -19,10 +20,14 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md', f
 
   if (!isOpen) return null
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in">
+  return createPortal(
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in"
+      onClick={onClose}
+    >
       <div
         className={`bg-white rounded-xl shadow-sm w-full ${sizeClasses[size] || sizeClasses.md} max-h-[90vh] flex flex-col border border-gray-200 animate-scale-in`}
+        onClick={(e) => e.stopPropagation()}
       >
         <div className="flex-shrink-0 flex items-center justify-between p-6 border-b border-gray-200 bg-white rounded-t-xl">
           <h2 className="text-xl font-semibold text-gray-900">{title}</h2>
@@ -40,6 +45,7 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md', f
           <div className="flex-shrink-0 border-t border-gray-200 bg-white rounded-b-xl">{footer}</div>
         ) : null}
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
