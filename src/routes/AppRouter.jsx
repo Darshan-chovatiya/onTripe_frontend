@@ -55,6 +55,7 @@ import CustomerCommunity from '@/customer/pages/Community.jsx'
 import VendorLogin from '@/vendor/auth/Login.jsx'
 import VendorDashboard from '@/vendor/pages/Dashboard.jsx'
 import VendorPackageDetails from '@/vendor/pages/PackageDetails.jsx'
+import PackageReviewsPage from '@/shared/pages/PackageReviewsPage.jsx'
 
 export default function AppRouter() {
   return (
@@ -95,6 +96,7 @@ export default function AppRouter() {
         <Route path="packages/:packageId/whitelabels" element={<AdminPackageWhitelabels />} />
         <Route path="packages/:packageId/bookings" element={<AdminPackageBookings />} />
         <Route path="packages/:packageId/community" element={<AdminPackageCommunity />} />
+        <Route path="packages/:packageId/reviews" element={<PackageReviewsPage />} />
         <Route path="packages" element={<AdminPackages />} />
         <Route path="agencies" element={<AdminAgencies />} />
         <Route path="agencies/network/:parentId" element={<AdminAgencyNetwork />} />
@@ -166,6 +168,14 @@ export default function AppRouter() {
           element={
             <AgencyPermissionRoute anyOf={[P.PACKAGES_FULL, P.PACKAGES_CLONE]}>
               <AgencyPackageCommunity />
+            </AgencyPermissionRoute>
+          }
+        />
+        <Route
+          path="packages/:packageId/reviews"
+          element={
+            <AgencyPermissionRoute anyOf={[P.PACKAGES_FULL, P.PACKAGES_CLONE]}>
+              <PackageReviewsPage />
             </AgencyPermissionRoute>
           }
         />
@@ -257,6 +267,7 @@ export default function AppRouter() {
       >
         <Route index element={<Navigate to="booking" replace />} />
         <Route path="booking/:bookingId/community" element={<BookingCommunity />} />
+        <Route path="booking/:bookingId/reviews/:packageId" element={<PackageReviewsPage />} />
         <Route path="booking/:bookingId?" element={<CustomerBooking />} />
         <Route path="trip-history" element={<CustomerTripHistory />} />
         <Route path="community" element={<CustomerCommunity />} />

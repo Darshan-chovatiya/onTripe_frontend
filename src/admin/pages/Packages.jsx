@@ -12,6 +12,7 @@ import {
   Calendar,
   Layers,
   Ticket,
+  Star,
 } from 'lucide-react'
 import adminApi from '@/admin/services/adminApi'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
@@ -77,11 +78,10 @@ function PackageDetailModal({ isOpen, onClose, pkg }) {
                 {pkg.currency || 'INR'}
               </span>
               <span
-                className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[11px] font-medium ${
-                  pkg.isActive
-                    ? 'border-emerald-200 bg-emerald-50 text-emerald-900'
-                    : 'border-gray-200 bg-gray-100 text-gray-700'
-                }`}
+                className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[11px] font-medium ${pkg.isActive
+                  ? 'border-emerald-200 bg-emerald-50 text-emerald-900'
+                  : 'border-gray-200 bg-gray-100 text-gray-700'
+                  }`}
               >
                 <span className={`h-1.5 w-1.5 rounded-full ${pkg.isActive ? 'bg-emerald-500' : 'bg-gray-400'}`} />
                 {pkg.isActive ? 'Active' : 'Inactive'}
@@ -91,18 +91,16 @@ function PackageDetailModal({ isOpen, onClose, pkg }) {
                 title="Total bookings for this package"
               >
                 <Ticket className="h-3.5 w-3.5 text-gray-500" strokeWidth={2} />
-                {`${Number(pkg.bookingCount) || 0} booking${
-                  (Number(pkg.bookingCount) || 0) === 1 ? '' : 's'
-                }`}
+                {`${Number(pkg.bookingCount) || 0} booking${(Number(pkg.bookingCount) || 0) === 1 ? '' : 's'
+                  }`}
               </span>
               <span
                 className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-gray-50 px-2.5 py-1 text-[11px] font-medium text-gray-800"
                 title="Whitelabel copies of this package"
               >
                 <Layers className="h-3.5 w-3.5 text-gray-500" strokeWidth={2} />
-                {`${Number(pkg.whitelabelCount) || 0} whitelabel${
-                  (Number(pkg.whitelabelCount) || 0) === 1 ? '' : 's'
-                }`}
+                {`${Number(pkg.whitelabelCount) || 0} whitelabel${(Number(pkg.whitelabelCount) || 0) === 1 ? '' : 's'
+                  }`}
               </span>
             </div>
           </div>
@@ -624,6 +622,15 @@ export default function Packages() {
                           >
                             <MessageSquare className="h-4 w-4" strokeWidth={2} />
                           </button>
+                          <button
+                            type="button"
+                            onClick={() => navigate(`/admin/packages/${String(pkg._id)}/reviews?readOnly=true`)}
+                            className="inline-flex cursor-pointer rounded-lg border border-gray-200 bg-white p-2 text-gray-500 transition-colors hover:border-amber-200 hover:text-amber-600 active:scale-95"
+                            title="View reviews"
+                            aria-label={`Reviews for ${pkg.title}`}
+                          >
+                            <Star className="h-4 w-4" strokeWidth={2} />
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -644,7 +651,6 @@ export default function Packages() {
       </div>
 
       <PackageDetailModal isOpen={isDetailOpen} onClose={closeDetail} pkg={selectedPkg} />
-
     </div>
   )
 }

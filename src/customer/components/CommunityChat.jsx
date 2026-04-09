@@ -10,6 +10,7 @@ import {
   Trash2,
   Users,
   ChevronLeft,
+  MessageSquare,
 } from 'lucide-react'
 import { io } from 'socket.io-client'
 import axiosInstance from '@/shared/services/axiosInstance.js'
@@ -29,6 +30,7 @@ export default function CommunityChat({
   customerId,
   currentUserId,
   layout = 'embedded',
+  onToggleSidebar,
 }) {
   const { toast } = useToast()
   const { user } = useAuth()
@@ -89,7 +91,7 @@ export default function CommunityChat({
           setMessages((prev) => [...next, ...prev])
         } else if (mode === 'append') {
           setMessages((prev) => [...prev, ...next])
-        } else {  
+        } else {
           setMessages(next)
         }
       }
@@ -308,7 +310,7 @@ export default function CommunityChat({
 
   const shellClass = isPage
     ? 'flex h-full min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-gray-200/90 bg-white shadow-[0_8px_30px_rgb(0,0,0,0.06)] dark:border-white/10 dark:bg-gray-950 dark:shadow-none'
-    : 'flex h-[min(65vh,560px)] w-full max-w-full flex-col overflow-hidden rounded-2xl border border-gray-200/90 bg-white shadow-[0_8px_30px_rgb(0,0,0,0.06)] dark:border-white/10 dark:bg-gray-950 dark:shadow-none'
+    : 'flex h-[90vh] w-full max-w-full flex-col overflow-hidden rounded-2xl border border-gray-200/90 bg-white shadow-[0_8px_30px_rgb(0,0,0,0.06)] dark:border-white/10 dark:bg-gray-950 dark:shadow-none'
 
   const headerClass =
     'flex h-[52px] shrink-0 items-center gap-2 border-b border-gray-100 bg-white/95 px-2 backdrop-blur-sm dark:border-white/10 dark:bg-gray-950/95 sm:px-3'
@@ -355,9 +357,18 @@ export default function CommunityChat({
         ) : (
           <>
             <div className="flex min-w-0 flex-1 items-center gap-3 pl-1">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary-100 text-sm font-semibold text-primary-800 dark:bg-primary-900/60 dark:text-primary-100">
-                {(community.package?.title || 'T').charAt(0).toUpperCase()}
-              </div>
+              {onToggleSidebar ? (
+                <button
+                  onClick={onToggleSidebar}
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary-600 text-white shadow-lg shadow-primary-200 transition-all active:scale-95 lg:hidden"
+                >
+                  <MessageSquare size={18} />
+                </button>
+              ) : (
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary-100 text-sm font-semibold text-primary-800 dark:bg-primary-900/60 dark:text-primary-100">
+                  {(community.package?.title || 'T').charAt(0).toUpperCase()}
+                </div>
+              )}
               <div className="min-w-0">
                 <h3 className="truncate text-[15px] font-semibold leading-tight text-gray-900 dark:text-white">
                   {community.package?.title || 'Trip chat'}
@@ -560,11 +571,10 @@ export default function CommunityChat({
                     <div className={`flex max-w-[min(100%,26rem)] flex-col ${isMe ? 'items-end' : 'items-start'}`}>
                       {showAvatar && (
                         <span
-                          className={`mb-0.5 flex items-center gap-1.5 px-0.5 text-[11px] ${
-                            isMe
+                          className={`mb-0.5 flex items-center gap-1.5 px-0.5 text-[11px] ${isMe
                               ? 'text-primary-700/90 dark:text-primary-300/90'
                               : 'text-gray-600 dark:text-gray-400'
-                          }`}
+                            }`}
                         >
                           <span className="font-medium">{senderName}</span>
                           <span
@@ -580,11 +590,10 @@ export default function CommunityChat({
                       )}
 
                       <div
-                        className={`rounded-xl px-2.5 py-1.5 text-sm leading-snug shadow-sm ${
-                          isMe
+                        className={`rounded-xl px-2.5 py-1.5 text-sm leading-snug shadow-sm ${isMe
                             ? 'rounded-br-md bg-primary-600 text-white dark:bg-primary-600 dark:text-white'
                             : 'rounded-bl-md border border-gray-200/90 bg-white text-gray-900 shadow-gray-200/30 dark:border-white/10 dark:bg-gray-900 dark:text-gray-100'
-                        }`}
+                          }`}
                       >
                         {msg.type === 'image' ? (
                           <div className="space-y-1">
@@ -602,11 +611,10 @@ export default function CommunityChat({
                       </div>
 
                       <div
-                        className={`mt-0.5 flex items-center gap-1 px-0.5 text-[10px] ${
-                          isMe
+                        className={`mt-0.5 flex items-center gap-1 px-0.5 text-[10px] ${isMe
                             ? 'text-primary-700/75 dark:text-primary-200/70'
                             : 'text-gray-500 dark:text-gray-500'
-                        } ${isMe ? 'flex-row-reverse' : ''}`}
+                          } ${isMe ? 'flex-row-reverse' : ''}`}
                       >
                         <span>
                           {new Date(msg.createdAt).toLocaleTimeString([], {
@@ -637,9 +645,8 @@ export default function CommunityChat({
               />
               <label
                 htmlFor="chat-images"
-                className={`mb-0.5 flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full text-gray-600 transition-colors hover:bg-black/5 dark:text-gray-300 dark:hover:bg-white/10 ${
-                  uploadingImages ? 'opacity-50' : ''
-                }`}
+                className={`mb-0.5 flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full text-gray-600 transition-colors hover:bg-black/5 dark:text-gray-300 dark:hover:bg-white/10 ${uploadingImages ? 'opacity-50' : ''
+                  }`}
                 title="Photo"
               >
                 {uploadingImages ? (

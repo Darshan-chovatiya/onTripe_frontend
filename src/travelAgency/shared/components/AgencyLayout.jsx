@@ -20,6 +20,7 @@ function usePageTitle() {
     'manage-sub-children': 'Manage Sub-Children',
     'my-bookings': 'My Bookings',
     customers: 'Customers',
+    reviews: 'Package Reviews',
   }
   return titles[segment] || segment.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) || 'Dashboard'
 }

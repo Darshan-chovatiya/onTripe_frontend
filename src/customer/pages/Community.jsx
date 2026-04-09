@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import { MapPin, Users, MessageSquare } from 'lucide-react'
 import axiosInstance from '@/shared/services/axiosInstance.js'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
@@ -14,17 +15,20 @@ const getFullUrl = (path) =>
 
 export default function Community() {
   const { toast } = useToast()
-  const [bookings, setBookings]       = useState([])
-  const [loading, setLoading]         = useState(true)
-  const [selected, setSelected]       = useState(null)
+  const location = useLocation()
+  const statePackageId = location.state?.selectedPackageId
+
+  const [bookings, setBookings] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [selected, setSelected] = useState(null)
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   useEffect(() => {
-    ;(async () => {
+    ; (async () => {
       try {
         const { data } = await axiosInstance.get('/customer/bookings')
         if (data?.success) {
-          const seen   = new Set()
+          const seen = new Set()
           const unique = (data.data.bookings || [])
             .filter((b) => b.package?._id)
             .filter((b) => {
@@ -33,7 +37,12 @@ export default function Community() {
               return true
             })
           setBookings(unique)
-          if (unique.length > 0) pickTrip(unique[0])
+          if (unique.length > 0) {
+            const target = statePackageId
+              ? unique.find(b => b.package?._id === statePackageId)
+              : unique[0]
+            pickTrip(target || unique[0])
+          }
         }
       } catch {
         toast.error('Failed to load communities')
@@ -45,13 +54,13 @@ export default function Community() {
 
   const pickTrip = (b) => {
     setSelected({
-      packageId:   b.package._id,
-      customerId:  b.customer?._id,
-      title:       b.package.title,
+      packageId: b.package._id,
+      customerId: b.customer?._id,
+      title: b.package.title,
       destination: b.package.destination,
-      coverImage:  b.package.coverImage,
-      travelDate:  b.travelDate,
-      status:      b.bookingStatus,
+      coverImage: b.package.coverImage,
+      travelDate: b.travelDate,
+      status: b.bookingStatus,
     })
     setSidebarOpen(false)
   }
@@ -105,22 +114,21 @@ export default function Community() {
         {/* Trip list */}
         <div className="flex-1 overflow-y-auto px-3 pb-4 space-y-1">
           {bookings.map((b) => {
-            const pkg      = b.package
+            const pkg = b.package
             const isActive = selected?.packageId === pkg._id
 
             return (
               <button
                 key={pkg._id}
                 onClick={() => pickTrip(b)}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors text-left ${
-                  isActive ? 'bg-primary-50 border border-primary-200' : 'hover:bg-gray-100 border border-transparent'
-                }`}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors text-left ${isActive ? 'bg-primary-50 border border-primary-200' : 'hover:bg-gray-100 border border-transparent'
+                  }`}
               >
                 {/* Square image */}
-                <div className="w-11 h-11 rounded-lg overflow-hidden shrink-0 bg-gray-200">
+                <div className="w-11 h-11 rounded-xl overflow-hidden shrink-0 bg-primary-50 flex items-center justify-center border border-primary-100">
                   {pkg.coverImage
                     ? <img src={getFullUrl(pkg.coverImage)} alt={pkg.title} className="w-full h-full object-cover" />
-                    : <div className="w-full h-full flex items-center justify-center"><MapPin size={16} className="text-gray-400" /></div>
+                    : <MessageSquare size={18} className="text-primary-400" />
                   }
                 </div>
 
@@ -147,33 +155,13 @@ export default function Community() {
       {/* ── RIGHT CHAT PANEL ── */}
       <div className="flex-1 flex flex-col min-w-0 bg-white relative">
 
-        {/* Mobile topbar */}
-        <div className="lg:hidden flex items-center gap-3 px-4 py-3 border-b border-gray-100">
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="p-2 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors"
-          >
-            <MessageSquare size={18} className="text-gray-600" />
-          </button>
-          {selected && (
-            <div className="flex items-center gap-2 min-w-0">
-              <div className="w-8 h-8 rounded-lg overflow-hidden bg-gray-100 shrink-0">
-                {selected.coverImage
-                  ? <img src={getFullUrl(selected.coverImage)} alt="" className="w-full h-full object-cover" />
-                  : <div className="w-full h-full flex items-center justify-center"><MapPin size={14} className="text-gray-400" /></div>
-                }
-              </div>
-              <p className="text-sm font-black text-gray-900 truncate">{selected.title}</p>
-            </div>
-          )}
-        </div>
-
         {selected ? (
           <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
             <CommunityChat
               key={selected.packageId}
               packageId={selected.packageId}
               customerId={selected.customerId}
+              onToggleSidebar={() => setSidebarOpen(true)}
             />
           </div>
         ) : (
