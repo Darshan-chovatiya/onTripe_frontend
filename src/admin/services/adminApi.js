@@ -117,7 +117,8 @@ const adminApi = {
   getNotificationRecipients,
   sendNotification,
   getSentNotifications,
-  getNotificationPreview
+  getNotificationPreview,
+  syncBookingStatus: () => axiosInstance.post('/admin/bookings/sync-status'),
 }
 
 export default adminApi
