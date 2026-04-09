@@ -59,8 +59,11 @@ export function basePackageFromBooking(b) {
 /** @param {Record<string, unknown> | null | undefined} docs */
 export function flattenDocPaths(docs) {
   if (!docs || typeof docs !== 'object') return []
+  // Unwrap Mongoose subdoc if needed
+  const plain = (docs._doc && typeof docs._doc === 'object') ? docs._doc : docs
   const out = []
-  for (const [k, val] of Object.entries(docs)) {
+  for (const [k, val] of Object.entries(plain)) {
+    if (k.startsWith('$') || k.startsWith('_')) continue
     if (k === 'otherDocs' && Array.isArray(val)) {
       val.forEach((p, i) => {
         if (typeof p === 'string' && p) out.push({ key: `${k}_${i}`, label: 'Other document', path: p })

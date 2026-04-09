@@ -191,9 +191,17 @@ export default function BookingDetailModal({ isOpen, onClose, bookingId, fetchBo
     if (!customerName.trim() || !customerPhone.trim()) return
     const amount = Number(totalAmount)
     if (Number.isNaN(amount) || amount <= 0) return
+    // Preserve existing docs from original booking travelers by index
+    const originalTravelers = booking.travelers || []
     const validTravelers = travelers
       .filter((r) => r.name.trim() || r.age !== '')
-      .map((r) => ({ name: r.name.trim(), age: Number(r.age) || 0, gender: r.gender }))
+      .map((r, i) => ({
+        name: r.name.trim(),
+        age: Number(r.age) || 0,
+        gender: r.gender,
+        // carry forward existing docs so backend doesn't wipe them
+        docs: originalTravelers[i]?.docs ? { ...originalTravelers[i].docs } : undefined,
+      }))
 
     const fd = new FormData()
     fd.append('customerName', customerName.trim())
@@ -485,7 +493,7 @@ export default function BookingDetailModal({ isOpen, onClose, bookingId, fetchBo
                       ) : null}
                       <div className="mt-2 border-t border-gray-100 pt-2">
                         <p className="mb-1 text-[11px] font-semibold uppercase text-gray-400">Documents</p>
-                        <DocLinks docs={t.docs} />
+                        <DocLinks docs={t.docs ? { ...t.docs } : null} />
                       </div>
                     </li>
                   ))}
