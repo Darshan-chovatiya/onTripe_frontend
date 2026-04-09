@@ -141,6 +141,7 @@ export default function Bookings() {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {sorted.map((b) => {
+                  const communityPackageId = basePackageFromBooking(b)?._id || b?.package?._id || null
                   const bookedBy = b.bookedBy
                   const isSelf = currentUserId && bookedBy && String(bookedBy._id || bookedBy) === String(currentUserId)
                   return (
