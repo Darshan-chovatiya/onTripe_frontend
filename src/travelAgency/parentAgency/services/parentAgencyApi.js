@@ -66,8 +66,8 @@ export function uploadEventImage(formData) {
 }
 
 // Vendors
-export function listVendors() {
-  return axiosInstance.get('/parent-agent/vendors')
+export function listVendors(params = {}) {
+  return axiosInstance.get('/parent-agent/vendors', { params })
 }
 
 export function getVendor(id) {
