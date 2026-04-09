@@ -12,6 +12,7 @@ import {
   Calendar,
   Layers,
   Ticket,
+  IndianRupee,
 } from 'lucide-react'
 import adminApi from '@/admin/services/adminApi'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
@@ -660,6 +661,7 @@ export default function Packages() {
                     <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-600">Agency</th>
                     <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-600">Whitelabels</th>
                     <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-600">Bookings</th>
+                    <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-600">Revenue</th>
                     <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-600">Status</th>
                     <th className="px-4 py-2.5 text-right text-xs font-medium text-gray-600">Actions</th>
                   </tr>
@@ -717,6 +719,12 @@ export default function Packages() {
                           <Ticket className="h-3.5 w-3.5 shrink-0 text-gray-500" strokeWidth={2} />
                           {Number(pkg.bookingCount) || 0}
                         </button>
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3">
+                        <span className="inline-flex items-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold tabular-nums text-emerald-800">
+                          <IndianRupee className="h-3 w-3 shrink-0" strokeWidth={2.5} />
+                          {(Number(pkg.totalRevenue) || 0).toLocaleString('en-IN')}
+                        </span>
                       </td>
                       <td className="whitespace-nowrap px-4 py-3">
                         <span
