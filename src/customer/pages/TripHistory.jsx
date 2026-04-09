@@ -70,7 +70,7 @@ export default function TripHistory() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8 animate-fade-in pb-32">
+    <div className="space-y-8 animate-fade-in">
       <div className="flex items-end justify-between px-2">
         <div className="space-y-1">
           <h1 className="text-3xl font-black text-gray-900 tracking-tight">Your Journeys</h1>

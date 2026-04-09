@@ -86,7 +86,7 @@ export default function CommunityChat({ packageId, customerId, currentUserId }) 
           setMessages((prev) => [...next, ...prev])
         } else if (mode === 'append') {
           setMessages((prev) => [...prev, ...next])
-        } else {
+        } else {  
           setMessages(next)
         }
       }
@@ -292,7 +292,7 @@ export default function CommunityChat({ packageId, customerId, currentUserId }) 
   )
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-[2.5rem] shadow-2xl shadow-gray-100/50 border border-gray-50 dark:border-white/5 overflow-hidden flex flex-col animate-fade-in relative">
+    <div className="bg-white dark:bg-gray-800 overflow-hidden flex flex-col h-full animate-fade-in relative">
       
       {/* Header */}
       <div className="px-8 py-6 border-b border-gray-50 dark:border-white/5 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md flex items-center justify-between z-10">
@@ -331,7 +331,7 @@ export default function CommunityChat({ packageId, customerId, currentUserId }) 
       <div 
         ref={scrollRef}
         onScroll={onScroll}
-        className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6 scrollbar-hide bg-gray-50/30 dark:bg-transparen  max-h-[500px] overflow-auto"
+        className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6 scrollbar-hide bg-gray-50/30 dark:bg-transparent min-h-0"
       >
         {loadingMore && (
           <div className="sticky top-0 z-10 -mt-2 pb-2">

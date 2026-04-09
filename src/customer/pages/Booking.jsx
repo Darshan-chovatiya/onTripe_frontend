@@ -18,7 +18,6 @@ import { useAuth } from '@/shared/context/AuthContext.jsx'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
 import axiosInstance from '@/shared/services/axiosInstance.js'
 import Loader from '@/shared/components/Loader.jsx'
-import CommunityChat from '../components/CommunityChat.jsx'
 import ReviewSection from '../components/ReviewSection.jsx'
 
 const BASE_IMG_URL = import.meta.env.VITE_API_BASE_URL?.replace('/api', '').replace(/\/$/, '') || 'http://localhost:5001'
@@ -34,7 +33,7 @@ export default function Booking() {
   const [loading, setLoading] = useState(true)
   const [activeDayIdx, setActiveDayIdx] = useState(0)
   const [currentImgIdx, setCurrentImgIdx] = useState(0)
-  const [activeTab, setActiveTab] = useState('itinerary') // 'itinerary' or 'community'
+  const [activeTab, setActiveTab] = useState('itinerary') // 'itinerary' | 'reviews'
   const carouselTimer = useRef(null)
 
   useEffect(() => {
@@ -172,10 +171,6 @@ export default function Booking() {
           </div>
         )}
         <div className="absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-black/80 via-black/30 to-transparent p-8 md:p-16 text-white flex flex-col items-center text-center">
-          <div className="mb-4 inline-flex items-center gap-2 px-4 py-1.5 bg-primary-600/20 backdrop-blur-md rounded-full border border-primary-500/30">
-             <Calendar size={14} className="text-primary-400" />
-             <span className="text-[10px] font-black uppercase tracking-[0.2em]">{new Date(booking.travelDate).toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' })}</span>
-          </div>
           <h1 className="max-w-4xl text-3xl font-black tracking-tight md:text-7xl drop-shadow-2xl leading-[1.1]">
             {wlPkg.customTitle || pkg.title || 'Your Journey'}
           </h1>
@@ -183,9 +178,6 @@ export default function Booking() {
             <p className="flex items-center gap-2.5 font-black text-white px-6 py-3 bg-white/10 backdrop-blur-md rounded-2xl border border-white/5">
               <MapPin className="h-5 w-5 text-primary-400" />
               <span className="uppercase tracking-[0.2em] text-[10px] md:text-xs">{pkg.destination}</span>
-            </p>
-            <p className="flex items-center gap-2.5 font-black text-white px-6 py-3 bg-white/10 backdrop-blur-md rounded-2xl border border-white/5">
-              <span className="uppercase tracking-[0.2em] text-[10px] md:text-xs">₹{booking.totalAmount.toLocaleString()}</span>
             </p>
           </div>
         </div>
@@ -199,12 +191,6 @@ export default function Booking() {
               className={`flex-1 flex items-center justify-center gap-2 py-4 rounded-[1.5rem] font-black text-xs uppercase tracking-widest transition-all duration-500 ${activeTab === 'itinerary' ? 'bg-primary-600 text-white shadow-xl shadow-primary-200' : 'text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5'}`}
             >
                <Calendar size={16} /> Itinerary
-            </button>
-            <button 
-              onClick={() => setActiveTab('community')}
-              className={`flex-1 flex items-center justify-center gap-2 py-4 rounded-[1.5rem] font-black text-xs uppercase tracking-widest transition-all duration-500 ${activeTab === 'community' ? 'bg-primary-600 text-white shadow-xl shadow-primary-200' : 'text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5'}`}
-            >
-               <MessageSquare size={16} /> Community
             </button>
             <button 
               onClick={() => setActiveTab('reviews')}
@@ -311,14 +297,6 @@ export default function Booking() {
             <div className="flex h-80 items-center justify-center rounded-[3rem] border-4 border-dashed border-gray-100 text-gray-300 font-black uppercase tracking-[0.3em] text-sm">Select A Day To Begin</div>
           )}
         </>
-      ) : activeTab === 'community' ? (
-        <div className="px-4">
-           {booking.package?._id ? (
-             <CommunityChat packageId={booking.package._id} customerId={booking.customer?._id} />
-           ) : (
-             <div className="text-center p-20 opacity-40 uppercase font-black text-xs tracking-widest">Community Unavailable</div>
-           )}
-        </div>
       ) : (
         <ReviewSection
           bookingId={booking.bookingId}

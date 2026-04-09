@@ -48,6 +48,7 @@ import CustomerLayout from '@/customer/components/CustomerLayout.jsx'
 import CustomerBooking from '@/customer/pages/Booking.jsx'
 import CustomerTripHistory from '@/customer/pages/TripHistory.jsx'
 import CustomerProfile from '@/customer/pages/Profile.jsx'
+import CustomerCommunity from '@/customer/pages/Community.jsx'
 
 export default function AppRouter() {
   return (
@@ -215,6 +216,7 @@ export default function AppRouter() {
         <Route index element={<Navigate to="booking" replace />} />
         <Route path="booking/:bookingId?" element={<CustomerBooking />} />
         <Route path="trip-history" element={<CustomerTripHistory />} />
+        <Route path="community" element={<CustomerCommunity />} />
         <Route path="profile" element={<CustomerProfile />} />
       </Route>
 
