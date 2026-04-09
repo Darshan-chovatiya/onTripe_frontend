@@ -98,29 +98,58 @@ export default function Settings() {
   }
 
   return (
-    <div className="animate-fade-in mx-auto max-w-6xl space-y-6">
-      <header>
+    <div className="animate-fade-in space-y-8">
+      <div>
         <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
-        <p className="mt-1 text-sm text-gray-500">Manage your sub-child account profile and password.</p>
-      </header>
+        <p className="mt-0.5 text-sm text-gray-500">Manage your profile and account security</p>
+      </div>
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-          <div className="mb-4 flex items-center gap-3 border-b border-gray-100 pb-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-100 text-primary-700"><User className="h-5 w-5" /></div>
-            <h2 className="text-lg font-semibold text-gray-900">Update profile</h2>
+        <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+          <div className="flex items-center gap-2 border-b border-gray-100 px-6 py-4">
+            <User size={16} className="text-gray-500" />
+            <h2 className="font-semibold text-gray-900">Profile Information</h2>
           </div>
-          {loadingProfile ? <div className="flex items-center gap-2 py-8 text-sm text-gray-500"><Loader2 className="h-5 w-5 animate-spin" />Loading profile…</div> : (
-            <form onSubmit={handleProfileSubmit} className="space-y-4">
-              <input className="input-field w-full" value={name} onChange={(e) => setName(e.target.value)} placeholder="Full name" />
-              <input type="email" className="input-field w-full" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" />
-              <input className="input-field w-full" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Phone" />
+          {loadingProfile ? (
+            <div className="flex items-center gap-2 px-6 py-8 text-sm text-gray-500">
+              <Loader2 className="h-5 w-5 animate-spin" />
+              Loading profile...
+            </div>
+          ) : (
+            <form onSubmit={handleProfileSubmit} className="space-y-4 p-6">
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">Full Name *</label>
+                <input
+                  className="input-field w-full"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Your full name"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">Email Address</label>
+                <input
+                  type="email"
+                  className="input-field w-full"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">Phone Number</label>
+                <input
+                  className="input-field w-full"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="+91 XXXXX XXXXX"
+                />
+              </div>
 
-              {/* KYC Status */}
               {kycStatus && (() => {
                 const map = {
-                  approved: { icon: CheckCircle, label: 'KYC Approved',  cls: 'bg-green-50 border-green-200 text-green-700' },
-                  pending:  { icon: Clock,        label: 'KYC Pending',   cls: 'bg-yellow-50 border-yellow-200 text-yellow-700' },
-                  rejected: { icon: XCircle,      label: 'KYC Rejected',  cls: 'bg-red-50 border-red-200 text-red-700' },
+                  approved: { icon: CheckCircle, label: 'KYC Approved', cls: 'bg-green-50 border-green-200 text-green-700' },
+                  pending: { icon: Clock, label: 'KYC Pending', cls: 'bg-yellow-50 border-yellow-200 text-yellow-700' },
+                  rejected: { icon: XCircle, label: 'KYC Rejected', cls: 'bg-red-50 border-red-200 text-red-700' },
                 }
                 const { icon: Icon, label, cls } = map[kycStatus] || map.pending
                 return (
@@ -130,23 +159,54 @@ export default function Settings() {
                 )
               })()}
 
-              <Button type="submit" disabled={profileSaving}>{profileSaving ? 'Saving…' : 'Save profile'}</Button>
+              <div className="flex justify-end pt-2">
+                <Button type="submit" disabled={profileSaving}>{profileSaving ? 'Saving...' : 'Save Profile'}</Button>
+              </div>
             </form>
           )}
-        </section>
+        </div>
 
-        <section className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-          <div className="mb-4 flex items-center gap-3 border-b border-gray-100 pb-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-100 text-amber-800"><Shield className="h-5 w-5" /></div>
-            <h2 className="text-lg font-semibold text-gray-900">Change password</h2>
+        <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+          <div className="flex items-center gap-2 border-b border-gray-100 px-6 py-4">
+            <Shield size={16} className="text-gray-500" />
+            <h2 className="font-semibold text-gray-900">Change Password</h2>
           </div>
-          <form onSubmit={handlePasswordSubmit} className="space-y-4">
-            <input type="password" className="input-field w-full" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} placeholder="Current password" />
-            <input type="password" className="input-field w-full" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="New password" />
-            <input type="password" className="input-field w-full" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Confirm new password" />
-            <Button type="submit" variant="secondary" disabled={passwordSaving}>{passwordSaving ? 'Updating…' : 'Change password'}</Button>
+          <form onSubmit={handlePasswordSubmit} className="space-y-4 p-6">
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">Current Password *</label>
+              <input
+                type="password"
+                className="input-field w-full"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                placeholder="Current password"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">New Password *</label>
+              <input
+                type="password"
+                className="input-field w-full"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Minimum 8 characters"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">Confirm New Password *</label>
+              <input
+                type="password"
+                className="input-field w-full"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Confirm new password"
+              />
+            </div>
+            <div className="flex justify-end pt-2">
+              <Button type="submit" disabled={passwordSaving}>{passwordSaving ? 'Changing...' : 'Change Password'}</Button>
+            </div>
           </form>
-        </section>
+        </div>
       </div>
 
       <ParentManagement

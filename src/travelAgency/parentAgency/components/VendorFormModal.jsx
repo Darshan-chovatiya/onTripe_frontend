@@ -1,20 +1,22 @@
 import { useState, useEffect } from 'react'
 import { CountrySelect, StateSelect, CitySelect, GetCountries, GetState } from 'react-country-state-city'
 import 'react-country-state-city/dist/react-country-state-city.css'
-import { FileText } from 'lucide-react'
+import { FileText, File } from 'lucide-react'
 import Modal from '@/shared/components/Modal.jsx'
 import Button from '@/shared/components/Button.jsx'
 
 const VENDOR_TYPES = ['hotel', 'transport', 'restaurant', 'activity_provider', 'guide', 'cruise', 'other']
 
 const EMPTY = {
-  name: '', contactPerson: '', email: '', phone: '', password: '',
+  name: '', contactPerson: '', email: '', phone: '',
   type: 'hotel', address: '', city: '', state: '', country: '',
 }
 
 export default function VendorFormModal({ isOpen, onClose, onSubmit, initialData, loading }) {
   const [form, setForm] = useState(EMPTY)
   const [docs, setDocs] = useState([])
+  const [docPreviews, setDocPreviews] = useState([])
+  const [existingDocs, setExistingDocs] = useState([])
   const [countryObj, setCountryObj] = useState(null)
   const [stateObj, setStateObj] = useState(null)
   const isEdit = !!initialData
@@ -26,13 +28,13 @@ export default function VendorFormModal({ isOpen, onClose, onSubmit, initialData
         contactPerson: initialData.contactPerson || '',
         email: initialData.email || '',
         phone: initialData.phone || '',
-        password: '',
         type: initialData.type || 'hotel',
         address: initialData.address || '',
         city: initialData.city || '',
         state: initialData.state || '',
         country: initialData.country || '',
       })
+      setExistingDocs(Array.isArray(initialData.docs) ? initialData.docs : [])
 
       // Resolve country → state objects so dropdowns are populated
       if (initialData.country) {
@@ -53,25 +55,42 @@ export default function VendorFormModal({ isOpen, onClose, onSubmit, initialData
       setForm(EMPTY)
       setCountryObj(null)
       setStateObj(null)
+      setExistingDocs([])
     }
     setDocs([])
   }, [initialData, isOpen])
+
+  useEffect(() => {
+    const previews = docs.map((file) => ({
+      name: file.name,
+      isImage: file.type.startsWith('image/'),
+      src: file.type.startsWith('image/') ? URL.createObjectURL(file) : '',
+    }))
+    setDocPreviews(previews)
+    return () => {
+      previews.forEach((p) => {
+        if (p.src) URL.revokeObjectURL(p.src)
+      })
+    }
+  }, [docs])
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    if (isEdit) {
-      const data = { ...form }
-      if (!data.password) delete data.password
-      onSubmit(data)
-    } else {
-      const fd = new FormData()
-      Object.entries(form).forEach(([k, v]) => { if (v) fd.append(k, v) })
-      docs.forEach(f => fd.append('docs', f))
-      onSubmit(fd)
-    }
+    const fd = new FormData()
+    Object.entries(form).forEach(([k, v]) => { if (v) fd.append(k, v) })
+    docs.forEach(f => fd.append('docs', f))
+    onSubmit(fd)
   }
+
+  const toDocUrl = (path) => {
+    if (!path) return ''
+    if (String(path).startsWith('http')) return String(path)
+    const base = (import.meta.env.VITE_API_BASE_URL || '').replace('/api', '').replace(/\/$/, '')
+    return `${base}/${String(path).replace(/^\//, '')}`
+  }
+  const isImageDoc = (name = '') => /\.(png|jpe?g|webp|gif)$/i.test(String(name))
 
   return (
     <Modal
@@ -141,19 +160,6 @@ export default function VendorFormModal({ isOpen, onClose, onSubmit, initialData
             />
             {isEdit && <p className="mt-1 text-xs text-gray-400">Email cannot be changed</p>}
           </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">
-              {isEdit ? 'New Password' : 'Password *'}
-            </label>
-            <input
-              type="password"
-              className="input-field"
-              value={form.password}
-              onChange={e => set('password', e.target.value)}
-              placeholder={isEdit ? 'Leave blank to keep current' : 'Set a password'}
-              required={!isEdit}
-            />
-          </div>
         </div>
 
         <div className="space-y-4 rounded-lg border border-gray-100 bg-gray-50/60 p-4">
@@ -209,30 +215,73 @@ export default function VendorFormModal({ isOpen, onClose, onSubmit, initialData
           </div>
         </div>
 
-        {/* Documents — create only */}
-        {!isEdit && (
-          <div className="space-y-3 rounded-lg border border-gray-100 bg-white p-4">
-            <div className="flex items-center gap-2 text-sm font-medium text-gray-800">
-              <FileText className="h-4 w-4 text-gray-500" />
-              Documents
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">
-                Upload Documents <span className="font-normal text-gray-400">(PDF / Images, optional)</span>
-              </label>
-              <input
-                type="file"
-                multiple
-                accept=".pdf,.jpg,.jpeg,.png"
-                className="input-field cursor-pointer"
-                onChange={e => setDocs(Array.from(e.target.files))}
-              />
-              {docs.length > 0 && (
-                <p className="mt-1.5 text-xs text-gray-400">{docs.length} file(s) selected</p>
-              )}
-            </div>
+        {/* Documents */}
+        <div className="space-y-3 rounded-lg border border-gray-100 bg-white p-4">
+          <div className="flex items-center gap-2 text-sm font-medium text-gray-800">
+            <FileText className="h-4 w-4 text-gray-500" />
+            Documents
           </div>
-        )}
+
+          {isEdit && existingDocs.length > 0 ? (
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              {existingDocs.map((doc, idx) => {
+                const url = toDocUrl(doc)
+                const isImg = isImageDoc(doc)
+                return (
+                  <a
+                    key={`${doc}-${idx}`}
+                    href={url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="group flex items-center gap-2 rounded-md border border-gray-200 p-2 transition-colors hover:bg-gray-50"
+                  >
+                    {isImg ? (
+                      <img src={url} alt="" className="h-10 w-10 rounded object-cover" />
+                    ) : (
+                      <div className="flex h-10 w-10 items-center justify-center rounded bg-gray-100 text-gray-500">
+                        <File className="h-4 w-4" />
+                      </div>
+                    )}
+                    <span className="truncate text-xs text-gray-700 group-hover:text-gray-900">{String(doc).split('/').pop()}</span>
+                  </a>
+                )
+              })}
+            </div>
+          ) : null}
+
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">
+              Upload Documents <span className="font-normal text-gray-400">(PDF / Images)</span>
+            </label>
+            <input
+              type="file"
+              multiple
+              accept=".pdf,.jpg,.jpeg,.png,.webp"
+              className="input-field cursor-pointer"
+              onChange={e => setDocs(Array.from(e.target.files))}
+            />
+            {docs.length > 0 ? (
+              <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                {docPreviews.map((file, idx) => {
+                  return (
+                    <div key={`${file.name}-${idx}`} className="flex items-center gap-2 rounded-md border border-gray-200 p-2">
+                      {file.isImage ? (
+                        <img src={file.src} alt="" className="h-10 w-10 rounded object-cover" />
+                      ) : (
+                        <div className="flex h-10 w-10 items-center justify-center rounded bg-gray-100 text-gray-500">
+                          <FileText className="h-4 w-4" />
+                        </div>
+                      )}
+                      <span className="truncate text-xs text-gray-700">{file.name}</span>
+                    </div>
+                  )
+                })}
+              </div>
+            ) : (
+              <p className="mt-1.5 text-xs text-gray-400">No new files selected.</p>
+            )}
+          </div>
+        </div>
 
       </form>
     </Modal>
