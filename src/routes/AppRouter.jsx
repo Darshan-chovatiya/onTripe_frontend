@@ -31,6 +31,7 @@ import AdminAgentWhitelabels from '@/admin/pages/AgentWhitelabels.jsx'
 import AdminAgentCustomers from '@/admin/pages/AgentCustomers.jsx'
 import AdminAgentParents from '@/admin/pages/AgentParents.jsx'
 import AdminNotifications from '@/admin/pages/Notifications.jsx'
+import AdminNotificationHistory from '@/admin/pages/NotificationHistory.jsx'
 
 import AgencyLayout from '@/travelAgency/shared/components/AgencyLayout.jsx'
 import AgencyPanelSidebar from '@/travelAgency/agency/components/AgencyPanelSidebar.jsx'
@@ -116,6 +117,7 @@ export default function AppRouter() {
           }
         />
         <Route path="notifications" element={<AdminNotifications />} />
+        <Route path="notifications/history" element={<AdminNotificationHistory />} />
         <Route path="settings" element={<AdminSettings />} />
       </Route>
 

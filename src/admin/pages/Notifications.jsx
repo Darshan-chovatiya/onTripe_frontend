@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
-  Bell,
   Search,
   Send,
   Users,
@@ -11,13 +11,15 @@ import {
   Phone,
   Check,
   History,
-  Trash2,
   Loader2,
+  Paperclip,
+  X,
+  FileText,
+  ImageIcon,
 } from 'lucide-react'
 import adminApi from '@/admin/services/adminApi'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
 import Loader from '@/shared/components/Loader.jsx'
-import Modal from '@/shared/components/Modal.jsx'
 
 const TABS = [
   { id: 'parents', label: 'Parents', icon: Building2 },
@@ -38,6 +40,7 @@ export default function Notifications() {
   const { toast } = useToast()
   const toastRef = useRef(toast)
   toastRef.current = toast
+  const navigate = useNavigate()
 
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
@@ -51,14 +54,10 @@ export default function Notifications() {
   const [activeCategory, setActiveCategory] = useState('parents')
   const [search, setSearch] = useState('')
   const [selectedIds, setSelectedIds] = useState(() => new Set())
-  const [showHistory, setShowHistory] = useState(false)
-  const [historyLoading, setHistoryLoading] = useState(false)
-  const [history, setHistory] = useState([])
 
-  const [formData, setFormData] = useState({
-    subject: '',
-    message: '',
-  })
+  const [formData, setFormData] = useState({ subject: '', message: '' })
+  const [files, setFiles] = useState([])
+  const fileInputRef = useRef(null)
 
   const fetchRecipients = useCallback(async () => {
     setLoading(true)
@@ -84,27 +83,6 @@ export default function Notifications() {
   useEffect(() => {
     fetchRecipients()
   }, [fetchRecipients])
-
-  const fetchHistory = async () => {
-    setHistoryLoading(true)
-    try {
-      const { data } = await adminApi.getSentNotifications()
-      if (data?.success) {
-        setHistory(data.data?.notifications || [])
-      } else {
-        toastRef.current.error(data?.message || 'Could not load history')
-      }
-    } catch {
-      toastRef.current.error('Failed to load history')
-    } finally {
-      setHistoryLoading(false)
-    }
-  }
-
-  const openHistory = () => {
-    setShowHistory(true)
-    fetchHistory()
-  }
 
   const toggleRecipient = (id) => {
     setSelectedIds((prev) => {
@@ -153,17 +131,20 @@ export default function Notifications() {
         })
       })
 
-      const { data } = await adminApi.sendNotification({
-        users,
-        customers,
-        subject: formData.subject.trim(),
-        message: formData.message.trim(),
-      })
+      const fd = new FormData()
+      fd.append('subject', formData.subject.trim())
+      fd.append('message', formData.message.trim())
+      fd.append('users', JSON.stringify(users))
+      fd.append('customers', JSON.stringify(customers))
+      files.forEach((f) => fd.append('attachments', f))
+
+      const { data } = await adminApi.sendNotification(fd)
 
       if (data?.success) {
         toastRef.current.success(`Sent to ${selectedIds.size} recipient${selectedIds.size === 1 ? '' : 's'}`)
         setSelectedIds(new Set())
         setFormData({ subject: '', message: '' })
+        setFiles([])
       } else {
         toastRef.current.error(data?.message || 'Send failed')
       }
@@ -173,6 +154,17 @@ export default function Notifications() {
       setSending(false)
     }
   }
+
+  const handleFileChange = (e) => {
+    const picked = Array.from(e.target.files || [])
+    setFiles((prev) => {
+      const combined = [...prev, ...picked]
+      return combined.slice(0, 5) // max 5
+    })
+    e.target.value = ''
+  }
+
+  const removeFile = (idx) => setFiles((prev) => prev.filter((_, i) => i !== idx))
 
   const q = search.trim().toLowerCase()
   const list = recipients[activeCategory] || []
@@ -207,7 +199,7 @@ export default function Notifications() {
         </div>
         <button
           type="button"
-          onClick={openHistory}
+          onClick={() => navigate('/admin/notifications/history')}
           className="self-start text-sm text-gray-500 transition-colors hover:text-gray-900 sm:self-auto"
         >
           <span className="inline-flex items-center gap-1.5">
@@ -390,6 +382,51 @@ export default function Notifications() {
                   Recipients receive this as an email. Sending cannot be undone.
                 </p>
 
+                {/* Attachments */}
+                <div>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    multiple
+                    accept="image/jpeg,image/png,image/jpg,application/pdf"
+                    className="hidden"
+                    onChange={handleFileChange}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={files.length >= 5}
+                    className="inline-flex items-center gap-2 rounded-lg border border-dashed border-gray-300 bg-gray-50 px-3 py-2 text-xs font-medium text-gray-600 transition hover:border-gray-400 hover:bg-gray-100 disabled:opacity-40"
+                  >
+                    <Paperclip className="h-3.5 w-3.5" strokeWidth={2} />
+                    Attach file
+                    <span className="text-gray-400">({files.length}/5)</span>
+                  </button>
+
+                  {files.length > 0 && (
+                    <ul className="mt-2 space-y-1.5">
+                      {files.map((f, i) => {
+                        const isImg = f.type.startsWith('image/')
+                        return (
+                          <li key={i} className="flex items-center gap-2 rounded-lg border border-gray-100 bg-gray-50 px-3 py-2">
+                            {isImg
+                              ? <ImageIcon className="h-4 w-4 shrink-0 text-sky-500" strokeWidth={1.75} />
+                              : <FileText className="h-4 w-4 shrink-0 text-rose-400" strokeWidth={1.75} />
+                            }
+                            <span className="min-w-0 flex-1 truncate text-xs text-gray-700">{f.name}</span>
+                            <span className="shrink-0 text-[10px] text-gray-400">
+                              {f.size < 1024 * 1024 ? `${(f.size / 1024).toFixed(0)} KB` : `${(f.size / (1024 * 1024)).toFixed(1)} MB`}
+                            </span>
+                            <button type="button" onClick={() => removeFile(i)} className="shrink-0 text-gray-400 hover:text-red-500">
+                              <X className="h-3.5 w-3.5" strokeWidth={2} />
+                            </button>
+                          </li>
+                        )
+                      })}
+                    </ul>
+                  )}
+                </div>
+
                 <button
                   type="button"
                   onClick={handleSend}
@@ -414,44 +451,6 @@ export default function Notifications() {
         </div>
       </div>
 
-      <Modal isOpen={showHistory} onClose={() => setShowHistory(false)} title="History" size="lg">
-        {historyLoading ? (
-          <div className="flex flex-col items-center py-16">
-            <Loader size="md" />
-            <p className="mt-3 text-xs text-gray-400">Loading…</p>
-          </div>
-        ) : history.length === 0 ? (
-          <p className="py-12 text-center text-sm text-gray-400">Nothing sent yet.</p>
-        ) : (
-          <ul className="max-h-[min(60vh,440px)] space-y-0 overflow-y-auto">
-            {history.map((item) => {
-              const sent = (item.recipients || []).filter((r) => r.status === 'sent').length
-              const failed = (item.recipients || []).filter((r) => r.status === 'failed').length
-              const total = (item.recipients || []).length
-              return (
-                <li
-                  key={item._id}
-                  className="border-b border-gray-100 py-4 last:border-0 last:pb-0 first:pt-0"
-                >
-                  <div className="flex flex-wrap items-baseline justify-between gap-2">
-                    <p className="text-sm font-medium text-gray-900">{item.subject || '—'}</p>
-                    <time className="text-xs tabular-nums text-gray-400" dateTime={item.createdAt}>
-                      {item.createdAt ? new Date(item.createdAt).toLocaleString() : ''}
-                    </time>
-                  </div>
-                  {item.message ? (
-                    <p className="mt-2 line-clamp-2 text-sm text-gray-500">{item.message}</p>
-                  ) : null}
-                  <p className="mt-2 text-xs text-gray-400">
-                    {total} to send · {sent} sent
-                    {failed > 0 ? ` · ${failed} failed` : ''}
-                  </p>
-                </li>
-              )
-            })}
-          </ul>
-        )}
-      </Modal>
     </div>
   )
 }
