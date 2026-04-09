@@ -42,16 +42,53 @@ export default function Bookings() {
   const [detailId, setDetailId] = useState(null)
   const [detailOpenEdit, setDetailOpenEdit] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [packageFilter, setPackageFilter] = useState('all')
+  const [parentFilter, setParentFilter] = useState('all')
 
-  const sorted = useMemo(
-    () =>
-      [...bookings].sort((a, b) => {
-        const ta = new Date(a.createdAt || 0).getTime()
-        const tb = new Date(b.createdAt || 0).getTime()
-        return tb - ta
-      }),
-    [bookings]
-  )
+  // Helper: get base package and its parent from a booking
+  const getBasePackage = (b) => {
+    if (b.whitelabelPackage?.originalPackage && typeof b.whitelabelPackage.originalPackage === 'object') {
+      return b.whitelabelPackage.originalPackage
+    }
+    return b.package && typeof b.package === 'object' ? b.package : null
+  }
+
+  // Derive unique packages and parents from bookings
+  const packageOptions = useMemo(() => {
+    const map = new Map()
+    bookings.forEach((b) => {
+      const pkg = getBasePackage(b)
+      if (pkg?._id) map.set(String(pkg._id), pkg.title || '—')
+    })
+    return Array.from(map.entries()).map(([id, title]) => ({ id, title }))
+  }, [bookings])
+
+  const parentOptions = useMemo(() => {
+    const map = new Map()
+    bookings.forEach((b) => {
+      const pkg = getBasePackage(b)
+      const creator = pkg?.createdBy
+      if (creator?._id) map.set(String(creator._id), creator.name || creator.email || String(creator._id))
+    })
+    return Array.from(map.entries()).map(([id, name]) => ({ id, name }))
+  }, [bookings])
+
+  const sorted = useMemo(() => {
+    let list = [...bookings].sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
+    if (packageFilter !== 'all') {
+      list = list.filter((b) => {
+        const pkg = getBasePackage(b)
+        return String(pkg?._id) === packageFilter
+      })
+    }
+    if (parentFilter !== 'all') {
+      list = list.filter((b) => {
+        const pkg = getBasePackage(b)
+        return String(pkg?.createdBy?._id || pkg?.createdBy) === parentFilter
+      })
+    }
+    return list
+  }, [bookings, packageFilter, parentFilter])
 
   const handleCreate = async (formData) => {
     setSubmitting(true)
@@ -97,6 +134,44 @@ export default function Bookings() {
       {error ? (
         <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
       ) : null}
+
+      {/* Filters */}
+      {(packageOptions.length > 1 || parentOptions.length > 1) && (
+        <div className="flex flex-wrap gap-3">
+          {parentOptions.length > 1 && (
+            <select
+              className="input-field w-auto min-w-[160px] text-sm"
+              value={parentFilter}
+              onChange={(e) => { setParentFilter(e.target.value); setPackageFilter('all') }}
+            >
+              <option value="all">All parents</option>
+              {parentOptions.map((p) => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+          )}
+          {packageOptions.length > 1 && (
+            <select
+              className="input-field w-auto min-w-[180px] text-sm"
+              value={packageFilter}
+              onChange={(e) => setPackageFilter(e.target.value)}
+            >
+              <option value="all">All packages</option>
+              {packageOptions
+                .filter((p) => {
+                  if (parentFilter === 'all') return true
+                  return bookings.some((b) => {
+                    const pkg = getBasePackage(b)
+                    return String(pkg?._id) === p.id && String(pkg?.createdBy?._id || pkg?.createdBy) === parentFilter
+                  })
+                })
+                .map((p) => (
+                  <option key={p.id} value={p.id}>{p.title}</option>
+                ))}
+            </select>
+          )}
+        </div>
+      )}
 
       {loading && sorted.length === 0 ? (
         <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
