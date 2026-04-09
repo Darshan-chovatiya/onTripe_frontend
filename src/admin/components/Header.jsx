@@ -74,7 +74,7 @@ export default function Header({ onMenuClick }) {
   const handleLogout = () => {
     setShowLogoutConfirm(false)
     logout()
-    navigate('/admin/login', { replace: true })
+    navigate('/login', { replace: true })
   }
 
   return (

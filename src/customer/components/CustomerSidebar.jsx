@@ -23,7 +23,7 @@ export default function CustomerSidebar({ isOpen, onClose }) {
 
   const handleLogout = () => {
     logout()
-    navigate('/login', { replace: true })
+    navigate('/customer/login', { replace: true })
     if (window.innerWidth < 1024) onClose()
   }
 

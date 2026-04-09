@@ -97,7 +97,7 @@ export default function Booking() {
 
   const handleLogout = () => {
     logout()
-    navigate('/login', { replace: true })
+    navigate('/customer/login', { replace: true })
   }
 
   const pkg = booking?.package || {}

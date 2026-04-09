@@ -60,13 +60,13 @@ export function useAgencyPermissions() {
   const loginPathForLogout = useMemo(() => {
     switch (authRole) {
       case ROLES.PARENT_AGENCY:
-        return '/travelAgency/parent/login'
+        return '/login'
       case ROLES.CHILD_AGENCY:
-        return '/travelAgency/child/login'
+        return '/login'
       case ROLES.SUB_CHILD:
-        return '/travelAgency/subchild/login'
+        return '/login'
       default:
-        return '/travelAgency/parent/login'
+        return '/login'
     }
   }, [authRole])
 

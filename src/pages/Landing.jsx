@@ -8,19 +8,25 @@ const PANELS = [
     name: 'Admin',
     description: 'Platform administration',
     path: '/admin/dashboard',
-    signInPath: '/admin/login',
+    signInPath: '/login',
   },
   {
     name: 'Agency',
     description: 'Parent, child, or sub-child — one panel, role-based access',
     path: '/agency/dashboard',
-    signInPath: '/travelAgency/parent/login',
+    signInPath: '/login',
   },
   {
     name: 'Customer',
     description: 'Book and manage trips',
     path: '/customer/booking',
-    signInPath: '/login',
+    signInPath: '/customer/login',
+  },
+  {
+    name: 'Vendor',
+    description: 'View assigned activities, customer details and trip dates',
+    path: '/vendor/dashboard',
+    signInPath: '/vendor/login',
   },
 ]
 
@@ -49,7 +55,7 @@ export default function Landing() {
                 <ArrowRight className="h-4 w-4" />
               </Link>
             ) : null}
-            <Link to="/login" className={isAuthenticated ? 'btn-secondary' : 'btn-primary inline-flex items-center gap-2'}>
+            <Link to="/customer/login" className={isAuthenticated ? 'btn-secondary' : 'btn-primary inline-flex items-center gap-2'}>
               Customer sign in
               {!isAuthenticated ? <ArrowRight className="h-4 w-4" /> : null}
             </Link>

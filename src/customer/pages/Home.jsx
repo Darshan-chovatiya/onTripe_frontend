@@ -104,7 +104,7 @@ export default function Home() {
 
   const handleLogout = () => {
     logout()
-    navigate('/login', { replace: true })
+    navigate('/customer/login', { replace: true })
   }
 
   if (loading) {

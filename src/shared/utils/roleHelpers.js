@@ -13,6 +13,8 @@ export function getRoleRedirectPath(role) {
       return '/agency/sub/dashboard'
     case ROLES.CUSTOMER:
       return '/customer/booking'
+    case ROLES.VENDOR:
+      return '/vendor/dashboard'
     default:
       return '/login'
   }
@@ -54,6 +56,7 @@ export function getRequiredRolesForPath(pathname) {
     return [ROLES.PARENT_AGENCY, ROLES.CHILD_AGENCY, ROLES.SUB_CHILD]
   }
   if (pathname.startsWith('/customer')) return [ROLES.CUSTOMER]
+  if (pathname.startsWith('/vendor')) return [ROLES.VENDOR]
   return null
 }
 
@@ -63,11 +66,13 @@ export function getRequiredRolesForPath(pathname) {
  * @param {string} pathname
  */
 export function getLoginPathForCurrentPath(pathname) {
-  if (pathname.startsWith('/admin')) return '/admin/login'
-  if (pathname.startsWith('/agency/parent')) return '/travelAgency/parent/login'
-  if (pathname.startsWith('/agency/child')) return '/travelAgency/child/login'
-  if (pathname.startsWith('/agency/sub')) return '/travelAgency/subchild/login'
-  if (pathname.startsWith('/agency')) return '/travelAgency/parent/login'
+  if (pathname.startsWith('/admin')) return '/login'
+  if (pathname.startsWith('/agency/parent')) return '/login'
+  if (pathname.startsWith('/agency/child')) return '/login'
+  if (pathname.startsWith('/agency/sub')) return '/login'
+  if (pathname.startsWith('/agency')) return '/login'
+  if (pathname.startsWith('/customer')) return '/customer/login'
+  if (pathname.startsWith('/vendor')) return '/vendor/login'
   return '/login'
 }
 

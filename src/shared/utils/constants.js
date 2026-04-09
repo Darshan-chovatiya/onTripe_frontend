@@ -1,4 +1,4 @@
-/** @typedef {'admin' | 'parentAgency' | 'childAgency' | 'subChild' | 'customer'} AppRole */
+/** @typedef {'admin' | 'parentAgency' | 'childAgency' | 'subChild' | 'customer' | 'vendor'} AppRole */
 
 export const AUTH_STORAGE_KEY = 'ontrip-auth'
 
@@ -8,6 +8,7 @@ export const ROLES = {
   CHILD_AGENCY: 'childAgency',
   SUB_CHILD: 'subChild',
   CUSTOMER: 'customer',
+  VENDOR: 'vendor',
 }
 
 export const ALL_ROLES = Object.values(ROLES)

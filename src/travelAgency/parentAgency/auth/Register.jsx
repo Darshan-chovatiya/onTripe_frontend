@@ -41,7 +41,7 @@ export default function ParentRegister() {
     const res = await registerParent(submitData)
     if (res.success) {
       toast.success('Application submitted successfully! Our team will review your KYC documents soon.')
-      setTimeout(() => navigate('/travelAgency/parent/login'), 2500)
+      setTimeout(() => navigate('/login'), 2500)
     } else {
       toast.error(res.message || 'Application failed')
     }
@@ -176,7 +176,7 @@ export default function ParentRegister() {
 
         <div className="mt-8 text-center text-sm">
           <span className="text-gray-600">Already a partner? </span>
-          <Link to="/travelAgency/parent/login" className="font-semibold text-primary-600 hover:underline">
+          <Link to="/login" className="font-semibold text-primary-600 hover:underline">
             Sign In Here
           </Link>
         </div>
