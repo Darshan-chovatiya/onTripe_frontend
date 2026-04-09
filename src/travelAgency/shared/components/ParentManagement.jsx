@@ -1,20 +1,20 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Building2, CheckCircle, Clock, Plus, Trash2, X } from 'lucide-react'
+import { Building2, CheckCircle, Clock, Plus, XCircle } from 'lucide-react'
 import Button from '@/shared/components/Button.jsx'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
 import { getApiErrorMessage } from '@/shared/services/apiHelpers.js'
 
 /**
- * @param {{ listParents: Function, addParent: Function, removeParent: Function, label: string }} props
+ * @param {{ listParents: Function, addParent: Function, toggleParentActive: Function, label: string }} props
  */
-export default function ParentManagement({ listParents, addParent, removeParent, label }) {
+export default function ParentManagement({ listParents, addParent, toggleParentActive, label }) {
   const { toast } = useToast()
   const toastRef = useRef(toast)
   const [parents, setParents] = useState([])
   const [loading, setLoading] = useState(false)
   const [code, setCode] = useState('')
   const [adding, setAdding] = useState(false)
-  const [removingId, setRemovingId] = useState(null)
+  const [togglingId, setTogglingId] = useState(null)
 
   const refresh = useCallback(async () => {
     setLoading(true)
@@ -47,16 +47,20 @@ export default function ParentManagement({ listParents, addParent, removeParent,
     }
   }
 
-  const handleRemove = async (parentId) => {
-    setRemovingId(parentId)
+  const handleToggle = async (p) => {
+    setTogglingId(p._id)
     try {
-      await removeParent(parentId)
-      toast.success('Parent removed')
-      setParents(prev => prev.filter(p => String(p._id) !== String(parentId)))
+      await toggleParentActive(p._id)
+      setParents(prev => prev.map(item =>
+        String(item._id) === String(p._id)
+          ? { ...item, isActive: !item.isActive }
+          : item
+      ))
+      toast.success(p.isActive ? 'Parent deactivated — packages hidden' : 'Parent activated')
     } catch (err) {
       toast.error(getApiErrorMessage(err))
     } finally {
-      setRemovingId(null)
+      setTogglingId(null)
     }
   }
 
@@ -97,31 +101,55 @@ export default function ParentManagement({ listParents, addParent, removeParent,
           {parents.map((p) => (
             <li
               key={p._id}
-              className="flex items-center justify-between gap-3 rounded-xl border border-gray-100 bg-gray-50/80 px-4 py-3"
+              className={`flex items-center justify-between gap-3 rounded-xl border px-4 py-3 ${
+                p.status === 'approved' && !p.isActive
+                  ? 'border-gray-200 bg-gray-100/60'
+                  : 'border-gray-100 bg-gray-50/80'
+              }`}
             >
               <div className="min-w-0">
-                <p className="truncate text-sm font-medium text-gray-900">{p.name || '—'}</p>
+                <p className={`truncate text-sm font-medium ${p.status === 'approved' && !p.isActive ? 'text-gray-400' : 'text-gray-900'}`}>
+                  {p.name || '—'}
+                </p>
                 <p className="text-xs text-gray-500">{p.email || p.phone || p.agentCode || ''}</p>
               </div>
               <div className="flex shrink-0 items-center gap-2">
+                {/* Status badge */}
                 {p.status === 'approved' ? (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-100">
-                    <CheckCircle className="h-3 w-3" /> Approved
+                  p.isActive ? (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-100">
+                      <CheckCircle className="h-3 w-3" /> Approved
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-semibold text-gray-500 ring-1 ring-inset ring-gray-200">
+                      Inactive
+                    </span>
+                  )
+                ) : p.status === 'rejected' ? (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2.5 py-0.5 text-xs font-semibold text-red-700 ring-1 ring-inset ring-red-100">
+                    <XCircle className="h-3 w-3" /> Rejected
                   </span>
                 ) : (
                   <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-700 ring-1 ring-inset ring-amber-100">
                     <Clock className="h-3 w-3" /> Pending
                   </span>
                 )}
-                <button
-                  type="button"
-                  onClick={() => handleRemove(p._id)}
-                  disabled={removingId === p._id}
-                  className="rounded-lg p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
-                  title="Remove"
-                >
-                  {removingId === p._id ? <X className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                </button>
+
+                {/* Active/Inactive toggle — only for approved */}
+                {p.status === 'approved' && (
+                  <button
+                    type="button"
+                    onClick={() => handleToggle(p)}
+                    disabled={togglingId === p._id}
+                    className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition disabled:opacity-50 ${
+                      p.isActive
+                        ? 'border border-gray-200 bg-white text-gray-600 hover:border-red-200 hover:bg-red-50 hover:text-red-600'
+                        : 'border border-emerald-200 bg-white text-emerald-700 hover:bg-emerald-50'
+                    }`}
+                  >
+                    {togglingId === p._id ? '…' : p.isActive ? 'Set inactive' : 'Set active'}
+                  </button>
+                )}
               </div>
             </li>
           ))}

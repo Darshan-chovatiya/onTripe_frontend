@@ -123,6 +123,18 @@ export default function PackageCard({ pkg, onEdit, onUpdateCover, onUpdateGaller
           )}
         </div>
 
+        {/* Revenue & Bookings */}
+        <div className="flex flex-wrap gap-2">
+          <span className="inline-flex items-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold tabular-nums text-emerald-800">
+            <IndianRupee className="h-3 w-3 shrink-0" strokeWidth={2.5} />
+            {(Number(pkg.totalRevenue) || 0).toLocaleString('en-IN')}
+            <span className="font-normal text-emerald-600">revenue</span>
+          </span>
+          <span className="inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-gray-50 px-2.5 py-1 text-[11px] font-medium tabular-nums text-gray-700">
+            {Number(pkg.bookingCount) || 0} booking{(Number(pkg.bookingCount) || 0) !== 1 ? 's' : ''}
+          </span>
+        </div>
+
         <div className="mt-auto space-y-2 border-t border-gray-100 pt-3">
           <div className="grid grid-cols-2 gap-2">
             <button

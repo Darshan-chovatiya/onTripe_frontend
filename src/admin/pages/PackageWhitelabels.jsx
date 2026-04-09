@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ChevronRight, Layers, Loader2, MapPin, Calendar, Package, IndianRupee } from 'lucide-react'
+import { ChevronRight, Download, Layers, Loader2, MapPin, Calendar, Package, IndianRupee } from 'lucide-react'
 import adminApi from '@/admin/services/adminApi'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
 import { getFileUrl, WhitelabelAgencyChain, NewOfferDetails } from '@/admin/components/WhitelabelOfferBlocks.jsx'
@@ -15,6 +15,7 @@ export default function PackageWhitelabels() {
   const [loading, setLoading] = useState(true)
   const [pkg, setPkg] = useState(null)
   const [rows, setRows] = useState([])
+  const [exportLoading, setExportLoading] = useState(false)
 
   const load = useCallback(async () => {
     if (!packageId) return
@@ -40,6 +41,64 @@ export default function PackageWhitelabels() {
   }, [load])
 
   const coverUrl = useMemo(() => getFileUrl(pkg?.coverImage), [pkg?.coverImage])
+
+  const handleExport = async () => {
+    setExportLoading(true)
+    try {
+      const { exportToExcel } = await import('@/admin/utils/exportExcel.js')
+      await exportToExcel(
+        rows.map((wl, idx) => {
+          const isSubChild = wl.createdBy?.role === 'sub_child_agent'
+          const basePrice = Number(pkg?.basePrice || 0)
+          const finalPrice = Number(wl.finalPrice || 0)
+          const commission = wl.commissionType === 'percentage'
+            ? `${wl.commissionValue ?? 0}%`
+            : wl.commissionType === 'flat'
+              ? `₹${Number(wl.commissionValue || 0).toLocaleString('en-IN')}`
+              : '—'
+
+          return {
+            '#': idx + 1,
+            'Whitelabel Title': wl.customTitle || pkg?.title || '—',
+            'Custom Description': wl.customDescription || '—',
+            'Source Type': isSubChild
+              ? 'Sub-child (whitelabelled from child whitelabel)'
+              : 'Child (whitelabelled from original package)',
+            'Original Package': pkg?.title || '—',
+            'Original Package Owner (Parent Agency)': pkg?.createdBy?.name || '—',
+            ...(isSubChild ? {
+              'Child Agency (Whitelabel Source)': wl.ownedByParent?.name || '—',
+              'Child Agency Code': wl.ownedByParent?.agentCode || '—',
+              'Child Agency Email': wl.ownedByParent?.email || '—',
+              'Sub-Child Agent (Created By)': wl.createdBy?.name || '—',
+              'Sub-Child Agent Code': wl.createdBy?.agentCode || '—',
+              'Sub-Child Agent Email': wl.createdBy?.email || '—',
+            } : {
+              'Child Agent (Created By)': wl.createdBy?.name || '—',
+              'Child Agent Code': wl.createdBy?.agentCode || '—',
+              'Child Agent Email': wl.createdBy?.email || '—',
+              'Parent Agency': wl.ownedByParent?.name || '—',
+              'Parent Agency Code': wl.ownedByParent?.agentCode || '—',
+            }),
+            'Destination': pkg?.destination || '—',
+            'Total Days': pkg?.totalDays ?? '—',
+            'Base Price (INR)': basePrice,
+            'Commission': commission,
+            'Commission Type': wl.commissionType || '—',
+            'Final Offer Price (INR)': finalPrice,
+            'Status': wl.isActive ? 'Active' : 'Inactive',
+            'Created On': wl.createdAt ? new Date(wl.createdAt).toLocaleDateString() : '—',
+          }
+        }),
+        `whitelabels-${pkg?.title || 'package'}`,
+        'Whitelabels'
+      )
+    } catch {
+      toastRef.current.error('Export failed')
+    } finally {
+      setExportLoading(false)
+    }
+  }
 
   if (loading && !pkg) {
     return (
@@ -125,11 +184,24 @@ export default function PackageWhitelabels() {
       <section>
         <div className="mb-2 flex items-center justify-between gap-2">
           <h2 className="text-base font-semibold text-gray-900">Whitelabel offers</h2>
-          {!loading && rows.length > 0 ? (
-            <span className="text-xs text-gray-500">
-              {rows.length} offer{rows.length === 1 ? '' : 's'}
-            </span>
-          ) : null}
+          <div className="flex items-center gap-2">
+            {!loading && rows.length > 0 && (
+              <>
+                <span className="text-xs text-gray-500">{rows.length} offer{rows.length === 1 ? '' : 's'}</span>
+                <button
+                  type="button"
+                  onClick={handleExport}
+                  disabled={exportLoading}
+                  className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 disabled:opacity-50"
+                >
+                  {exportLoading
+                    ? <Loader2 className="h-4 w-4 animate-spin" strokeWidth={2} />
+                    : <Download className="h-4 w-4" strokeWidth={2} />}
+                  Export
+                </button>
+              </>
+            )}
+          </div>
         </div>
 
         {loading ? (

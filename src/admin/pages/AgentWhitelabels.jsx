@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
-import { Building2, ChevronRight, Layers, Loader2, Mail, Phone, ShieldCheck } from 'lucide-react'
+import { Building2, ChevronRight, Download, Layers, Loader2, Mail, Phone, ShieldCheck } from 'lucide-react'
 import adminApi from '@/admin/services/adminApi'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
 import { NewOfferDetails, SourcePackageSummary } from '@/admin/components/WhitelabelOfferBlocks.jsx'
@@ -21,6 +21,7 @@ export default function AgentWhitelabels() {
   const [agent, setAgent] = useState(null)
   const [parentAgency, setParentAgency] = useState(null)
   const [rows, setRows] = useState([])
+  const [exportLoading, setExportLoading] = useState(false)
 
   const load = useCallback(async () => {
     if (!agentId) return
@@ -58,6 +59,67 @@ export default function AgentWhitelabels() {
         : isSubChildContext
           ? 'Sub-child agency'
           : 'Child agency'
+
+  const handleExport = async () => {
+    setExportLoading(true)
+    try {
+      const { exportToExcel } = await import('@/admin/utils/exportExcel.js')
+      const isSubChild = agent?.role === 'sub_child_agent' || isSubChildContext
+      await exportToExcel(
+        rows.map((wl, idx) => {
+          const basePkg = wl.originalPackage
+          const basePrice = Number(basePkg?.basePrice || 0)
+          const finalPrice = Number(wl.finalPrice || 0)
+          const commission = wl.commissionType === 'percentage'
+            ? `${wl.commissionValue ?? 0}%`
+            : wl.commissionType === 'flat'
+              ? `₹${Number(wl.commissionValue || 0).toLocaleString('en-IN')}`
+              : '—'
+
+          return {
+            '#': idx + 1,
+            'Whitelabel Title': wl.customTitle || basePkg?.title || '—',
+            'Custom Description': wl.customDescription || '—',
+
+            // Chain differs: child whitelabels from original; sub-child from child's whitelabel
+            'Source Type': isSubChild
+              ? 'Sub-child (whitelabelled from child whitelabel)'
+              : 'Child (whitelabelled from original package)',
+            'Original Package': basePkg?.title || '—',
+            'Original Package Owner': basePkg?.createdBy?.name || '—',
+            'Original Package Owner Code': basePkg?.createdBy?.agentCode || '—',
+
+            ...(isSubChild ? {
+              'Child Agency (Whitelabel Source)': wl.ownedByParent?.name || parentAgency?.name || '—',
+              'Child Agency Code': wl.ownedByParent?.agentCode || parentAgency?.agentCode || '—',
+              'Child Agency Email': wl.ownedByParent?.email || parentAgency?.email || '—',
+              'Sub-Child Agent': agent?.name || '—',
+              'Sub-Child Agent Code': agent?.agentCode || '—',
+              'Sub-Child Agent Email': agent?.email || '—',
+            } : {
+              'Child Agent': agent?.name || '—',
+              'Child Agent Code': agent?.agentCode || '—',
+              'Child Agent Email': agent?.email || '—',
+              'Parent Agency': wl.ownedByParent?.name || parentAgency?.name || '—',
+              'Parent Agency Code': wl.ownedByParent?.agentCode || parentAgency?.agentCode || '—',
+            }),
+
+            'Destination': basePkg?.destination || '—',
+            'Total Days': basePkg?.totalDays ?? '—',
+            'Base Price (INR)': basePrice,
+            'Commission': commission,
+            'Commission Type': wl.commissionType || '—',
+            'Final Offer Price (INR)': finalPrice,
+            'Status': wl.isActive ? 'Active' : 'Inactive',
+            'Created On': wl.createdAt ? new Date(wl.createdAt).toLocaleDateString() : '—',
+          }
+        }),
+        `whitelabels-${agent?.name || 'agent'}`,
+        'Whitelabels'
+      )
+    } catch { toastRef.current.error('Export failed') }
+    finally { setExportLoading(false) }
+  }
 
   if (loading && !agent) {
     return (
@@ -147,11 +209,22 @@ export default function AgentWhitelabels() {
       <section>
         <div className="mb-2 flex items-center justify-between gap-2">
           <h2 className="text-base font-semibold text-gray-900">Whitelabel offers</h2>
-          {!loading && rows.length > 0 ? (
-            <span className="text-xs text-gray-500">
-              {rows.length} offer{rows.length === 1 ? '' : 's'}
-            </span>
-          ) : null}
+          <div className="flex items-center gap-2">
+            {!loading && rows.length > 0 && (
+              <>
+                <span className="text-xs text-gray-500">{rows.length} offer{rows.length === 1 ? '' : 's'}</span>
+                <button
+                  type="button"
+                  onClick={handleExport}
+                  disabled={exportLoading}
+                  className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 disabled:opacity-50"
+                >
+                  {exportLoading ? <Loader2 className="h-4 w-4 animate-spin" strokeWidth={2} /> : <Download className="h-4 w-4" strokeWidth={2} />}
+                  Export
+                </button>
+              </>
+            )}
+          </div>
         </div>
 
         {loading ? (

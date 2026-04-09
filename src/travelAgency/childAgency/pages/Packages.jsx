@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { PackageOpen, Layers, Tags } from 'lucide-react'
 import { useChildPackages } from '@/travelAgency/childAgency/hooks/useChildPackages.js'
@@ -10,6 +10,7 @@ import Button from '@/shared/components/Button.jsx'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
 import { getApiErrorMessage } from '@/shared/services/apiHelpers.js'
 import { mapWhitelabelByOriginalPackageId } from '@/travelAgency/childAgency/utils/whitelabelHelpers.js'
+import { listParents } from '@/travelAgency/childAgency/services/childAgencyApi.js'
 export default function Packages() {
   const navigate = useNavigate()
   const { availablePackages, whitelabels, loading, error, createWhitelabel, updateWhitelabel } = useChildPackages()
@@ -18,6 +19,18 @@ export default function Packages() {
   const [submitting, setSubmitting] = useState(false)
   const [chatPackageId, setChatPackageId] = useState(null)
   const [parentFilter, setParentFilter] = useState('all')
+  const [inactiveParentIds, setInactiveParentIds] = useState(new Set())
+
+  useEffect(() => {
+    listParents().then(({ data }) => {
+      const ids = new Set(
+        (data?.data?.parents ?? [])
+          .filter(p => p.status === 'approved' && !p.isActive)
+          .map(p => String(p._id))
+      )
+      setInactiveParentIds(ids)
+    }).catch(() => {})
+  }, [])
 
   // Derive unique parent list from available packages
   const parentOptions = useMemo(() => {
@@ -179,6 +192,7 @@ export default function Packages() {
                 existingWhitelabel={whitelabelByPackageId.get(String(pkg._id)) ?? null}
                 onCreateWhiteLabel={(p) => openCreate(p)}
                 onEditWhiteLabel={openEdit}
+                disabled={inactiveParentIds.has(String(pkg.createdBy?._id || pkg.createdBy))}
               />
             ))}
           </div>
@@ -248,6 +262,7 @@ export default function Packages() {
                     navigate(`/agency/packages/${pid}/reviews?readOnly=true`)
                   }}
                   hasBooking={bookedWhiteLabelIds.has(String(wl._id))}
+                  disabled={inactiveParentIds.has(String(wl.ownedByParent?._id || wl.ownedByParent))}
                 />
               ))}
             </div>

@@ -13,6 +13,7 @@ import {
   Layers,
   Ticket,
   Star,
+  IndianRupee,
 } from 'lucide-react'
 import adminApi from '@/admin/services/adminApi'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
@@ -20,7 +21,6 @@ import Loader from '@/shared/components/Loader.jsx'
 import Modal from '@/shared/components/Modal.jsx'
 import CustomDropdown from '@/shared/components/CustomDropdown.jsx'
 import Pagination from '@/admin/components/Pagination.jsx'
-import { exportToExcel } from '@/admin/utils/exportExcel.js'
 
 /** Neutral count pill — matches other admin tables (gray border / soft bg) */
 const countPillClass =
@@ -435,21 +435,150 @@ export default function Packages() {
         ...(statusFilter !== 'all' ? { status: statusFilter } : {}),
         ...(parentFilter !== 'all' ? { parentAgencyId: parentFilter } : {}),
       })
-      await exportToExcel(
-        (data?.data?.packages ?? []).map((p) => ({
-          Title: p.title || '', Destination: p.destination || '',
-          'Total Days': p.totalDays ?? '', 'Base Price (INR)': Number(p.basePrice) || 0,
-          Currency: p.currency || 'INR', 'Max Capacity': p.maxCapacity ?? '',
-          Status: p.isActive ? 'Active' : 'Inactive',
-          'Agency Name': p.createdBy?.name || '', 'Agency Code': p.createdBy?.agentCode || '',
+      const pkgs = data?.data?.packages ?? []
+
+      const ExcelJS = (await import('exceljs')).default
+      const { saveAs } = await import('file-saver')
+      const wb = new ExcelJS.Workbook()
+      wb.creator = 'OnTrip Admin'; wb.created = new Date()
+
+      const NAVY = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1E293B' } }
+      const LBLFIL = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF1F5F9' } }
+      const STRIPE = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8FAFC' } }
+      const WHITE = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFFFFF' } }
+      const HFONT = { bold: true, color: { argb: 'FFFFFFFF' }, size: 11, name: 'Calibri' }
+      const LFONT = { bold: true, color: { argb: 'FF334155' }, size: 10, name: 'Calibri' }
+      const VFONT = { color: { argb: 'FF1E293B' }, size: 10, name: 'Calibri' }
+      const CENTER = { horizontal: 'center', vertical: 'middle' }
+      const WRAP = { vertical: 'middle', wrapText: true }
+      const MIDDLE = { vertical: 'middle' }
+      const TBDR = { bottom: { style: 'thin', color: { argb: 'FFE2E8F0' } }, right: { style: 'thin', color: { argb: 'FFE2E8F0' } } }
+      const MBDR = { bottom: { style: 'medium', color: { argb: 'FF3B82F6' } } }
+
+      const styleHdr = (ws, height = 24) => {
+        const r = ws.getRow(1); r.height = height
+        r.eachCell((c) => { c.fill = NAVY; c.font = HFONT; c.alignment = CENTER; c.border = MBDR })
+      }
+      const styleData = (row, idx) => {
+        row.height = 18
+        row.eachCell((c) => { c.fill = idx % 2 === 0 ? STRIPE : WHITE; c.font = VFONT; c.alignment = MIDDLE; c.border = TBDR })
+      }
+
+      // ── Sheet 1: Packages Summary ──────────────────────────────────
+      const sumWs = wb.addWorksheet('Packages')
+      sumWs.views = [{ state: 'frozen', ySplit: 1 }]
+      const sumHeaders = [
+        '#', 'Title', 'Destination', 'Total Days', 'Base Price (INR)', 'Currency',
+        'Max Capacity', 'Status', 'Approval Status',
+        'Agency Name', 'Agency Code', 'Agency Email', 'Agency Phone',
+        'Inclusions', 'Exclusions', 'Important Notes',
+        'Whitelabels', 'Bookings', 'Created On',
+      ]
+      sumWs.columns = sumHeaders.map((h) => ({ header: h, key: h, width: Math.min(Math.max(h.length + 4, 14), 42) }))
+      styleHdr(sumWs)
+
+      pkgs.forEach((p, idx) => {
+        const r = sumWs.addRow({
+          '#': idx + 1,
+          'Title': p.title || '',
+          'Destination': p.destination || '',
+          'Total Days': p.totalDays ?? '',
+          'Base Price (INR)': Number(p.basePrice) || 0,
+          'Currency': p.currency || 'INR',
+          'Max Capacity': p.maxCapacity ?? '',
+          'Status': p.isActive ? 'Active' : 'Inactive',
+          'Approval Status': p.status || 'approved',
+          'Agency Name': p.createdBy?.name || '',
+          'Agency Code': p.createdBy?.agentCode || '',
           'Agency Email': p.createdBy?.email || '',
-          Whitelabels: Number(p.whitelabelCount) || 0, Bookings: Number(p.bookingCount) || 0,
+          'Agency Phone': p.createdBy?.phone || '',
+          'Inclusions': Array.isArray(p.inclusions) ? p.inclusions.join('\n') : '',
+          'Exclusions': Array.isArray(p.exclusions) ? p.exclusions.join('\n') : '',
+          'Important Notes': Array.isArray(p.importantNotes) ? p.importantNotes.join('\n') : '',
+          'Whitelabels': Number(p.whitelabelCount) || 0,
+          'Bookings': Number(p.bookingCount) || 0,
           'Created On': p.createdAt ? new Date(p.createdAt).toLocaleDateString() : '',
-        })),
-        'packages', 'Packages'
-      )
-    } catch { toastRef.current.error('Export failed') }
-    finally { setExportLoading(false) }
+        })
+        r.height = 20
+        r.eachCell((c) => {
+          c.fill = idx % 2 === 0 ? STRIPE : WHITE; c.font = VFONT
+          c.alignment = WRAP; c.border = TBDR
+        })
+      })
+
+      // ── Sheet 2: Itinerary (one row per day per package) ──────────
+      const itnWs = wb.addWorksheet('Itinerary')
+      itnWs.views = [{ state: 'frozen', ySplit: 1 }]
+      const itnHeaders = [
+        'Package Title', 'Day #', 'Day Title', 'Day Description',
+        'Breakfast', 'Lunch', 'Dinner',
+        'Activity #', 'Activity Name', 'Category', 'Activity Description',
+        'Location', 'Start Time', 'End Time', 'Duration (min)',
+        'Optional', 'Highlight', 'Included in Price', 'Extra Cost',
+        'Difficulty', 'Min Age', 'Max Age',
+      ]
+      itnWs.columns = itnHeaders.map((h) => ({ header: h, key: h, width: Math.min(Math.max(h.length + 4, 12), 40) }))
+      styleHdr(itnWs)
+
+      let itnIdx = 0
+      pkgs.forEach((p) => {
+        const itinerary = Array.isArray(p.itinerary) ? p.itinerary : []
+        if (itinerary.length === 0) {
+          // still add one row so the package appears
+          const r = itnWs.addRow({ 'Package Title': p.title || '', 'Day #': '—' })
+          styleData(r, itnIdx++)
+          return
+        }
+        itinerary.forEach((day) => {
+          const experiences = Array.isArray(day.experiences) ? day.experiences : []
+          const meals = day.meals || {}
+          if (experiences.length === 0) {
+            const r = itnWs.addRow({
+              'Package Title': p.title || '', 'Day #': day.day ?? '',
+              'Day Title': day.title || '', 'Day Description': day.description || '',
+              'Breakfast': meals.breakfast ? 'Yes' : 'No',
+              'Lunch': meals.lunch ? 'Yes' : 'No',
+              'Dinner': meals.dinner ? 'Yes' : 'No',
+            })
+            styleData(r, itnIdx++)
+          } else {
+            experiences.forEach((exp, ei) => {
+              const r = itnWs.addRow({
+                'Package Title': p.title || '', 'Day #': day.day ?? '',
+                'Day Title': day.title || '', 'Day Description': day.description || '',
+                'Breakfast': meals.breakfast ? 'Yes' : 'No',
+                'Lunch': meals.lunch ? 'Yes' : 'No',
+                'Dinner': meals.dinner ? 'Yes' : 'No',
+                'Activity #': ei + 1,
+                'Activity Name': exp.name || '',
+                'Category': exp.category || '',
+                'Activity Description': exp.description || '',
+                'Location': exp.location || '',
+                'Start Time': exp.startTime || '',
+                'End Time': exp.endTime || '',
+                'Duration (min)': exp.durationMinutes ?? '',
+                'Optional': exp.isOptional ? 'Yes' : 'No',
+                'Highlight': exp.isHighlight ? 'Yes' : 'No',
+                'Included in Price': exp.includedInPrice !== false ? 'Yes' : 'No',
+                'Extra Cost': exp.extraCost ?? 0,
+                'Difficulty': exp.difficulty || '',
+                'Min Age': exp.minAge ?? '',
+                'Max Age': exp.maxAge ?? '',
+              })
+              styleData(r, itnIdx++)
+            })
+          }
+        })
+      })
+
+      const buf = await wb.xlsx.writeBuffer()
+      saveAs(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), 'packages.xlsx')
+    } catch (e) {
+      console.error(e)
+      toastRef.current.error('Export failed')
+    } finally {
+      setExportLoading(false)
+    }
   }
 
   return (
@@ -533,6 +662,7 @@ export default function Packages() {
                     <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-600">Agency</th>
                     <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-600">Whitelabels</th>
                     <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-600">Bookings</th>
+                    <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-600">Revenue</th>
                     <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-600">Status</th>
                     <th className="px-4 py-2.5 text-right text-xs font-medium text-gray-600">Actions</th>
                   </tr>
@@ -590,6 +720,12 @@ export default function Packages() {
                           <Ticket className="h-3.5 w-3.5 shrink-0 text-gray-500" strokeWidth={2} />
                           {Number(pkg.bookingCount) || 0}
                         </button>
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3">
+                        <span className="inline-flex items-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold tabular-nums text-emerald-800">
+                          <IndianRupee className="h-3 w-3 shrink-0" strokeWidth={2.5} />
+                          {(Number(pkg.totalRevenue) || 0).toLocaleString('en-IN')}
+                        </span>
                       </td>
                       <td className="whitespace-nowrap px-4 py-3">
                         <span
@@ -654,3 +790,4 @@ export default function Packages() {
     </div>
   )
 }
+

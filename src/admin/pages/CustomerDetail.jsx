@@ -587,20 +587,12 @@ export default function CustomerDetail() {
                       <Ticket className="h-4 w-4 shrink-0 text-primary-600" strokeWidth={2} />
                       <span className="font-mono text-sm font-semibold text-gray-900">{b.bookingId || '—'}</span>
                     </div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className={`inline-flex items-center gap-1 rounded-lg border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
-                        b.paymentStatus === 'paid' ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
-                        : b.paymentStatus === 'partial' ? 'border-sky-200 bg-sky-50 text-sky-800'
-                        : b.paymentStatus === 'refunded' ? 'border-violet-200 bg-violet-50 text-violet-800'
-                        : 'border-amber-200 bg-amber-50 text-amber-800'
-                      }`}>{b.paymentStatus || 'pending'}</span>
-                      <span className={`inline-flex items-center gap-1 rounded-lg border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
-                        b.bookingStatus === 'confirmed' ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
-                        : b.bookingStatus === 'ongoing' ? 'border-sky-200 bg-sky-50 text-sky-800'
-                        : b.bookingStatus === 'completed' ? 'border-gray-200 bg-gray-100 text-gray-700'
-                        : 'border-red-200 bg-red-50 text-red-800'
-                      }`}>{b.bookingStatus || 'confirmed'}</span>
-                    </div>
+                    <span className={`inline-flex items-center gap-1 rounded-lg border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
+                      b.bookingStatus === 'confirmed' ? 'border-blue-200 bg-blue-50 text-blue-800'
+                      : b.bookingStatus === 'ongoing'   ? 'border-sky-200 bg-sky-50 text-sky-800'
+                      : b.bookingStatus === 'completed' ? 'border-gray-200 bg-gray-100 text-gray-700'
+                      : 'border-red-200 bg-red-50 text-red-800'
+                    }`}>{b.bookingStatus || 'confirmed'}</span>
                   </div>
 
                   <div className="p-4 space-y-4">
@@ -619,6 +611,14 @@ export default function CustomerDetail() {
                       </DetailRow>
                       <DetailRow label="Total Amount">
                         <span className="inline-flex items-center gap-1 font-semibold tabular-nums"><IndianRupee className="h-3.5 w-3.5 text-gray-400" strokeWidth={2} />{Number(b.totalAmount || 0).toLocaleString('en-IN')}</span>
+                      </DetailRow>
+                      <DetailRow label="Payment">
+                        <span className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
+                          b.paymentStatus === 'paid'     ? 'bg-emerald-100 text-emerald-800'
+                          : b.paymentStatus === 'partial'  ? 'bg-sky-100 text-sky-800'
+                          : b.paymentStatus === 'refunded' ? 'bg-violet-100 text-violet-800'
+                          : 'bg-amber-100 text-amber-900'
+                        }`}>{b.paymentStatus || 'pending'}</span>
                       </DetailRow>
                       <DetailRow label="Travelers">
                         <span className="inline-flex items-center gap-1"><Users className="h-3.5 w-3.5 text-gray-400" strokeWidth={2} />{b.travelerCount ?? travelers.length}</span>

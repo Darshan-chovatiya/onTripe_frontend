@@ -10,6 +10,7 @@ import {
   Clock,
   Download,
   Eye,
+  EyeOff,
   ExternalLink,
   FileCheck,
   FileText,
@@ -399,6 +400,7 @@ const AddAgencyModal = ({ isOpen, onClose, onRefresh }) => {
     panCard: null
   })
   const [errors, setErrors] = useState({})
+  const [showPassword, setShowPassword] = useState(false)
 
   const handleFileChange = (e, key) => {
     const file = e.target.files[0]
@@ -580,23 +582,28 @@ const AddAgencyModal = ({ isOpen, onClose, onRefresh }) => {
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="sm:col-span-2">
-              <label className={`mb-1.5 ml-1 block text-xs font-medium ${errors.name ? 'text-red-500' : 'text-gray-600'}`}>Full name</label>
+              <label className={`mb-1.5 ml-1 block text-xs font-medium ${errors.name ? 'text-red-500' : 'text-gray-600'}`}>Full name <span className="text-red-500">*</span></label>
               <input required type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className={`h-11 w-full rounded-xl border px-4 text-sm outline-none transition ${errors.name ? 'border-red-500' : 'border-gray-200 bg-gray-50/50 focus:border-gray-400 focus:bg-white'}`} placeholder="Company or individual name" />
               {errors.name && <div className="mt-1 ml-1 flex items-center gap-1 text-[11px] font-medium text-red-500"><AlertCircle size={11} /> {errors.name}</div>}
             </div>
             <div className="sm:col-span-2">
-              <label className={`mb-1.5 ml-1 block text-xs font-medium ${errors.email ? 'text-red-500' : 'text-gray-600'}`}>Email address</label>
+              <label className={`mb-1.5 ml-1 block text-xs font-medium ${errors.email ? 'text-red-500' : 'text-gray-600'}`}>Email address <span className="text-red-500">*</span></label>
               <input required type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} className={`h-11 w-full rounded-xl border px-4 text-sm outline-none transition ${errors.email ? 'border-red-500' : 'border-gray-200 bg-gray-50/50 focus:border-gray-400 focus:bg-white'}`} placeholder="contact@agency.com" />
               {errors.email && <div className="mt-1 ml-1 flex items-center gap-1 text-[11px] font-medium text-red-500"><AlertCircle size={11} /> {errors.email}</div>}
             </div>
             <div>
-              <label className={`mb-1.5 ml-1 block text-xs font-medium ${errors.phone ? 'text-red-500' : 'text-gray-600'}`}>Phone number</label>
-              <input required type="tel" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} className={`h-11 w-full rounded-xl border px-4 text-sm outline-none transition ${errors.phone ? 'border-red-500' : 'border-gray-200 bg-gray-50/50 focus:border-gray-400 focus:bg-white'}`} placeholder="+91XXXXXXXXXX" />
+              <label className={`mb-1.5 ml-1 block text-xs font-medium ${errors.phone ? 'text-red-500' : 'text-gray-600'}`}>Phone number <span className="text-red-500">*</span></label>
+              <input required type="tel" maxLength={10} value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value.replace(/\D/g, '').slice(0, 10) })} className={`h-11 w-full rounded-xl border px-4 text-sm outline-none transition ${errors.phone ? 'border-red-500' : 'border-gray-200 bg-gray-50/50 focus:border-gray-400 focus:bg-white'}`} placeholder="10-digit number" />
               {errors.phone && <div className="mt-1 ml-1 flex items-center gap-1 text-[11px] font-medium text-red-500"><AlertCircle size={11} /> {errors.phone}</div>}
             </div>
             <div>
-              <label className={`mb-1.5 ml-1 block text-xs font-medium ${errors.password ? 'text-red-500' : 'text-gray-600'}`}>Password</label>
-              <input required type="password" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} className={`h-11 w-full rounded-xl border px-4 text-sm outline-none transition ${errors.password ? 'border-red-500' : 'border-gray-200 bg-gray-50/50 focus:border-gray-400 focus:bg-white'}`} placeholder="Minimum 8 characters" />
+              <label className={`mb-1.5 ml-1 block text-xs font-medium ${errors.password ? 'text-red-500' : 'text-gray-600'}`}>Password <span className="text-red-500">*</span></label>
+              <div className="relative">
+                <input required type={showPassword ? 'text' : 'password'} value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} className={`h-11 w-full rounded-xl border px-4 pr-11 text-sm outline-none transition ${errors.password ? 'border-red-500' : 'border-gray-200 bg-gray-50/50 focus:border-gray-400 focus:bg-white'}`} placeholder="Minimum 8 characters" />
+                <button type="button" onClick={() => setShowPassword((v) => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600" aria-label={showPassword ? 'Hide password' : 'Show password'}>
+                  {showPassword ? <EyeOff size={16} strokeWidth={2} /> : <Eye size={16} strokeWidth={2} />}
+                </button>
+              </div>
               {errors.password && <div className="mt-1 ml-1 flex items-center gap-1 text-[11px] font-medium text-red-500"><AlertCircle size={11} /> {errors.password}</div>}
             </div>
           </div>
@@ -863,7 +870,7 @@ const EditAgencyModal = ({ isOpen, onClose, agent, onRefresh }) => {
             </div>
             <div>
               <label className={`mb-1.5 ml-1 block text-xs font-medium ${errors.phone ? 'text-red-500' : 'text-gray-600'}`}>Phone number</label>
-              <input required type="tel" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} className={`h-11 w-full rounded-xl border px-4 text-sm outline-none transition ${errors.phone ? 'border-red-500' : 'border-gray-200 bg-gray-50/50 focus:border-gray-400 focus:bg-white'}`} placeholder="+91XXXXXXXXXX" />
+              <input required type="tel" maxLength={10} value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value.replace(/\D/g, '').slice(0, 10) })} className={`h-11 w-full rounded-xl border px-4 text-sm outline-none transition ${errors.phone ? 'border-red-500' : 'border-gray-200 bg-gray-50/50 focus:border-gray-400 focus:bg-white'}`} placeholder="10-digit number" />
               {errors.phone && <div className="mt-1 ml-1 flex items-center gap-1 text-[11px] font-medium text-red-500"><AlertCircle size={11} /> {errors.phone}</div>}
             </div>
           </div>

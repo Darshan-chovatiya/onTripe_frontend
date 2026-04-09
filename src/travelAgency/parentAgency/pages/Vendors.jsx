@@ -1,35 +1,42 @@
-import { useState } from 'react'
-import { Plus, RefreshCw, Store, Eye, Edit2, Trash2 } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Plus, RefreshCw, Store, Eye, Edit2, Trash2, Search, Download } from 'lucide-react'
 import { useVendors } from '@/travelAgency/parentAgency/hooks/useVendors.js'
+import { listVendors } from '@/travelAgency/parentAgency/services/parentAgencyApi.js'
 import VendorFormModal from '@/travelAgency/parentAgency/components/VendorFormModal.jsx'
 import VendorDetailModal from '@/travelAgency/parentAgency/components/VendorDetailModal.jsx'
 import ConfirmDialog from '@/shared/components/ConfirmDialog.jsx'
 import Button from '@/shared/components/Button.jsx'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
 import { getApiErrorMessage } from '@/shared/services/apiHelpers.js'
+import Pagination from '@/admin/components/Pagination.jsx'
+import { exportToExcel } from '@/admin/utils/exportExcel.js'
 
 const ALL_TYPES = ['hotel', 'transport', 'restaurant', 'activity_provider', 'guide', 'cruise', 'other']
 
 const TYPE_COLORS = {
-  hotel:             'bg-blue-50 text-blue-700',
-  transport:         'bg-purple-50 text-purple-700',
-  restaurant:        'bg-orange-50 text-orange-700',
+  hotel: 'bg-blue-50 text-blue-700',
+  transport: 'bg-purple-50 text-purple-700',
+  restaurant: 'bg-orange-50 text-orange-700',
   activity_provider: 'bg-green-50 text-green-700',
-  guide:             'bg-yellow-50 text-yellow-700',
-  cruise:            'bg-cyan-50 text-cyan-700',
-  other:             'bg-gray-100 text-gray-600',
+  guide: 'bg-yellow-50 text-yellow-700',
+  cruise: 'bg-cyan-50 text-cyan-700',
+  other: 'bg-gray-100 text-gray-600',
 }
 
+const PAGE_SIZE = 10
+
 export default function Vendors() {
-  const { vendors, loading, error, fetchVendors, create, update, remove } = useVendors()
+  const { vendors, loading, error, pagination, fetchVendors, create, update, remove } = useVendors()
   const { toast } = useToast()
 
-  const [formModal, setFormModal]     = useState({ open: false, data: null })
+  const [formModal, setFormModal] = useState({ open: false, data: null })
   const [detailVendor, setDetailVendor] = useState(null)
   const [confirmDelete, setConfirmDelete] = useState({ open: false, vendor: null })
-  const [submitting, setSubmitting]   = useState(false)
-  const [search, setSearch]           = useState('')
-  const [typeFilter, setTypeFilter]   = useState('all')
+  const [submitting, setSubmitting] = useState(false)
+  const [search, setSearch] = useState('')
+  const [typeFilter, setTypeFilter] = useState('all')
+  const [page, setPage] = useState(1)
+  const [exportLoading, setExportLoading] = useState(false)
 
   const handleSubmit = async (payload) => {
     setSubmitting(true)
@@ -60,157 +67,189 @@ export default function Vendors() {
     }
   }
 
-  const filtered = vendors.filter(v => {
-    const matchSearch = !search ||
-      v.name?.toLowerCase().includes(search.toLowerCase()) ||
-      v.contactPerson?.toLowerCase().includes(search.toLowerCase()) ||
-      v.city?.toLowerCase().includes(search.toLowerCase()) ||
-      v.email?.toLowerCase().includes(search.toLowerCase())
-    const matchType = typeFilter === 'all' || v.type === typeFilter
-    return matchSearch && matchType
-  })
+  useEffect(() => {
+    setPage(1)
+  }, [search, typeFilter])
+
+  useEffect(() => {
+    fetchVendors({
+      page,
+      limit: PAGE_SIZE,
+      search: search.trim(),
+      type: typeFilter,
+    })
+  }, [fetchVendors, page, search, typeFilter])
+
+  const handleExport = async () => {
+    setExportLoading(true)
+    try {
+      const { data } = await listVendors({
+        page: 1,
+        limit: 10000,
+        search: search.trim(),
+        type: typeFilter,
+      })
+      const rows = data?.data?.vendors || []
+      await exportToExcel(
+        rows.map((v, idx) => ({
+          '#': idx + 1,
+          Name: v.name || '',
+          Type: (v.type || '').replace(/_/g, ' '),
+          'Contact Person': v.contactPerson || '',
+          Email: v.email || '',
+          Phone: v.phone || '',
+          City: v.city || '',
+          State: v.state || '',
+          Country: v.country || '',
+          Address: v.address || '',
+          Active: v.isActive ? 'Yes' : 'No',
+        })),
+        'vendors',
+        'Vendors'
+      )
+    } catch {
+      toast.error('Export failed')
+    } finally {
+      setExportLoading(false)
+    }
+  }
 
   return (
-    <div className="animate-fade-in space-y-6">
-
-      {/* Header */}
-      <div className="flex items-center justify-between">
+    <div className="animate-fade-in space-y-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Vendors</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Manage your service vendors</p>
+          <h1 className="text-xl font-semibold tracking-tight text-gray-900 sm:text-2xl">Vendors</h1>
+          <p className="mt-1 text-sm text-gray-500">Manage your service providers and contact details.</p>
         </div>
         <div className="flex gap-2">
-          <button onClick={fetchVendors} className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors" aria-label="Refresh">
-            <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
+          <button
+            type="button"
+            onClick={handleExport}
+            disabled={exportLoading}
+            className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-3.5 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 disabled:opacity-50"
+          >
+            {exportLoading ? <RefreshCw size={15} className="animate-spin" /> : <Download size={15} />}
+            Export Excel
           </button>
-          <Button onClick={() => setFormModal({ open: true, data: null })}>
+          <Button onClick={() => setFormModal({ open: true, data: null })} className="inline-flex cursor-pointer items-center">
             <Plus size={16} className="mr-1 inline" /> Add Vendor
           </Button>
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <input
-          className="input-field flex-1"
-          placeholder="Search by name, contact, email or city…"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-        />
-        <select
-          className="input-field sm:w-48"
-          value={typeFilter}
-          onChange={e => setTypeFilter(e.target.value)}
-        >
-          <option value="all">All Types</option>
-          {ALL_TYPES.map(t => (
-            <option key={t} value={t}>{t.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</option>
-          ))}
-        </select>
-      </div>
-
-      {/* Stats */}
-      {vendors.length > 0 && (
-        <div className="flex flex-wrap gap-4 text-sm">
-          <span className="text-gray-500">Total: <span className="font-semibold text-gray-800">{vendors.length}</span></span>
-          {ALL_TYPES.filter(t => vendors.some(v => v.type === t)).map(t => (
-            <span key={t} className="text-gray-500 capitalize">
-              {t.replace('_', ' ')}: <span className="font-semibold text-gray-800">{vendors.filter(v => v.type === t).length}</span>
-            </span>
-          ))}
+      <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+        <div className="flex flex-col gap-3 border-b border-gray-200 px-4 py-3 sm:flex-row sm:items-center">
+          <div className="relative min-w-0 flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" strokeWidth={2} />
+            <input
+              className="w-full rounded-md border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-gray-300 focus:outline-none focus:ring-1 focus:ring-gray-300"
+              placeholder="Search by name, contact, email or city..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+          <select
+            className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:border-gray-300 focus:outline-none focus:ring-1 focus:ring-gray-300 sm:w-56"
+            value={typeFilter}
+            onChange={(e) => setTypeFilter(e.target.value)}
+          >
+            <option value="all">All types</option>
+            {ALL_TYPES.map((t) => (
+              <option key={t} value={t}>
+                {t.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
+              </option>
+            ))}
+          </select>
         </div>
-      )}
 
-      {/* Error */}
-      {error && <div className="rounded-xl bg-red-50 border border-red-200 p-4 text-sm text-red-700">{error}</div>}
+        {error ? <div className="m-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div> : null}
 
-      {/* Loading skeleton */}
-      {loading && vendors.length === 0 && (
-        <div className="space-y-3">
-          {[1, 2, 3].map(i => (
-            <div key={i} className="rounded-2xl border border-gray-100 bg-white p-4 animate-pulse flex gap-4">
-              <div className="h-8 w-8 rounded-full bg-gray-200 flex-shrink-0" />
-              <div className="flex-1 space-y-2">
-                <div className="h-4 bg-gray-200 rounded w-1/3" />
-                <div className="h-3 bg-gray-200 rounded w-1/2" />
+        {loading && vendors.length === 0 ? (
+          <div className="space-y-3 p-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="animate-pulse rounded-xl border border-gray-100 bg-white p-4">
+                <div className="flex items-center gap-3">
+                  <div className="h-8 w-8 rounded-full bg-gray-200" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-4 w-1/3 rounded bg-gray-200" />
+                    <div className="h-3 w-1/2 rounded bg-gray-200" />
+                  </div>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        ) : null}
 
-      {/* Empty */}
-      {!loading && filtered.length === 0 && !error && (
-        <div className="flex flex-col items-center justify-center py-20 text-center">
-          <Store className="h-14 w-14 text-gray-300 mb-4" />
-          <h3 className="text-lg font-semibold text-gray-700">
-            {vendors.length === 0 ? 'No vendors yet' : 'No vendors match your search'}
-          </h3>
-          {vendors.length === 0 && (
-            <>
-              <p className="text-sm text-gray-400 mt-1 mb-5">Add your first vendor to get started.</p>
-              <Button onClick={() => setFormModal({ open: true, data: null })}>
-                <Plus size={16} className="mr-1 inline" /> Add Vendor
-              </Button>
-            </>
-          )}
-        </div>
-      )}
+        {!loading && vendors.length === 0 && !error ? (
+          <div className="px-4 py-14 text-center">
+            <Store className="mx-auto h-8 w-8 text-gray-300" strokeWidth={1.5} />
+            <p className="mt-3 text-sm font-medium text-gray-900">
+              {search || typeFilter !== 'all' ? 'No vendors match your search' : 'No vendors yet'}
+            </p>
+            {search || typeFilter !== 'all' ? null : (
+              <>
+                <p className="mt-1 text-sm text-gray-500">Add your first vendor to get started.</p>
+                <Button onClick={() => setFormModal({ open: true, data: null })} className="mt-4 cursor-pointer">
+                  <Plus size={16} className="mr-1 inline" /> Add Vendor
+                </Button>
+              </>
+            )}
+          </div>
+        ) : null}
 
-      {/* Table */}
-      {filtered.length > 0 && (
-        <div className="rounded-2xl border border-gray-100 bg-white shadow-sm overflow-hidden">
+        {vendors.length > 0 ? (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-100 text-xs font-semibold text-gray-500 uppercase tracking-wide bg-gray-50">
-                  <th className="px-5 py-3 text-left">Vendor</th>
-                  <th className="px-5 py-3 text-left">Type</th>
-                  <th className="px-5 py-3 text-left">Contact</th>
-                  <th className="px-5 py-3 text-left">Location</th>
-                  <th className="px-5 py-3 text-right">Actions</th>
+            <table className="w-full min-w-[860px] text-sm">
+              <thead className="border-b border-gray-200 bg-gray-50">
+                <tr>
+                  <th className="px-4 py-2.5 text-left align-middle text-xs font-medium text-gray-600">Vendor</th>
+                  <th className="px-4 py-2.5 text-left align-middle text-xs font-medium text-gray-600">Type</th>
+                  <th className="px-4 py-2.5 text-left align-middle text-xs font-medium text-gray-600">Contact</th>
+                  <th className="px-4 py-2.5 text-left align-middle text-xs font-medium text-gray-600">Location</th>
+                  <th className="px-4 py-2.5 text-right align-middle text-xs font-medium text-gray-600">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
-                {filtered.map(v => (
-                  <tr key={v._id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-5 py-3.5">
-                      <p className="font-semibold text-gray-900">{v.name}</p>
-                      {v.contactPerson && <p className="text-xs text-gray-400 mt-0.5">{v.contactPerson}</p>}
+              <tbody className="divide-y divide-gray-100">
+                {vendors.map((v) => (
+                  <tr key={v._id} className="transition-colors hover:bg-gray-50/80">
+                    <td className="px-4 py-2.5 align-middle">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-gray-900">{v.name}</p>
+                        {v.contactPerson ? <p className="mt-0.5 truncate text-xs text-gray-500">{v.contactPerson}</p> : null}
+                      </div>
                     </td>
-                    <td className="px-5 py-3.5">
-                      <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${TYPE_COLORS[v.type] || TYPE_COLORS.other}`}>
+                    <td className="px-4 py-2.5 align-middle">
+                      <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${TYPE_COLORS[v.type] || TYPE_COLORS.other}`}>
                         {v.type?.replace(/_/g, ' ')}
                       </span>
                     </td>
-                    <td className="px-5 py-3.5 space-y-0.5">
-                      {v.email && <p className="text-xs text-gray-600">{v.email}</p>}
-                      {v.phone && <p className="text-xs text-gray-400">{v.phone}</p>}
+                    <td className="px-4 py-2.5 align-middle">
+                      {v.email ? <p className="text-xs text-gray-700">{v.email}</p> : <p className="text-xs text-gray-400">-</p>}
+                      {v.phone ? <p className="mt-0.5 text-xs text-gray-500">{v.phone}</p> : null}
                     </td>
-                    <td className="px-5 py-3.5 text-xs text-gray-600">
-                      {[v.city, v.state, v.country].filter(Boolean).join(', ') || '—'}
-                    </td>
-                    <td className="px-5 py-3.5 text-right">
-                      <div className="inline-flex items-center gap-2">
+                    <td className="px-4 py-2.5 align-middle text-xs text-gray-600">{[v.city, v.state, v.country].filter(Boolean).join(', ') || '-'}</td>
+                    <td className="px-4 py-2.5 align-middle text-right">
+                      <div className="inline-flex items-center gap-1.5">
                         <button
                           onClick={() => setDetailVendor(v)}
-                          className="flex items-center gap-1 text-xs font-medium text-gray-500 hover:text-gray-800 transition-colors"
+                          className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border border-gray-200 bg-white text-gray-600 transition-colors hover:bg-gray-50 hover:text-gray-900"
+                          title="View"
                         >
-                          <Eye size={13} />
+                          <Eye size={12} />
                         </button>
                         <button
                           onClick={() => setFormModal({ open: true, data: v })}
-                          className="p-1.5 rounded-lg text-gray-400 hover:text-primary-600 hover:bg-primary-50 transition-colors"
+                          className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border border-gray-200 bg-white text-gray-600 transition-colors hover:bg-gray-50 hover:text-gray-900"
                           title="Edit"
                         >
-                          <Edit2 size={14} />
+                          <Edit2 size={13} />
                         </button>
                         <button
                           onClick={() => setConfirmDelete({ open: true, vendor: v })}
-                          className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                          className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border border-gray-200 bg-white text-gray-600 transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-700"
                           title="Deactivate"
                         >
-                          <Trash2 size={14} />
+                          <Trash2 size={13} />
                         </button>
                       </div>
                     </td>
@@ -219,8 +258,18 @@ export default function Vendors() {
               </tbody>
             </table>
           </div>
-        </div>
-      )}
+        ) : null}
+
+        {vendors.length > 0 ? (
+          <Pagination
+            page={pagination.page}
+            totalPages={pagination.totalPages}
+            total={pagination.totalCount}
+            limit={PAGE_SIZE}
+            onPageChange={setPage}
+          />
+        ) : null}
+      </div>
 
       <VendorFormModal
         isOpen={formModal.open}
@@ -234,8 +283,8 @@ export default function Vendors() {
         isOpen={!!detailVendor}
         onClose={() => setDetailVendor(null)}
         vendor={detailVendor}
-        onEdit={v => setFormModal({ open: true, data: v })}
-        onDeactivate={v => setConfirmDelete({ open: true, vendor: v })}
+        onEdit={(v) => setFormModal({ open: true, data: v })}
+        onDeactivate={(v) => setConfirmDelete({ open: true, vendor: v })}
       />
 
       <ConfirmDialog
