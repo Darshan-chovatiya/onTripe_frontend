@@ -14,10 +14,11 @@ import {
   Images,
   Sparkles,
   MessageSquare,
+  Star,
 } from 'lucide-react'
 import { destinationText } from '@/travelAgency/parentAgency/utils/packageDisplay.js'
 
-export default function PackageCard({ pkg, onEdit, onUpdateCover, onUpdateGallery, onDeactivate, onActivate, onChat }) {
+export default function PackageCard({ pkg, onEdit, onUpdateCover, onUpdateGallery, onDeactivate, onActivate, onChat, onRating }) {
   const navigate = useNavigate()
   const base = import.meta.env.VITE_API_BASE_URL?.replace('/api', '').replace(/\/$/, '') || 'http://localhost:5001'
   const coverSrc = pkg.coverImage ? `${base}/${pkg.coverImage.replace(/\\/g, '/')}` : null
@@ -46,11 +47,10 @@ export default function PackageCard({ pkg, onEdit, onUpdateCover, onUpdateGaller
 
         <div className="absolute right-3 top-3 flex flex-col items-end gap-1.5">
           <span
-            className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide shadow-sm ${
-              pkg.isActive
-                ? 'bg-emerald-500/95 text-white'
-                : 'bg-white/95 text-red-600 ring-1 ring-red-200'
-            }`}
+            className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide shadow-sm ${pkg.isActive
+              ? 'bg-emerald-500/95 text-white'
+              : 'bg-white/95 text-red-600 ring-1 ring-red-200'
+              }`}
           >
             {pkg.isActive ? 'Live' : 'Inactive'}
           </span>
@@ -171,6 +171,14 @@ export default function PackageCard({ pkg, onEdit, onUpdateCover, onUpdateGaller
             >
               <Edit2 className="h-3.5 w-3.5 shrink-0" />
               <span className="truncate">Update</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => onRating(pkg)}
+              className="inline-flex h-10 items-center justify-center gap-1 rounded-xl border border-amber-100 bg-amber-50 px-2.5 py-2 text-amber-700 shadow-sm transition hover:bg-amber-100"
+              title="View reviews"
+            >
+              <Star className="h-4 w-4 shrink-0 fill-current" />
             </button>
             <button
               type="button"

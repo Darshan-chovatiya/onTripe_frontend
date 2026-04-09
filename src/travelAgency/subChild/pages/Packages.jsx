@@ -365,8 +365,45 @@ export default function SubChildPackages() {
               />
             ))}
           </div>
-        ) : null}
-      </section>
+          {!loading && whitelabels.length === 0 ? (
+            <div className="rounded-2xl border border-gray-100 bg-white py-12 text-center shadow-sm">
+              <p className="text-sm text-gray-500">You have not created any white-label packages yet.</p>
+              <Button
+                type="button"
+                className="mt-4"
+                variant="secondary"
+                onClick={() => openCreate(null)}
+                disabled={!packagesEligibleForNewWhitelabel.length}
+              >
+                Create your first white-label
+              </Button>
+            </div>
+          ) : null}
+          {whitelabels.length > 0 ? (
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {whitelabels.map((wl) => (
+                <WhitelabelPackageCard
+                  key={wl._id}
+                  item={wl}
+                  onEdit={openEdit}
+                  onToggleActive={handleToggleActive}
+                  onChat={() => {
+                    const pid = wl.originalPackage?._id || wl.originalPackage
+                    if (!pid) return
+                    const t = wl.customTitle || (typeof wl.originalPackage === 'object' && wl.originalPackage?.title) || 'Package'
+                    navigate(`/agency/packages/${pid}/community?title=${encodeURIComponent(t)}`)
+                  }}
+                  onRating={(it) => {
+                    const pid = it.originalPackage?._id || it.originalPackage
+                    navigate(`/agency/packages/${pid}/reviews?readOnly=true`)
+                  }}
+                  hasBooking={bookedWhiteLabelIds.has(String(wl._id))}
+                  disabled={inactiveParentIds.has(String(wl.ownedByParent?._id || wl.ownedByParent))}
+                />
+              ))}
+            </div>
+          ) : null}
+        </section>
       )}
 
       <WhitelabelModal

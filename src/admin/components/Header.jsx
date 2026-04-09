@@ -20,6 +20,7 @@ function titleForPath(pathname) {
   if (/^\/admin\/packages\/[^/]+\/whitelabels$/.test(pathname)) return 'Package whitelabels'
   if (/^\/admin\/packages\/[^/]+\/bookings$/.test(pathname)) return 'Package bookings'
   if (/^\/admin\/packages\/[^/]+\/community$/.test(pathname)) return 'Package chat'
+  if (/^\/admin\/packages\/[^/]+\/reviews$/.test(pathname)) return 'Package reviews'
   if (/^\/admin\/child-agencies\/[^/]+\/whitelabels$/.test(pathname)) return 'Agent whitelabels'
   if (/^\/admin\/sub-child-agencies\/[^/]+\/whitelabels$/.test(pathname)) return 'Agent whitelabels'
   if (/^\/admin\/child-agencies\/[^/]+\/customers$/.test(pathname)) return 'Agency customers'
@@ -47,7 +48,7 @@ export default function Header({ onMenuClick }) {
   useEffect(() => {
     if (!menuOpen) return
     const onDocDown = (e) => {
-      if (menuRef.current && !menuRef.current.contains(/** @type {Node} */ (e.target))) {
+      if (menuRef.current && !menuRef.current.contains(/** @type {Node} */(e.target))) {
         setMenuOpen(false)
       }
     }

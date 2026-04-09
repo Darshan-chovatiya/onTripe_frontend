@@ -12,6 +12,7 @@ import {
   Calendar,
   Layers,
   Ticket,
+  Star,
   IndianRupee,
 } from 'lucide-react'
 import adminApi from '@/admin/services/adminApi'
@@ -757,6 +758,15 @@ export default function Packages() {
                           >
                             <MessageSquare className="h-4 w-4" strokeWidth={2} />
                           </button>
+                          <button
+                            type="button"
+                            onClick={() => navigate(`/admin/packages/${String(pkg._id)}/reviews?readOnly=true`)}
+                            className="inline-flex cursor-pointer rounded-lg border border-gray-200 bg-white p-2 text-gray-500 transition-colors hover:border-amber-200 hover:text-amber-600 active:scale-95"
+                            title="View reviews"
+                            aria-label={`Reviews for ${pkg.title}`}
+                          >
+                            <Star className="h-4 w-4" strokeWidth={2} />
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -777,7 +787,6 @@ export default function Packages() {
       </div>
 
       <PackageDetailModal isOpen={isDetailOpen} onClose={closeDetail} pkg={selectedPkg} />
-
     </div>
   )
 }

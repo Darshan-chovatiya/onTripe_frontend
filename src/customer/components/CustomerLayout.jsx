@@ -1,13 +1,13 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
-import { Home, Search, Calendar, History, LogOut, User } from 'lucide-react'
+import { Calendar, History, LogOut, User, MessageSquare, Menu, X } from 'lucide-react'
 import { useAuth } from '@/shared/context/AuthContext.jsx'
 import { useState } from 'react'
 
 export default function CustomerLayout() {
   const { logout } = useAuth()
   const navigate = useNavigate()
-
   const [showConfirmLogout, setShowConfirmLogout] = useState(false)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
 
   const handleLogout = () => {
     logout()
@@ -15,96 +15,150 @@ export default function CustomerLayout() {
   }
 
   const navItems = [
-    { to: '/customer/booking', icon: Calendar, label: 'My Trip' },
+    { to: '/customer/booking', icon: Calendar, label: 'Trips' },
     { to: '/customer/trip-history', icon: History, label: 'History' },
+    { to: '/customer/community', icon: MessageSquare, label: 'Community' },
     { to: '/customer/profile', icon: User, label: 'Profile' },
   ]
 
+  const closeSidebar = () => setIsSidebarOpen(false)
+
   return (
-    <div className="bg-gray-50 dark:bg-gray-900">
-      {/* Logout Confirmation Modal */}
+    <div className="bg-gray-50 dark:bg-gray-900 min-h-screen">
+
+      {/* 🔴 Logout Modal */}
       {showConfirmLogout && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 animate-fade-in">
-          <div 
-            className="absolute inset-0 bg-gray-950/20 backdrop-blur-md" 
-            onClick={() => setShowConfirmLogout(false)} 
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/30 backdrop-blur-sm"
+            onClick={() => setShowConfirmLogout(false)}
           />
-          <div className="bg-white dark:bg-gray-900 rounded-[2.5rem] shadow-2xl border border-gray-100 dark:border-white/5 p-8 md:p-10 w-full max-w-sm text-center relative z-10 animate-scale-in">
-             <div className="w-20 h-20 bg-red-50 dark:bg-red-500/10 text-red-500 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-inner">
-                <LogOut size={32} strokeWidth={2.5} />
-             </div>
-             <h2 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight mb-2">Logout ?</h2>
-             <p className="text-sm font-bold text-gray-400 mb-8 uppercase tracking-widest leading-relaxed">
-               Are you sure you want to Logout ?
-             </p>
-             <div className="grid grid-cols-2 gap-4">
-                <button 
-                  onClick={() => setShowConfirmLogout(false)}
-                  className="flex items-center justify-center gap-2 py-4 bg-gray-50 dark:bg-white/5 text-gray-500 hover:text-gray-900 dark:hover:text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all"
-                >
-                   No
-                </button>
-                <button 
-                  onClick={handleLogout}
-                  className="flex items-center justify-center gap-2 py-4 bg-red-600 hover:bg-red-700 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-red-200 dark:shadow-none active:scale-95 transition-all"
-                >
-                   Yes
-                </button>
-             </div>
+          <div className="relative z-10 w-full max-w-xs sm:max-w-sm bg-white dark:bg-gray-900 rounded-3xl border border-gray-200/50 dark:border-white/10 shadow-2xl p-6 sm:p-8 text-center animate-scale-in">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 bg-red-100 dark:bg-red-500/10 text-red-500 rounded-2xl flex items-center justify-center mx-auto mb-5">
+              <LogOut size={28} />
+            </div>
+            <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white">Logout?</h2>
+            <p className="text-xs sm:text-sm text-gray-500 mt-2 mb-6">Are you sure you want to logout?</p>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={() => setShowConfirmLogout(false)}
+                className="py-2.5 rounded-xl bg-gray-100 dark:bg-white/5 text-gray-600 hover:text-gray-900 dark:hover:text-white text-sm font-medium transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleLogout}
+                className="py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-medium active:scale-95 transition"
+              >
+                Logout
+              </button>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Main Content Area */}
-      <main className="px-4 py-8 sm:px-6 lg:px-8">
-        <Outlet />
-      </main>
+      {/* 🟢 Mobile Sidebar (Drawer) */}
+      <div className={`fixed inset-0 z-[150] lg:hidden transition-all duration-300 ${isSidebarOpen ? 'visible' : 'invisible'}`}>
+        <div
+          className={`absolute inset-0 bg-black/20 backdrop-blur-sm transition-opacity duration-300 ${isSidebarOpen ? 'opacity-100' : 'opacity-0'}`}
+          onClick={closeSidebar}
+        />
+        <aside className={`absolute top-0 right-0 bottom-0 w-72 bg-white dark:bg-gray-950 shadow-2xl transition-transform duration-300 ease-out border-l border-gray-100 dark:border-white/5 ${isSidebarOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+          <div className="p-6 h-full flex flex-col">
+            <div className="flex items-center justify-between mb-10">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
+                  <Calendar className="text-white" size={18} />
+                </div>
+                <span className="font-bold text-gray-900 dark:text-white">OnTrip</span>
+              </div>
+              <button onClick={closeSidebar} className="p-2 text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 rounded-xl">
+                <X size={20} />
+              </button>
+            </div>
 
-      {/* Persistent App-like Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 z-[100] px-4 pb-6 pt-2 pointer-events-none">
-        <div className="max-w-lg mx-auto bg-white/80 dark:bg-gray-950/80 backdrop-blur-2xl border border-gray-200/50 dark:border-white/10 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.15)] flex items-center justify-around p-2 pointer-events-auto">
+            <nav className="space-y-2 flex-1">
+              {navItems.map((item) => (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  onClick={closeSidebar}
+                  className={({ isActive }) => `
+                    flex items-center gap-3 px-4 py-3.5 rounded-2xl transition-all duration-200
+                    ${isActive
+                      ? 'bg-primary-600 text-white shadow-lg shadow-primary-200 dark:shadow-none'
+                      : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-white'}
+                  `}
+                >
+                  <item.icon size={20} />
+                  <span className="font-semibold">{item.label}</span>
+                </NavLink>
+              ))}
+            </nav>
+
+            <button
+              onClick={() => { closeSidebar(); setShowConfirmLogout(true); }}
+              className="flex items-center gap-3 px-4 py-3.5 rounded-2xl text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-all duration-200"
+            >
+              <LogOut size={20} />
+              <span className="font-semibold">Logout</span>
+            </button>
+          </div>
+        </aside>
+      </div>
+
+      {/* 🟢 Top Navigation */}
+      <header className="fixed top-0 left-0 right-0 z-[100] bg-white/90 dark:bg-gray-950/90 backdrop-blur-xl border-b border-gray-200/50 dark:border-white/10 h-16 items-center flex px-4 sm:px-8 justify-between">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
+            <Calendar className="text-white" size={18} />
+          </div>
+          <span className="font-bold text-gray-900 dark:text-white tracking-tight">OnTrip</span>
+        </div>
+
+        {/* Desktop Nav */}
+        <nav className="hidden lg:flex items-center gap-1">
           {navItems.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
               className={({ isActive }) => `
-                flex flex-col items-center justify-center p-3 rounded-2xl transition-all duration-500 group relative
-                ${isActive ? 'text-primary-600 -translate-y-2' : 'text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5'}
+                flex items-center gap-2 px-4 py-2 rounded-xl transition-all duration-200
+                ${isActive
+                  ? 'bg-primary-50 text-primary-600 font-semibold'
+                  : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-white/5 dark:hover:text-white'}
               `}
             >
-              {({ isActive }) => (
-                <>
-                  <div className={`
-                    transition-all duration-500 flex items-center justify-center
-                    ${isActive ? 'p-3 rounded-full bg-primary-600 text-white shadow-xl shadow-primary-200 scale-125' : 'group-hover:scale-110'}
-                  `}>
-                    <item.icon 
-                      size={24} 
-                      strokeWidth={isActive ? 2.5 : 2}
-                    />
-                  </div>
-                  <span className={`text-[10px] font-black uppercase tracking-[0.1em] transition-all duration-300 mt-1.5 ${isActive ? 'text-primary-700 font-black scale-110' : 'text-gray-400 group-hover:text-primary-500'}`}>
-                    {item.label}
-                  </span>
-                  {isActive && (
-                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1 h-1 bg-primary-600 rounded-full" />
-                  )}
-                </>
-              )}
+              <item.icon size={18} />
+              <span className="text-sm">{item.label}</span>
             </NavLink>
           ))}
+        </nav>
 
-          {/* Logout Button */}
+        <div className="flex items-center gap-2">
           <button
             onClick={() => setShowConfirmLogout(true)}
-            className="flex flex-col items-center justify-center p-3 rounded-2xl text-gray-400 hover:bg-red-50 hover:text-red-500 transition-all duration-300 group"
+            className="hidden lg:flex items-center gap-2 px-4 py-2 rounded-xl text-gray-400 hover:bg-red-50 hover:text-red-500 transition-all duration-200"
           >
-            <LogOut size={24} strokeWidth={2} className="group-hover:scale-110 transition-transform" />
-            <span className="text-[10px] font-black uppercase tracking-[0.1em] mt-1.5">Exit</span>
+            <LogOut size={18} />
+            <span className="text-sm font-medium">Exit</span>
+          </button>
+
+          <button
+            onClick={() => setIsSidebarOpen(true)}
+            className="lg:hidden p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 rounded-xl transition-colors"
+          >
+            <Menu size={24} />
           </button>
         </div>
-      </nav>
+      </header>
+
+      {/* 🟢 Main Content */}
+      <main className="pt-20 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <Outlet />
+        </div>
+      </main>
     </div>
   )
 }
-

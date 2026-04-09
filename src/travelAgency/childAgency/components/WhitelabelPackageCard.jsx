@@ -1,10 +1,10 @@
-import { MapPin, Clock, IndianRupee, Image, Pencil, Power, MessageSquare, Eye } from 'lucide-react'
+import { MapPin, Clock, IndianRupee, Image, Pencil, Power, MessageSquare, Eye, Star } from 'lucide-react'
 import { useState } from 'react'
 import Button from '@/shared/components/Button.jsx'
 import { packageCoverUrl } from '@/travelAgency/childAgency/components/packageMedia.js'
 import PackageDetailModal from '@/travelAgency/childAgency/components/PackageDetailModal.jsx'
 
-export default function WhitelabelPackageCard({ item, onEdit, onToggleActive, onChat, hasBooking, disabled = false }) {
+export default function WhitelabelPackageCard({ item, onEdit, onToggleActive, onChat, onRating, hasBooking, disabled = false }) {
   const orig = item.originalPackage
   const coverSrc = packageCoverUrl(item.customCoverImage || orig?.coverImage)
   const title = item.customTitle || orig?.title || 'White-label package'
@@ -82,6 +82,9 @@ export default function WhitelabelPackageCard({ item, onEdit, onToggleActive, on
             <Button type="button" variant="secondary" className="flex-1 min-w-[5rem]" onClick={() => onToggleActive(item)}>
               <Power className="mr-1 inline h-3.5 w-3.5" />
               {item.isActive ? 'Off' : 'On'}
+            </Button>
+            <Button type="button" variant="secondary" onClick={() => onRating(item)} title="View reviews">
+              <Star className="h-4 w-4 text-amber-500 fill-current" />
             </Button>
             {hasBooking && (
               <Button type="button" variant="secondary" onClick={onChat} title="Community chat">
