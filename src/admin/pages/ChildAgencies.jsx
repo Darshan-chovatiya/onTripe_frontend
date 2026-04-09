@@ -21,6 +21,7 @@ import { useToast } from '@/shared/components/ToastContainer.jsx'
 import Loader from '@/shared/components/Loader.jsx'
 import CustomDropdown from '@/shared/components/CustomDropdown.jsx'
 import Modal from '@/shared/components/Modal.jsx'
+import Pagination from '@/admin/components/Pagination.jsx'
 
 export default function ChildAgencies({ agentRole = 'child_agent', pageTitle = 'Child Agencies' }) {
   const { toast } = useToast()
@@ -31,6 +32,7 @@ export default function ChildAgencies({ agentRole = 'child_agent', pageTitle = '
   const [loading, setLoading] = useState(true)
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
+  const [total, setTotal] = useState(0)
   const [searchQuery, setSearchQuery] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
@@ -81,6 +83,7 @@ export default function ChildAgencies({ agentRole = 'child_agent', pageTitle = '
       if (data?.success) {
         setAgents(data.data.agents)
         setTotalPages(data.data.totalPages)
+        setTotal(data.data.totalCount ?? 0)
       }
     } catch (error) {
       toast.error(`Failed to fetch ${agentRole === 'sub_child_agent' ? 'sub-child' : 'child'} agencies`)
@@ -507,32 +510,13 @@ export default function ChildAgencies({ agentRole = 'child_agent', pageTitle = '
               </table>
             </div>
 
-            {totalPages > 1 && (
-              <div className="flex items-center justify-between border-t border-gray-200 bg-gray-50 px-4 py-3">
-                <p className="text-xs text-gray-500">
-                  Page <span className="font-medium text-gray-900">{page}</span> of{' '}
-                  <span className="font-medium text-gray-900">{totalPages}</span>
-                </p>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setPage((p) => Math.max(1, p - 1))}
-                    disabled={page === 1}
-                    className="inline-flex h-8 items-center justify-center rounded-md border border-gray-200 bg-white px-3 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50 disabled:opacity-40"
-                  >
-                    Prev
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                    disabled={page === totalPages}
-                    className="inline-flex h-8 items-center justify-center rounded-md border border-gray-200 bg-white px-3 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50 disabled:opacity-40"
-                  >
-                    Next
-                  </button>
-                </div>
-              </div>
-            )}
+            <Pagination
+              page={page}
+              totalPages={totalPages}
+              total={total}
+              limit={10}
+              onPageChange={setPage}
+            />
           </>
         )}
       </div>

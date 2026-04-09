@@ -4,6 +4,7 @@ import { Users, Search, Mail, Phone, Building2 } from 'lucide-react'
 import adminApi from '@/admin/services/adminApi'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
 import Loader from '@/shared/components/Loader.jsx'
+import Pagination from '@/admin/components/Pagination.jsx'
 
 export default function Customers() {
   const navigate = useNavigate()
@@ -13,6 +14,7 @@ export default function Customers() {
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
+  const [total, setTotal] = useState(0)
   const { toast } = useToast()
   const toastRef = useRef(toast)
   toastRef.current = toast
@@ -31,7 +33,7 @@ export default function Customers() {
     try {
       const { data } = await adminApi.listCustomers({
         page,
-        limit: 12,
+        limit: 10,
         ...(debouncedSearch ? { search: debouncedSearch } : {}),
       })
       const payload = data?.data
@@ -40,6 +42,7 @@ export default function Customers() {
         setCustomers(rows)
         const tp = payload.totalPages
         setTotalPages(typeof tp === 'number' && tp > 0 ? tp : 1)
+        setTotal(typeof payload.totalCount === 'number' ? payload.totalCount : 0)
       } else {
         setCustomers([])
         setTotalPages(1)
@@ -164,32 +167,13 @@ export default function Customers() {
               </table>
             </div>
 
-            {totalPages > 1 && (
-              <div className="flex items-center justify-between border-t border-gray-200 bg-gray-50/50 px-4 py-3">
-                <p className="text-xs text-gray-500">
-                  Page <span className="font-medium text-gray-900">{page}</span> of{' '}
-                  <span className="font-medium text-gray-900">{totalPages}</span>
-                </p>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setPage((p) => Math.max(1, p - 1))}
-                    disabled={page === 1}
-                    className="inline-flex h-8 items-center rounded-md border border-gray-200 bg-white px-3 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-40"
-                  >
-                    Previous
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                    disabled={page === totalPages}
-                    className="inline-flex h-8 items-center rounded-md border border-gray-200 bg-white px-3 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-40"
-                  >
-                    Next
-                  </button>
-                </div>
-              </div>
-            )}
+            <Pagination
+              page={page}
+              totalPages={totalPages}
+              total={total}
+              limit={10}
+              onPageChange={setPage}
+            />
           </>
         )}
       </div>
