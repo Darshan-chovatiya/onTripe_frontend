@@ -13,10 +13,18 @@ import {
   Phone,
   ArrowLeft,
   FileText,
+  Ticket,
+  IndianRupee,
+  Users,
+  Clock,
+  MapPin,
+  Download,
 } from 'lucide-react'
 import adminApi from '@/admin/services/adminApi'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
 import Loader from '@/shared/components/Loader.jsx'
+import ExcelJS from 'exceljs'
+import { saveAs } from 'file-saver'
 
 function roleBadgeClass(role) {
   if (!role) return 'bg-gray-100 text-gray-700 border-gray-200'
@@ -238,6 +246,9 @@ export default function CustomerDetail() {
   const [customer, setCustomer] = useState(null)
   const [loading, setLoading] = useState(true)
   const [copied, setCopied] = useState(false)
+  const [bookings, setBookings] = useState([])
+  const [bookingsLoading, setBookingsLoading] = useState(true)
+  const [exportLoading, setExportLoading] = useState(false)
 
   const load = useCallback(async () => {
     if (!customerId) return
@@ -261,6 +272,110 @@ export default function CustomerDetail() {
   useEffect(() => {
     load()
   }, [load])
+
+  useEffect(() => {
+    if (!customerId) return
+    setBookingsLoading(true)
+    adminApi.getCustomerBookings(customerId)
+      .then(({ data }) => setBookings(Array.isArray(data?.data?.bookings) ? data.data.bookings : []))
+      .catch(() => setBookings([]))
+      .finally(() => setBookingsLoading(false))
+  }, [customerId])
+
+  const handleExport = async () => {
+    if (!customer) return
+    setExportLoading(true)
+    try {
+      const wb = new ExcelJS.Workbook()
+      wb.creator = 'OnTrip Admin'; wb.created = new Date()
+
+      const NAVY   = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1E293B' } }
+      const LBLFIL = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF1F5F9' } }
+      const STRIPE = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8FAFC' } }
+      const WHITE  = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFFFFF' } }
+      const HFONT  = { bold: true, color: { argb: 'FFFFFFFF' }, size: 11, name: 'Calibri' }
+      const LFONT  = { bold: true, color: { argb: 'FF334155' }, size: 10, name: 'Calibri' }
+      const VFONT  = { color: { argb: 'FF1E293B' }, size: 10, name: 'Calibri' }
+      const CENTER = { horizontal: 'center', vertical: 'middle' }
+      const MIDDLE = { vertical: 'middle' }
+      const TBDR   = { bottom: { style: 'thin', color: { argb: 'FFE2E8F0' } }, right: { style: 'thin', color: { argb: 'FFE2E8F0' } } }
+      const MBDR   = { bottom: { style: 'medium', color: { argb: 'FF3B82F6' } } }
+
+      // Sheet 1 — Customer Info
+      const infoWs = wb.addWorksheet('Customer Info')
+      infoWs.columns = [{ key: 'label', width: 26 }, { key: 'value', width: 46 }]
+      infoWs.mergeCells('A1:B1')
+      const t1 = infoWs.getCell('A1')
+      t1.value = `Customer — ${customer.name || 'Unnamed'}`
+      t1.font = HFONT; t1.fill = NAVY; t1.alignment = CENTER
+      infoWs.getRow(1).height = 26
+      ;[
+        ['Name', customer.name || '—'],
+        ['Email', customer.email || '—'],
+        ['Phone', customer.phone || '—'],
+        ['Joined On', customer.createdAt ? new Date(customer.createdAt).toLocaleDateString() : '—'],
+        ['Total Bookings', bookings.length],
+      ].forEach(([label, value]) => {
+        const r = infoWs.addRow({ label, value })
+        r.height = 20
+        const lc = r.getCell('label'); const vc = r.getCell('value')
+        lc.font = LFONT; lc.fill = LBLFIL; lc.alignment = MIDDLE; lc.border = TBDR
+        vc.font = VFONT; vc.alignment = MIDDLE; vc.border = TBDR
+      })
+
+      // Sheet 2 — Bookings
+      const maxTravelers = bookings.reduce((m, b) => Math.max(m, Array.isArray(b.travelers) ? b.travelers.length : 0), 0)
+      const bHeaders = [
+        'Booking #', 'Booking ID', 'Trip / Package', 'Destination', 'Total Days',
+        'Base Price (INR)', 'Travel Date', 'Booked On',
+        'Booked By', 'Booked By Email', 'Agent Code',
+        'Traveler Count', 'Total Amount (INR)', 'Payment Status', 'Booking Status',
+      ]
+      for (let i = 1; i <= maxTravelers; i++) bHeaders.push(`Traveler ${i} Name`, `Traveler ${i} Age`)
+
+      const bookWs = wb.addWorksheet('Bookings')
+      bookWs.views = [{ state: 'frozen', ySplit: 1 }]
+      bookWs.columns = bHeaders.map((h) => ({ header: h, key: h, width: Math.min(Math.max(h.length + 4, 14), 38) }))
+      const bHdr = bookWs.getRow(1)
+      bHdr.height = 24
+      bHdr.eachCell((cell) => { cell.fill = NAVY; cell.font = HFONT; cell.alignment = CENTER; cell.border = MBDR })
+
+      bookings.forEach((b, idx) => {
+        const travelers = Array.isArray(b.travelers) ? b.travelers : []
+        const row = {
+          'Booking #': idx + 1, 'Booking ID': b.bookingId || '—',
+          'Trip / Package': b.whitelabelPackage?.customTitle || b.package?.title || '—',
+          'Destination': b.package?.destination || '—', 'Total Days': b.package?.totalDays ?? '—',
+          'Base Price (INR)': Number(b.package?.basePrice || 0),
+          'Travel Date': b.travelDate ? new Date(b.travelDate).toLocaleDateString() : '—',
+          'Booked On': b.createdAt ? new Date(b.createdAt).toLocaleDateString() : '—',
+          'Booked By': b.bookedBy?.name || '—', 'Booked By Email': b.bookedBy?.email || '—',
+          'Agent Code': b.bookedBy?.agentCode || '—',
+          'Traveler Count': b.travelerCount ?? travelers.length,
+          'Total Amount (INR)': Number(b.totalAmount || 0),
+          'Payment Status': b.paymentStatus || '—', 'Booking Status': b.bookingStatus || '—',
+        }
+        for (let i = 1; i <= maxTravelers; i++) {
+          const t = travelers[i - 1]
+          row[`Traveler ${i} Name`] = t?.name || ''; row[`Traveler ${i} Age`] = t?.age ?? ''
+        }
+        const r = bookWs.addRow(row)
+        r.height = 18
+        r.eachCell((cell) => {
+          cell.fill = idx % 2 === 0 ? STRIPE : WHITE
+          cell.font = VFONT; cell.alignment = MIDDLE; cell.border = TBDR
+        })
+      })
+
+      const buf = await wb.xlsx.writeBuffer()
+      const safeName = (customer.name || 'customer').replace(/[^a-z0-9]/gi, '-').toLowerCase()
+      saveAs(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), `bookings-${safeName}.xlsx`)
+    } catch {
+      toastRef.current.error('Export failed')
+    } finally {
+      setExportLoading(false)
+    }
+  }
 
   const copyId = async () => {
     if (!customer?._id) return
@@ -423,6 +538,130 @@ export default function CustomerDetail() {
             {profiles.map((profile, idx) => (
               <AgencyProfileCard key={profile._id || idx} profile={profile} index={idx} />
             ))}
+          </div>
+        )}
+      </section>
+
+      {/* ── Bookings ── */}
+      <section className="space-y-4">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <h2 className="text-base font-semibold text-gray-900">Bookings</h2>
+            {!bookingsLoading && bookings.length > 0 && (
+              <span className="rounded-full border border-gray-200 bg-gray-50 px-2 py-0.5 text-xs font-medium text-gray-600">
+                {bookings.length}
+              </span>
+            )}
+          </div>
+          {bookings.length > 0 && (
+            <button
+              type="button"
+              onClick={handleExport}
+              disabled={exportLoading}
+              className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 disabled:opacity-50"
+            >
+              {exportLoading ? <Loader size="sm" /> : <Download className="h-4 w-4" strokeWidth={2} />}
+              Export Excel
+            </button>
+          )}
+        </div>
+
+        {bookingsLoading ? (
+          <div className="flex items-center justify-center py-10"><Loader size="md" /></div>
+        ) : bookings.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50/70 px-4 py-12 text-center">
+            <Ticket className="mx-auto h-10 w-10 text-gray-300" strokeWidth={1.5} />
+            <p className="mt-3 text-sm font-medium text-gray-800">No bookings yet</p>
+            <p className="mt-1 text-sm text-gray-500">This customer has no trip bookings on record.</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {bookings.map((b, idx) => {
+              const pkgTitle = b.whitelabelPackage?.customTitle || b.package?.title || '—'
+              const travelers = Array.isArray(b.travelers) ? b.travelers : []
+              return (
+                <article key={b._id} className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+                  <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 bg-gray-50/60 px-4 py-3">
+                    <div className="flex items-center gap-3">
+                      <span className="flex h-6 w-6 items-center justify-center rounded-md bg-gray-200 text-[10px] font-bold text-gray-600">{idx + 1}</span>
+                      <Ticket className="h-4 w-4 shrink-0 text-primary-600" strokeWidth={2} />
+                      <span className="font-mono text-sm font-semibold text-gray-900">{b.bookingId || '—'}</span>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className={`inline-flex items-center gap-1 rounded-lg border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
+                        b.paymentStatus === 'paid' ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+                        : b.paymentStatus === 'partial' ? 'border-sky-200 bg-sky-50 text-sky-800'
+                        : b.paymentStatus === 'refunded' ? 'border-violet-200 bg-violet-50 text-violet-800'
+                        : 'border-amber-200 bg-amber-50 text-amber-800'
+                      }`}>{b.paymentStatus || 'pending'}</span>
+                      <span className={`inline-flex items-center gap-1 rounded-lg border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
+                        b.bookingStatus === 'confirmed' ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+                        : b.bookingStatus === 'ongoing' ? 'border-sky-200 bg-sky-50 text-sky-800'
+                        : b.bookingStatus === 'completed' ? 'border-gray-200 bg-gray-100 text-gray-700'
+                        : 'border-red-200 bg-red-50 text-red-800'
+                      }`}>{b.bookingStatus || 'confirmed'}</span>
+                    </div>
+                  </div>
+
+                  <div className="p-4 space-y-4">
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-4">
+                      <DetailRow label="Trip / Package"><span className="truncate block">{pkgTitle}</span></DetailRow>
+                      {b.package?.destination && (
+                        <DetailRow label="Destination">
+                          <span className="inline-flex items-center gap-1"><MapPin className="h-3.5 w-3.5 text-gray-400" strokeWidth={2} />{b.package.destination}</span>
+                        </DetailRow>
+                      )}
+                      <DetailRow label="Travel Date">
+                        <span className="inline-flex items-center gap-1"><Calendar className="h-3.5 w-3.5 text-gray-400" strokeWidth={2} />{b.travelDate ? new Date(b.travelDate).toLocaleDateString() : '—'}</span>
+                      </DetailRow>
+                      <DetailRow label="Booked On">
+                        <span className="inline-flex items-center gap-1"><Clock className="h-3.5 w-3.5 text-gray-400" strokeWidth={2} />{b.createdAt ? new Date(b.createdAt).toLocaleDateString() : '—'}</span>
+                      </DetailRow>
+                      <DetailRow label="Total Amount">
+                        <span className="inline-flex items-center gap-1 font-semibold tabular-nums"><IndianRupee className="h-3.5 w-3.5 text-gray-400" strokeWidth={2} />{Number(b.totalAmount || 0).toLocaleString('en-IN')}</span>
+                      </DetailRow>
+                      <DetailRow label="Travelers">
+                        <span className="inline-flex items-center gap-1"><Users className="h-3.5 w-3.5 text-gray-400" strokeWidth={2} />{b.travelerCount ?? travelers.length}</span>
+                      </DetailRow>
+                      {b.bookedBy && (
+                        <DetailRow label="Booked By" className="sm:col-span-2">
+                          <span>{b.bookedBy.name || '—'}</span>
+                          {b.bookedBy.agentCode && (
+                            <span className="ml-2 rounded bg-primary-50 px-1.5 py-0.5 font-mono text-[10px] text-primary-700">{b.bookedBy.agentCode}</span>
+                          )}
+                        </DetailRow>
+                      )}
+                    </div>
+
+                    {travelers.length > 0 && (
+                      <div>
+                        <p className="mb-2 text-xs font-semibold text-gray-700">Travelers</p>
+                        <div className="overflow-hidden rounded-xl border border-gray-100">
+                          <table className="w-full text-sm">
+                            <thead className="border-b border-gray-100 bg-gray-50">
+                              <tr>
+                                <th className="px-3 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-gray-500">#</th>
+                                <th className="px-3 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-gray-500">Name</th>
+                                <th className="px-3 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-gray-500">Age</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-50">
+                              {travelers.map((t, i) => (
+                                <tr key={i} className="hover:bg-gray-50/50">
+                                  <td className="px-3 py-2 text-xs text-gray-500">{i + 1}</td>
+                                  <td className="px-3 py-2 text-xs font-medium text-gray-900">{t.name || '—'}</td>
+                                  <td className="px-3 py-2 text-xs text-gray-700">{t.age ?? '—'}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </article>
+              )
+            })}
           </div>
         )}
       </section>

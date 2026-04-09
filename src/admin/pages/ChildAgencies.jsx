@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { 
   Building2, 
+  Download,
   Search, 
   Eye, 
   Mail, 
@@ -22,6 +23,7 @@ import Loader from '@/shared/components/Loader.jsx'
 import CustomDropdown from '@/shared/components/CustomDropdown.jsx'
 import Modal from '@/shared/components/Modal.jsx'
 import Pagination from '@/admin/components/Pagination.jsx'
+import { exportToExcel } from '@/admin/utils/exportExcel.js'
 
 export default function ChildAgencies({ agentRole = 'child_agent', pageTitle = 'Child Agencies' }) {
   const { toast } = useToast()
@@ -40,6 +42,7 @@ export default function ChildAgencies({ agentRole = 'child_agent', pageTitle = '
   const [parentFilter, setParentFilter] = useState(initialParentRef || 'all')
   const [parentOptions, setParentOptions] = useState([{ value: 'all', label: 'All parents' }])
   const [togglingId, setTogglingId] = useState(null)
+  const [exportLoading, setExportLoading] = useState(false)
 
   // Modal States
   const [selectedAgent, setSelectedAgent] = useState(null)
@@ -233,6 +236,36 @@ export default function ChildAgencies({ agentRole = 'child_agent', pageTitle = '
     </Modal>
   )
 
+  const handleExport = async () => {
+    setExportLoading(true)
+    try {
+      const { data } = await adminApi.listAgents({
+        role: agentRole, limit: 10000, page: 1,
+        isActive: statusFilter === 'all' ? undefined : (statusFilter === 'active' ? 'true' : 'false'),
+        search: debouncedSearch || undefined,
+        kycStatus: kycFilter === 'all' ? undefined : kycFilter,
+        parentRef: parentFilter === 'all' ? undefined : parentFilter,
+      })
+      const isSubChild = agentRole === 'sub_child_agent'
+      await exportToExcel(
+        (data?.data?.agents ?? []).map((a) => ({
+          Name: a.name, Email: a.email, Phone: a.phone || '',
+          'Agent Code': a.agentCode || '',
+          [isSubChild ? 'Child Agency' : 'Parent Agency']: a.parentName || '',
+          'Parent Code': a.parentCode || '',
+          'KYC Status': a.kyc?.status || 'pending',
+          'Account Status': a.isActive ? 'Active' : 'Inactive',
+          ...(isSubChild ? {} : { 'Sub-Child Count': a.childCount ?? 0 }),
+          Whitelabels: a.whitelabelCount ?? 0, Customers: a.customerCount ?? 0,
+          'Joined On': a.createdAt ? new Date(a.createdAt).toLocaleDateString() : '',
+        })),
+        isSubChild ? 'sub-child-agencies' : 'child-agencies',
+        isSubChild ? 'Sub-Child Agencies' : 'Child Agencies'
+      )
+    } catch { toast.error('Export failed') }
+    finally { setExportLoading(false) }
+  }
+
   return (
     <div className="animate-fade-in space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -244,6 +277,15 @@ export default function ChildAgencies({ agentRole = 'child_agent', pageTitle = '
               : 'Manage and monitor secondary distribution entities.'}
           </p>
         </div>
+        <button
+          type="button"
+          onClick={handleExport}
+          disabled={exportLoading}
+          className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 disabled:opacity-50 sm:w-auto"
+        >
+          {exportLoading ? <Loader size="sm" /> : <Download size={16} strokeWidth={2} />}
+          Export
+        </button>
       </div>
 
       <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
