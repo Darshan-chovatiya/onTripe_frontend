@@ -12,6 +12,14 @@ export function createBooking(formData) {
   return axiosInstance.post('/sub-child-agent/bookings', formData)
 }
 
+export function getBooking(id) {
+  return axiosInstance.get(`/sub-child-agent/bookings/${id}`)
+}
+
+export function updateBooking(id, formData) {
+  return axiosInstance.patch(`/sub-child-agent/bookings/${id}`, formData)
+}
+
 export function listAvailableWhitelabels() {
   return axiosInstance.get('/sub-child-agent/whitelabels/available')
 }
@@ -59,6 +67,8 @@ export function changeSubChildPassword(body) {
 export default {
   listMyBookings,
   createBooking,
+  getBooking,
+  updateBooking,
   listAvailableWhitelabels,
   listMyWhitelabels,
   createWhitelabel,

@@ -1,26 +1,44 @@
 import { useMemo, useState } from 'react'
-import { CalendarDays, IndianRupee, Plus, Ticket } from 'lucide-react'
+import { CalendarDays, Eye, IndianRupee, Pencil, Plus, Ticket } from 'lucide-react'
 import { useSubChildBookings } from '@/travelAgency/subChild/hooks/useSubChildBookings.js'
 import { useSubChildPackages } from '@/travelAgency/subChild/hooks/useSubChildPackages.js'
 import CreateBookingModal from '@/travelAgency/subChild/components/CreateBookingModal.jsx'
+import BookingDetailModal from '@/travelAgency/childAgency/components/BookingDetailModal.jsx'
 import Button from '@/shared/components/Button.jsx'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
 import { getApiErrorMessage } from '@/shared/services/apiHelpers.js'
 
+function bookingOfferLabel(b) {
+  if (b.whitelabelPackage) {
+    const wl = b.whitelabelPackage
+    const base = typeof wl.originalPackage === 'object' && wl.originalPackage?.title
+    return wl.customTitle || base || 'White-label'
+  }
+  return b.package?.title || '—'
+}
+
+function statusClass(status) {
+  switch (status) {
+    case 'confirmed': return 'bg-emerald-100 text-emerald-800'
+    case 'ongoing':   return 'bg-blue-100 text-blue-800'
+    case 'completed': return 'bg-gray-200 text-gray-800'
+    case 'cancelled': return 'bg-red-100 text-red-800'
+    default:          return 'bg-gray-100 text-gray-700'
+  }
+}
+
 export default function MyBookings() {
-  const { bookings, loading, error, create } = useSubChildBookings()
+  const { bookings, loading, error, create, fetchBooking, updateBooking } = useSubChildBookings()
   const { availablePackages, whitelabels } = useSubChildPackages()
   const { toast } = useToast()
+
   const [modalOpen, setModalOpen] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [detailId, setDetailId] = useState(null)
+  const [detailOpenEdit, setDetailOpenEdit] = useState(false)
 
   const sorted = useMemo(
-    () =>
-      [...bookings].sort((a, b) => {
-        const ta = new Date(a.createdAt || 0).getTime()
-        const tb = new Date(b.createdAt || 0).getTime()
-        return tb - ta
-      }),
+    () => [...bookings].sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)),
     [bookings]
   )
 
@@ -38,6 +56,21 @@ export default function MyBookings() {
     }
   }
 
+  const handleUpdate = async (id, body) => {
+    try {
+      const updated = await updateBooking(id, body)
+      toast.success('Booking updated')
+      return updated
+    } catch (err) {
+      toast.error(getApiErrorMessage(err))
+      throw err
+    }
+  }
+
+  const openView = (id) => { setDetailId(id); setDetailOpenEdit(false) }
+  const openEdit = (id) => { setDetailId(id); setDetailOpenEdit(true) }
+  const closeDetail = () => { setDetailId(null); setDetailOpenEdit(false) }
+
   return (
     <div className="animate-fade-in space-y-6">
       <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -51,10 +84,17 @@ export default function MyBookings() {
         </Button>
       </header>
 
-      {error ? <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
+      {error ? (
+        <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
+      ) : null}
 
       {loading && sorted.length === 0 ? (
-        <div className="rounded-2xl border border-gray-100 bg-white p-6 text-sm text-gray-500">Loading bookings…</div>
+        <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+          <div className="animate-pulse space-y-3 p-6">
+            <div className="h-4 w-1/3 rounded bg-gray-200" />
+            {[1, 2, 3].map((i) => <div key={i} className="h-12 rounded bg-gray-100" />)}
+          </div>
+        </div>
       ) : null}
 
       {!loading && sorted.length === 0 ? (
@@ -72,36 +112,64 @@ export default function MyBookings() {
         <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
           <div className="overflow-x-auto">
             <table className="min-w-full text-left text-sm">
-              <thead className="border-b border-gray-100 bg-gray-50/80 text-gray-500">
+              <thead className="border-b border-gray-100 bg-gray-50/80">
                 <tr>
-                  <th className="px-4 py-3 font-medium">Booking ID</th>
-                  <th className="px-4 py-3 font-medium">Package</th>
-                  <th className="px-4 py-3 font-medium">Travel date</th>
-                  <th className="px-4 py-3 font-medium">Amount</th>
-                  <th className="px-4 py-3 font-medium">Status</th>
+                  <th className="px-4 py-3 font-semibold text-gray-700">Booking ID</th>
+                  <th className="px-4 py-3 font-semibold text-gray-700">Package / offer</th>
+                  <th className="px-4 py-3 font-semibold text-gray-700">Customer</th>
+                  <th className="px-4 py-3 font-semibold text-gray-700">Travel date</th>
+                  <th className="px-4 py-3 font-semibold text-gray-700">Amount</th>
+                  <th className="px-4 py-3 font-semibold text-gray-700">Status</th>
+                  <th className="px-4 py-3 text-right font-semibold text-gray-700">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
+              <tbody className="divide-y divide-gray-100">
                 {sorted.map((b) => (
                   <tr key={b._id} className="hover:bg-gray-50/80">
-                    <td className="px-4 py-3 font-mono text-xs text-gray-700">{b.bookingId || '—'}</td>
-                    <td className="px-4 py-3 text-gray-900">{b.package?.title || b.whitelabelPackage?.customTitle || '—'}</td>
-                    <td className="px-4 py-3 text-gray-700">
+                    <td className="px-4 py-3 font-mono text-xs font-semibold text-gray-900">{b.bookingId || '—'}</td>
+                    <td className="max-w-[12rem] px-4 py-3 text-gray-800">
+                      <span className="line-clamp-2">{bookingOfferLabel(b)}</span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="font-medium text-gray-900">{b.customer?.name || '—'}</div>
+                      <div className="text-xs text-gray-500">{b.customer?.phone || ''}</div>
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3 text-gray-600">
                       <span className="inline-flex items-center gap-1">
                         <CalendarDays className="h-3.5 w-3.5 text-gray-400" />
-                        {b.travelDate ? new Date(b.travelDate).toLocaleDateString('en-IN') : '—'}
+                        {b.travelDate
+                          ? new Date(b.travelDate).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
+                          : '—'}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-gray-800">
+                    <td className="whitespace-nowrap px-4 py-3 text-gray-800">
                       <span className="inline-flex items-center gap-0.5">
                         <IndianRupee className="h-3.5 w-3.5" />
-                        {Number(b.totalAmount || 0).toLocaleString('en-IN')}
+                        {b.totalAmount != null ? Number(b.totalAmount).toLocaleString('en-IN') : '—'}
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      <span className="inline-flex rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium capitalize text-gray-700">
-                        {b.bookingStatus || 'confirmed'}
+                      <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold capitalize ${statusClass(b.bookingStatus)}`}>
+                        {b.bookingStatus || '—'}
                       </span>
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <button
+                        type="button"
+                        onClick={() => openView(b._id)}
+                        className="inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                      >
+                        <Eye className="h-3.5 w-3.5" />
+                        View
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => openEdit(b._id)}
+                        className="ml-2 inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-700 hover:border-primary-200 hover:bg-primary-50 hover:text-primary-600"
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                        Edit
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -118,6 +186,15 @@ export default function MyBookings() {
         loading={submitting}
         availablePackages={availablePackages}
         whitelabels={whitelabels}
+      />
+
+      <BookingDetailModal
+        isOpen={Boolean(detailId)}
+        onClose={closeDetail}
+        bookingId={detailId}
+        fetchBooking={fetchBooking}
+        updateBooking={handleUpdate}
+        openInEdit={detailOpenEdit}
       />
     </div>
   )

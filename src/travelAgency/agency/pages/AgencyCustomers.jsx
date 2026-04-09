@@ -578,41 +578,13 @@ export default function AgencyCustomers() {
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 text-sm">
               <div className="rounded-lg border border-gray-100 bg-white px-3 py-2">
-                <span className="font-semibold text-gray-700">DOB:</span>{' '}
-                <span className="text-gray-600">
-                  {viewTarget.dob ? new Date(viewTarget.dob).toLocaleDateString('en-IN') : '—'}
-                </span>
-              </div>
-              <div className="rounded-lg border border-gray-100 bg-white px-3 py-2">
-                <span className="font-semibold text-gray-700">Gender:</span>{' '}
-                <span className="text-gray-600">{viewTarget.gender || '—'}</span>
-              </div>
-              <div className="rounded-lg border border-gray-100 bg-white px-3 py-2">
-                <span className="font-semibold text-gray-700">Nationality:</span>{' '}
-                <span className="text-gray-600">{viewTarget.nationality || '—'}</span>
-              </div>
-              <div className="rounded-lg border border-gray-100 bg-white px-3 py-2">
                 <span className="font-semibold text-gray-700">Status:</span>{' '}
                 <span className="text-gray-600">{viewTarget.isActive ? 'Active' : 'Inactive'}</span>
               </div>
               <div className="rounded-lg border border-gray-100 bg-white px-3 py-2">
-                <span className="font-semibold text-gray-700">Aadhar Number:</span>{' '}
-                <span className="text-gray-600">{viewTarget.aadharNumber || '—'}</span>
+                <span className="font-semibold text-gray-700">Notes:</span>{' '}
+                <span className="text-gray-600">{viewTarget.notes || '—'}</span>
               </div>
-              <div className="rounded-lg border border-gray-100 bg-white px-3 py-2">
-                <span className="font-semibold text-gray-700">Passport Number:</span>{' '}
-                <span className="text-gray-600">{viewTarget.passportNumber || '—'}</span>
-              </div>
-            </div>
-
-            <div className="rounded-lg border border-gray-100 bg-white px-3 py-2 text-sm">
-              <span className="font-semibold text-gray-700">Address:</span>{' '}
-              <span className="text-gray-600">{viewTarget.address || '—'}</span>
-            </div>
-
-            <div className="rounded-lg border border-gray-100 bg-white px-3 py-2 text-sm">
-              <span className="font-semibold text-gray-700">Notes:</span>{' '}
-              <span className="text-gray-600">{viewTarget.notes || '—'}</span>
             </div>
 
             <div className="rounded-lg border border-gray-100 bg-white px-3 py-2 text-sm">

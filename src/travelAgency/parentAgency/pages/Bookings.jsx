@@ -182,9 +182,26 @@ export default function Bookings() {
                       </span>
                     </td>
                     <td className="px-5 py-3.5 text-xs text-gray-500">
-                      {typeof b.bookedBy === 'string'
-                        ? '—'
-                        : b.bookedBy?.name || b.bookedBy?.email || '—'}
+                      {(() => {
+                        const bookedBy = b.bookedBy
+                        if (!bookedBy || typeof bookedBy === 'string') return '—'
+                        if (bookedBy.role === 'sub_child_agent' && bookedBy.parentRef?.name) {
+                          return (
+                            <>
+                              {bookedBy.parentRef.name}
+                              <span className="ml-1.5 rounded-full bg-purple-50 px-1.5 py-0.5 text-[10px] font-semibold text-purple-700 ring-1 ring-inset ring-purple-100">via Sub-child</span>
+                            </>
+                          )
+                        }
+                        return (
+                          <>
+                            {bookedBy.name || bookedBy.email || '—'}
+                            {bookedBy.role === 'child_agent' && (
+                              <span className="ml-1.5 rounded-full bg-blue-50 px-1.5 py-0.5 text-[10px] font-semibold text-blue-700 ring-1 ring-inset ring-blue-100">Child</span>
+                            )}
+                          </>
+                        )
+                      })()}
                     </td>
                     <td className="px-5 py-3.5 text-right">
                       <div className="inline-flex items-center gap-3">
