@@ -64,6 +64,10 @@ export function removeParent(parentId) {
   return axiosInstance.delete(`/sub-child-agent/parents/${parentId}`)
 }
 
+export function toggleParentActive(parentId) {
+  return axiosInstance.patch(`/sub-child-agent/parents/${parentId}/toggle-active`)
+}
+
 export function getSubChildProfile() {
   return axiosInstance.get('/sub-child-agent/profile')
 }
