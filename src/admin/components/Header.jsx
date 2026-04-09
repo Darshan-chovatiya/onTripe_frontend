@@ -21,6 +21,8 @@ function titleForPath(pathname) {
   if (/^\/admin\/packages\/[^/]+\/bookings$/.test(pathname)) return 'Package bookings'
   if (/^\/admin\/child-agencies\/[^/]+\/whitelabels$/.test(pathname)) return 'Agent whitelabels'
   if (/^\/admin\/sub-child-agencies\/[^/]+\/whitelabels$/.test(pathname)) return 'Agent whitelabels'
+  if (/^\/admin\/child-agencies\/[^/]+\/customers$/.test(pathname)) return 'Agency customers'
+  if (/^\/admin\/sub-child-agencies\/[^/]+\/customers$/.test(pathname)) return 'Agency customers'
   const hit = PAGE_TITLES.find((e) => pathname === e.match || pathname.startsWith(e.match + '/'))
   if (hit) return hit.title
   if (pathname.startsWith('/admin')) return 'Admin'

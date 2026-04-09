@@ -90,26 +90,25 @@ export function WhitelabelAgencyChain({ wl }) {
   const showMid = seller?.role === 'sub_child_agent' && mid
 
   return (
-    // <div className="border-b border-gray-100 bg-gradient-to-b from-slate-50/80 to-white px-3 py-3 sm:px-4">
-    //   <div className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-gray-500">
-    //     <Users className="h-3.5 w-3.5 text-primary-600" strokeWidth={2} />
-    //     Downstream agencies
-    //   </div>
-    //   <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center">
-    //     {showMid ? (
-    //       <>
-    //         <AgencyChip badge="Child" user={mid} />
-    //         <div className="flex shrink-0 justify-center text-gray-300" aria-hidden>
-    //           <ChevronRight className="h-5 w-5 rotate-90 sm:rotate-0" strokeWidth={2} />
-    //         </div>
-    //         <AgencyChip badge="Sub-child · seller" user={seller} highlight />
-    //       </>
-    //     ) : (
-    //       <AgencyChip badge="Child · seller" user={seller} highlight />
-    //     )}
-    //   </div>
-    // </div>
-    <div></div>
+    <div className="border-b border-gray-100 bg-gradient-to-b from-slate-50/80 to-white px-3 py-3 sm:px-4">
+      <div className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+        <Users className="h-3.5 w-3.5 text-primary-600" strokeWidth={2} />
+        Downstream agencies
+      </div>
+      <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center">
+        {showMid ? (
+          <>
+            <AgencyChip badge="Child" user={mid} />
+            <div className="flex shrink-0 justify-center text-gray-300" aria-hidden>
+              <ChevronRight className="h-5 w-5 rotate-90 sm:rotate-0" strokeWidth={2} />
+            </div>
+            <AgencyChip badge="Sub-child · seller" user={seller} highlight />
+          </>
+        ) : (
+          <AgencyChip badge="Child · seller" user={seller} highlight />
+        )}
+      </div>
+    </div>
   )
 }
 

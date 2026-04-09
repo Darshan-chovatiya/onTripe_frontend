@@ -27,6 +27,7 @@ import AdminPackageBookings from '@/admin/pages/PackageBookings.jsx'
 import AdminAgencyNetwork from '@/admin/pages/AgencyNetwork.jsx'
 import AdminChildAgencies from '@/admin/pages/ChildAgencies.jsx'
 import AdminAgentWhitelabels from '@/admin/pages/AgentWhitelabels.jsx'
+import AdminAgentCustomers from '@/admin/pages/AgentCustomers.jsx'
 import AdminNotifications from '@/admin/pages/Notifications.jsx'
 
 import AgencyLayout from '@/travelAgency/shared/components/AgencyLayout.jsx'
@@ -94,6 +95,8 @@ export default function AppRouter() {
         <Route path="agencies/network/:parentId" element={<AdminAgencyNetwork />} />
         <Route path="child-agencies/:agentId/whitelabels" element={<AdminAgentWhitelabels />} />
         <Route path="sub-child-agencies/:agentId/whitelabels" element={<AdminAgentWhitelabels />} />
+        <Route path="child-agencies/:agentId/customers" element={<AdminAgentCustomers />} />
+        <Route path="sub-child-agencies/:agentId/customers" element={<AdminAgentCustomers />} />
         <Route path="child-agencies" element={<AdminChildAgencies key="admin-child-agencies" />} />
         <Route
           path="sub-child-agencies"

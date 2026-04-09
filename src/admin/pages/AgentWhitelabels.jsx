@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { Building2, ChevronRight, Layers, Loader2, Mail, Phone, ShieldCheck } from 'lucide-react'
 import adminApi from '@/admin/services/adminApi'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
-import { NewOfferDetails, SourcePackageSummary, WhitelabelAgencyChain } from '@/admin/components/WhitelabelOfferBlocks.jsx'
+import { NewOfferDetails, SourcePackageSummary } from '@/admin/components/WhitelabelOfferBlocks.jsx'
 
 export default function AgentWhitelabels() {
   const { agentId } = useParams()
@@ -178,7 +178,6 @@ export default function AgentWhitelabels() {
                 key={String(wl._id)}
                 className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm transition-shadow hover:shadow-md"
               >
-                <WhitelabelAgencyChain wl={wl} />
                 <SourcePackageSummary pkg={wl.originalPackage || null} adminPackageLink />
                 <NewOfferDetails wl={wl} basePkg={wl.originalPackage || null} splitSourceAndOfferUI />
               </li>

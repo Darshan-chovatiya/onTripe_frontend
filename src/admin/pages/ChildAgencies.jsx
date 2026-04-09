@@ -42,9 +42,6 @@ export default function ChildAgencies({ agentRole = 'child_agent', pageTitle = '
   // Modal States
   const [selectedAgent, setSelectedAgent] = useState(null)
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
-  const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false)
-  const [agencyCustomers, setAgencyCustomers] = useState([])
-  const [loadingCustomers, setLoadingCustomers] = useState(false)
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -144,21 +141,10 @@ export default function ChildAgencies({ agentRole = 'child_agent', pageTitle = '
     )
   }
 
-  const handleFetchCustomers = async (agent) => {
-    setSelectedAgent(agent)
-    setLoadingCustomers(true)
-    setIsCustomerModalOpen(true)
-    try {
-      const { data } = await adminApi.getAgencyCustomers(agent._id)
-      if (data?.success) {
-        setAgencyCustomers(data.data.customers)
-      }
-    } catch (error) {
-      toast.error('Failed to retrieve associated traveler profiles')
-    } finally {
-      setLoadingCustomers(false)
-    }
-  }
+  const customersPathForAgent = (id) =>
+    agentRole === 'sub_child_agent'
+      ? `/admin/sub-child-agencies/${id}/customers`
+      : `/admin/child-agencies/${id}/customers`
 
   const AgentDetailModal = () => (
     <Modal
@@ -201,10 +187,18 @@ export default function ChildAgencies({ agentRole = 'child_agent', pageTitle = '
               <div className="text-xs font-medium text-gray-500">Whitelabels</div>
               <p className="mt-1 text-xl font-semibold text-gray-900">{selectedAgent.whitelabelCount ?? 0}</p>
             </button>
-            <div className="rounded-xl border border-gray-200 bg-gray-50/80 px-4 py-3 text-center">
+            <button
+              type="button"
+              onClick={() => {
+                setIsDetailModalOpen(false)
+                navigate(customersPathForAgent(selectedAgent._id))
+              }}
+              className="rounded-xl border border-gray-200 bg-gray-50/80 px-4 py-3 text-center transition-colors hover:border-primary-200 hover:bg-primary-50/60"
+              title="View customers for this agency and its network"
+            >
               <div className="text-xs font-medium text-gray-500">Customers</div>
               <p className="mt-1 text-xl font-semibold text-gray-900">{selectedAgent.customerCount ?? 0}</p>
-            </div>
+            </button>
           </div>
 
           <div className="grid gap-4 rounded-xl border border-gray-200 bg-white p-4 sm:grid-cols-2">
@@ -233,61 +227,6 @@ export default function ChildAgencies({ agentRole = 'child_agent', pageTitle = '
           </div>
         </div>
       )}
-    </Modal>
-  )
-
-  const CustomerModal = () => (
-    <Modal
-      isOpen={isCustomerModalOpen}
-      onClose={() => setIsCustomerModalOpen(false)}
-      title={`Customers List of ${selectedAgent?.name}`}
-      size="lg"
-    >
-      <div className="space-y-4">
-        <p className="text-xs text-gray-400 font-bold uppercase tracking-widest leading-none">Customers managed by this agency and its network</p>
-        
-        <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden min-h-[300px]">
-           {loadingCustomers ? (
-              <div className="p-12 flex flex-col items-center justify-center">
-                 <Loader size="md" />
-                 <p className="text-[10px] font-bold text-gray-400 mt-4 tracking-widest uppercase">Fetching Customer List...</p>
-              </div>
-           ) : agencyCustomers.length === 0 ? (
-              <div className="p-12 text-center">
-                 <p className="text-sm text-gray-400 font-medium italic">No customers found for this agency.</p>
-              </div>
-           ) : (
-              <table className="w-full text-left">
-                 <thead className="bg-gray-50 border-b border-gray-100">
-                     <tr>
-                        <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest">Customer Details</th>
-                        <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest">Account Type</th>
-                        <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest">Managed By</th>
-                     </tr>
-                 </thead>
-                 <tbody className="divide-y divide-gray-50">
-                    {agencyCustomers.map((ac, idx) => (
-                      <tr key={ac._id || idx} className="hover:bg-gray-50/50 transition-colors">
-                         <td className="px-6 py-4">
-                            <div className="text-sm font-bold text-zinc-900">{ac.customer?.name}</div>
-                            <div className="text-[9px] font-black text-gray-400 uppercase tracking-widest">{ac.customer?.email}</div>
-                         </td>
-                         <td className="px-6 py-4">
-                            <div className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full w-fit uppercase tracking-tighter">
-                               {ac.customer?.role === 'sub_child_agent' ? 'Sub-Agent' : (ac.customer?.role === 'child_agent' ? 'Child Agent' : 'Regular Customer')}
-                            </div>
-                         </td>
-                         <td className="px-6 py-4">
-                            <div className="text-xs text-gray-600 font-bold">{ac.managedBy?.name}</div>
-                            <div className="text-[9px] font-black text-gray-400 uppercase tracking-widest">{ac.managedBy?.role?.replace(/_/g, ' ')}</div>
-                         </td>
-                      </tr>
-                    ))}
-                 </tbody>
-              </table>
-           )}
-        </div>
-      </div>
     </Modal>
   )
 
@@ -463,8 +402,9 @@ export default function ChildAgencies({ agentRole = 'child_agent', pageTitle = '
                       <td className="px-4 py-2.5">
                         <button
                           type="button"
-                          onClick={() => handleFetchCustomers(agent)}
-                          className="inline-flex items-center gap-1.5 rounded-lg border border-gray-100 bg-gray-50 px-2.5 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:border-gray-200 hover:bg-white"
+                          onClick={() => navigate(customersPathForAgent(agent._id))}
+                          className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-gray-200 bg-gray-50 px-2.5 py-1.5 text-xs font-medium tabular-nums text-gray-800 transition-colors hover:border-primary-200 hover:bg-primary-50/50 hover:text-primary-900"
+                          title="View customers for this agency and its network"
                         >
                           <UserRound className="h-3.5 w-3.5 text-gray-500" strokeWidth={2} />
                           <span>{agent.customerCount || 0}</span>
@@ -537,9 +477,7 @@ export default function ChildAgencies({ agentRole = 'child_agent', pageTitle = '
         )}
       </div>
 
-      {/* Pop-up Modals */}
       <AgentDetailModal />
-      <CustomerModal />
     </div>
   )
 }
