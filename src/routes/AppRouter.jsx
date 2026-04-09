@@ -43,6 +43,7 @@ import AgencyVendors from '@/travelAgency/agency/pages/AgencyVendors.jsx'
 import AgencyBookings from '@/travelAgency/agency/pages/AgencyBookings.jsx'
 import AgencyMyBookings from '@/travelAgency/agency/pages/AgencyMyBookings.jsx'
 import AgencyManageDownstream from '@/travelAgency/agency/pages/AgencyManageDownstream.jsx'
+import ParentNotificationHistory from '@/travelAgency/parentAgency/pages/ParentNotificationHistory.jsx'
 import AgencyCustomers from '@/travelAgency/agency/pages/AgencyCustomers.jsx'
 import AgencyCustomerTrips from '@/travelAgency/agency/pages/AgencyCustomerTrips.jsx'
 import AgencySettings from '@/travelAgency/agency/pages/AgencySettings.jsx'
@@ -210,6 +211,14 @@ export default function AppRouter() {
           element={
             <AgencyPermissionRoute anyOf={[P.NETWORK_CHILDREN, P.NETWORK_SUBCHILDREN]}>
               <AgencyManageDownstream />
+            </AgencyPermissionRoute>
+          }
+        />
+        <Route
+          path="manage-downstream/notification-history"
+          element={
+            <AgencyPermissionRoute permission={P.NETWORK_CHILDREN}>
+              <ParentNotificationHistory />
             </AgencyPermissionRoute>
           }
         />
