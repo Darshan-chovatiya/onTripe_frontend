@@ -72,7 +72,7 @@ export default function ParentManagement({ listParents, addParent, toggleParentA
         </div>
         <div>
           <h2 className="text-lg font-semibold text-gray-900">{label}</h2>
-          <p className="text-xs text-gray-500">Add a parent code to link your account. Pending until approved.</p>
+          <p className="text-xs text-gray-500">Add a parent code to link your account. Set inactive to hide their packages.</p>
         </div>
       </div>
 
@@ -116,15 +116,9 @@ export default function ParentManagement({ listParents, addParent, toggleParentA
               <div className="flex shrink-0 items-center gap-2">
                 {/* Status badge */}
                 {p.status === 'approved' ? (
-                  p.isActive ? (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-100">
-                      <CheckCircle className="h-3 w-3" /> Approved
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-semibold text-gray-500 ring-1 ring-inset ring-gray-200">
-                      Inactive
-                    </span>
-                  )
+                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-100">
+                    <CheckCircle className="h-3 w-3" /> Approved
+                  </span>
                 ) : p.status === 'rejected' ? (
                   <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2.5 py-0.5 text-xs font-semibold text-red-700 ring-1 ring-inset ring-red-100">
                     <XCircle className="h-3 w-3" /> Rejected
@@ -144,7 +138,7 @@ export default function ParentManagement({ listParents, addParent, toggleParentA
                     className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition disabled:opacity-50 ${
                       p.isActive
                         ? 'border border-gray-200 bg-white text-gray-600 hover:border-red-200 hover:bg-red-50 hover:text-red-600'
-                        : 'border border-emerald-200 bg-white text-emerald-700 hover:bg-emerald-50'
+                        : 'border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
                     }`}
                   >
                     {togglingId === p._id ? '…' : p.isActive ? 'Set inactive' : 'Set active'}

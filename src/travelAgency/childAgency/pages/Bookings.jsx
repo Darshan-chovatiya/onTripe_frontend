@@ -1,14 +1,19 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { CalendarDays, Eye, IndianRupee, Plus, Ticket, MessageSquare, Pencil } from 'lucide-react'
+import { CalendarDays, Eye, IndianRupee, Plus, Ticket, MessageSquare, Pencil, Search, Download, RefreshCw } from 'lucide-react'
 import { useChildBookings } from '@/travelAgency/childAgency/hooks/useChildBookings.js'
 import { useChildPackages } from '@/travelAgency/childAgency/hooks/useChildPackages.js'
+import { listBookings } from '@/travelAgency/childAgency/services/childAgencyApi.js'
 import CreateBookingModal from '@/travelAgency/childAgency/components/CreateBookingModal.jsx'
 import BookingDetailModal from '@/travelAgency/childAgency/components/BookingDetailModal.jsx'
 import Button from '@/shared/components/Button.jsx'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
 import { getApiErrorMessage } from '@/shared/services/apiHelpers.js'
 import { basePackageFromBooking } from '@/travelAgency/shared/utils/bookingDetailHelpers.js'
+import Pagination from '@/admin/components/Pagination.jsx'
+import { exportToExcel } from '@/admin/utils/exportExcel.js'
+
+const PAGE_SIZE = 10
 
 function bookingOfferLabel(b) {
   if (b.whitelabelPackage) {
@@ -35,60 +40,33 @@ function statusClass(status) {
 }
 
 export default function Bookings() {
-  const { bookings, loading, error, create, fetchBooking, updateBooking, currentUserId } = useChildBookings()
+  const navigate = useNavigate()
+  const { bookings, loading, error, create, fetchBooking, updateBooking, currentUserId, fetchBookings, pagination } = useChildBookings()
   const { availablePackages, whitelabels } = useChildPackages()
   const { toast } = useToast()
   const [modalOpen, setModalOpen] = useState(false)
   const [detailId, setDetailId] = useState(null)
   const [detailOpenEdit, setDetailOpenEdit] = useState(false)
   const [submitting, setSubmitting] = useState(false)
-  const [packageFilter, setPackageFilter] = useState('all')
-  const [parentFilter, setParentFilter] = useState('all')
+  const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState('all')
+  const [page, setPage] = useState(1)
+  const [exportLoading, setExportLoading] = useState(false)
 
-  // Helper: get base package and its parent from a booking
-  const getBasePackage = (b) => {
-    if (b.whitelabelPackage?.originalPackage && typeof b.whitelabelPackage.originalPackage === 'object') {
-      return b.whitelabelPackage.originalPackage
-    }
-    return b.package && typeof b.package === 'object' ? b.package : null
-  }
+  // Reset page when filters change
+  useEffect(() => {
+    setPage(1)
+  }, [search, statusFilter])
 
-  // Derive unique packages and parents from bookings
-  const packageOptions = useMemo(() => {
-    const map = new Map()
-    bookings.forEach((b) => {
-      const pkg = getBasePackage(b)
-      if (pkg?._id) map.set(String(pkg._id), pkg.title || '—')
+  // Fetch bookings with pagination
+  useEffect(() => {
+    fetchBookings({
+      page,
+      limit: PAGE_SIZE,
+      search: search.trim(),
+      status: statusFilter === 'all' ? undefined : statusFilter
     })
-    return Array.from(map.entries()).map(([id, title]) => ({ id, title }))
-  }, [bookings])
-
-  const parentOptions = useMemo(() => {
-    const map = new Map()
-    bookings.forEach((b) => {
-      const pkg = getBasePackage(b)
-      const creator = pkg?.createdBy
-      if (creator?._id) map.set(String(creator._id), creator.name || creator.email || String(creator._id))
-    })
-    return Array.from(map.entries()).map(([id, name]) => ({ id, name }))
-  }, [bookings])
-
-  const sorted = useMemo(() => {
-    let list = [...bookings].sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
-    if (packageFilter !== 'all') {
-      list = list.filter((b) => {
-        const pkg = getBasePackage(b)
-        return String(pkg?._id) === packageFilter
-      })
-    }
-    if (parentFilter !== 'all') {
-      list = list.filter((b) => {
-        const pkg = getBasePackage(b)
-        return String(pkg?.createdBy?._id || pkg?.createdBy) === parentFilter
-      })
-    }
-    return list
-  }, [bookings, packageFilter, parentFilter])
+  }, [fetchBookings, page, search, statusFilter])
 
   const handleCreate = async (formData) => {
     setSubmitting(true)
@@ -115,121 +93,160 @@ export default function Bookings() {
     }
   }
 
+  const handleExport = async () => {
+    setExportLoading(true)
+    try {
+      const { data } = await listBookings({
+        page: 1,
+        limit: 10000,
+        search: search.trim(),
+        status: statusFilter === 'all' ? undefined : statusFilter
+      })
+      const rows = data?.data?.bookings || []
+      await exportToExcel(
+        rows.map((b, idx) => ({
+          '#': idx + 1,
+          'Booking ID': b.bookingId || '',
+          'Package': b.whitelabelPackage?.customTitle || b.package?.title || '—',
+          'Customer': b.customer?.name || '—',
+          'Phone': b.customer?.phone || '',
+          'Travel Date': b.travelDate ? new Date(b.travelDate).toLocaleString() : '—',
+          'Amount': b.totalAmount != null ? Number(b.totalAmount).toLocaleString('en-IN') : '—',
+          'Booked By': b.bookedBy?.name || '—',
+          'Status': b.bookingStatus || '—'
+        })),
+        'bookings',
+        'Bookings'
+      )
+    } catch {
+      toast.error('Export failed')
+    } finally {
+      setExportLoading(false)
+    }
+  }
+
+  console.log('Bookings pagination:', pagination)
+
   return (
     <div className="animate-fade-in space-y-6">
       <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Bookings</h1>
           <p className="mt-1 text-sm text-gray-500">
-            All bookings you and your sub-child agencies have created. Start a new booking for a parent package or one
-            of your white-label offers.
+            All bookings you and your sub-child agencies have created.
           </p>
         </div>
-        <Button type="button" onClick={() => setModalOpen(true)}>
-          <Plus className="mr-1.5 inline h-4 w-4" />
-          New booking
-        </Button>
-      </header>
-
-      {error ? (
-        <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
-      ) : null}
-
-      {/* Filters */}
-      {(packageOptions.length > 1 || parentOptions.length > 1) && (
-        <div className="flex flex-wrap gap-3">
-          {parentOptions.length > 1 && (
-            <select
-              className="input-field w-auto min-w-[160px] text-sm"
-              value={parentFilter}
-              onChange={(e) => { setParentFilter(e.target.value); setPackageFilter('all') }}
-            >
-              <option value="all">All parents</option>
-              {parentOptions.map((p) => (
-                <option key={p.id} value={p.id}>{p.name}</option>
-              ))}
-            </select>
-          )}
-          {packageOptions.length > 1 && (
-            <select
-              className="input-field w-auto min-w-[180px] text-sm"
-              value={packageFilter}
-              onChange={(e) => setPackageFilter(e.target.value)}
-            >
-              <option value="all">All packages</option>
-              {packageOptions
-                .filter((p) => {
-                  if (parentFilter === 'all') return true
-                  return bookings.some((b) => {
-                    const pkg = getBasePackage(b)
-                    return String(pkg?._id) === p.id && String(pkg?.createdBy?._id || pkg?.createdBy) === parentFilter
-                  })
-                })
-                .map((p) => (
-                  <option key={p.id} value={p.id}>{p.title}</option>
-                ))}
-            </select>
-          )}
-        </div>
-      )}
-
-      {loading && sorted.length === 0 ? (
-        <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
-          <div className="animate-pulse space-y-3 p-6">
-            <div className="h-4 w-1/3 rounded bg-gray-200" />
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-12 rounded bg-gray-100" />
-            ))}
-          </div>
-        </div>
-      ) : null}
-
-      {!loading && sorted.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-gray-200 bg-gray-50/80 py-16 text-center">
-          <Ticket className="mb-3 h-12 w-12 text-gray-300" />
-          <p className="text-sm font-medium text-gray-600">No bookings yet</p>
-          <p className="mt-1 max-w-md text-xs text-gray-400">
-            When you or a sub-child agent confirms a trip, it will show up here. Use New booking to add one now.
-          </p>
-          <Button type="button" className="mt-4" onClick={() => setModalOpen(true)}>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={handleExport}
+            disabled={exportLoading}
+            className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-3.5 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 disabled:opacity-50"
+          >
+            {exportLoading ? <RefreshCw size={15} className="animate-spin" /> : <Download size={15} />}
+            Export Excel
+          </button>
+          <Button type="button" onClick={() => setModalOpen(true)}>
             <Plus className="mr-1.5 inline h-4 w-4" />
             New booking
           </Button>
         </div>
-      ) : null}
+      </header>
 
-      {sorted.length > 0 ? (
-        <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+      <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
+        {/* Filters */}
+        <div className="flex flex-col gap-3 border-b border-gray-200 px-4 py-3 sm:flex-row sm:items-center">
+          <div className="relative min-w-0 flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" strokeWidth={2} />
+            <input
+              className="w-full rounded-md border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-gray-300 focus:outline-none focus:ring-1 focus:ring-gray-300"
+              placeholder="Search by booking ID, customer, or package..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+          <select
+            className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:border-gray-300 focus:outline-none focus:ring-1 focus:ring-gray-300 sm:w-48"
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+          >
+            <option value="all">All statuses</option>
+            <option value="confirmed">Confirmed</option>
+            <option value="ongoing">Ongoing</option>
+            <option value="completed">Completed</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+        </div>
+
+        {error ? <div className="m-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div> : null}
+
+        {loading && bookings.length === 0 ? (
+          <div className="space-y-3 p-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="animate-pulse rounded-xl border border-gray-100 bg-white p-4">
+                <div className="flex items-center gap-3">
+                  <div className="h-8 w-8 rounded-full bg-gray-200" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-4 w-1/3 rounded bg-gray-200" />
+                    <div className="h-3 w-1/2 rounded bg-gray-200" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : null}
+
+        {!loading && bookings.length === 0 && !error ? (
+          <div className="px-4 py-14 text-center">
+            <Ticket className="mx-auto h-8 w-8 text-gray-300" strokeWidth={1.5} />
+            <p className="mt-3 text-sm font-medium text-gray-900">
+              {search || statusFilter !== 'all' ? 'No bookings match your search' : 'No bookings yet'}
+            </p>
+            {search || statusFilter !== 'all' ? null : (
+              <>
+                <p className="mt-1 text-sm text-gray-500">
+                  When you or a sub-child agent confirms a trip, it will show up here.
+                </p>
+                <Button type="button" className="mt-4" onClick={() => setModalOpen(true)}>
+                  <Plus className="mr-1.5 inline h-4 w-4" />
+                  New booking
+                </Button>
+              </>
+            )}
+          </div>
+        ) : null}
+
+        {bookings.length > 0 ? (
           <div className="overflow-x-auto">
-            <table className="min-w-full text-left text-sm">
-              <thead className="border-b border-gray-100 bg-gray-50/80">
+            <table className="w-full min-w-[860px] text-sm">
+              <thead className="border-b border-gray-200 bg-gray-50">
                 <tr>
-                  <th className="px-4 py-3 font-semibold text-gray-700">Booking ID</th>
-                  <th className="px-4 py-3 font-semibold text-gray-700">Package / offer</th>
-                  <th className="px-4 py-3 font-semibold text-gray-700">Customer</th>
-                  <th className="px-4 py-3 font-semibold text-gray-700">Travel date</th>
-                  <th className="px-4 py-3 font-semibold text-gray-700">Amount</th>
-                  <th className="px-4 py-3 font-semibold text-gray-700">Booked by</th>
-                  <th className="px-4 py-3 font-semibold text-gray-700">Status</th>
-                  <th className="px-4 py-3 font-semibold text-gray-700 text-right">Actions</th>
+                  <th className="px-4 py-2.5 text-left align-middle text-xs font-medium text-gray-600">Booking ID</th>
+                  <th className="px-4 py-2.5 text-left align-middle text-xs font-medium text-gray-600">Package / offer</th>
+                  <th className="px-4 py-2.5 text-left align-middle text-xs font-medium text-gray-600">Customer</th>
+                  <th className="px-4 py-2.5 text-left align-middle text-xs font-medium text-gray-600">Travel date</th>
+                  <th className="px-4 py-2.5 text-left align-middle text-xs font-medium text-gray-600">Amount</th>
+                  <th className="px-4 py-2.5 text-left align-middle text-xs font-medium text-gray-600">Booked by</th>
+                  <th className="px-4 py-2.5 text-left align-middle text-xs font-medium text-gray-600">Status</th>
+                  <th className="px-4 py-2.5 text-right align-middle text-xs font-medium text-gray-600">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {sorted.map((b) => {
+                {bookings.map((b) => {
                   const communityPackageId = basePackageFromBooking(b)?._id || b?.package?._id || null
                   const bookedBy = b.bookedBy
                   const isSelf = currentUserId && bookedBy && String(bookedBy._id || bookedBy) === String(currentUserId)
                   return (
-                    <tr key={b._id} className="hover:bg-gray-50/80">
-                      <td className="px-4 py-3 font-mono text-xs font-semibold text-gray-900">{b.bookingId}</td>
-                      <td className="max-w-[12rem] px-4 py-3 text-gray-800">
+                    <tr key={b._id} className="transition-colors hover:bg-gray-50/80">
+                      <td className="px-4 py-2.5 align-middle font-mono text-xs font-semibold text-gray-900">{b.bookingId}</td>
+                      <td className="max-w-[12rem] px-4 py-2.5 align-middle text-gray-800">
                         <span className="line-clamp-2">{bookingOfferLabel(b)}</span>
                       </td>
-                      <td className="px-4 py-3 text-gray-600">
+                      <td className="px-4 py-2.5 align-middle text-gray-600">
                         <div className="font-medium text-gray-900">{b.customer?.name || '—'}</div>
                         <div className="text-xs">{b.customer?.phone || ''}</div>
                       </td>
-                      <td className="whitespace-nowrap px-4 py-3 text-gray-600">
+                      <td className="whitespace-nowrap px-4 py-2.5 align-middle text-gray-600">
                         <span className="inline-flex items-center gap-1">
                           <CalendarDays className="h-3.5 w-3.5 text-gray-400" />
                           {b.travelDate
@@ -240,13 +257,13 @@ export default function Bookings() {
                             : '—'}
                         </span>
                       </td>
-                      <td className="whitespace-nowrap px-4 py-3 text-gray-800">
+                      <td className="whitespace-nowrap px-4 py-2.5 align-middle text-gray-800">
                         <span className="inline-flex items-center gap-0.5">
                           <IndianRupee className="h-3.5 w-3.5" />
                           {b.totalAmount != null ? Number(b.totalAmount).toLocaleString('en-IN') : '—'}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-gray-600">
+                      <td className="px-4 py-2.5 align-middle text-gray-600">
                         {typeof bookedBy === 'object' && bookedBy?.name ? (
                           <>
                             {bookedBy.name}
@@ -256,7 +273,7 @@ export default function Bookings() {
                           '—'
                         )}
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-2.5 align-middle">
                         <span
                           className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold capitalize ${statusClass(
                             b.bookingStatus
@@ -265,40 +282,42 @@ export default function Bookings() {
                           {b.bookingStatus || '—'}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-right">
-                        <button
-                          type="button"
-                          onClick={() => { setDetailId(b._id); setDetailOpenEdit(false) }}
-                          className="inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
-                        >
-                          <Eye className="h-3.5 w-3.5" />
-                          View
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => { setDetailId(b._id); setDetailOpenEdit(true) }}
-                          className="ml-2 inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-700 hover:bg-primary-50 hover:text-primary-600 hover:border-primary-200"
-                        >
-                          <Pencil className="h-3.5 w-3.5" />
-                          Edit
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (!communityPackageId) return
-                            const title = encodeURIComponent(bookingOfferLabel(b))
-                            navigate(`/agency/packages/${communityPackageId}/community?title=${title}`)
-                          }}
-                          disabled={!communityPackageId}
-                          title={communityPackageId ? 'Open community chat' : 'Community chat not available'}
-                          className={`ml-2 inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium transition-colors ${
-                            communityPackageId
-                              ? 'text-primary-600 hover:text-primary-700 hover:bg-primary-50'
-                              : 'opacity-50 cursor-not-allowed text-gray-300'
-                          }`}
-                        >
-                          <MessageSquare className="h-3.5 w-3.5" />
-                        </button>
+                      <td className="px-4 py-2.5 align-middle text-right">
+                        <div className="inline-flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => { setDetailId(b._id); setDetailOpenEdit(false) }}
+                            className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border border-gray-200 bg-white text-gray-600 transition-colors hover:bg-gray-50 hover:text-gray-900"
+                            title="View"
+                          >
+                            <Eye size={12} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => { setDetailId(b._id); setDetailOpenEdit(true) }}
+                            className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border border-gray-200 bg-white text-gray-600 transition-colors hover:bg-primary-50 hover:text-primary-600 hover:border-primary-200"
+                            title="Edit"
+                          >
+                            <Pencil size={13} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (!communityPackageId) return
+                              const title = encodeURIComponent(bookingOfferLabel(b))
+                              navigate(`/agency/packages/${communityPackageId}/community?title=${title}`)
+                            }}
+                            disabled={!communityPackageId}
+                            title={communityPackageId ? 'Open community chat' : 'Community chat not available'}
+                            className={`inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border border-gray-200 bg-white transition-colors ${
+                              communityPackageId
+                                ? 'text-primary-600 hover:text-primary-700 hover:bg-primary-50'
+                                : 'opacity-50 cursor-not-allowed text-gray-300'
+                            }`}
+                          >
+                            <MessageSquare size={13} />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   )
@@ -306,8 +325,18 @@ export default function Bookings() {
               </tbody>
             </table>
           </div>
-        </div>
-      ) : null}
+        ) : null}
+
+        {bookings.length > 0 ? (
+          <Pagination
+            page={pagination.page}
+            totalPages={pagination.totalPages}
+            total={pagination.totalCount}
+            limit={PAGE_SIZE}
+            onPageChange={setPage}
+          />
+        ) : null}
+      </div>
 
       <CreateBookingModal
         isOpen={modalOpen}

@@ -12,6 +12,7 @@ import {
 import Button from '@/shared/components/Button.jsx'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
 import ParentManagement from '@/travelAgency/shared/components/ParentManagement.jsx'
+import KycDocumentsSection from '@/travelAgency/shared/components/KycDocumentsSection.jsx'
 
 function errMessage(err) {
   const data = /** @type {{ message?: string; errors?: string[] }} */ (err?.response?.data)
@@ -25,6 +26,7 @@ export default function Settings() {
 
   const [loadingProfile, setLoadingProfile] = useState(true)
   const [kycStatus, setKycStatus] = useState(null)
+  const [kyc, setKyc] = useState(null)
 
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
@@ -49,6 +51,7 @@ export default function Settings() {
           setEmail(u.email || '')
           setPhone(u.phone || '')
           setKycStatus(u.kycStatus || null)
+          if (u.kyc) setKyc(u.kyc)
         }
       } catch {
         if (!cancelled) {
@@ -278,6 +281,8 @@ export default function Settings() {
           </form>
         </div>
       </div>
+
+      <KycDocumentsSection kyc={kyc} />
 
       <ParentManagement
         listParents={listParents}

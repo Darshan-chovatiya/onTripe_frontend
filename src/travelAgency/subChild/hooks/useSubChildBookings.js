@@ -13,13 +13,15 @@ export function useSubChildBookings() {
   const [bookings, setBookings] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [pagination, setPagination] = useState({ page: 1, limit: 10, totalPages: 1, totalCount: 0 })
 
-  const refresh = useCallback(async () => {
+  const fetchBookings = useCallback(async (params = {}) => {
     setLoading(true)
     setError(null)
     try {
-      const res = await listMyBookings()
+      const res = await listMyBookings(params)
       setBookings(res.data?.data?.bookings ?? [])
+      setPagination(res.data?.data?.pagination || { page: 1, limit: 10, totalPages: 1, totalCount: 0 })
     } catch (err) {
       setError(getApiErrorMessage(err))
     } finally {
@@ -27,16 +29,12 @@ export function useSubChildBookings() {
     }
   }, [])
 
-  useEffect(() => {
-    refresh()
-  }, [refresh])
-
   const create = useCallback(
     async (formData) => {
       await apiCreateBooking(formData)
-      await refresh()
+      await fetchBookings()
     },
-    [refresh]
+    [fetchBookings]
   )
 
   const fetchBooking = useCallback(async (id) => {
@@ -57,10 +55,11 @@ export function useSubChildBookings() {
     bookings,
     loading,
     error,
+    pagination,
+    fetchBookings,
     create,
     fetchBooking,
     updateBooking,
     currentUserId: user?.id ?? null,
-    refresh,
   }
 }

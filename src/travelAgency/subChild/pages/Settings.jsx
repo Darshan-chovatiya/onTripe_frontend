@@ -12,6 +12,7 @@ import {
 import Button from '@/shared/components/Button.jsx'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
 import ParentManagement from '@/travelAgency/shared/components/ParentManagement.jsx'
+import KycDocumentsSection from '@/travelAgency/shared/components/KycDocumentsSection.jsx'
 
 function errMessage(err) {
   const data = err?.response?.data
@@ -27,6 +28,7 @@ export default function Settings() {
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
   const [kycStatus, setKycStatus] = useState(null)
+  const [kyc, setKyc] = useState(null)
   const [profileSaving, setProfileSaving] = useState(false)
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
@@ -45,6 +47,7 @@ export default function Settings() {
           setEmail(u.email || '')
           setPhone(u.phone || '')
           setKycStatus(u.kyc?.status || u.kycStatus || null)
+          if (u.kyc) setKyc(u.kyc)
         }
       } catch {
         if (!cancelled) {
@@ -153,8 +156,8 @@ export default function Settings() {
                 }
                 const { icon: Icon, label, cls } = map[kycStatus] || map.pending
                 return (
-                  <div className={`flex items-center gap-2 rounded-xl border px-4 py-3 text-sm font-medium ${cls}`}>
-                    <Icon size={15} /> {label}
+                  <div className={`flex items-center gap-2 rounded-lg border px-4 py-3 text-sm font-medium ${cls}`}>
+                    <Icon size={16} /> {label}
                   </div>
                 )
               })()}
@@ -208,6 +211,8 @@ export default function Settings() {
           </form>
         </div>
       </div>
+
+      <KycDocumentsSection kyc={kyc} />
 
       <ParentManagement
         listParents={listParents}

@@ -4,8 +4,8 @@ export function getAnalytics() {
   return axiosInstance.get('/sub-child-agent/analytics')
 }
 
-export function listMyBookings() {
-  return axiosInstance.get('/sub-child-agent/bookings')
+export function listMyBookings(params) {
+  return axiosInstance.get('/sub-child-agent/bookings', { params })
 }
 
 export function createBooking(formData) {
@@ -36,8 +36,8 @@ export function updateWhitelabel(id, body) {
   return axiosInstance.patch(`/sub-child-agent/whitelabels/${id}`, body)
 }
 
-export function listCustomers() {
-  return axiosInstance.get('/sub-child-agent/customers')
+export function listCustomers(params) {
+  return axiosInstance.get('/sub-child-agent/customers', { params })
 }
 
 export function getCustomerByPhone(phone) {

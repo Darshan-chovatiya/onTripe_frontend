@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Mail, Phone, Search, UserCircle, Bell, Send, History, Check } from 'lucide-react'
+import { Mail, Phone, Search, UserCircle, Bell, Send, History, Check, Download, RefreshCw } from 'lucide-react'
 import { ROLES } from '@/shared/utils/constants.js'
 import { useAgencyPermissions } from '@/travelAgency/agency/hooks/useAgencyPermissions.js'
 import {
@@ -27,6 +27,10 @@ import {
   updateAgencyCustomer as updateSubChildAgencyCustomer,
   toggleAgencyCustomerActive as toggleSubChildAgencyCustomerActive,
 } from '@/travelAgency/subChild/services/subChildApi.js'
+import Pagination from '@/admin/components/Pagination.jsx'
+import { exportToExcel } from '@/admin/utils/exportExcel.js'
+
+const PAGE_SIZE = 10
 
 export default function AgencyCustomers() {
   const navigate = useNavigate()
@@ -36,7 +40,9 @@ export default function AgencyCustomers() {
   const [q, setQ] = useState('')
   const [loading, setLoading] = useState(false)
   const [rows, setRows] = useState([])
-  const [refreshTick, setRefreshTick] = useState(0)
+  const [page, setPage] = useState(1)
+  const [pagination, setPagination] = useState({ page: 1, limit: PAGE_SIZE, totalPages: 1, totalCount: 0 })
+  const [exportLoading, setExportLoading] = useState(false)
 
   const [selectedIds, setSelectedIds] = useState(() => new Set())
 
@@ -81,96 +87,101 @@ export default function AgencyCustomers() {
 
   const selectedCount = selectedIds.size
 
+  // Reset page when search changes
   useEffect(() => {
-    let cancelled = false
-    ;(async () => {
-      if (role !== ROLES.CHILD_AGENCY && role !== ROLES.SUB_CHILD) {
-        setRows([])
-        return
-      }
-      setLoading(true)
-      try {
-        const res =
-          role === ROLES.CHILD_AGENCY
-            ? await listChildCustomers()
-            : await listSubCustomers()
-        const customers = res.data?.data?.customers ?? []
-        const bookingsRes =
-          role === ROLES.CHILD_AGENCY
-            ? await listChildBookings()
-            : await listSubChildBookings()
-        const bookings = bookingsRes.data?.data?.bookings ?? []
-        const bookingMapByAgencyCustomer = new Map()
-        bookings.forEach((b) => {
-          const agencyCustomerKey = b?.agencyCustomer?._id
-            ? String(b.agencyCustomer._id)
-            : b?.agencyCustomer
-              ? String(b.agencyCustomer)
-              : null
-          if (!agencyCustomerKey) return
-          const existing = bookingMapByAgencyCustomer.get(agencyCustomerKey) || []
-          existing.push(b)
-          bookingMapByAgencyCustomer.set(agencyCustomerKey, existing)
-        })
-        if (cancelled) return
-        const normalizedRows = customers.map((item) => ({
-          // Backend notification endpoint expects Customer `_id` (not AgencyCustomer `_id`)
-          id: item.customer?._id || item._id,
-          agencyCustomerId: item._id,
-          name: item.name || item.customer?.name || '—',
-          phone: item.phone || item.customer?.phone || '—',
-          email: item.email || item.customer?.email || '—',
-          notes: item.notes || '',
-          dob: item.dob || null,
-          gender: item.gender || '',
-          nationality: item.nationality || '',
-          address: item.address || '',
-          aadharNumber: item.aadharNumber || '',
-          passportNumber: item.passportNumber || '',
-          docs: item.docs || {},
-          tripsData: bookingMapByAgencyCustomer.get(String(item._id)) || [],
-          trips: (bookingMapByAgencyCustomer.get(String(item._id)) || []).length,
-          lastActivity: item.updatedAt || item.createdAt,
-          isActive: item.isActive !== false,
-          createdAt: item.createdAt || null,
-          updatedAt: item.updatedAt || null,
-        }))
+    setPage(1)
+  }, [q])
 
-        // Keep table order stable across reloads; do not depend on backend updatedAt ordering.
-        normalizedRows.sort((a, b) => {
-          const aCreated = a.createdAt ? new Date(a.createdAt).getTime() : 0
-          const bCreated = b.createdAt ? new Date(b.createdAt).getTime() : 0
-          if (aCreated !== bCreated) return aCreated - bCreated
-          return String(a.agencyCustomerId || '').localeCompare(String(b.agencyCustomerId || ''))
-        })
-
-        setRows(normalizedRows)
-      } catch (err) {
-        if (!cancelled) toastRef.current.error(getApiErrorMessage(err))
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
-    })()
-    return () => {
-      cancelled = true
+  const fetchCustomers = useCallback(async () => {
+    if (role !== ROLES.CHILD_AGENCY && role !== ROLES.SUB_CHILD) {
+      setRows([])
+      return
     }
-  }, [role, refreshTick])
+    setLoading(true)
+    try {
+      const params = {
+        page,
+        limit: PAGE_SIZE,
+        search: q.trim()
+      }
+      
+      const res =
+        role === ROLES.CHILD_AGENCY
+          ? await listChildCustomers(params)
+          : await listSubCustomers(params)
+      const customers = res.data?.data?.customers ?? []
+      const paginationData = res.data?.data?.pagination
+      
+      if (paginationData) {
+        setPagination(paginationData)
+      } else {
+        // Fallback if backend doesn't return pagination
+        setPagination({
+          page,
+          limit: PAGE_SIZE,
+          totalPages: Math.ceil(customers.length / PAGE_SIZE),
+          totalCount: customers.length
+        })
+      }
 
-  const filtered = useMemo(() => {
-    const s = q.trim().toLowerCase()
-    if (!s) return rows
-    return rows.filter(
-      (c) =>
-        c.name.toLowerCase().includes(s) ||
-        c.phone.replace(/\s/g, '').includes(s) ||
-        c.email.toLowerCase().includes(s)
-    )
-  }, [q, rows])
+      // Fetch all bookings to calculate trip counts
+      const bookingsRes =
+        role === ROLES.CHILD_AGENCY
+          ? await listChildBookings({ page: 1, limit: 10000 })
+          : await listSubChildBookings({ page: 1, limit: 10000 })
+      const bookings = bookingsRes.data?.data?.bookings ?? []
+      const bookingMapByAgencyCustomer = new Map()
+      bookings.forEach((b) => {
+        const agencyCustomerKey = b?.agencyCustomer?._id
+          ? String(b.agencyCustomer._id)
+          : b?.agencyCustomer
+            ? String(b.agencyCustomer)
+            : null
+        if (!agencyCustomerKey) return
+        const existing = bookingMapByAgencyCustomer.get(agencyCustomerKey) || []
+        existing.push(b)
+        bookingMapByAgencyCustomer.set(agencyCustomerKey, existing)
+      })
+
+      const normalizedRows = customers.map((item) => ({
+        // Backend notification endpoint expects Customer `_id` (not AgencyCustomer `_id`)
+        id: item.customer?._id || item._id,
+        agencyCustomerId: item._id,
+        name: item.name || item.customer?.name || '—',
+        phone: item.phone || item.customer?.phone || '—',
+        email: item.email || item.customer?.email || '—',
+        notes: item.notes || '',
+        dob: item.dob || null,
+        gender: item.gender || '',
+        nationality: item.nationality || '',
+        address: item.address || '',
+        aadharNumber: item.aadharNumber || '',
+        passportNumber: item.passportNumber || '',
+        docs: item.docs || {},
+        tripsData: bookingMapByAgencyCustomer.get(String(item._id)) || [],
+        trips: (bookingMapByAgencyCustomer.get(String(item._id)) || []).length,
+        lastActivity: item.updatedAt || item.createdAt,
+        isActive: item.isActive !== false,
+        createdAt: item.createdAt || null,
+        updatedAt: item.updatedAt || null,
+      }))
+
+      setRows(normalizedRows)
+    } catch (err) {
+      toastRef.current.error(getApiErrorMessage(err))
+    } finally {
+      setLoading(false)
+    }
+  }, [role, page, q])
+
+  useEffect(() => {
+    fetchCustomers()
+  }, [fetchCustomers])
 
   const allFilteredSelected = useMemo(() => {
-    if (filtered.length === 0) return false
-    return filtered.every((c) => selectedIds.has(c.id))
-  }, [filtered, selectedIds])
+    if (rows.length === 0) return false
+    return rows.every((c) => selectedIds.has(c.id))
+  }, [rows, selectedIds])
 
   const toggleSelect = (id) => {
     setSelectedIds((prev) => {
@@ -184,12 +195,49 @@ export default function AgencyCustomers() {
   const toggleSelectAllFiltered = () => {
     setSelectedIds((prev) => {
       const next = new Set(prev)
-      const shouldDeselect = filtered.length > 0 && filtered.every((c) => next.has(c.id))
-      if (shouldDeselect) filtered.forEach((c) => next.delete(c.id))
-      else filtered.forEach((c) => next.add(c.id))
+      const shouldDeselect = rows.length > 0 && rows.every((c) => next.has(c.id))
+      if (shouldDeselect) rows.forEach((c) => next.delete(c.id))
+      else rows.forEach((c) => next.add(c.id))
       return next
     })
   }
+
+  const handleExport = async () => {
+    setExportLoading(true)
+    try {
+      const params = {
+        page: 1,
+        limit: 10000,
+        search: q.trim()
+      }
+      
+      const res =
+        role === ROLES.CHILD_AGENCY
+          ? await listChildCustomers(params)
+          : await listSubCustomers(params)
+      const customers = res.data?.data?.customers ?? []
+      
+      await exportToExcel(
+        customers.map((c, idx) => ({
+          '#': idx + 1,
+          'Name': c.name || c.customer?.name || '',
+          'Phone': c.phone || c.customer?.phone || '',
+          'Email': c.email || c.customer?.email || '',
+          'Notes': c.notes || '',
+          'Status': c.isActive !== false ? 'Active' : 'Inactive',
+          'Created': c.createdAt ? new Date(c.createdAt).toLocaleString() : ''
+        })),
+        'customers',
+        'Customers'
+      )
+    } catch {
+      toast.error('Export failed')
+    } finally {
+      setExportLoading(false)
+    }
+  }
+
+  console.log('Customers pagination:', pagination)
 
   const canManageCustomers = can(P.CUSTOMERS)
 
@@ -391,6 +439,15 @@ export default function AgencyCustomers() {
         <div className="flex items-center gap-2">
           <button
             type="button"
+            onClick={handleExport}
+            disabled={exportLoading}
+            className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+          >
+            {exportLoading ? <RefreshCw size={16} className="animate-spin" /> : <Download size={16} />}
+            Export Excel
+          </button>
+          <button
+            type="button"
             onClick={openHistory}
             className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
           >
@@ -450,7 +507,7 @@ export default function AgencyCustomers() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {filtered.map((c) => (
+              {rows.map((c) => (
                 <tr key={c.id} className="hover:bg-gray-50/80">
                   <td className="px-4 py-3">
                     <button
@@ -550,8 +607,17 @@ export default function AgencyCustomers() {
         {loading ? (
           <p className="px-4 py-8 text-center text-sm text-gray-500">Loading customers…</p>
         ) : null}
-        {!loading && filtered.length === 0 ? (
+        {!loading && rows.length === 0 ? (
           <p className="px-4 py-8 text-center text-sm text-gray-500">No customers match your search.</p>
+        ) : null}
+        {rows.length > 0 ? (
+          <Pagination
+            page={pagination.page}
+            totalPages={pagination.totalPages}
+            total={pagination.totalCount}
+            limit={PAGE_SIZE}
+            onPageChange={setPage}
+          />
         ) : null}
       </div>
 
