@@ -1173,7 +1173,7 @@ export default function Agencies() {
                         <button
                           type="button"
                           onClick={() => navigate(`/admin/child-agencies?parentRef=${agent._id}`)}
-                          className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-800 shadow-sm transition-colors hover:border-primary-200 hover:bg-primary-50/50 hover:text-primary-900"
+                          className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-800 transition-colors hover:border-primary-200 hover:bg-primary-50/50 hover:text-primary-900"
                           title="View child agencies"
                         >
                           <Users className="h-3.5 w-3.5 text-gray-500" strokeWidth={2} />
@@ -1185,14 +1185,15 @@ export default function Agencies() {
                     </td>
                     <td className="px-4 py-2.5">
                       <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
-                        <div
-                          className="inline-flex items-center gap-1.5 rounded-lg border border-gray-100 bg-gray-50 px-2.5 py-1.5 text-xs font-medium text-gray-700"
-                          title="Packages created by this agency"
+                        <button
+                          type="button"
+                          onClick={() => navigate(`/admin/packages?parentAgencyId=${agent._id}`)}
+                          className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-gray-200 bg-gray-50 px-2.5 py-1.5 text-xs font-medium tabular-nums text-gray-800 transition-colors hover:border-primary-200 hover:bg-primary-50/50 hover:text-primary-900"
+                          title="Open Packages Management filtered to this parent agency"
                         >
                           <Package className="h-3.5 w-3.5 text-gray-500" strokeWidth={2} />
                           <span>{agent.packageCount ?? 0}</span>
-                          {/* <span className="text-gray-400">packages</span> */}
-                        </div>
+                        </button>
                       </div>
                     </td>
                     <td className="whitespace-nowrap px-4 py-2.5">
@@ -1241,7 +1242,7 @@ export default function Agencies() {
                             setSelectedAgent(agent)
                             setIsKycModalOpen(true)
                           }}
-                          className="inline-flex cursor-pointer rounded-lg border border-gray-200 bg-white p-2 text-gray-500 shadow-sm transition-colors hover:border-primary-200 hover:text-primary-700 active:scale-95"
+                          className="inline-flex cursor-pointer rounded-lg border border-gray-200 bg-white p-2 text-gray-500 transition-colors hover:border-primary-200 hover:text-primary-700 active:scale-95"
                           title="View agency"
                           aria-label={`View ${agent.name}`}
                         >
@@ -1253,7 +1254,7 @@ export default function Agencies() {
                             setEditingAgency(agent)
                             setIsEditModalOpen(true)
                           }}
-                          className="inline-flex cursor-pointer rounded-lg border border-gray-200 bg-white p-2 text-gray-500 shadow-sm transition-colors hover:border-emerald-200 hover:text-emerald-700 active:scale-95"
+                          className="inline-flex cursor-pointer rounded-lg border border-gray-200 bg-white p-2 text-gray-500 transition-colors hover:border-emerald-200 hover:text-emerald-700 active:scale-95"
                           title="Edit agency"
                           aria-label={`Edit ${agent.name}`}
                         >
@@ -1263,7 +1264,7 @@ export default function Agencies() {
                           type="button"
                           onClick={() => handleDeleteAgent(agent)}
                           disabled={isActionLoading}
-                          className="inline-flex cursor-pointer rounded-lg border border-gray-200 bg-white p-2 text-gray-500 shadow-sm transition-colors hover:border-rose-200 hover:text-rose-700 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+                          className="inline-flex cursor-pointer rounded-lg border border-gray-200 bg-white p-2 text-gray-500 transition-colors hover:border-rose-200 hover:text-rose-700 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
                           title="Delete agency"
                           aria-label={`Delete ${agent.name}`}
                         >
@@ -1346,13 +1347,21 @@ export default function Agencies() {
                 </div>
                 <p className="mt-1 text-xl font-semibold tabular-nums text-gray-900">{selectedAgent.childCount ?? 0}</p>
               </div>
-              <div className="rounded-xl border border-gray-200 bg-gray-50/80 px-4 py-3 text-center">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsKycModalOpen(false)
+                  navigate(`/admin/packages?parentAgencyId=${selectedAgent._id}`)
+                }}
+                className="rounded-xl border border-gray-200 bg-gray-50/80 px-4 py-3 text-center transition-colors hover:border-primary-200 hover:bg-primary-50/60"
+                title="Open Packages Management filtered to this parent agency"
+              >
                 <div className="flex items-center justify-center gap-1.5 text-xs font-medium text-gray-500">
                   <Package className="h-3.5 w-3.5" strokeWidth={2} />
                   Packages
                 </div>
                 <p className="mt-1 text-xl font-semibold tabular-nums text-gray-900">{selectedAgent.packageCount ?? 0}</p>
-              </div>
+              </button>
               <div className="rounded-xl border border-gray-200 bg-gray-50/80 px-4 py-3 text-center">
                 <div className="flex items-center justify-center gap-1.5 text-xs font-medium text-gray-500">
                   <UserCircle className="h-3.5 w-3.5" strokeWidth={2} />

@@ -24,10 +24,13 @@ import AdminUsers from '@/admin/pages/Users.jsx'
 import AdminAgencies from '@/admin/pages/Agencies.jsx'
 import AdminSettings from '@/admin/pages/Settings.jsx'
 import AdminCustomers from '@/admin/pages/Customers.jsx'
+import AdminCustomerDetail from '@/admin/pages/CustomerDetail.jsx'
 import AdminPackages from '@/admin/pages/Packages.jsx'
-import AdminWhitelabels from '@/admin/pages/Whitelabels.jsx'
+import AdminPackageWhitelabels from '@/admin/pages/PackageWhitelabels.jsx'
+import AdminPackageBookings from '@/admin/pages/PackageBookings.jsx'
 import AdminAgencyNetwork from '@/admin/pages/AgencyNetwork.jsx'
 import AdminChildAgencies from '@/admin/pages/ChildAgencies.jsx'
+import AdminAgentWhitelabels from '@/admin/pages/AgentWhitelabels.jsx'
 import AdminNotifications from '@/admin/pages/Notifications.jsx'
 
 import AgencyLayout from '@/travelAgency/shared/components/AgencyLayout.jsx'
@@ -81,10 +84,14 @@ export default function AppRouter() {
         <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard" element={<AdminDashboard />} />
         <Route path="customers" element={<AdminCustomers />} />
+        <Route path="customers/:customerId" element={<AdminCustomerDetail />} />
+        <Route path="packages/:packageId/whitelabels" element={<AdminPackageWhitelabels />} />
+        <Route path="packages/:packageId/bookings" element={<AdminPackageBookings />} />
         <Route path="packages" element={<AdminPackages />} />
-        <Route path="whitelabels" element={<AdminWhitelabels />} />
         <Route path="agencies" element={<AdminAgencies />} />
         <Route path="agencies/network/:parentId" element={<AdminAgencyNetwork />} />
+        <Route path="child-agencies/:agentId/whitelabels" element={<AdminAgentWhitelabels />} />
+        <Route path="sub-child-agencies/:agentId/whitelabels" element={<AdminAgentWhitelabels />} />
         <Route path="child-agencies" element={<AdminChildAgencies key="admin-child-agencies" />} />
         <Route
           path="sub-child-agencies"

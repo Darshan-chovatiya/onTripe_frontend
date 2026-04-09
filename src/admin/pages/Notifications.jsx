@@ -1,110 +1,151 @@
-import { useState, useEffect } from 'react'
-import { 
-  Bell, 
-  Search, 
-  Send, 
-  Users, 
-  UserCheck, 
-  Building2, 
-  UserPlus, 
-  Mail, 
-  CheckCircle2, 
-  AlertCircle,
-  X,
+import { useState, useEffect, useRef, useCallback } from 'react'
+import {
+  Bell,
+  Search,
+  Send,
+  Users,
+  UserCheck,
+  Building2,
+  UserPlus,
+  Mail,
+  Phone,
+  Check,
   History,
   Trash2,
-  ChevronRight,
-  Filter,
-  Check
+  Loader2,
 } from 'lucide-react'
 import adminApi from '@/admin/services/adminApi'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
 import Loader from '@/shared/components/Loader.jsx'
 import Modal from '@/shared/components/Modal.jsx'
 
-const Notifications = () => {
+const TABS = [
+  { id: 'parents', label: 'Parents', icon: Building2 },
+  { id: 'children', label: 'Child agents', icon: Users },
+  { id: 'subChildren', label: 'Sub-child', icon: UserPlus },
+  { id: 'customers', label: 'Customers', icon: UserCheck },
+]
+
+function recipientSearchHaystack(item, category) {
+  const name = (item.name || '').toLowerCase()
+  const email = (item.email || '').toLowerCase()
+  const code = (item.agentCode || '').toLowerCase()
+  const phone = (item.phone || '').toString().toLowerCase()
+  return `${name} ${email} ${code} ${category === 'customers' ? phone : ''}`
+}
+
+export default function Notifications() {
   const { toast } = useToast()
+  const toastRef = useRef(toast)
+  toastRef.current = toast
+
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
   const [recipients, setRecipients] = useState({
     parents: [],
     children: [],
     subChildren: [],
-    customers: []
+    customers: [],
   })
-  
+
   const [activeCategory, setActiveCategory] = useState('parents')
   const [search, setSearch] = useState('')
-  const [selectedIds, setSelectedIds] = useState(new Set())
+  const [selectedIds, setSelectedIds] = useState(() => new Set())
   const [showHistory, setShowHistory] = useState(false)
+  const [historyLoading, setHistoryLoading] = useState(false)
   const [history, setHistory] = useState([])
-  
+
   const [formData, setFormData] = useState({
     subject: '',
-    message: ''
+    message: '',
   })
 
-  useEffect(() => {
-    fetchRecipients()
-  }, [])
-
-  const fetchRecipients = async () => {
+  const fetchRecipients = useCallback(async () => {
     setLoading(true)
     try {
       const { data } = await adminApi.getNotificationRecipients()
-      if (data.success) {
-        setRecipients(data.data)
+      if (data?.success && data.data) {
+        setRecipients({
+          parents: data.data.parents || [],
+          children: data.data.children || [],
+          subChildren: data.data.subChildren || [],
+          customers: data.data.customers || [],
+        })
+      } else {
+        toastRef.current.error(data?.message || 'Could not load recipients')
       }
-    } catch (err) {
-      toast.error('Failed to synchronize recipient matrix')
+    } catch {
+      toastRef.current.error('Failed to load recipients')
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    fetchRecipients()
+  }, [fetchRecipients])
 
   const fetchHistory = async () => {
+    setHistoryLoading(true)
     try {
       const { data } = await adminApi.getSentNotifications()
-      if (data.success) {
-        setHistory(data.data.notifications)
+      if (data?.success) {
+        setHistory(data.data?.notifications || [])
+      } else {
+        toastRef.current.error(data?.message || 'Could not load history')
       }
-    } catch (err) {
-      toast.error('Failed to retrieve notification logs')
+    } catch {
+      toastRef.current.error('Failed to load history')
+    } finally {
+      setHistoryLoading(false)
     }
+  }
+
+  const openHistory = () => {
+    setShowHistory(true)
+    fetchHistory()
   }
 
   const toggleRecipient = (id) => {
-    const next = new Set(selectedIds)
-    if (next.has(id)) next.delete(id)
-    else next.add(id)
-    setSelectedIds(next)
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
   }
 
   const toggleCategory = (category) => {
-    const categoryList = recipients[category]
-    const next = new Set(selectedIds)
-    const allSelected = categoryList.every(item => next.has(item._id))
-    
-    if (allSelected) {
-      categoryList.forEach(item => next.delete(item._id))
-    } else {
-      categoryList.forEach(item => next.add(item._id))
-    }
-    setSelectedIds(next)
+    const categoryList = recipients[category] || []
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      const allSelected = categoryList.length > 0 && categoryList.every((item) => next.has(item._id))
+      if (allSelected) {
+        categoryList.forEach((item) => next.delete(item._id))
+      } else {
+        categoryList.forEach((item) => next.add(item._id))
+      }
+      return next
+    })
   }
 
   const handleSend = async () => {
-    if (selectedIds.size === 0) return toast.error('Please select at least one recipient')
-    if (!formData.subject.trim() || !formData.message.trim()) return toast.error('Subject and message are mandatory')
+    if (selectedIds.size === 0) {
+      toastRef.current.error('Select at least one recipient')
+      return
+    }
+    if (!formData.subject.trim() || !formData.message.trim()) {
+      toastRef.current.error('Subject and message are required')
+      return
+    }
 
     setSending(true)
     try {
       const users = []
       const customers = []
 
-      // Properly categorize selected IDs
-      Object.keys(recipients).forEach(cat => {
-        recipients[cat].forEach(item => {
+      Object.keys(recipients).forEach((cat) => {
+        ;(recipients[cat] || []).forEach((item) => {
           if (selectedIds.has(item._id)) {
             if (cat === 'customers') customers.push(item._id)
             else users.push(item._id)
@@ -115,238 +156,302 @@ const Notifications = () => {
       const { data } = await adminApi.sendNotification({
         users,
         customers,
-        subject: formData.subject,
-        message: formData.message
+        subject: formData.subject.trim(),
+        message: formData.message.trim(),
       })
 
-      if (data.success) {
-        toast.success(`Broadcasting initiated for ${selectedIds.size} recipients`)
+      if (data?.success) {
+        toastRef.current.success(`Sent to ${selectedIds.size} recipient${selectedIds.size === 1 ? '' : 's'}`)
         setSelectedIds(new Set())
         setFormData({ subject: '', message: '' })
+      } else {
+        toastRef.current.error(data?.message || 'Send failed')
       }
-    } catch (err) {
-      toast.error('Broadcasting failed')
+    } catch {
+      toastRef.current.error('Broadcast failed')
     } finally {
       setSending(false)
     }
   }
 
-  const filteredRecipients = recipients[activeCategory].filter(item => 
-    item.name.toLowerCase().includes(search.toLowerCase()) || 
-    item.email?.toLowerCase().includes(search.toLowerCase()) ||
-    item.agentCode?.toLowerCase().includes(search.toLowerCase())
-  )
+  const q = search.trim().toLowerCase()
+  const list = recipients[activeCategory] || []
+  const filteredRecipients = q
+    ? list.filter((item) => recipientSearchHaystack(item, activeCategory).includes(q))
+    : list
 
-  const categories = [
-    { id: 'parents', label: 'Parent Agents', icon: Building2, color: 'blue' },
-    { id: 'children', label: 'Child Agents', icon: Users, color: 'indigo' },
-    { id: 'subChildren', label: 'Sub-Children', icon: UserPlus, color: 'violet' },
-    { id: 'customers', label: 'Customers', icon: UserCheck, color: 'emerald' }
-  ]
+  const allInTabSelected =
+    list.length > 0 && list.every((item) => selectedIds.has(item._id))
 
-  if (loading) return <div className="h-[400px] flex items-center justify-center"><Loader /></div>
+  if (loading) {
+    return (
+      <div className="animate-fade-in flex min-h-[280px] flex-col items-center justify-center py-20">
+        <Loader size="lg" />
+        <p className="mt-4 text-sm text-gray-400">Loading recipients…</p>
+      </div>
+    )
+  }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="animate-fade-in">
+      {/* Header — minimal */}
+      <div className="flex flex-col gap-4 pb-6 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900">Broadcast Center</h1>
-          <p className="text-gray-500 text-sm">Send multi-tier notifications to agencies and travelers across the network</p>
+          {/* <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-md bg-gray-100 text-gray-600">
+            <Bell className="h-4 w-4" strokeWidth={1.75} />
+          </div> */}
+          <h1 className="text-2xl font-semibold tracking-tight text-gray-900">Broadcast</h1>
+          <p className="mt-1 max-w-lg text-sm leading-relaxed text-gray-500">
+            Email everyone you select. Pick an audience, write once, send.
+          </p>
         </div>
-        <button 
-          onClick={() => { setShowHistory(true); fetchHistory(); }}
-          className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-bold transition-all shadow-sm active:scale-95"
+        <button
+          type="button"
+          onClick={openHistory}
+          className="self-start text-sm text-gray-500 transition-colors hover:text-gray-900 sm:self-auto"
         >
-          <History size={16} /> Broadcast History
+          <span className="inline-flex items-center gap-1.5">
+            <History className="h-4 w-4 opacity-70" strokeWidth={1.75} />
+            History
+          </span>
         </button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Recipient Selector */}
-        <div className="lg:col-span-7 bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex flex-col h-[700px]">
-          <div className="p-4 border-b border-gray-100 flex flex-wrap items-center justify-between gap-3 bg-gray-50/50">
-             <div className="flex bg-white p-1 rounded-lg border border-gray-200 shadow-sm">
-                {categories.map(cat => {
-                  const Icon = cat.icon
-                  return (
-                    <button
-                      key={cat.id}
-                      onClick={() => {setActiveCategory(cat.id); setSearch('')}}
-                      className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-bold transition-all ${
-                        activeCategory === cat.id 
-                          ? `bg-${cat.color}-50 text-${cat.color}-600 border border-${cat.color}-100 shadow-sm` 
-                          : 'text-gray-400 hover:text-gray-600'
-                      }`}
-                    >
-                      <Icon size={14} />
-                      <span className="hidden sm:inline">{cat.label}</span>
-                    </button>
-                  )
-                })}
-             </div>
-             
-             <div className="relative w-full sm:w-64">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input 
-                  type="text" 
-                  placeholder="Search recipients..."
-                  className="w-full pl-9 pr-3 py-1.5 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-primary-500/10 shadow-sm bg-white"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                />
-             </div>
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 lg:gap-10">
+        {/* Recipients */}
+        <div className="flex min-h-[520px] flex-col rounded-2xl border border-gray-200/80 bg-white lg:col-span-7">
+          {/* Tabs — underline style */}
+          <div className="scrollbar-thin flex gap-1 overflow-x-auto border-b border-gray-100 px-2 pt-1 sm:px-4">
+            {TABS.map((tab) => {
+              const Icon = tab.icon
+              const on = activeCategory === tab.id
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => {
+                    setActiveCategory(tab.id)
+                    setSearch('')
+                  }}
+                  className={`relative flex shrink-0 items-center gap-2 whitespace-nowrap px-3 py-3 text-sm transition-colors ${
+                    on
+                      ? 'font-medium text-gray-900'
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  <Icon className="h-4 w-4 opacity-70" strokeWidth={1.75} />
+                  {tab.label}
+                  {on ? (
+                    <span className="absolute bottom-0 left-3 right-3 h-0.5 rounded-full bg-gray-900" />
+                  ) : null}
+                </button>
+              )
+            })}
           </div>
 
-          <div className="flex-1 overflow-y-auto custom-scrollbar">
-             <div className="p-4 flex items-center justify-between border-b border-gray-50 bg-white sticky top-0 z-10 shadow-sm shadow-gray-100/50">
-                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{filteredRecipients.length} Available Targets</span>
-                <button 
-                  onClick={() => toggleCategory(activeCategory)}
-                  className="text-primary-600 text-[10px] font-black uppercase tracking-widest hover:underline"
-                >
-                  {recipients[activeCategory].every(i => selectedIds.has(i._id)) ? 'Deselect All' : 'Select All'}
-                </button>
-             </div>
-             
-             <div className="divide-y divide-gray-50">
-               {filteredRecipients.length === 0 ? (
-                 <div className="p-20 text-center">
-                    <div className="h-16 w-16 bg-gray-50 rounded-full flex items-center justify-center text-gray-200 mx-auto mb-4"><Users size={32} /></div>
-                    <p className="text-sm text-gray-500 italic">No recipients found in this layer.</p>
-                 </div>
-               ) : (
-                 filteredRecipients.map(item => (
-                   <div 
-                     key={item._id} 
-                     onClick={() => toggleRecipient(item._id)}
-                     className={`px-4 py-3 flex items-center justify-between cursor-pointer transition-all hover:bg-gray-50 ${selectedIds.has(item._id) ? 'bg-primary-50/30' : ''}`}
-                   >
-                     <div className="flex items-center gap-3">
-                        <div className={`h-8 w-8 rounded-lg flex items-center justify-center border transition-all ${
-                          selectedIds.has(item._id) 
-                            ? 'bg-primary-600 border-primary-600 text-white shadow-md' 
-                            : 'bg-white border-gray-200 text-transparent hover:border-primary-400'
-                        }`}>
-                           <Check size={14} strokeWidth={4} />
-                        </div>
-                        <div>
-                           <div className="text-xs font-bold text-zinc-900">{item.name}</div>
-                           <div className="text-[10px] text-gray-500 flex items-center gap-3 font-medium">
-                              <span className="flex items-center gap-1"><Mail size={10} /> {item.email || 'N/A'}</span>
-                              {item.agentCode && (
-                                <span className="bg-gray-100 px-1.5 py-0.5 rounded text-[9px] font-black text-gray-600">CODE: {item.agentCode}</span>
-                              )}
-                           </div>
-                        </div>
-                     </div>
-                     <div className="text-[9px] font-black text-gray-300 group-hover:text-primary-400"><ChevronRight size={14}/></div>
-                   </div>
-                 ))
-               )}
-             </div>
+          <div className="border-b border-gray-50 px-4 py-3">
+            <div className="relative">
+              <Search
+                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
+                strokeWidth={1.75}
+              />
+              <input
+                type="search"
+                placeholder="Search…"
+                autoComplete="off"
+                className="w-full rounded-lg border-0 bg-gray-50 py-2.5 pl-10 pr-3 text-sm text-gray-900 placeholder:text-gray-400 focus:bg-gray-100/80 focus:outline-none focus:ring-0"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
           </div>
-          
-          <div className="p-4 bg-gray-50 border-t border-gray-100 flex items-center justify-between">
-             <div className="flex items-center gap-2">
-                <span className="h-8 w-8 bg-primary-600 text-white rounded-full flex items-center justify-center text-xs font-black shadow-lg shadow-primary-500/30">{selectedIds.size}</span>
-                <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Recipients Selected</span>
-             </div>
-             {selectedIds.size > 0 && (
-               <button 
+
+          <div className="flex items-center justify-between px-4 py-2">
+            <span className="text-xs text-gray-400">{filteredRecipients.length} shown</span>
+            <button
+              type="button"
+              onClick={() => toggleCategory(activeCategory)}
+              disabled={list.length === 0}
+              className="text-xs text-gray-600 underline-offset-2 hover:underline disabled:opacity-30"
+            >
+              {allInTabSelected ? 'Clear tab' : 'Select all'}
+            </button>
+          </div>
+
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            {filteredRecipients.length === 0 ? (
+              <div className="flex flex-col items-center justify-center px-6 py-20 text-center">
+                <Users className="h-10 w-10 text-gray-200" strokeWidth={1} />
+                <p className="mt-4 text-sm text-gray-500">No matches</p>
+              </div>
+            ) : (
+              <ul>
+                {filteredRecipients.map((item) => {
+                  const selected = selectedIds.has(item._id)
+                  return (
+                    <li key={item._id} className="border-t border-gray-50 first:border-t-0">
+                      <button
+                        type="button"
+                        onClick={() => toggleRecipient(item._id)}
+                        className={`flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors ${
+                          selected ? 'bg-gray-50/80' : 'hover:bg-gray-50/50'
+                        }`}
+                      >
+                        <span
+                          className={`flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded border transition-colors ${
+                            selected
+                              ? 'border-gray-900 bg-gray-900 text-white'
+                              : 'border-gray-300 bg-white'
+                          }`}
+                        >
+                          {selected ? <Check className="h-3 w-3" strokeWidth={2.5} /> : null}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium text-gray-900">{item.name || 'Unnamed'}</p>
+                          <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-0.5 text-xs text-gray-500">
+                            {item.email ? (
+                              <span className="inline-flex items-center gap-1 truncate">
+                                <Mail className="h-3 w-3 shrink-0 opacity-60" strokeWidth={2} />
+                                <span className="truncate">{item.email}</span>
+                              </span>
+                            ) : null}
+                            {activeCategory === 'customers' && item.phone ? (
+                              <span className="inline-flex items-center gap-1">
+                                <Phone className="h-3 w-3 shrink-0 opacity-60" strokeWidth={2} />
+                                {item.phone}
+                              </span>
+                            ) : null}
+                            {item.agentCode ? (
+                              <span className="font-mono text-[11px] text-gray-400">{item.agentCode}</span>
+                            ) : null}
+                          </div>
+                        </div>
+                      </button>
+                    </li>
+                  )
+                })}
+              </ul>
+            )}
+          </div>
+
+          <div className="mt-auto flex items-center justify-between border-t border-gray-100 px-4 py-3">
+            <p className="text-sm text-gray-600">
+              <span className="font-medium tabular-nums text-gray-900">{selectedIds.size}</span>
+              <span className="text-gray-400"> selected</span>
+            </p>
+            {selectedIds.size > 0 ? (
+              <button
+                type="button"
                 onClick={() => setSelectedIds(new Set())}
-                className="text-rose-600 text-[10px] font-black uppercase tracking-widest flex items-center gap-1 hover:bg-rose-50 px-2 py-1 rounded"
-               >
-                 <Trash2 size={12} /> Clear
-               </button>
-             )}
+                className="text-xs font-medium text-gray-500 hover:text-gray-800"
+              >
+                Clear
+              </button>
+            ) : null}
           </div>
         </div>
 
-        {/* Composer */}
-        <div className="lg:col-span-5 space-y-6">
-           <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 sticky top-6">
-              <h3 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em] mb-6">Dispatch Composer</h3>
-              
-              <div className="space-y-5">
-                 <div>
-                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5 block">Notification Subject</label>
-                    <input 
-                      type="text" 
-                      placeholder="e.g. System Maintenance Update"
-                      className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm font-semibold focus:outline-none focus:ring-4 focus:ring-primary-500/5 focus:border-primary-500/50 transition-all placeholder:text-gray-300"
-                      value={formData.subject}
-                      onChange={(e) => setFormData({...formData, subject: e.target.value})}
-                    />
-                 </div>
+        {/* Compose */}
+        <div className="lg:col-span-5">
+          <div className="lg:sticky lg:top-4">
+            <div className="rounded-2xl border border-gray-200/80 bg-white p-6">
+              <h2 className="text-sm font-medium text-gray-900">Message</h2>
+              <p className="mt-0.5 text-xs text-gray-400">Delivered by email</p>
 
-                 <div>
-                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5 block">Message Content</label>
-                    <textarea 
-                      placeholder="Type your message here..."
-                      rows={10}
-                      className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-4 focus:ring-primary-500/5 focus:border-primary-500/50 transition-all placeholder:text-gray-300 resize-none leading-relaxed"
-                      value={formData.message}
-                      onChange={(e) => setFormData({...formData, message: e.target.value})}
-                    ></textarea>
-                 </div>
+              <div className="mt-6 space-y-5">
+                <div>
+                  <label htmlFor="bc-subject" className="sr-only">
+                    Subject
+                  </label>
+                  <input
+                    id="bc-subject"
+                    type="text"
+                    placeholder="Subject"
+                    className="w-full border-0 border-b border-gray-200 bg-transparent px-0 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-gray-400 focus:outline-none focus:ring-0"
+                    value={formData.subject}
+                    onChange={(e) => setFormData((f) => ({ ...f, subject: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="bc-message" className="sr-only">
+                    Message
+                  </label>
+                  <textarea
+                    id="bc-message"
+                    placeholder="Write your message…"
+                    rows={12}
+                    className="w-full resize-none rounded-xl border border-gray-100 bg-gray-50/50 px-3 py-3 text-sm leading-relaxed text-gray-900 placeholder:text-gray-400 focus:border-gray-200 focus:bg-white focus:outline-none focus:ring-0"
+                    value={formData.message}
+                    onChange={(e) => setFormData((f) => ({ ...f, message: e.target.value }))}
+                  />
+                </div>
 
-                 <div className="p-4 rounded-xl bg-primary-50/50 border border-primary-100 flex items-start gap-3">
-                    <div className="h-2 w-2 rounded-full bg-primary-500 mt-1.5 animate-pulse"></div>
-                    <p className="text-[11px] text-primary-700 font-medium leading-normal">
-                      Your message will be dispatched via **Email** to all {selectedIds.size} selected targets. This action is irreversible once initiated.
-                    </p>
-                 </div>
+                <p className="text-xs leading-relaxed text-gray-400">
+                  Recipients receive this as an email. Sending cannot be undone.
+                </p>
 
-                 <button 
+                <button
+                  type="button"
                   onClick={handleSend}
                   disabled={sending || selectedIds.size === 0}
-                  className="w-full h-12 rounded-xl bg-primary-600 text-white font-black text-xs uppercase tracking-widest flex items-center justify-center gap-3 shadow-lg shadow-primary-600/30 hover:bg-primary-700 transition-all disabled:opacity-50 disabled:shadow-none hover:-translate-y-0.5 active:translate-y-0"
-                 >
-                   {sending ? 'In Transit...' : (
-                      <>Push Broadcast <Send size={16} /></>
-                   )}
-                 </button>
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-gray-900 px-4 py-3 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  {sending ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" strokeWidth={2} />
+                      Sending…
+                    </>
+                  ) : (
+                    <>
+                      <Send className="h-4 w-4" strokeWidth={1.75} />
+                      Send
+                    </>
+                  )}
+                </button>
               </div>
-           </div>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* History Modal */}
-      <Modal 
-        isOpen={showHistory} 
-        onClose={() => setShowHistory(false)} 
-        title="Recent Broadcast Operations"
-        size="lg"
-      >
-        <div className="max-h-[60vh] overflow-y-auto custom-scrollbar divide-y divide-gray-100">
-           {history.length === 0 ? (
-             <div className="p-20 text-center text-gray-500 italic text-sm">No notification history found.</div>
-           ) : (
-             history.map(item => (
-               <div key={item._id} className="p-4 hover:bg-gray-50 transition-colors">
-                  <div className="flex items-center justify-between mb-1">
-                     <div className="text-sm font-bold text-zinc-900">{item.subject}</div>
-                     <div className="text-[10px] font-bold text-gray-400">{new Date(item.createdAt).toLocaleString()}</div>
+      <Modal isOpen={showHistory} onClose={() => setShowHistory(false)} title="History" size="lg">
+        {historyLoading ? (
+          <div className="flex flex-col items-center py-16">
+            <Loader size="md" />
+            <p className="mt-3 text-xs text-gray-400">Loading…</p>
+          </div>
+        ) : history.length === 0 ? (
+          <p className="py-12 text-center text-sm text-gray-400">Nothing sent yet.</p>
+        ) : (
+          <ul className="max-h-[min(60vh,440px)] space-y-0 overflow-y-auto">
+            {history.map((item) => {
+              const sent = (item.recipients || []).filter((r) => r.status === 'sent').length
+              const failed = (item.recipients || []).filter((r) => r.status === 'failed').length
+              const total = (item.recipients || []).length
+              return (
+                <li
+                  key={item._id}
+                  className="border-b border-gray-100 py-4 last:border-0 last:pb-0 first:pt-0"
+                >
+                  <div className="flex flex-wrap items-baseline justify-between gap-2">
+                    <p className="text-sm font-medium text-gray-900">{item.subject || '—'}</p>
+                    <time className="text-xs tabular-nums text-gray-400" dateTime={item.createdAt}>
+                      {item.createdAt ? new Date(item.createdAt).toLocaleString() : ''}
+                    </time>
                   </div>
-                  <p className="text-xs text-gray-500 line-clamp-1 mb-2 italic">"{item.message}"</p>
-                  <div className="flex flex-wrap gap-2">
-                     <span className="px-2 py-0.5 bg-zinc-100 rounded text-[9px] font-black text-zinc-900 uppercase tracking-widest">{item.recipients.length} Recipients</span>
-                     <span className="px-2 py-0.5 bg-emerald-50 text-emerald-600 rounded text-[9px] font-black uppercase tracking-widest">
-                       {item.recipients.filter(r => r.status === 'sent').length} Sent
-                     </span>
-                     {item.recipients.some(r => r.status === 'failed') && (
-                       <span className="px-2 py-0.5 bg-rose-50 text-rose-600 rounded text-[9px] font-black uppercase tracking-widest">
-                         {item.recipients.filter(r => r.status === 'failed').length} Failed
-                       </span>
-                     )}
-                  </div>
-               </div>
-             ))
-           )}
-        </div>
+                  {item.message ? (
+                    <p className="mt-2 line-clamp-2 text-sm text-gray-500">{item.message}</p>
+                  ) : null}
+                  <p className="mt-2 text-xs text-gray-400">
+                    {total} to send · {sent} sent
+                    {failed > 0 ? ` · ${failed} failed` : ''}
+                  </p>
+                </li>
+              )
+            })}
+          </ul>
+        )}
       </Modal>
     </div>
   )
 }
-
-export default Notifications

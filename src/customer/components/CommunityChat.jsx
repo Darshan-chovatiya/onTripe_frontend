@@ -27,7 +27,7 @@ const SOCKET_URL = import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || 'ht
 const BASE_IMG_URL = SOCKET_URL
 const PAGE_SIZE = 30
 
-export default function CommunityChat({ packageId, customerId, currentUserId }) {
+export default function CommunityChat({ packageId, customerId, currentUserId, embedded = false }) {
   const { toast } = useToast()
   const { user } = useAuth()
   const [community, setCommunity] = useState(null)
@@ -291,8 +291,12 @@ export default function CommunityChat({ packageId, customerId, currentUserId }) 
     </div>
   )
 
+  const shellClass = embedded
+    ? 'bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-white/5 overflow-hidden flex flex-col h-[min(65vh,560px)] w-full max-w-full mx-0 animate-fade-in relative'
+    : 'bg-white dark:bg-gray-800 rounded-[2.5rem] shadow-2xl shadow-gray-100/50 border border-gray-50 dark:border-white/5 overflow-hidden flex flex-col h-[700px] max-w-5xl mx-auto animate-fade-in relative'
+
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-[2.5rem] shadow-2xl shadow-gray-100/50 border border-gray-50 dark:border-white/5 overflow-hidden flex flex-col h-[700px] max-w-5xl mx-auto animate-fade-in relative">
+    <div className={shellClass}>
       
       {/* Header */}
       <div className="px-8 py-6 border-b border-gray-50 dark:border-white/5 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md flex items-center justify-between z-10">
