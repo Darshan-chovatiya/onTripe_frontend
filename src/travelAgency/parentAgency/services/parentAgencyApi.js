@@ -16,6 +16,18 @@ export function approveChildKyc(id) {
   return axiosInstance.patch(`/parent-agent/children/${id}/approve-kyc`)
 }
 
+export function listPendingRequests() {
+  return axiosInstance.get('/parent-agent/pending-requests')
+}
+
+export function approveParentRequest(id) {
+  return axiosInstance.patch(`/parent-agent/pending-requests/${id}/approve`)
+}
+
+export function rejectParentRequest(id) {
+  return axiosInstance.delete(`/parent-agent/pending-requests/${id}`)
+}
+
 // Packages
 export function createPackage(formData) {
   return axiosInstance.post('/parent-agent/packages', formData)

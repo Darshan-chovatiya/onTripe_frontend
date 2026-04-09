@@ -5,8 +5,9 @@ import SubChildDetailModal from '@/travelAgency/childAgency/components/SubChildD
 import ConfirmDialog from '@/shared/components/ConfirmDialog.jsx'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
 import { getApiErrorMessage } from '@/shared/services/apiHelpers.js'
-import { approveSubChildKyc, sendNotification, getSentNotifications, getNotificationPreview } from '@/travelAgency/childAgency/services/childAgencyApi.js'
+import { approveSubChildKyc, sendNotification, getSentNotifications, getNotificationPreview, listPendingRequests, approveParentRequest, rejectParentRequest } from '@/travelAgency/childAgency/services/childAgencyApi.js'
 import Modal from '@/shared/components/Modal.jsx'
+import PendingRequestsSection from '@/travelAgency/shared/components/PendingRequestsSection.jsx'
 
 export default function ManageSubChildren() {
   const { subChildren, loading, error, refresh, fetchOne, setActive } = useManageSubChildren()
@@ -218,6 +219,13 @@ export default function ManageSubChildren() {
           </button>
         </div>
       </header>
+
+      <PendingRequestsSection
+        listPendingRequests={listPendingRequests}
+        approveRequest={approveParentRequest}
+        rejectRequest={rejectParentRequest}
+        label="sub-child agency"
+      />
 
       {error ? (
         <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
