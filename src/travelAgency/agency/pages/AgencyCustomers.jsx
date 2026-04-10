@@ -446,7 +446,7 @@ export default function AgencyCustomers() {
           <button
             type="button"
             onClick={handleExport}
-            disabled={exportLoading}
+            disabled={rows.length === 0 || exportLoading}
             className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
           >
             {exportLoading ? <RefreshCw size={16} className="animate-spin" /> : <Download size={16} />}

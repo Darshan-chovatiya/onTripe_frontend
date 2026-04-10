@@ -192,7 +192,7 @@ export default function Customers() {
           <button
             type="button"
             onClick={handleExport}
-            disabled={exportLoading}
+            disabled={rows.length === 0 || exportLoading}
             className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-gray-200 bg-white px-3.5 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 disabled:opacity-50"
           >
             {exportLoading ? <RefreshCw size={15} className="animate-spin" /> : <Download size={15} />}
