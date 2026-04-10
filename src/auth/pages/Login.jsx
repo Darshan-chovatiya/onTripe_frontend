@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { Phone, Ticket } from 'lucide-react'
 import { useAuth } from '@/shared/context/AuthContext.jsx'
@@ -15,6 +15,40 @@ export default function Login() {
   const [mobile, setMobile] = useState('')
   const [otp, setOtp] = useState('')
   const [step, setStep] = useState('phone') // 'phone' or 'otp'
+  /** Seconds until customer can resend OTP (countdown after send). */
+  const [resendCooldownSec, setResendCooldownSec] = useState(0)
+
+  useEffect(() => {
+    if (resendCooldownSec <= 0) return undefined
+    const id = setInterval(() => {
+      setResendCooldownSec((s) => (s <= 1 ? 0 : s - 1))
+    }, 1000)
+    return () => clearInterval(id)
+  }, [resendCooldownSec])
+
+  const formatTimer = (totalSec) => {
+    const m = Math.floor(totalSec / 60)
+    const s = totalSec % 60
+    return `${m}:${String(s).padStart(2, '0')}`
+  }
+
+  const OTP_RESEND_COOLDOWN = 120 // 2 minutes before resend
+
+  const sendOtpToMobile = useCallback(async () => {
+    const cleanedMobile = mobile.replace(/\D/g, '')
+    if (cleanedMobile.length !== 10) {
+      toast.error('Enter a valid 10-digit mobile number')
+      return false
+    }
+    const res = await requestCustomerOtp(cleanedMobile)
+    if (res.success) {
+      toast.success(res.message || 'OTP sent successfully')
+      setResendCooldownSec(OTP_RESEND_COOLDOWN)
+      return true
+    }
+    toast.error(res.message || 'Failed to send OTP')
+    return false
+  }, [mobile, requestCustomerOtp, toast])
 
   if (isCheckingAuth) {
     return (
@@ -30,19 +64,13 @@ export default function Login() {
 
   const handleSendOtp = async (e) => {
     e.preventDefault()
-    const cleanedMobile = mobile.replace(/\D/g, '')
-    if (cleanedMobile.length !== 10) {
-      toast.error('Enter a valid 10-digit mobile number')
-      return
-    }
+    const ok = await sendOtpToMobile()
+    if (ok) setStep('otp')
+  }
 
-    const res = await requestCustomerOtp(cleanedMobile)
-    if (res.success) {
-      toast.success(res.message || 'OTP sent successfully')
-      setStep('otp')
-    } else {
-      toast.error(res.message || 'Failed to send OTP')
-    }
+  const handleResendOtp = async () => {
+    if (resendCooldownSec > 0 || isLoading) return
+    await sendOtpToMobile()
   }
 
   const handleLogin = async (e) => {
@@ -103,6 +131,21 @@ export default function Login() {
           </form>
         ) : (
           <form onSubmit={handleLogin} className="space-y-6">
+            {/* {resendCooldownSec > 0 && (
+              <div
+                className="rounded-lg border border-primary-100 bg-primary-50/90 px-4 py-3 text-center"
+                role="status"
+                aria-live="polite"
+              >
+                <p className="text-xs font-medium uppercase tracking-wide text-primary-800/80">OTP sent</p>
+                <p className="mt-1 text-2xl font-semibold tabular-nums text-primary-900">
+                  {formatTimer(resendCooldownSec)}
+                </p>
+                <p className="mt-1 text-xs text-primary-800/75">
+                  Resend is available after 2 minutes when this timer reaches 0:00.
+                </p>
+              </div>
+            )} */}
             <div>
               <label className="mb-1 flex items-center gap-2 text-sm font-medium text-gray-700">
                 OTP <span className="text-red-500">*</span>
@@ -126,13 +169,29 @@ export default function Login() {
               >
                 {isLoading ? 'Verifying…' : 'Login'}
               </button>
-              <button 
-                type="button"
-                onClick={() => { setStep('phone'); setOtp(''); }}
-                className="w-full text-sm text-primary-600 hover:text-primary-700 font-medium"
-              >
-                Change Phone Number
-              </button>
+              <div className="flex flex-col items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleResendOtp}
+                  disabled={isLoading || resendCooldownSec > 0}
+                  className="text-sm font-medium text-primary-600 hover:text-primary-700 disabled:cursor-not-allowed disabled:text-gray-400 disabled:no-underline"
+                >
+                  {resendCooldownSec > 0
+                    ? `Resend OTP in ${formatTimer(resendCooldownSec)}`
+                    : 'Resend OTP'}
+                </button>
+                <button 
+                  type="button"
+                  onClick={() => {
+                    setStep('phone')
+                    setOtp('')
+                    setResendCooldownSec(0)
+                  }}
+                  className="text-sm text-gray-600 hover:text-gray-800 font-medium"
+                >
+                  Change Phone Number
+                </button>
+              </div>
             </div>
           </form>
         )}

@@ -3,7 +3,7 @@ import { useAgencyPermissions } from '@/travelAgency/agency/hooks/useAgencyPermi
 
 /**
  * Renders `children` only if the effective agency role has the given permission(s).
- * Otherwise redirects to a safe in-panel route (avoids /unauthorized for missing features).
+ * Otherwise redirects to a safe in-panel route (avoids sending users to the landing page for missing features).
  *
  * @param {{
  *   permission?: string,

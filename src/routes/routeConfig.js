@@ -37,5 +37,4 @@ export const publicPaths = [
   '/customer/login',
   '/vendor/login',
   '/forgot-password',
-  '/unauthorized',
 ]

@@ -8,7 +8,6 @@ import AgencyLegacyRedirect from '@/routes/AgencyLegacyRedirect.jsx'
 import AgentAdminLogin from '@/auth/pages/AgentAdminLogin.jsx'
 import CustomerLogin from '@/auth/pages/Login.jsx'
 import ForgotPassword from '@/auth/pages/ForgotPassword.jsx'
-import Unauthorized from '@/pages/Unauthorized.jsx'
 import Landing from '@/pages/Landing.jsx'
 
 import ChildAgentRegister from '@/travelAgency/childAgency/auth/Register.jsx'
@@ -88,7 +87,6 @@ export default function AppRouter() {
       <Route path="/customer/login" element={<CustomerLogin />} />
       <Route path="/vendor/login" element={<VendorLogin />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
-      <Route path="/unauthorized" element={<Unauthorized />} />
 
       <Route path="/admin/login" element={<Navigate to="/login" replace />} />
 

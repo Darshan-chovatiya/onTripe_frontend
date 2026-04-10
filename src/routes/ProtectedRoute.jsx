@@ -25,7 +25,7 @@ export default function ProtectedRoute({ children }) {
 
   const required = getRequiredRolesForPath(location.pathname)
   if (required && user?.role && !required.includes(user.role)) {
-    return <Navigate to="/unauthorized" replace />
+    return <Navigate to="/" replace />
   }
 
   return children
