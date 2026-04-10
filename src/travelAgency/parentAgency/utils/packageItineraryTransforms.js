@@ -6,24 +6,23 @@
 /** @typedef {{ title?: string, type?: string, description?: string, location?: string, startTime?: string, endTime?: string, duration?: string, image?: string, vendor?: string | null }} FormEvent */
 
 const EVENT_TYPE_TO_CATEGORY = {
-  activity: 'adventure',
-  hotel_checkin: 'accommodation',
-  hotel_checkout: 'accommodation',
-  transfer: 'transport',
-  meal: 'food',
-  other: 'other',
+  Activity: 'adventure',
+  'Hotel CheckIn': 'accommodation',
+  'Hotel CheckOut': 'accommodation',
+  Transfer: 'transport',
+  Other: 'other',
 }
 
 const CATEGORY_TO_EVENT_TYPE = {
-  adventure: 'activity',
-  sightseeing: 'activity',
-  cultural: 'activity',
-  food: 'meal',
-  leisure: 'activity',
-  transport: 'transfer',
-  accommodation: 'hotel_checkin',
-  shopping: 'activity',
-  other: 'other',
+  adventure: 'Activity',
+  sightseeing: 'Activity',
+  cultural: 'Activity',
+  food: 'Other', // meal is removed from UI types
+  leisure: 'Activity',
+  transport: 'Transfer',
+  accommodation: 'Hotel CheckIn',
+  shopping: 'Activity',
+  other: 'Other',
 }
 
 function parseDurationMinutes(duration) {
@@ -66,8 +65,8 @@ export function formItineraryToApi(days) {
           vendorNotes: '',
           whatToBring: [],
           difficulty: 'easy',
-          includedInPrice: true,
-          extraCost: 0,
+          includedInPrice: ev.includedInPrice !== false,
+          extraCost: Number(ev.extraCost) || 0,
         }
         return exp
       })
@@ -150,6 +149,8 @@ function apiDayToForm(day, index) {
       duration: durationStr,
       image: firstImg,
       vendor: vendorId || null,
+      includedInPrice: ex.includedInPrice !== false,
+      extraCost: ex.extraCost || '',
     }
   })
 

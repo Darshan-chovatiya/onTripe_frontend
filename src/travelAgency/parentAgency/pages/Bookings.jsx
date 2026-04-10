@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import { BookOpen, Calendar, User, IndianRupee, Hash, Eye, Ticket, Download, RefreshCw, Search } from 'lucide-react'
-import { listBookings } from '@/travelAgency/parentAgency/services/parentAgencyApi.js'
+import { listBookings, listMyPackages } from '@/travelAgency/parentAgency/services/parentAgencyApi.js'
 import { getApiErrorMessage } from '@/shared/services/apiHelpers.js'
 import BookingDetailModal from '@/travelAgency/parentAgency/components/BookingDetailModal.jsx'
 import { useAuth } from '@/shared/context/AuthContext.jsx'
@@ -29,7 +30,10 @@ export default function Bookings() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [search, setSearch] = useState('')
+  const [searchParams] = useSearchParams()
   const [statusFilter, setStatusFilter] = useState('all')
+  const [packageFilter, setPackageFilter] = useState(searchParams.get('packageId') || 'all')
+  const [packages, setPackages] = useState([])
   const [viewId, setViewId] = useState(null)
   const { user } = useAuth()
   const [ticketsBooking, setTicketsBooking] = useState(null)
@@ -46,6 +50,7 @@ export default function Bookings() {
         limit: PAGE_SIZE,
         search: search.trim(),
         status: statusFilter === 'all' ? undefined : statusFilter,
+        packageId: packageFilter === 'all' ? undefined : packageFilter,
       })
       const bookingsData = res.data?.data?.bookings || []
       const paginationData = res.data?.data?.pagination || { page: 1, totalPages: 1, totalCount: bookingsData.length }
@@ -60,16 +65,22 @@ export default function Bookings() {
     } finally {
       setLoading(false)
     }
-  }, [page, search, statusFilter])
+  }, [page, search, statusFilter, packageFilter])
 
   useEffect(() => { fetchBookings() }, [fetchBookings])
 
-  useEffect(() => { setPage(1) }, [search, statusFilter])
+  useEffect(() => { setPage(1) }, [search, statusFilter, packageFilter])
+
+  useEffect(() => {
+    listMyPackages()
+      .then(res => setPackages(res.data?.data?.packages || []))
+      .catch(console.error)
+  }, [])
 
   const handleExport = async () => {
     setExportLoading(true)
     try {
-      const res = await listBookings({ page: 1, limit: 10000, search: search.trim(), status: statusFilter === 'all' ? undefined : statusFilter })
+      const res = await listBookings({ page: 1, limit: 10000, search: search.trim(), status: statusFilter === 'all' ? undefined : statusFilter, packageId: packageFilter === 'all' ? undefined : packageFilter })
       const rows = res.data?.data?.bookings || []
       await exportToExcel(
         rows.map((b, idx) => ({
@@ -140,6 +151,16 @@ export default function Bookings() {
             <option value="completed">Completed</option>
             <option value="cancelled">Cancelled</option>
           </select>
+          <select
+            className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:border-gray-300 focus:outline-none focus:ring-1 focus:ring-gray-300 sm:w-44"
+            value={packageFilter}
+            onChange={e => setPackageFilter(e.target.value)}
+          >
+            <option value="all">All Packages</option>
+            {packages.map(p => (
+              <option key={p._id} value={p._id}>{p.title}</option>
+            ))}
+          </select>
         </div>
 
         {/* Error */}
@@ -167,9 +188,9 @@ export default function Bookings() {
           <div className="px-4 py-14 text-center">
             <BookOpen className="mx-auto h-8 w-8 text-gray-300" strokeWidth={1.5} />
             <p className="mt-3 text-sm font-medium text-gray-900">
-              {search || statusFilter !== 'all' ? 'No bookings match your search' : 'No bookings yet'}
+              {search || statusFilter !== 'all' || packageFilter !== 'all' ? 'No bookings match your search' : 'No bookings yet'}
             </p>
-            {!search && statusFilter === 'all' && (
+            {!search && statusFilter === 'all' && packageFilter === 'all' && (
               <p className="mt-1 text-sm text-gray-500">No bookings created in your network yet.</p>
             )}
           </div>
@@ -202,9 +223,15 @@ export default function Bookings() {
                     </td>
                     <td className="px-4 py-2.5 align-middle">
                       <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold text-gray-900">
-                          {b.package?.title || b.whitelabelPackage?.customTitle || '—'}
-                        </p>
+                        {b.package ? (
+                          <Link to={`/agency/packages/${b.package._id}`} className="truncate text-sm font-semibold text-primary-600 hover:underline">
+                            {b.package.title || '—'}
+                          </Link>
+                        ) : (
+                          <p className="truncate text-sm font-semibold text-gray-900">
+                            {b.whitelabelPackage?.customTitle || '—'}
+                          </p>
+                        )}
                         {b.package?.destination && (
                           <p className="mt-0.5 truncate text-xs text-gray-500">{b.package.destination}</p>
                         )}
@@ -219,7 +246,17 @@ export default function Bookings() {
                     <td className="px-4 py-2.5 align-middle text-xs text-gray-600">
                       <span className="flex items-center gap-1">
                         <Calendar size={12} />
-                        {b.travelDate ? new Date(b.travelDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
+                        {b.travelDate ? (() => {
+                          const start = new Date(b.travelDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+                          const days = b.package?.totalDays || b.whitelabelPackage?.originalPackage?.totalDays || b.whitelabelPackage?.totalDays
+                          if (days) {
+                            const d = new Date(b.travelDate)
+                            d.setDate(d.getDate() + (days - 1))
+                            const end = d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+                            return `${start} — ${end}`
+                          }
+                          return start
+                        })() : '—'}
                       </span>
                     </td>
                     <td className="px-4 py-2.5 align-middle">

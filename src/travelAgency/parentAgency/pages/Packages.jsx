@@ -4,7 +4,7 @@ import {
   Plus, Search, MapPin, Clock, Users, IndianRupee,
   Edit2, ImageIcon, ImagePlus, MessageSquare, LayoutGrid,
   List, TrendingUp, Package, CheckCircle2, XCircle,
-  Calendar, Star,
+  Calendar, Star, Eye, Copy
 } from 'lucide-react'
 import { usePackages } from '@/travelAgency/parentAgency/hooks/usePackages.js'
 import PackageFormModal from '@/travelAgency/parentAgency/components/PackageFormModal.jsx'
@@ -43,7 +43,7 @@ function StatusPill({ isActive, onClick }) {
   )
 }
 
-function PackageGridCard({ pkg, onEdit, onCover, onGallery, onToggle, navigate }) {
+function PackageGridCard({ pkg, onEdit, onClone, onCover, onGallery, onToggle, navigate }) {
   const cover = imgUrl(pkg.coverImage)
   return (
     <article className="group relative flex flex-col overflow-hidden rounded-2xl bg-white ring-1 ring-gray-200 shadow-sm transition-all duration-300 hover:shadow-xl hover:shadow-gray-200/60 hover:-translate-y-0.5">
@@ -56,11 +56,6 @@ function PackageGridCard({ pkg, onEdit, onCover, onGallery, onToggle, navigate }
           onError={(e) => { e.currentTarget.src = PLACEHOLDER }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-
-        {/* Status pill top-right */}
-        <div className="absolute right-3 top-3">
-          <StatusPill isActive={pkg.isActive} onClick={() => onToggle(pkg)} />
-        </div>
 
         {/* Price bottom-left */}
         <div className="absolute bottom-3 left-3">
@@ -115,7 +110,13 @@ function PackageGridCard({ pkg, onEdit, onCover, onGallery, onToggle, navigate }
           <div className="h-8 w-px bg-gray-200" />
           <div className="flex-1 text-center">
             <p className="text-[10px] font-medium uppercase tracking-wide text-gray-400">Bookings</p>
-            <p className="mt-0.5 text-sm font-bold tabular-nums text-gray-800">{Number(pkg.bookingCount) || 0}</p>
+            <button
+              type="button"
+              onClick={() => navigate(`${AGENCY_PANEL_BASE}/bookings?packageId=${pkg._id}`)}
+              className="mt-0.5 inline-block text-sm font-bold tabular-nums text-primary-600 hover:text-primary-800 hover:underline"
+            >
+              {Number(pkg.bookingCount) || 0}
+            </button>
           </div>
           <div className="h-8 w-px bg-gray-200" />
           <div className="flex-1 text-center">
@@ -124,54 +125,81 @@ function PackageGridCard({ pkg, onEdit, onCover, onGallery, onToggle, navigate }
           </div>
         </div>
 
-        {/* Actions */}
-        <div className="mt-auto grid grid-cols-2 gap-2">
+        {/* Actions Layout */}
+        <div className="mt-auto flex flex-col gap-1.5">
           <button
             type="button"
             onClick={() => navigate(`${AGENCY_PANEL_BASE}/packages/${pkg._id}`)}
-            className="col-span-2 rounded-xl bg-primary-600 py-2 text-xs font-semibold text-white transition hover:bg-primary-700 active:scale-[0.98]"
+            className="w-full rounded-xl bg-primary-600 py-2 text-xs font-semibold text-white transition hover:bg-primary-700 active:scale-[0.98]"
           >
             View details
           </button>
-          <button
-            type="button"
-            onClick={() => onEdit(pkg)}
-            className="flex items-center justify-center gap-1.5 rounded-xl border border-gray-200 bg-white py-2 text-xs font-medium text-gray-700 transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-800"
-          >
-            <Edit2 className="h-3.5 w-3.5" strokeWidth={2} />
-            Edit
-          </button>
-          <button
-            type="button"
-            onClick={() => navigate(`${AGENCY_PANEL_BASE}/packages/${pkg._id}/community?title=${encodeURIComponent(pkg.title || '')}`)}
-            className="flex items-center justify-center gap-1.5 rounded-xl border border-gray-200 bg-white py-2 text-xs font-medium text-gray-700 transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-800"
-          >
-            <MessageSquare className="h-3.5 w-3.5" strokeWidth={2} />
-            Chat
-          </button>
-          <button
-            type="button"
-            onClick={() => onCover(pkg)}
-            className="flex items-center justify-center gap-1.5 rounded-xl border border-gray-200 bg-white py-2 text-xs font-medium text-gray-700 transition hover:border-sky-200 hover:bg-sky-50 hover:text-sky-800"
-          >
-            <ImageIcon className="h-3.5 w-3.5" strokeWidth={2} />
-            Cover
-          </button>
-          <button
-            type="button"
-            onClick={() => onGallery(pkg)}
-            className="flex items-center justify-center gap-1.5 rounded-xl border border-gray-200 bg-white py-2 text-xs font-medium text-gray-700 transition hover:border-violet-200 hover:bg-violet-50 hover:text-violet-800"
-          >
-            <ImagePlus className="h-3.5 w-3.5" strokeWidth={2} />
-            Gallery
-          </button>
+          
+          {/* First row: Cover, Gallery, Chat */}
+          <div className="grid grid-cols-3 gap-1.5">
+            <button
+              type="button"
+              onClick={() => onCover(pkg)}
+              className="flex flex-col items-center justify-center gap-0.5 rounded-lg border border-gray-200 bg-white py-1.5 text-[10px] font-medium text-gray-700 transition hover:border-sky-200 hover:bg-sky-50 hover:text-sky-800"
+            >
+              <ImageIcon className="h-3.5 w-3.5" strokeWidth={2} />
+              Cover
+            </button>
+            <button
+              type="button"
+              onClick={() => onGallery(pkg)}
+              className="flex flex-col items-center justify-center gap-0.5 rounded-lg border border-gray-200 bg-white py-1.5 text-[10px] font-medium text-gray-700 transition hover:border-violet-200 hover:bg-violet-50 hover:text-violet-800"
+            >
+              <ImagePlus className="h-3.5 w-3.5" strokeWidth={2} />
+              Gallery
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate(`${AGENCY_PANEL_BASE}/packages/${pkg._id}/community?title=${encodeURIComponent(pkg.title || '')}`)}
+              className="flex flex-col items-center justify-center gap-0.5 rounded-lg border border-gray-200 bg-white py-1.5 text-[10px] font-medium text-gray-700 transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-800"
+            >
+              <MessageSquare className="h-3.5 w-3.5" strokeWidth={2} />
+              Chat
+            </button>
+          </div>
+          {/* Second row: Edit, Clone, Live */}
+          <div className="grid grid-cols-3 gap-1.5">
+            <button
+              type="button"
+              onClick={() => onEdit(pkg)}
+              className="flex items-center justify-center gap-1.5 rounded-lg border border-gray-200 bg-white py-2 text-[11px] font-medium text-gray-700 transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-800"
+            >
+              <Edit2 className="h-3.5 w-3.5" strokeWidth={2} />
+              Edit
+            </button>
+            <button
+              type="button"
+              onClick={() => onClone(pkg)}
+              className="flex items-center justify-center gap-1.5 rounded-lg border border-gray-200 bg-white py-2 text-[11px] font-medium text-gray-700 transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-800"
+            >
+              <Copy className="h-3.5 w-3.5" strokeWidth={2} />
+              Clone
+            </button>
+            <button
+              type="button"
+              onClick={() => onToggle(pkg)}
+              className={`flex items-center justify-center gap-1.5 rounded-lg border py-2 text-[11px] font-medium transition ${
+                pkg.isActive 
+                ? 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100' 
+                : 'border-red-200 bg-red-50 text-red-700 hover:bg-red-100'
+              }`}
+            >
+              {pkg.isActive ? <CheckCircle2 className="h-3.5 w-3.5" strokeWidth={2} /> : <XCircle className="h-3.5 w-3.5" strokeWidth={2} />}
+              {pkg.isActive ? 'Live' : 'Paused'}
+            </button>
+          </div>
         </div>
       </div>
     </article>
   )
 }
 
-function PackageListRow({ pkg, onEdit, onCover, onGallery, onToggle, navigate }) {
+function PackageListRow({ pkg, onEdit, onClone, onCover, onGallery, onToggle, navigate }) {
   const cover = imgUrl(pkg.coverImage)
   return (
     <div className="group flex items-center gap-4 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm transition hover:border-primary-100 hover:shadow-md">
@@ -189,7 +217,6 @@ function PackageListRow({ pkg, onEdit, onCover, onGallery, onToggle, navigate })
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
           <h3 className="truncate text-sm font-semibold text-gray-900">{pkg.title}</h3>
-          <StatusPill isActive={pkg.isActive} onClick={() => onToggle(pkg)} />
         </div>
         <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-gray-500">
           {pkg.destination && (
@@ -222,51 +249,78 @@ function PackageListRow({ pkg, onEdit, onCover, onGallery, onToggle, navigate })
         </div>
         <div className="text-center">
           <p className="text-[10px] font-medium uppercase tracking-wide text-gray-400">Bookings</p>
-          <p className="mt-0.5 text-sm font-bold tabular-nums text-gray-800">{Number(pkg.bookingCount) || 0}</p>
+          <button
+            type="button"
+            onClick={() => navigate(`${AGENCY_PANEL_BASE}/bookings?packageId=${pkg._id}`)}
+            className="mt-0.5 inline-block text-sm font-bold tabular-nums text-primary-600 hover:text-primary-800 hover:underline"
+          >
+            {Number(pkg.bookingCount) || 0}
+          </button>
         </div>
       </div>
 
       {/* Actions */}
-      <div className="flex shrink-0 items-center gap-1.5">
+      <div className="flex shrink-0 items-center justify-center gap-4">
         <button
           type="button"
           onClick={() => navigate(`${AGENCY_PANEL_BASE}/packages/${pkg._id}`)}
-          className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-800"
+          className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-[11px] font-semibold text-gray-700 transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-800"
         >
-          View
+          View Details
         </button>
-        <button
-          type="button"
-          onClick={() => onEdit(pkg)}
-          className="rounded-lg border border-gray-200 bg-white p-1.5 text-gray-500 transition hover:border-primary-200 hover:text-primary-700"
-          title="Edit"
-        >
-          <Edit2 className="h-4 w-4" strokeWidth={2} />
-        </button>
-        <button
-          type="button"
-          onClick={() => onCover(pkg)}
-          className="rounded-lg border border-gray-200 bg-white p-1.5 text-gray-500 transition hover:border-sky-200 hover:text-sky-700"
-          title="Cover"
-        >
-          <ImageIcon className="h-4 w-4" strokeWidth={2} />
-        </button>
-        <button
-          type="button"
-          onClick={() => onGallery(pkg)}
-          className="rounded-lg border border-gray-200 bg-white p-1.5 text-gray-500 transition hover:border-violet-200 hover:text-violet-700"
-          title="Gallery"
-        >
-          <ImagePlus className="h-4 w-4" strokeWidth={2} />
-        </button>
-        <button
-          type="button"
-          onClick={() => navigate(`${AGENCY_PANEL_BASE}/packages/${pkg._id}/community?title=${encodeURIComponent(pkg.title || '')}`)}
-          className="rounded-lg border border-gray-200 bg-white p-1.5 text-gray-500 transition hover:border-emerald-200 hover:text-emerald-700"
-          title="Community"
-        >
-          <MessageSquare className="h-4 w-4" strokeWidth={2} />
-        </button>
+        <div className="flex shrink-0 flex-col gap-1.5">
+          <div className="flex justify-end gap-1.5">
+            <button
+              type="button"
+              onClick={() => onCover(pkg)}
+              className="flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2 py-1 text-[11px] transition hover:border-sky-200 hover:text-sky-700 text-gray-600"
+            >
+              <ImageIcon className="h-3.5 w-3.5" strokeWidth={2} /> Cover
+            </button>
+            <button
+               type="button"
+               onClick={() => onGallery(pkg)}
+               className="flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2 py-1 text-[11px] transition hover:border-violet-200 hover:text-violet-700 text-gray-600"
+            >
+               <ImagePlus className="h-3.5 w-3.5" strokeWidth={2} /> Gallery
+            </button>
+            <button
+               type="button"
+               onClick={() => navigate(`${AGENCY_PANEL_BASE}/packages/${pkg._id}/community?title=${encodeURIComponent(pkg.title || '')}`)}
+               className="flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2 py-1 text-[11px] transition hover:border-emerald-200 hover:text-emerald-700 text-gray-600"
+            >
+               <MessageSquare className="h-3.5 w-3.5" strokeWidth={2} /> Chat
+            </button>
+          </div>
+          <div className="flex justify-end gap-1.5">
+            <button
+               type="button"
+               onClick={() => onEdit(pkg)}
+               className="flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-gray-700 transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-800"
+            >
+               <Edit2 className="h-3.5 w-3.5" strokeWidth={2} /> Edit
+            </button>
+            <button
+               type="button"
+               onClick={() => onClone(pkg)}
+               className="flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-gray-700 transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-800"
+            >
+               <Copy className="h-3.5 w-3.5" strokeWidth={2} /> Clone
+            </button>
+            <button
+              type="button"
+              onClick={() => onToggle(pkg)}
+              className={`flex items-center gap-1 rounded-lg border px-2.5 py-1 text-[11px] font-semibold transition ${
+                pkg.isActive 
+                ? 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100' 
+                : 'border-red-200 bg-red-50 text-red-700 hover:bg-red-100'
+              }`}
+            >
+               {pkg.isActive ? <CheckCircle2 className="h-3.5 w-3.5" strokeWidth={2} /> : <XCircle className="h-3.5 w-3.5" strokeWidth={2} />}
+               {pkg.isActive ? 'Live' : 'Paused'}
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   )
@@ -280,7 +334,7 @@ export default function Packages() {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [viewMode, setViewMode] = useState('grid')
-  const [formModal, setFormModal] = useState({ open: false, data: null })
+  const [formModal, setFormModal] = useState({ open: false, data: null, isClone: false })
   const [imageModal, setImageModal] = useState({ open: false, pkg: null, mode: 'cover' })
   const [confirmToggle, setConfirmToggle] = useState({ open: false, pkg: null })
   const [submitting, setSubmitting] = useState(false)
@@ -307,9 +361,9 @@ export default function Packages() {
   const handleFormSubmit = async (formData, rawForm) => {
     setSubmitting(true)
     try {
-      if (formModal.data) { await update(formModal.data._id, rawForm); toast.success('Package updated') }
+      if (formModal.data && !formModal.isClone) { await update(formModal.data._id, rawForm); toast.success('Package updated') }
       else { await create(formData); toast.success('Package created') }
-      setFormModal({ open: false, data: null })
+      setFormModal({ open: false, data: null, isClone: false })
     } catch (err) { toast.error(getApiErrorMessage(err)) }
     finally { setSubmitting(false) }
   }
@@ -344,7 +398,7 @@ export default function Packages() {
         </div>
         <button
           type="button"
-          onClick={() => setFormModal({ open: true, data: null })}
+          onClick={() => setFormModal({ open: true, data: null, isClone: false })}
           className="inline-flex items-center gap-2 rounded-xl bg-primary-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-primary-900/20 transition hover:bg-primary-700 active:scale-[0.98]"
         >
           <Plus className="h-4 w-4" strokeWidth={2.5} />
@@ -450,7 +504,7 @@ export default function Packages() {
           {packages.length === 0 && (
             <button
               type="button"
-              onClick={() => setFormModal({ open: true, data: null })}
+              onClick={() => setFormModal({ open: true, data: null, isClone: false })}
               className="mt-6 inline-flex items-center gap-2 rounded-xl bg-primary-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-primary-700"
             >
               <Plus className="h-4 w-4" strokeWidth={2.5} />
@@ -465,7 +519,8 @@ export default function Packages() {
               key={pkg._id}
               pkg={pkg}
               navigate={navigate}
-              onEdit={(p) => setFormModal({ open: true, data: p })}
+              onEdit={(p) => setFormModal({ open: true, data: p, isClone: false })}
+              onClone={(p) => setFormModal({ open: true, data: p, isClone: true })}
               onCover={(p) => setImageModal({ open: true, pkg: p, mode: 'cover' })}
               onGallery={(p) => setImageModal({ open: true, pkg: p, mode: 'gallery' })}
               onToggle={(p) => setConfirmToggle({ open: true, pkg: p })}
@@ -479,7 +534,8 @@ export default function Packages() {
               key={pkg._id}
               pkg={pkg}
               navigate={navigate}
-              onEdit={(p) => setFormModal({ open: true, data: p })}
+              onEdit={(p) => setFormModal({ open: true, data: p, isClone: false })}
+              onClone={(p) => setFormModal({ open: true, data: p, isClone: true })}
               onCover={(p) => setImageModal({ open: true, pkg: p, mode: 'cover' })}
               onGallery={(p) => setImageModal({ open: true, pkg: p, mode: 'gallery' })}
               onToggle={(p) => setConfirmToggle({ open: true, pkg: p })}
@@ -491,9 +547,10 @@ export default function Packages() {
       {/* ── Modals ── */}
       <PackageFormModal
         isOpen={formModal.open}
-        onClose={() => setFormModal({ open: false, data: null })}
+        onClose={() => setFormModal({ open: false, data: null, isClone: false })}
         onSubmit={handleFormSubmit}
         initialData={formModal.data}
+        isClone={formModal.isClone}
         loading={submitting}
       />
 
