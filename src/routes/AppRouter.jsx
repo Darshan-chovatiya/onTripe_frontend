@@ -1,4 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
+import { useAuth } from '@/shared/context/AuthContext.jsx'
+import { getAgencyPanelDefaultPath } from '@/shared/utils/roleHelpers.js'
 import ProtectedRoute from '@/routes/ProtectedRoute.jsx'
 import AgencyPermissionRoute from '@/routes/AgencyPermissionRoute.jsx'
 import AgencyLegacyRedirect from '@/routes/AgencyLegacyRedirect.jsx'
@@ -48,6 +50,12 @@ import ChildNotificationHistory from '@/travelAgency/childAgency/pages/ChildNoti
 import AgencyCustomerNotificationHistory from '@/travelAgency/agency/pages/AgencyCustomerNotificationHistory.jsx'
 import { useAgencyPermissions } from '@/travelAgency/agency/hooks/useAgencyPermissions.js'
 import { ROLES } from '@/shared/utils/constants.js'
+
+/** `/agency` index: parents with pending/rejected KYC land on Settings */
+function AgencyIndexRedirect() {
+  const { user } = useAuth()
+  return <Navigate to={getAgencyPanelDefaultPath(user)} replace />
+}
 
 function ManageDownstreamNotificationHistory() {
   const { role } = useAgencyPermissions()
@@ -170,8 +178,15 @@ export default function AppRouter() {
           </ProtectedRoute>
         }
       >
-        <Route index element={<Navigate to="dashboard" replace />} />
-        <Route path="dashboard" element={<AgencyDashboard />} />
+        <Route index element={<AgencyIndexRedirect />} />
+        <Route
+          path="dashboard"
+          element={
+            <AgencyPermissionRoute permission={P.DASHBOARD}>
+              <AgencyDashboard />
+            </AgencyPermissionRoute>
+          }
+        />
         <Route
           path="packages"
           element={

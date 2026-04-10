@@ -12,7 +12,7 @@ function isImage(url) {
   return /\.(jpg|jpeg|png|gif|webp|bmp|svg)(\?|$)/i.test(url)
 }
 
-export default function KycDocumentsSection({ kyc, onUpdateKyc, loadingUpdate }) {
+export default function KycDocumentsSection({ kyc, onUpdateKyc, loadingUpdate, onEditOpen }) {
   const [lightbox, setLightbox] = useState(null) // { index, docs }
   const [isEditing, setIsEditing] = useState(false)
   const [files, setFiles] = useState({ aadharFront: null, aadharBack: null, panCard: null })
@@ -52,7 +52,8 @@ export default function KycDocumentsSection({ kyc, onUpdateKyc, loadingUpdate })
     }
 
     if (onUpdateKyc) {
-      await onUpdateKyc(formData)
+      const result = await onUpdateKyc(formData)
+      if (result === false) return
     }
     setIsEditing(false)
     setFiles({ aadharFront: null, aadharBack: null, panCard: null })
@@ -119,7 +120,10 @@ export default function KycDocumentsSection({ kyc, onUpdateKyc, loadingUpdate })
                <div className="mt-3">
                  <button
                    type="button"
-                   onClick={() => setIsEditing(true)}
+                   onClick={() => {
+                     onEditOpen?.()
+                     setIsEditing(true)
+                   }}
                    className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 shadow-sm transition-colors hover:bg-gray-50"
                  >
                    <Upload size={14} className="text-gray-500" /> Replace Documents

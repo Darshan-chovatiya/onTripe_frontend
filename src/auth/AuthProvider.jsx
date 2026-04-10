@@ -152,7 +152,7 @@ export function AuthProvider({ children }) {
         if (data?.success && data?.data?.user && data?.data?.token) {
           const u = normalizeUser(data.data.user)
           applySession(u, data.data.token)
-          return { success: true, role: u.role, message: data.message }
+          return { success: true, role: u.role, user: u, message: data.message }
         }
         return { success: false, message: data?.message || 'Login failed' }
       } catch (e) {

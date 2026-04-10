@@ -3,7 +3,7 @@ import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { Mail, Lock, Eye, EyeOff, Clock } from 'lucide-react'
 import { useAuth } from '@/shared/context/AuthContext.jsx'
 import Loader from '@/shared/components/Loader.jsx'
-import { getRoleRedirectPath } from '@/shared/utils/roleHelpers.js'
+import { getPostLoginRedirectPath } from '@/shared/utils/roleHelpers.js'
 
 const REGISTRATION_LINKS = [
   { to: '/travelAgency/parent/register', label: 'Parent agency' },
@@ -28,7 +28,7 @@ export default function AgentAdminLogin() {
   }
 
   if (isAuthenticated && user?.role) {
-    return <Navigate to={getRoleRedirectPath(user.role)} replace />
+    return <Navigate to={getPostLoginRedirectPath(user)} replace />
   }
 
   const handleSubmit = async (e) => {
@@ -41,7 +41,7 @@ export default function AgentAdminLogin() {
       return
     }
 
-    navigate(getRoleRedirectPath(res.role), { replace: true })
+    navigate(getPostLoginRedirectPath(res.user ?? { role: res.role }), { replace: true })
   }
 
   return (

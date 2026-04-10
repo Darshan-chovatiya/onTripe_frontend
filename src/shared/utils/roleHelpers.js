@@ -1,5 +1,30 @@
 import { ROLES } from './constants.js'
 
+/**
+ * After password login / session restore: parent agencies with pending or rejected KYC go to Settings.
+ * @param {{ role?: string, kyc?: { status?: string } } | null | undefined} user
+ */
+export function getPostLoginRedirectPath(user) {
+  if (!user?.role) return '/login'
+  if (user.role === ROLES.PARENT_AGENCY) {
+    const st = user.kyc?.status
+    if (st === 'pending' || st === 'rejected') return '/agency/settings'
+  }
+  return getRoleRedirectPath(user.role)
+}
+
+/**
+ * Default route inside unified `/agency` (e.g. `/agency` with no path).
+ * @param {{ role?: string, kyc?: { status?: string } } | null | undefined} user
+ */
+export function getAgencyPanelDefaultPath(user) {
+  if (user?.role === ROLES.PARENT_AGENCY) {
+    const st = user.kyc?.status
+    if (st === 'pending' || st === 'rejected') return '/agency/settings'
+  }
+  return '/agency/dashboard'
+}
+
 /** @param {string | undefined} role */
 export function getRoleRedirectPath(role) {
   switch (role) {

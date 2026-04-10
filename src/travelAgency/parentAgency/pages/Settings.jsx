@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { User, Lock, CheckCircle, Clock, XCircle } from 'lucide-react'
+import { User, Lock, CheckCircle, Clock, XCircle, Building2, MapPin, UserCircle2 } from 'lucide-react'
 import { useAuth } from '@/shared/context/AuthContext.jsx'
 import { getProfile, updateProfile, changePassword, updateKyc } from '@/travelAgency/parentAgency/services/parentAgencyApi.js'
 import { getApiErrorMessage } from '@/shared/services/apiHelpers.js'
@@ -16,6 +16,9 @@ export default function Settings() {
     name: user?.name || '',
     email: user?.email || '',
     phone: user?.phone || '',
+    gstNumber: user?.gstNumber || '',
+    address: user?.address || '',
+    contactPersonName: user?.contactPersonName || '',
   })
   const [profileLoading, setProfileLoading] = useState(false)
   const [profileErrors, setProfileErrors] = useState({})
@@ -25,6 +28,17 @@ export default function Settings() {
     getProfile().then(({ data }) => {
       const u = data?.data?.user
       if (u?.kyc) setKyc(u.kyc)
+      if (u) {
+        setProfile((p) => ({
+          ...p,
+          name: u.name ?? p.name,
+          email: u.email ?? p.email,
+          phone: u.phone ?? p.phone,
+          gstNumber: u.gstNumber ?? '',
+          address: u.address ?? '',
+          contactPersonName: u.contactPersonName ?? '',
+        }))
+      }
     }).catch(() => {})
   }, [])
 
@@ -65,9 +79,26 @@ export default function Settings() {
     if (Object.keys(errs).length) { setProfileErrors(errs); return }
     setProfileLoading(true)
     try {
-      const res = await updateProfile({ name: profile.name, email: profile.email, phone: profile.phone })
+      const res = await updateProfile({
+        name: profile.name,
+        email: profile.email,
+        phone: profile.phone,
+        gstNumber: profile.gstNumber,
+        address: profile.address,
+        contactPersonName: profile.contactPersonName,
+      })
       const updated = res.data?.data?.user
-      if (updated) setUser({ name: updated.name, email: updated.email, phone: updated.phone })
+      if (updated) {
+        setUser({
+          name: updated.name,
+          email: updated.email,
+          phone: updated.phone,
+          gstNumber: updated.gstNumber,
+          address: updated.address,
+          contactPersonName: updated.contactPersonName,
+          kyc: updated.kyc,
+        })
+      }
       toast.success('Profile updated successfully')
     } catch (err) {
       toast.error(getApiErrorMessage(err))
@@ -93,33 +124,46 @@ export default function Settings() {
   }
 
   const [kycUpdating, setKycUpdating] = useState(false)
+  const [showKycReverificationSent, setShowKycReverificationSent] = useState(false)
+
   const handleKycUpdate = async (formData) => {
     setKycUpdating(true)
     try {
       const { data } = await updateKyc(formData)
-      if (data?.data?.user) {
-         setKyc(data.data.user.kyc)
-         setUser(data.data.user)
+      const nextKyc = data?.data?.kyc ?? data?.data?.user?.kyc
+      const updatedUser = data?.data?.user
+      if (nextKyc) {
+        setKyc(nextKyc)
+        setUser((prev) => (prev ? { ...prev, kyc: nextKyc } : prev))
+      } else if (updatedUser) {
+        setKyc(updatedUser.kyc ?? null)
+        setUser(updatedUser)
       }
-      toast.success('KYC documents submitted for re-verification.')
+      const serverMsg = typeof data?.message === 'string' ? data.message.trim() : ''
+      toast.success(
+        serverMsg ||
+          'Your documents were sent for re-verification. KYC is now Pending until an administrator reviews them.',
+        'Re-verification submitted',
+      )
+      setShowKycReverificationSent(true)
+      return true
     } catch (err) {
-      toast.error(getApiErrorMessage(err))
+      toast.error(getApiErrorMessage(err), 'Could not submit KYC')
+      return false
     } finally {
       setKycUpdating(false)
     }
   }
 
-  const initials = user?.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '?'
-
   return (
-    <div className="animate-fade-in space-y-8">
+    <div className="w-full space-y-8">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
-        <p className="text-sm text-gray-500 mt-0.5">Manage your profile and account security</p>
+        <p className="text-sm text-gray-500 mt-0.5">Profile, business details, KYC, and account security</p>
       </div>
 
       {/* Profile + Password side by side */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-2">
 
         {/* Profile Information */}
         <div className="rounded-2xl border border-gray-100 bg-white shadow-sm overflow-hidden">
@@ -160,33 +204,49 @@ export default function Settings() {
               {profileErrors.phone && <p className="mt-1 text-xs text-red-500">{profileErrors.phone}</p>}
             </div>
 
-            {/* KYC Documents */}
-            {kyc && (
-              <div className="border-t border-gray-100 pt-4 space-y-2">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="text-sm font-semibold text-gray-700">KYC Documents</p>
-                  {(() => {
-                    const status = kyc?.status || 'pending'
-                    const map = {
-                      approved: { icon: CheckCircle, label: 'KYC Approved', cls: 'bg-green-50 border-green-200 text-green-700' },
-                      pending:  { icon: Clock,        label: 'KYC Pending',  cls: 'bg-yellow-50 border-yellow-200 text-yellow-700' },
-                      rejected: { icon: XCircle,      label: 'KYC Rejected', cls: 'bg-red-50 border-red-200 text-red-700' },
-                    }
-                    const { icon: Icon, label, cls } = map[status] || map.pending
-                    return (
-                      <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium ${cls}`}>
-                        <Icon size={11} />
-                        {label}
-                        {status === 'rejected' && kyc?.rejectionReason && (
-                          <span className="ml-0.5 font-normal">— {kyc.rejectionReason}</span>
-                        )}
-                      </span>
-                    )
-                  })()}
-                </div>
-                <KycDocumentsSection kyc={kyc} onUpdateKyc={handleKycUpdate} loadingUpdate={kycUpdating} />
+            <div className="border-t border-gray-100 pt-4">
+              <div className="mb-3 flex items-center gap-2">
+                <Building2 size={16} className="text-gray-500" />
+                <p className="text-sm font-semibold text-gray-800">Business details</p>
               </div>
-            )}
+              <p className="mb-3 text-xs text-gray-500">GST, address, and contact person (visible to your team; KYC status is set by admin after review).</p>
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">GST number</label>
+                  <input
+                    className="input-field"
+                    value={profile.gstNumber}
+                    onChange={(e) => setP('gstNumber', e.target.value)}
+                    placeholder="GSTIN"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 flex items-center gap-1 text-sm font-medium text-gray-700">
+                    <UserCircle2 size={14} className="text-gray-400" />
+                    Contact person name
+                  </label>
+                  <input
+                    className="input-field"
+                    value={profile.contactPersonName}
+                    onChange={(e) => setP('contactPersonName', e.target.value)}
+                    placeholder="Primary contact for this agency"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 flex items-center gap-1 text-sm font-medium text-gray-700">
+                    <MapPin size={14} className="text-gray-400" />
+                    Registered address
+                  </label>
+                  <textarea
+                    className="input-field min-h-[88px] resize-y"
+                    value={profile.address}
+                    onChange={(e) => setP('address', e.target.value)}
+                    placeholder="Full business address"
+                    rows={3}
+                  />
+                </div>
+              </div>
+            </div>
 
             <div className="flex justify-end pt-2">
               <Button type="submit" disabled={profileLoading}>
@@ -194,6 +254,129 @@ export default function Settings() {
               </Button>
             </div>
           </form>
+
+          {kyc && (
+            <div className="space-y-3 border-t border-gray-100 px-6 py-4">
+              {showKycReverificationSent && (kyc?.status === 'pending' || !kyc?.status) && (
+                <div
+                  className="rounded-lg border border-emerald-200 bg-emerald-50/95 px-3 py-3 text-sm text-emerald-950"
+                  role="status"
+                >
+                  <p className="font-semibold text-emerald-900">Re-verification request received</p>
+                  <p className="mt-1.5 leading-relaxed text-emerald-900/90">
+                    Your new documents are uploaded and your KYC is now marked{' '}
+                    <span className="font-semibold">Pending</span>. An administrator will review them in order.
+                    You do not need to submit again unless we ask for changes.
+                  </p>
+                  <p className="mt-2 text-xs leading-relaxed text-emerald-800/85">
+                    When the review is complete, your status will update here and we will email you at{' '}
+                    <span className="font-medium">{profile.email || user?.email || 'your account email'}</span>.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setShowKycReverificationSent(false)}
+                    className="mt-2.5 text-xs font-semibold text-emerald-800 underline decoration-emerald-600/40 hover:text-emerald-950"
+                  >
+                    Dismiss this notice
+                  </button>
+                </div>
+              )}
+
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-sm font-semibold text-gray-900">KYC verification</p>
+                {(() => {
+                  const status = kyc?.status || 'pending'
+                  const map = {
+                    approved: {
+                      icon: CheckCircle,
+                      label: 'Approved',
+                      cls: 'bg-green-50 border-green-200 text-green-800',
+                    },
+                    pending: {
+                      icon: Clock,
+                      label: 'Pending review',
+                      cls: 'bg-amber-50 border-amber-200 text-amber-900',
+                    },
+                    rejected: {
+                      icon: XCircle,
+                      label: 'Rejected',
+                      cls: 'bg-red-50 border-red-200 text-red-800',
+                    },
+                  }
+                  const { icon: Icon, label, cls } = map[status] || map.pending
+                  return (
+                    <span
+                      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold ${cls}`}
+                    >
+                      <Icon size={12} strokeWidth={2} />
+                      {label}
+                    </span>
+                  )
+                })()}
+              </div>
+
+              {kyc?.status === 'rejected' && (
+                <div
+                  className="rounded-lg border border-red-200 bg-red-50/95 px-3 py-3 text-sm text-red-950"
+                  role="alert"
+                >
+                  <p className="font-semibold text-red-900">Your KYC was not approved</p>
+                  <p className="mt-1.5 leading-relaxed text-red-900/90">
+                    Please read the reviewer&apos;s notes below, prepare corrected documents (clear scans, matching
+                    details), then use <span className="font-semibold">Replace Documents</span> to upload again.
+                    After you submit, your request returns to <span className="font-semibold">Pending</span> for a new
+                    review.
+                  </p>
+                  <div className="mt-3 rounded-md border border-red-200/80 bg-white/80 px-3 py-2.5">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-red-800/90">
+                      Reason from reviewer
+                    </p>
+                    <p className="mt-1.5 text-sm leading-relaxed text-red-950">
+                      {typeof kyc.rejectionReason === 'string' && kyc.rejectionReason.trim()
+                        ? kyc.rejectionReason.trim()
+                        : 'No specific reason was provided. Please re-check that IDs are readable, not expired, and match your business profile, then upload again.'}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {kyc?.status === 'pending' && !showKycReverificationSent && (
+                <div className="rounded-lg border border-amber-200/90 bg-amber-50/95 px-3 py-3 text-sm text-amber-950">
+                  <p className="font-semibold text-amber-950">KYC is pending review</p>
+                  <p className="mt-1.5 leading-relaxed text-amber-900/95">
+                    Your documents are in the review queue. A team member will verify them as soon as possible. While
+                    status is <span className="font-semibold">Pending</span>, you can still replace files using{' '}
+                    <span className="font-semibold">Replace Documents</span> if you notice a mistake.
+                  </p>
+                  <p className="mt-2 text-xs leading-relaxed text-amber-900/85">
+                    You will be notified by email when your KYC is approved or if more action is required.
+                  </p>
+                </div>
+              )}
+
+              {kyc?.status === 'pending' && showKycReverificationSent && (
+                <div className="rounded-lg border border-amber-200/80 bg-amber-50/60 px-3 py-2.5 text-xs leading-relaxed text-amber-950">
+                  <span className="font-semibold">While you wait:</span> your KYC stays{' '}
+                  <span className="font-semibold">Pending</span> until reviewed. Use Replace Documents only if you need
+                  to fix an upload.
+                </div>
+              )}
+
+              {kyc?.status === 'approved' && (
+                <p className="text-xs leading-relaxed text-gray-600">
+                  Your KYC is approved. Keep your business details up to date in the form above. Replace Documents is
+                  available if you ever need to refresh files per policy.
+                </p>
+              )}
+
+              <KycDocumentsSection
+                kyc={kyc}
+                onUpdateKyc={handleKycUpdate}
+                loadingUpdate={kycUpdating}
+                onEditOpen={() => setShowKycReverificationSent(false)}
+              />
+            </div>
+          )}
         </div>
         {/* Change Password */}
         <div className="rounded-2xl border border-gray-100 bg-white shadow-sm overflow-hidden">

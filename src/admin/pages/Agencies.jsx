@@ -15,6 +15,7 @@ import {
   FileCheck,
   FileText,
   Mail,
+  MapPin,
   Package,
   Pencil,
   Phone,
@@ -392,7 +393,12 @@ const AddAgencyModal = ({ isOpen, onClose, onRefresh }) => {
     email: '',
     phone: '',
     password: '',
-    role: 'parent_agent'
+    role: 'parent_agent',
+    gstNumber: '',
+    address: '',
+    contactPersonName: '',
+    kycStatus: 'approved',
+    kycRejectionReason: '',
   })
   const [files, setFiles] = useState({
     aadharFront: null,
@@ -461,7 +467,18 @@ const AddAgencyModal = ({ isOpen, onClose, onRefresh }) => {
         toast.success('Parent Agency established with complete document profile')
         onRefresh()
         onClose()
-        setFormData({ name: '', email: '', phone: '', password: '', role: 'parent_agent' })
+        setFormData({
+          name: '',
+          email: '',
+          phone: '',
+          password: '',
+          role: 'parent_agent',
+          gstNumber: '',
+          address: '',
+          contactPersonName: '',
+          kycStatus: 'approved',
+          kycRejectionReason: '',
+        })
         setFiles({ aadharFront: null, aadharBack: null, panCard: null })
         setErrors({})
       }
@@ -573,28 +590,48 @@ const AddAgencyModal = ({ isOpen, onClose, onRefresh }) => {
         <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
           <div className="mb-4 flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-100 text-gray-600">
-              <Users size={16} strokeWidth={2} />
+              <Building2 size={16} strokeWidth={2} />
             </div>
             <div>
               <h3 className="text-sm font-semibold text-gray-900">Agency details</h3>
-              <p className="text-xs text-gray-500">Fill the core profile and login info</p>
+              <p className="text-xs text-gray-500">Legal name, contacts, GST, login password, and address</p>
             </div>
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="sm:col-span-2">
+            <div>
               <label className={`mb-1.5 ml-1 block text-xs font-medium ${errors.name ? 'text-red-500' : 'text-gray-600'}`}>Full name <span className="text-red-500">*</span></label>
               <input required type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className={`h-11 w-full rounded-xl border px-4 text-sm outline-none transition ${errors.name ? 'border-red-500' : 'border-gray-200 bg-gray-50/50 focus:border-gray-400 focus:bg-white'}`} placeholder="Company or individual name" />
               {errors.name && <div className="mt-1 ml-1 flex items-center gap-1 text-[11px] font-medium text-red-500"><AlertCircle size={11} /> {errors.name}</div>}
             </div>
-            <div className="sm:col-span-2">
-              <label className={`mb-1.5 ml-1 block text-xs font-medium ${errors.email ? 'text-red-500' : 'text-gray-600'}`}>Email address <span className="text-red-500">*</span></label>
+            <div>
+              <label className="mb-1.5 ml-1 block text-xs font-medium text-gray-600">Contact person name</label>
+              <input
+                type="text"
+                value={formData.contactPersonName}
+                onChange={(e) => setFormData({ ...formData, contactPersonName: e.target.value })}
+                className="h-11 w-full rounded-xl border border-gray-200 bg-gray-50/50 px-4 text-sm outline-none transition focus:border-gray-400 focus:bg-white"
+                placeholder="Primary contact"
+              />
+            </div>
+            <div>
+              <label className={`mb-1.5 ml-1 block text-xs font-medium ${errors.email ? 'text-red-500' : 'text-gray-600'}`}>Email <span className="text-red-500">*</span></label>
               <input required type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} className={`h-11 w-full rounded-xl border px-4 text-sm outline-none transition ${errors.email ? 'border-red-500' : 'border-gray-200 bg-gray-50/50 focus:border-gray-400 focus:bg-white'}`} placeholder="contact@agency.com" />
               {errors.email && <div className="mt-1 ml-1 flex items-center gap-1 text-[11px] font-medium text-red-500"><AlertCircle size={11} /> {errors.email}</div>}
             </div>
             <div>
-              <label className={`mb-1.5 ml-1 block text-xs font-medium ${errors.phone ? 'text-red-500' : 'text-gray-600'}`}>Phone number <span className="text-red-500">*</span></label>
+              <label className={`mb-1.5 ml-1 block text-xs font-medium ${errors.phone ? 'text-red-500' : 'text-gray-600'}`}>Mobile <span className="text-red-500">*</span></label>
               <input required type="tel" maxLength={10} value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value.replace(/\D/g, '').slice(0, 10) })} className={`h-11 w-full rounded-xl border px-4 text-sm outline-none transition ${errors.phone ? 'border-red-500' : 'border-gray-200 bg-gray-50/50 focus:border-gray-400 focus:bg-white'}`} placeholder="10-digit number" />
               {errors.phone && <div className="mt-1 ml-1 flex items-center gap-1 text-[11px] font-medium text-red-500"><AlertCircle size={11} /> {errors.phone}</div>}
+            </div>
+            <div>
+              <label className="mb-1.5 ml-1 block text-xs font-medium text-gray-600">GST number</label>
+              <input
+                type="text"
+                value={formData.gstNumber}
+                onChange={(e) => setFormData({ ...formData, gstNumber: e.target.value })}
+                className="h-11 w-full rounded-xl border border-gray-200 bg-gray-50/50 px-4 text-sm outline-none transition focus:border-gray-400 focus:bg-white"
+                placeholder="e.g. 22AAAAA0000A1Z5"
+              />
             </div>
             <div>
               <label className={`mb-1.5 ml-1 block text-xs font-medium ${errors.password ? 'text-red-500' : 'text-gray-600'}`}>Password <span className="text-red-500">*</span></label>
@@ -606,6 +643,16 @@ const AddAgencyModal = ({ isOpen, onClose, onRefresh }) => {
               </div>
               {errors.password && <div className="mt-1 ml-1 flex items-center gap-1 text-[11px] font-medium text-red-500"><AlertCircle size={11} /> {errors.password}</div>}
             </div>
+            <div className="sm:col-span-2">
+              <label className="mb-1.5 ml-1 block text-xs font-medium text-gray-600">Address</label>
+              <textarea
+                value={formData.address}
+                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                rows={3}
+                className="w-full resize-y rounded-xl border border-gray-200 bg-gray-50/50 px-4 py-2.5 text-sm outline-none transition focus:border-gray-400 focus:bg-white"
+                placeholder="Registered / business address"
+              />
+            </div>
           </div>
         </section>
 
@@ -615,9 +662,35 @@ const AddAgencyModal = ({ isOpen, onClose, onRefresh }) => {
               <ShieldCheck size={16} strokeWidth={2} />
             </div>
             <div>
-              <h3 className="text-sm font-semibold text-gray-900">KYC documents</h3>
-              <p className="text-xs text-gray-500">Upload all three documents for quick verification</p>
+              <h3 className="text-sm font-semibold text-gray-900">KYC documents & status</h3>
+              <p className="text-xs text-gray-500">Upload documents and set initial verification status</p>
             </div>
+          </div>
+          <div className="mb-4">
+            <label className="mb-1.5 ml-1 block text-xs font-medium text-gray-600">KYC status</label>
+            <CustomDropdown
+              value={formData.kycStatus}
+              onChange={(v) => setFormData({ ...formData, kycStatus: v })}
+              options={[
+                { value: 'approved', label: 'Approved' },
+                { value: 'pending', label: 'Pending' },
+                { value: 'rejected', label: 'Rejected' },
+              ]}
+              className="w-full max-w-xs"
+              buttonClassName="!py-2.5"
+            />
+            {formData.kycStatus === 'rejected' && (
+              <div className="mt-3">
+                <label className="mb-1.5 ml-1 block text-xs font-medium text-gray-600">Rejection reason</label>
+                <textarea
+                  value={formData.kycRejectionReason}
+                  onChange={(e) => setFormData({ ...formData, kycRejectionReason: e.target.value })}
+                  rows={2}
+                  className="w-full resize-none rounded-xl border border-gray-200 bg-gray-50/50 px-3 py-2 text-sm outline-none focus:border-gray-400 focus:bg-white"
+                  placeholder="Shown to the agency when status is rejected"
+                />
+              </div>
+            )}
           </div>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             <FileSlot label="Aadhar front" id="aadharFront" currentFile={files.aadharFront} />
@@ -625,7 +698,7 @@ const AddAgencyModal = ({ isOpen, onClose, onRefresh }) => {
             <FileSlot label="PAN card" id="panCard" currentFile={files.panCard} />
           </div>
           <div className="mt-4 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-600">
-            Agencies created from admin are auto-marked as KYC approved.
+            Default is Approved when you add documents from admin. Choose Pending or Rejected if you need a different initial state.
           </div>
         </section>
       </div>
@@ -742,7 +815,12 @@ const EditAgencyModal = ({ isOpen, onClose, agent, onRefresh }) => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    phone: ''
+    phone: '',
+    gstNumber: '',
+    address: '',
+    contactPersonName: '',
+    kycStatus: 'approved',
+    kycRejectionReason: '',
   })
   const [files, setFiles] = useState({
     aadharFront: null,
@@ -756,7 +834,12 @@ const EditAgencyModal = ({ isOpen, onClose, agent, onRefresh }) => {
       setFormData({
         name: agent.name || '',
         email: agent.email || '',
-        phone: agent.phone || ''
+        phone: agent.phone || '',
+        gstNumber: agent.gstNumber || '',
+        address: agent.address || '',
+        contactPersonName: agent.contactPersonName || '',
+        kycStatus: agent.kyc?.status || 'pending',
+        kycRejectionReason: agent.kyc?.rejectionReason || '',
       })
       setFiles({ aadharFront: null, aadharBack: null, panCard: null })
       setErrors({})
@@ -849,29 +932,64 @@ const EditAgencyModal = ({ isOpen, onClose, agent, onRefresh }) => {
         <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
           <div className="mb-4 flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-100 text-gray-600">
-              <Users size={16} strokeWidth={2} />
+              <Building2 size={16} strokeWidth={2} />
             </div>
             <div>
-              <h3 className="text-sm font-semibold text-gray-900">Account details</h3>
-              <p className="text-xs text-gray-500">Update name, email, and phone in one place</p>
+              <h3 className="text-sm font-semibold text-gray-900">Agency details</h3>
+              <p className="text-xs text-gray-500">Same layout as add — password is not shown here; use agent code for reference</p>
             </div>
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="sm:col-span-2">
-              <label className={`mb-1.5 ml-1 block text-xs font-medium ${errors.name ? 'text-red-500' : 'text-gray-600'}`}>Agency name</label>
+            <div>
+              <label className={`mb-1.5 ml-1 block text-xs font-medium ${errors.name ? 'text-red-500' : 'text-gray-600'}`}>Full name</label>
               <input required type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className={`h-11 w-full rounded-xl border px-4 text-sm outline-none transition ${errors.name ? 'border-red-500' : 'border-gray-200 bg-gray-50/50 focus:border-gray-400 focus:bg-white'}`} placeholder="Company name" />
               {errors.name && <div className="mt-1 ml-1 flex items-center gap-1 text-[11px] font-medium text-red-500"><AlertCircle size={11} /> {errors.name}</div>}
             </div>
-            <div className="sm:col-span-2">
-              <label className={`mb-1.5 ml-1 block text-xs font-medium ${errors.email ? 'text-red-500' : 'text-gray-600'}`}>Email address</label>
+            <div>
+              <label className="mb-1.5 ml-1 block text-xs font-medium text-gray-600">Contact person name</label>
+              <input
+                type="text"
+                value={formData.contactPersonName}
+                onChange={(e) => setFormData({ ...formData, contactPersonName: e.target.value })}
+                className="h-11 w-full rounded-xl border border-gray-200 bg-gray-50/50 px-4 text-sm outline-none transition focus:border-gray-400 focus:bg-white"
+              />
+            </div>
+            <div>
+              <label className={`mb-1.5 ml-1 block text-xs font-medium ${errors.email ? 'text-red-500' : 'text-gray-600'}`}>Email</label>
               <input required type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} className={`h-11 w-full rounded-xl border px-4 text-sm outline-none transition ${errors.email ? 'border-red-500' : 'border-gray-200 bg-gray-50/50 focus:border-gray-400 focus:bg-white'}`} placeholder="contact@agency.com" />
               {errors.email && <div className="mt-1 ml-1 flex items-center gap-1 text-[11px] font-medium text-red-500"><AlertCircle size={11} /> {errors.email}</div>}
             </div>
             <div>
-              <label className={`mb-1.5 ml-1 block text-xs font-medium ${errors.phone ? 'text-red-500' : 'text-gray-600'}`}>Phone number</label>
+              <label className={`mb-1.5 ml-1 block text-xs font-medium ${errors.phone ? 'text-red-500' : 'text-gray-600'}`}>Mobile</label>
               <input required type="tel" maxLength={10} value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value.replace(/\D/g, '').slice(0, 10) })} className={`h-11 w-full rounded-xl border px-4 text-sm outline-none transition ${errors.phone ? 'border-red-500' : 'border-gray-200 bg-gray-50/50 focus:border-gray-400 focus:bg-white'}`} placeholder="10-digit number" />
               {errors.phone && <div className="mt-1 ml-1 flex items-center gap-1 text-[11px] font-medium text-red-500"><AlertCircle size={11} /> {errors.phone}</div>}
+            </div>
+            <div>
+              <label className="mb-1.5 ml-1 block text-xs font-medium text-gray-600">GST number</label>
+              <input
+                type="text"
+                value={formData.gstNumber}
+                onChange={(e) => setFormData({ ...formData, gstNumber: e.target.value })}
+                className="h-11 w-full rounded-xl border border-gray-200 bg-gray-50/50 px-4 text-sm outline-none transition focus:border-gray-400 focus:bg-white"
+                placeholder="GSTIN"
+              />
+            </div>
+            <div>
+              <label className="mb-1.5 ml-1 block text-xs font-medium text-gray-500">Agent code</label>
+              <div className="flex h-11 items-center rounded-xl border border-dashed border-gray-200 bg-gray-100/80 px-4 text-sm font-semibold text-primary-700">
+                {agent?.agentCode || '—'}
+              </div>
+              <p className="mt-1 ml-1 text-[10px] text-gray-400">Read-only</p>
+            </div>
+            <div className="sm:col-span-2">
+              <label className="mb-1.5 ml-1 block text-xs font-medium text-gray-600">Address</label>
+              <textarea
+                value={formData.address}
+                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                rows={3}
+                className="w-full resize-y rounded-xl border border-gray-200 bg-gray-50/50 px-4 py-2.5 text-sm outline-none focus:border-gray-400 focus:bg-white"
+              />
             </div>
           </div>
         </section>
@@ -882,10 +1000,35 @@ const EditAgencyModal = ({ isOpen, onClose, agent, onRefresh }) => {
               <ShieldCheck size={16} strokeWidth={2} />
             </div>
             <div>
-              <h3 className="text-sm font-semibold text-gray-900">KYC documents</h3>
-              <p className="text-xs text-gray-500">Replace any document as needed</p>
+              <h3 className="text-sm font-semibold text-gray-900">KYC status & documents</h3>
+              <p className="text-xs text-gray-500">Update verification status or replace documents</p>
             </div>
           </div>
+          <div className="mb-4 max-w-xs">
+            <label className="mb-1.5 ml-1 block text-xs font-medium text-gray-600">KYC status</label>
+            <CustomDropdown
+              value={formData.kycStatus}
+              onChange={(v) => setFormData({ ...formData, kycStatus: v })}
+              options={[
+                { value: 'approved', label: 'Approved' },
+                { value: 'pending', label: 'Pending' },
+                { value: 'rejected', label: 'Rejected' },
+              ]}
+              className="w-full"
+              buttonClassName="!py-2.5"
+            />
+          </div>
+          {formData.kycStatus === 'rejected' && (
+            <div className="mb-4">
+              <label className="mb-1.5 ml-1 block text-xs font-medium text-gray-600">Rejection reason</label>
+              <textarea
+                value={formData.kycRejectionReason}
+                onChange={(e) => setFormData({ ...formData, kycRejectionReason: e.target.value })}
+                rows={2}
+                className="w-full resize-none rounded-xl border border-gray-200 bg-gray-50/50 px-3 py-2 text-sm outline-none focus:border-gray-400 focus:bg-white"
+              />
+            </div>
+          )}
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             {[
@@ -1091,12 +1234,19 @@ export default function Agencies() {
       })
       await exportToExcel(
         (data?.data?.agents ?? []).map((a) => ({
-          Name: a.name, Email: a.email, Phone: a.phone || '',
-          'Agent Code': a.agentCode || '', 'KYC Status': a.kyc?.status || 'pending',
-          'Account Status': a.isActive ? 'Active' : 'Inactive',
-          Children: a.childCount ?? 0, Packages: a.packageCount ?? 0,
+          'Full name': a.name || '',
+          'Contact person': a.contactPersonName || '',
+          Email: a.email || '',
+          Mobile: a.phone || '',
+          'GST number': a.gstNumber || '',
+          Address: a.address || '',
+          'Agent code': a.agentCode || '',
+          'KYC status': a.kyc?.status || 'pending',
+          'Account status': a.isActive ? 'Active' : 'Inactive',
+          Children: a.childCount ?? 0,
+          Packages: a.packageCount ?? 0,
           Customers: a.customerCount ?? 0,
-          'Joined On': a.createdAt ? new Date(a.createdAt).toLocaleDateString() : '',
+          'Joined on': a.createdAt ? new Date(a.createdAt).toLocaleDateString() : '',
         })),
         'parent-agencies', 'Parent Agencies'
       )
@@ -1271,16 +1421,9 @@ export default function Agencies() {
                       </button>
                     </td>
                     <td className="whitespace-nowrap px-4 py-2.5">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSelectedAgent(agent)
-                          setIsKycModalOpen(true)
-                        }}
-                        className="cursor-pointer transition-transform active:scale-95"
-                      >
+                      <span className="inline-flex" title="Open the eye icon to view agency details and manage KYC">
                         {getStatusBadge(agent.kyc?.status)}
-                      </button>
+                      </span>
                     </td>
                     <td className="whitespace-nowrap px-4 py-2.5 pr-5 text-right">
                       <div className="flex items-center justify-end gap-1.5">
@@ -1308,7 +1451,7 @@ export default function Agencies() {
                         >
                           <Pencil className="h-4 w-4" strokeWidth={2} />
                         </button>
-                        <button
+                        {/* <button
                           type="button"
                           onClick={() => handleDeleteAgent(agent)}
                           disabled={isActionLoading}
@@ -1317,7 +1460,7 @@ export default function Agencies() {
                           aria-label={`Delete ${agent.name}`}
                         >
                           <Trash2 className="h-4 w-4" strokeWidth={2} />
-                        </button>
+                        </button> */}
                       </div>
                     </td>
                   </tr>
@@ -1364,8 +1507,58 @@ export default function Agencies() {
         {selectedAgent && (
           <div className="space-y-6">
             <div>
-              <p className="text-lg font-semibold text-gray-900">{selectedAgent.name}</p>
-              <p className="mt-1 text-sm text-gray-500">Parent agency profile, child counts, and KYC documents</p>
+              <p className="text-lg font-semibold text-gray-900">Agency overview</p>
+              <p className="mt-1 text-sm text-gray-500">Details, network stats, and KYC</p>
+            </div>
+
+            <div className="rounded-xl border border-gray-200 bg-white p-4">
+              <h3 className="mb-3 text-xs font-bold uppercase tracking-wider text-gray-500">Agency details</h3>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <p className="text-xs font-medium text-gray-500">Full name</p>
+                  <p className="mt-0.5 text-sm font-semibold text-gray-900">{selectedAgent.name || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-gray-500">Contact person</p>
+                  <p className="mt-0.5 text-sm text-gray-900">{selectedAgent.contactPersonName || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-gray-500">Email</p>
+                  <p className="mt-0.5 break-all text-sm text-gray-900">{selectedAgent.email || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-gray-500">Mobile</p>
+                  <p className="mt-0.5 text-sm text-gray-900">{selectedAgent.phone || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-gray-500">GST number</p>
+                  <p className="mt-0.5 text-sm text-gray-900">{selectedAgent.gstNumber || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-gray-500">Agent code</p>
+                  <p className="mt-0.5 flex items-center gap-1.5 text-sm font-semibold text-primary-700">
+                    <ShieldCheck className="h-4 w-4 shrink-0" strokeWidth={2} />
+                    {selectedAgent.agentCode || '—'}
+                  </p>
+                </div>
+                <div className="sm:col-span-2">
+                  <p className="text-xs font-medium text-gray-500">KYC status</p>
+                  <div className="mt-1.5">{getStatusBadge(selectedAgent.kyc?.status)}</div>
+                  {selectedAgent.kyc?.status === 'rejected' && selectedAgent.kyc?.rejectionReason && (
+                    <div className="mt-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2">
+                      <p className="text-xs font-medium text-red-800">Rejection reason</p>
+                      <p className="mt-0.5 text-xs text-red-700">{selectedAgent.kyc.rejectionReason}</p>
+                    </div>
+                  )}
+                </div>
+                <div className="sm:col-span-2 border-t border-gray-100 pt-3">
+                  <p className="flex items-center gap-1 text-xs font-medium text-gray-500">
+                    <MapPin className="h-3.5 w-3.5" strokeWidth={2} />
+                    Address
+                  </p>
+                  <p className="mt-1 whitespace-pre-wrap text-sm text-gray-900">{selectedAgent.address || '—'}</p>
+                </div>
+              </div>
             </div>
 
             <div className="grid grid-cols-3 gap-3">
@@ -1397,34 +1590,6 @@ export default function Agencies() {
                   Customers
                 </div>
                 <p className="mt-1 text-xl font-semibold tabular-nums text-gray-900">{selectedAgent.customerCount ?? 0}</p>
-              </div>
-            </div>
-
-            <div className="grid gap-4 rounded-xl border border-gray-200 bg-white p-4 sm:grid-cols-2">
-              <div>
-                <p className="text-xs font-medium text-gray-500">Agent code</p>
-                <p className="mt-0.5 flex items-center gap-1.5 text-sm font-semibold text-primary-700">
-                  <ShieldCheck className="h-4 w-4" strokeWidth={2} />
-                  {selectedAgent.agentCode || '—'}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs font-medium text-gray-500">KYC status</p>
-                <div className="mt-1">{getStatusBadge(selectedAgent.kyc?.status)}</div>
-                {selectedAgent.kyc?.status === 'rejected' && selectedAgent.kyc?.rejectionReason && (
-                  <div className="mt-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2">
-                    <p className="text-xs font-medium text-red-700">Rejection reason</p>
-                    <p className="mt-0.5 text-xs text-red-600">{selectedAgent.kyc.rejectionReason}</p>
-                  </div>
-                )}
-              </div>
-              <div className="sm:col-span-2">
-                <p className="text-xs font-medium text-gray-500">Email</p>
-                <p className="mt-0.5 break-all text-sm text-gray-900">{selectedAgent.email}</p>
-              </div>
-              <div>
-                <p className="text-xs font-medium text-gray-500">Phone</p>
-                <p className="mt-0.5 text-sm text-gray-900">{selectedAgent.phone || '—'}</p>
               </div>
             </div>
 
