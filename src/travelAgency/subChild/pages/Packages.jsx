@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
   PackageOpen, Layers, Tags, Search, Package, Tag, CheckCircle2, Plus,
 } from 'lucide-react'
@@ -15,7 +15,10 @@ import { mapWhitelabelByOriginalPackageId } from '@/travelAgency/childAgency/uti
 import { listParents } from '@/travelAgency/subChild/services/subChildApi.js'
 
 export default function SubChildPackages() {
-  const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const initialTab = searchParams.get('tab') || 'available'
+  const initialSearch = searchParams.get('search') || ''
+
   const { availablePackages, whitelabels, loading, error, createWhitelabel, updateWhitelabel } = useSubChildPackages()
   const { bookings } = useSubChildBookings()
   const { toast } = useToast()
@@ -23,8 +26,8 @@ export default function SubChildPackages() {
   const [inactiveParentIds, setInactiveParentIds] = useState(new Set())
   const [parents, setParents] = useState([])
   const [parentFilter, setParentFilter] = useState('all')
-  const [search, setSearch] = useState('')
-  const [activeTab, setActiveTab] = useState('available')
+  const [search, setSearch] = useState(initialSearch)
+  const [activeTab, setActiveTab] = useState(initialTab)
   const [modal, setModal] = useState({ open: false, mode: 'create', sourcePackage: null, whitelabel: null })
 
   useEffect(() => {

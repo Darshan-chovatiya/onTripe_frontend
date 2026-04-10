@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { CalendarDays, Eye, IndianRupee, Pencil, Plus, Ticket, Search, Download, RefreshCw } from 'lucide-react'
 import { useSubChildBookings } from '@/travelAgency/subChild/hooks/useSubChildBookings.js'
 import { useSubChildPackages } from '@/travelAgency/subChild/hooks/useSubChildPackages.js'
@@ -33,6 +34,7 @@ function statusClass(status) {
 }
 
 export default function MyBookings() {
+  const navigate = useNavigate()
   const { bookings, loading, error, create, fetchBooking, updateBooking, fetchBookings, pagination } = useSubChildBookings()
   const { availablePackages, whitelabels } = useSubChildPackages()
   const { toast } = useToast()
@@ -223,8 +225,18 @@ export default function MyBookings() {
                 {bookings.map((b) => (
                   <tr key={b._id} className="transition-colors hover:bg-gray-50/80">
                     <td className="px-4 py-2.5 align-middle font-mono text-xs font-semibold text-gray-900">{b.bookingId || '—'}</td>
-                    <td className="max-w-[12rem] px-4 py-2.5 align-middle text-gray-800">
-                      <span className="line-clamp-2">{bookingOfferLabel(b)}</span>
+                    <td className="max-w-[12rem] px-4 py-2.5 align-middle">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const tab = b.whitelabelPackage ? 'whitelabels' : 'available'
+                          const name = bookingOfferLabel(b)
+                          navigate(`/agency/packages?tab=${tab}&search=${encodeURIComponent(name)}`)
+                        }}
+                        className="line-clamp-2 cursor-pointer text-left text-primary-600 transition-colors hover:text-primary-700 hover:underline active:text-primary-800"
+                      >
+                        {bookingOfferLabel(b)}
+                      </button>
                     </td>
                     <td className="px-4 py-2.5 align-middle">
                       <div className="font-medium text-gray-900">{b.customer?.name || '—'}</div>

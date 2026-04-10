@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
   PackageOpen, Layers, Tags, Search, Package, Tag, TrendingUp,
   CheckCircle2, Plus, Filter,
@@ -16,14 +16,17 @@ import { mapWhitelabelByOriginalPackageId } from '@/travelAgency/childAgency/uti
 import { listParents } from '@/travelAgency/childAgency/services/childAgencyApi.js'
 
 export default function Packages() {
-  const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const initialTab = searchParams.get('tab') || 'available'
+  const initialSearch = searchParams.get('search') || ''
+
   const { availablePackages, whitelabels, loading, error, createWhitelabel, updateWhitelabel } = useChildPackages()
   const { bookings } = useChildBookings()
   const { toast } = useToast()
   const [submitting, setSubmitting] = useState(false)
   const [parentFilter, setParentFilter] = useState('all')
-  const [search, setSearch] = useState('')
-  const [activeTab, setActiveTab] = useState('available')
+  const [search, setSearch] = useState(initialSearch)
+  const [activeTab, setActiveTab] = useState(initialTab)
   const [inactiveParentIds, setInactiveParentIds] = useState(new Set())
   const [modal, setModal] = useState({ open: false, mode: 'create', sourcePackage: null, whitelabel: null })
 

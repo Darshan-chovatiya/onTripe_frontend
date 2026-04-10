@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { MapPin, Clock, IndianRupee, Pencil, Power, MessageSquare, Eye, Star, Users, TrendingUp, CheckCircle2, XCircle } from 'lucide-react'
+import { MapPin, Clock, IndianRupee, Pencil, Power, MessageSquare, Eye, Star, Users, TrendingUp, CheckCircle2, XCircle, Ticket } from 'lucide-react'
 import { packageCoverUrl } from '@/travelAgency/childAgency/components/packageMedia.js'
 import PackageDetailModal from '@/travelAgency/childAgency/components/PackageDetailModal.jsx'
 
@@ -80,6 +80,10 @@ export default function WhitelabelPackageCard({ item, onEdit, onToggleActive, on
               <Users className="h-3 w-3 text-primary-500" strokeWidth={2} />{orig.maxCapacity} pax
             </span>
           )}
+          <span className="inline-flex items-center gap-1 rounded-lg bg-primary-50 px-2 py-1 text-[11px] font-semibold text-primary-700 ring-1 ring-primary-100 shadow-sm">
+            <Ticket className="h-3 w-3 text-primary-600" strokeWidth={2.5} />
+            {item.bookingCount || 0} Bookings
+          </span>
         </div>
 
         {/* Markup + visibility */}
