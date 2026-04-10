@@ -18,7 +18,6 @@ export default function AgentAdminLogin() {
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
-  const [kycPending, setKycPending] = useState(false)
 
   if (isCheckingAuth) {
     return (
@@ -35,13 +34,10 @@ export default function AgentAdminLogin() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
-    setKycPending(false)
-
     const res = await login({ email: email.trim(), password })
     if (!res.success) {
       const msg = res.message || 'Login failed'
-      if (msg.toLowerCase().includes('kyc')) setKycPending(true)
-      else setError(msg)
+      setError(msg)
       return
     }
 
@@ -62,18 +58,6 @@ export default function AgentAdminLogin() {
 
           <div className="p-8">
             <form onSubmit={handleSubmit} className="space-y-5">
-              {kycPending && (
-                <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4">
-                  <Clock className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" strokeWidth={2} />
-                  <div>
-                    <p className="text-sm font-semibold text-amber-900">KYC approval pending</p>
-                    <p className="mt-0.5 text-xs text-amber-800/90">
-                      Your account is under review. You can sign in once KYC is approved.
-                    </p>
-                  </div>
-                </div>
-              )}
-
               {error ? (
                 <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">{error}</div>
               ) : null}

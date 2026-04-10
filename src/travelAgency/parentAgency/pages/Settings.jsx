@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { User, Lock, CheckCircle, Clock, XCircle } from 'lucide-react'
 import { useAuth } from '@/shared/context/AuthContext.jsx'
-import { getProfile, updateProfile, changePassword } from '@/travelAgency/parentAgency/services/parentAgencyApi.js'
+import { getProfile, updateProfile, changePassword, updateKyc } from '@/travelAgency/parentAgency/services/parentAgencyApi.js'
 import { getApiErrorMessage } from '@/shared/services/apiHelpers.js'
 import Button from '@/shared/components/Button.jsx'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
@@ -92,6 +92,23 @@ export default function Settings() {
     }
   }
 
+  const [kycUpdating, setKycUpdating] = useState(false)
+  const handleKycUpdate = async (formData) => {
+    setKycUpdating(true)
+    try {
+      const { data } = await updateKyc(formData)
+      if (data?.data?.user) {
+         setKyc(data.data.user.kyc)
+         setUser(data.data.user)
+      }
+      toast.success('KYC documents submitted for re-verification.')
+    } catch (err) {
+      toast.error(getApiErrorMessage(err))
+    } finally {
+      setKycUpdating(false)
+    }
+  }
+
   const initials = user?.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '?'
 
   return (
@@ -149,7 +166,7 @@ export default function Settings() {
                 <div className="flex items-center justify-between gap-2">
                   <p className="text-sm font-semibold text-gray-700">KYC Documents</p>
                   {(() => {
-                    const status = user?.kyc?.status || 'pending'
+                    const status = kyc?.status || 'pending'
                     const map = {
                       approved: { icon: CheckCircle, label: 'KYC Approved', cls: 'bg-green-50 border-green-200 text-green-700' },
                       pending:  { icon: Clock,        label: 'KYC Pending',  cls: 'bg-yellow-50 border-yellow-200 text-yellow-700' },
@@ -160,14 +177,14 @@ export default function Settings() {
                       <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium ${cls}`}>
                         <Icon size={11} />
                         {label}
-                        {status === 'rejected' && user?.kyc?.rejectionReason && (
-                          <span className="ml-0.5 font-normal">— {user.kyc.rejectionReason}</span>
+                        {status === 'rejected' && kyc?.rejectionReason && (
+                          <span className="ml-0.5 font-normal">— {kyc.rejectionReason}</span>
                         )}
                       </span>
                     )
                   })()}
                 </div>
-                <KycDocumentsSection kyc={kyc} />
+                <KycDocumentsSection kyc={kyc} onUpdateKyc={handleKycUpdate} loadingUpdate={kycUpdating} />
               </div>
             )}
 

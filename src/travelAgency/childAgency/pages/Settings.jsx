@@ -8,6 +8,7 @@ import {
   listParents,
   toggleParentActive,
   updateChildProfile,
+  updateChildKyc
 } from '@/travelAgency/childAgency/services/childAgencyApi.js'
 import Button from '@/shared/components/Button.jsx'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
@@ -148,6 +149,24 @@ export default function Settings() {
     }
   }
 
+  const [kycUpdating, setKycUpdating] = useState(false)
+  const handleKycUpdate = async (formData) => {
+    setKycUpdating(true)
+    try {
+      const { data } = await updateChildKyc(formData)
+      if (data?.data?.user) {
+         setKyc(data.data.user.kyc)
+         setKycStatus(data.data.user.kyc?.status || 'pending')
+         setUser(data.data.user)
+      }
+      toast.success('KYC documents submitted for re-verification.')
+    } catch (err) {
+      toast.error(errMessage(err))
+    } finally {
+      setKycUpdating(false)
+    }
+  }
+
   return (
     <div className="animate-fade-in space-y-8">
       <div>
@@ -224,7 +243,7 @@ export default function Settings() {
                       )
                     })()}
                   </div>
-                  <KycDocumentsSection kyc={kyc} />
+                  <KycDocumentsSection kyc={kyc} onUpdateKyc={handleKycUpdate} loadingUpdate={kycUpdating} />
                 </div>
               )}
 

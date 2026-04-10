@@ -8,6 +8,7 @@ import {
   listParents,
   toggleParentActive,
   updateSubChildProfile,
+  updateSubChildKyc,
 } from '@/travelAgency/subChild/services/subChildApi.js'
 import Button from '@/shared/components/Button.jsx'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
@@ -100,6 +101,24 @@ export default function Settings() {
     }
   }
 
+  const [kycUpdating, setKycUpdating] = useState(false)
+  const handleKycUpdate = async (formData) => {
+    setKycUpdating(true)
+    try {
+      const { data } = await updateSubChildKyc(formData)
+      if (data?.data?.user) {
+         setKyc(data.data.user.kyc)
+         setKycStatus(data.data.user.kyc?.status || 'pending')
+         setUser(data.data.user)
+      }
+      toast.success('KYC documents submitted for re-verification.')
+    } catch (err) {
+      toast.error(errMessage(err))
+    } finally {
+      setKycUpdating(false)
+    }
+  }
+
   return (
     <div className="animate-fade-in space-y-8">
       <div>
@@ -156,8 +175,14 @@ export default function Settings() {
                 }
                 const { icon: Icon, label, cls } = map[kycStatus] || map.pending
                 return (
-                  <div className={`flex items-center gap-2 rounded-lg border px-4 py-3 text-sm font-medium ${cls}`}>
-                    <Icon size={16} /> {label}
+                  <div className="border-t border-gray-100 pt-4 space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-sm font-semibold text-gray-700">KYC Documents</p>
+                      <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium ${cls}`}>
+                        <Icon size={11} /> {label}
+                      </span>
+                    </div>
+                    <KycDocumentsSection kyc={kyc} onUpdateKyc={handleKycUpdate} loadingUpdate={kycUpdating} />
                   </div>
                 )
               })()}

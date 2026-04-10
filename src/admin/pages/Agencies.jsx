@@ -1411,6 +1411,12 @@ export default function Agencies() {
               <div>
                 <p className="text-xs font-medium text-gray-500">KYC status</p>
                 <div className="mt-1">{getStatusBadge(selectedAgent.kyc?.status)}</div>
+                {selectedAgent.kyc?.status === 'rejected' && selectedAgent.kyc?.rejectionReason && (
+                  <div className="mt-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2">
+                    <p className="text-xs font-medium text-red-700">Rejection reason</p>
+                    <p className="mt-0.5 text-xs text-red-600">{selectedAgent.kyc.rejectionReason}</p>
+                  </div>
+                )}
               </div>
               <div className="sm:col-span-2">
                 <p className="text-xs font-medium text-gray-500">Email</p>
@@ -1484,6 +1490,49 @@ export default function Agencies() {
                 ))}
               </div>
             </div>
+
+            {selectedAgent.kycHistory?.length > 0 && (
+              <div className="space-y-3 border-t border-gray-100 pt-6">
+                <h3 className="flex items-center gap-2 text-sm font-semibold text-gray-900">
+                  <Clock className="h-4 w-4 text-gray-500" strokeWidth={2} />
+                  Previous Submissions
+                </h3>
+                <div className="space-y-3">
+                  {selectedAgent.kycHistory.map((historyItem, idx) => (
+                    <div key={idx} className="rounded-xl border border-gray-200 bg-gray-50/50 p-4">
+                      <div className="mb-2 flex items-center justify-between">
+                        <span className="text-xs font-medium text-gray-500">
+                          {new Date(historyItem.submittedAt || historyItem.updatedAt || Date.now()).toLocaleDateString()}
+                        </span>
+                        {getStatusBadge(historyItem.status)}
+                      </div>
+                      {historyItem.rejectionReason && (
+                        <div className="mb-3 rounded-lg border border-red-100 bg-red-50/50 p-2 text-xs text-red-600">
+                          <span className="font-semibold">Reason:</span> {historyItem.rejectionReason}
+                        </div>
+                      )}
+                      <div className="flex flex-wrap gap-2 text-[11px]">
+                        {[
+                          { key: 'aadharFront', label: 'Aadhar front' },
+                          { key: 'aadharBack', label: 'Aadhar back' },
+                          { key: 'panCard', label: 'PAN card' }
+                        ].map(({ key, label }) => historyItem[key] ? (
+                          <a
+                            key={key}
+                            href={getFileUrl(historyItem[key])}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2 py-1 font-medium text-gray-600 hover:text-primary-700"
+                          >
+                            <FileText className="h-3 w-3" /> {label}
+                          </a>
+                        ) : null)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {selectedAgent.kyc?.status === 'pending' && (
               <div className="space-y-4 border-t border-gray-100 pt-6">

@@ -145,3 +145,7 @@ export default {
   getSentNotifications,
   getNotificationPreview,
 }
+
+export function updateChildKyc(formData) {
+  return axiosInstance.patch('/child-agent/kyc', formData)
+}
