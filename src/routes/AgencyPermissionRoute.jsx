@@ -1,4 +1,4 @@
-import { Navigate } from 'react-router-dom'
+import { Navigate, useLocation } from 'react-router-dom'
 import { useAgencyPermissions } from '@/travelAgency/agency/hooks/useAgencyPermissions.js'
 
 /**
@@ -13,7 +13,13 @@ import { useAgencyPermissions } from '@/travelAgency/agency/hooks/useAgencyPermi
  * }} props
  */
 export default function AgencyPermissionRoute({ permission, anyOf, children, fallbackTo = '/agency/dashboard' }) {
-  const { can } = useAgencyPermissions()
+  const { can, isKycPending } = useAgencyPermissions()
+  const location = useLocation()
+
+  if (isKycPending && !location.pathname.endsWith('/settings')) {
+    return <Navigate to="/agency/settings" replace />
+  }
+
   if (anyOf?.length) {
     if (!anyOf.some((p) => can(p))) {
       return <Navigate to={fallbackTo} replace />

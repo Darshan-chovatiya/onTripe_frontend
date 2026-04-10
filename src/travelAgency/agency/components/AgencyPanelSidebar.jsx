@@ -11,6 +11,7 @@ import {
   Users,
   Ticket,
   ContactRound,
+  Lock,
 } from 'lucide-react'
 import { useAuth } from '@/shared/context/AuthContext.jsx'
 import ConfirmDialog from '@/shared/components/ConfirmDialog.jsx'
@@ -26,7 +27,7 @@ import { P } from '@/travelAgency/agency/rbac/agencyPermissions.js'
 export default function AgencyPanelSidebar({ isOpen, onClose }) {
   const navigate = useNavigate()
   const { logout } = useAuth()
-  const { can, roleLabel, loginPathForLogout } = useAgencyPermissions()
+  const { can, roleLabel, loginPathForLogout, isKycPending } = useAgencyPermissions()
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
   const [logoError, setLogoError] = useState(false)
   const panelName = `${(roleLabel || 'Agency').replace(/agency/gi, '').trim() || 'Agency'} panel`
@@ -117,22 +118,31 @@ export default function AgencyPanelSidebar({ isOpen, onClose }) {
           {navItems.map((item) => {
             const Icon = item.icon
             const isDashboard = item.path.endsWith('/dashboard')
+            const isSettings = item.path.endsWith('/settings')
+            const disabled = isKycPending && !isSettings
+            
             return (
               <NavLink
                 key={item.path}
-                to={item.path}
+                to={disabled ? '#' : item.path}
                 end={isDashboard}
-                onClick={() => window.innerWidth < 1024 && onClose()}
+                onClick={(e) => {
+                  if (disabled) e.preventDefault()
+                  else if (window.innerWidth < 1024) onClose()
+                }}
                 className={({ isActive }) =>
                   `group flex items-center gap-3 rounded-lg border-l-[3px] py-2.5 pl-[9px] pr-3 text-[14px] leading-snug transition-colors ${
-                    isActive
+                    disabled
+                      ? 'border-transparent text-gray-400 opacity-60 cursor-not-allowed'
+                      : isActive
                       ? 'border-primary-600 bg-primary-50 font-semibold text-gray-900 shadow-sm'
                       : 'border-transparent font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900'
                   }`
                 }
               >
-                <Icon className="h-[18px] w-[18px] shrink-0 text-gray-500 group-hover:text-gray-700" strokeWidth={2} aria-hidden />
-                <span>{item.label}</span>
+                <Icon className={`h-[18px] w-[18px] shrink-0 ${disabled ? 'text-gray-400' : 'text-gray-500 group-hover:text-gray-700'}`} strokeWidth={2} aria-hidden />
+                <span className="flex-1">{item.label}</span>
+                {disabled && <Lock className="h-3 w-3 text-gray-400" strokeWidth={2} />}
               </NavLink>
             )
           })}

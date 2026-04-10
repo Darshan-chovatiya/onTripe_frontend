@@ -149,3 +149,7 @@ export function uploadBookingTickets(id, formData) {
 export function deleteBookingTicket(id, ticketId) {
   return axiosInstance.delete(`/parent-agent/bookings/${id}/tickets/${ticketId}`)
 }
+
+export function updateKyc(formData) {
+  return axiosInstance.patch('/parent-agent/kyc', formData)
+}

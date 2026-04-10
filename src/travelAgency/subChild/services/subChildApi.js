@@ -97,3 +97,7 @@ export default {
   updateSubChildProfile,
   changeSubChildPassword,
 }
+
+export function updateSubChildKyc(formData) {
+  return axiosInstance.patch('/sub-child-agent/kyc', formData)
+}

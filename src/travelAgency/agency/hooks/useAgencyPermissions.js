@@ -49,6 +49,8 @@ export function useAgencyPermissions() {
   const authRole = user?.role
   const role = getEffectiveAgencyRole(authRole)
 
+  const isKycPending = Boolean(user?.kyc && (user.kyc.status === 'pending' || user.kyc.status === 'rejected'))
+
   const permissions = useMemo(() => getPermissionsForRole(role), [role])
 
   const can = useMemo(() => {
@@ -76,6 +78,7 @@ export function useAgencyPermissions() {
     roleLabel,
     permissions,
     can,
+    isKycPending,
     loginPathForLogout,
     P,
   }
