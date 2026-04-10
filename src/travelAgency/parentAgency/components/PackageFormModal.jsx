@@ -2,15 +2,17 @@ import { useState, useEffect } from 'react'
 import { Plus, Trash2, ChevronDown, ChevronUp, ImagePlus, X } from 'lucide-react'
 import Modal from '@/shared/components/Modal.jsx'
 import Button from '@/shared/components/Button.jsx'
-import { uploadEventImage, listVendors } from '@/travelAgency/parentAgency/services/parentAgencyApi.js'
+import { uploadEventImage, listVendors, createVendor } from '@/travelAgency/parentAgency/services/parentAgencyApi.js'
 import { getApiErrorMessage } from '@/shared/services/apiHelpers.js'
 import { formItineraryToApi, apiItineraryToForm } from '@/travelAgency/parentAgency/utils/packageItineraryTransforms.js'
+import VendorFormModal from './VendorFormModal.jsx'
+import { useToast } from '@/shared/components/ToastContainer.jsx'
 
-const EVENT_TYPES = ['activity', 'hotel_checkin', 'hotel_checkout', 'transfer', 'meal', 'other']
+const EVENT_TYPES = ['Activity', 'Hotel CheckIn', 'Hotel CheckOut', 'Transfer', 'Other']
 
 const emptyEvent = () => ({
   title: '', description: '', startTime: '', endTime: '', duration: '',
-  location: '', type: 'activity',
+  location: '', type: 'Activity', includedInPrice: true, extraCost: ''
 })
 
 const emptyDay = (day) => ({ day, dateSuffix: '', title: '', description: '', events: [] })
@@ -22,18 +24,21 @@ const EMPTY_FORM = {
   itinerary: [emptyDay(1)],
 }
 
-export default function PackageFormModal({ isOpen, onClose, onSubmit, initialData, loading }) {
+export default function PackageFormModal({ isOpen, onClose, onSubmit, initialData, loading, isClone }) {
   const [form, setForm] = useState(EMPTY_FORM)
   const [coverFile, setCoverFile] = useState(null)
   const [galleryFiles, setGalleryFiles] = useState([])
   const [expandedDays, setExpandedDays] = useState({ 0: true })
   const [uploadingEvent, setUploadingEvent] = useState(null) // "di-ei"
   const [vendors, setVendors] = useState([])
+  const { toast } = useToast()
+  const [isVendorModalOpen, setIsVendorModalOpen] = useState(false)
+  const [creatingVendor, setCreatingVendor] = useState(false)
 
   // Fetch vendors once when modal opens
   useEffect(() => {
     if (isOpen) {
-      listVendors().then(res => setVendors(res.data?.data?.vendors || [])).catch(() => {})
+      listVendors().then(res => setVendors(res.data?.data?.vendors || [])).catch(() => { })
     }
   }, [isOpen])
 
@@ -72,37 +77,59 @@ export default function PackageFormModal({ isOpen, onClose, onSubmit, initialDat
 
   // Itinerary day helpers
   const updateDay = (di, key, value) => {
-    const arr = [...form.itinerary]
-    arr[di] = { ...arr[di], [key]: value }
-    set('itinerary', arr)
+    setForm(f => {
+      const arr = [...f.itinerary]
+      arr[di] = { ...arr[di], [key]: value }
+      return { ...f, itinerary: arr }
+    })
   }
   const addDay = () => {
-    const next = form.itinerary.length + 1
-    set('itinerary', [...form.itinerary, emptyDay(next)])
-    setExpandedDays(e => ({ ...e, [form.itinerary.length]: true }))
+    setForm(f => {
+      const next = f.itinerary.length + 1
+      const arr = [...f.itinerary, emptyDay(next)]
+      setExpandedDays(e => ({ ...e, [f.itinerary.length]: true }))
+      return { ...f, itinerary: arr }
+    })
   }
   const removeDay = (di) => {
-    const arr = form.itinerary.filter((_, i) => i !== di).map((d, i) => ({ ...d, day: i + 1 }))
-    set('itinerary', arr)
+    setForm(f => {
+      const arr = f.itinerary.filter((_, i) => i !== di).map((d, i) => ({ ...d, day: i + 1 }))
+      return { ...f, itinerary: arr }
+    })
   }
 
   // Event helpers
   const addEvent = (di) => {
-    const arr = [...form.itinerary]
-    arr[di] = { ...arr[di], events: [...(arr[di].events || []), emptyEvent()] }
-    set('itinerary', arr)
+    setForm(f => {
+      const arr = [...f.itinerary]
+      arr[di] = { ...arr[di], events: [...(arr[di].events || []), emptyEvent()] }
+      return { ...f, itinerary: arr }
+    })
   }
   const updateEvent = (di, ei, key, value) => {
-    const arr = [...form.itinerary]
-    const events = [...(arr[di].events || [])]
-    events[ei] = { ...events[ei], [key]: value }
-    arr[di] = { ...arr[di], events }
-    set('itinerary', arr)
+    setForm(f => {
+      const arr = [...f.itinerary]
+      const events = [...(arr[di].events || [])]
+      events[ei] = { ...events[ei], [key]: value }
+      arr[di] = { ...arr[di], events }
+      return { ...f, itinerary: arr }
+    })
+  }
+  const updateEventFields = (di, ei, chunk) => {
+    setForm(f => {
+      const arr = [...f.itinerary]
+      const events = [...(arr[di].events || [])]
+      events[ei] = { ...events[ei], ...chunk }
+      arr[di] = { ...arr[di], events }
+      return { ...f, itinerary: arr }
+    })
   }
   const removeEvent = (di, ei) => {
-    const arr = [...form.itinerary]
-    arr[di] = { ...arr[di], events: arr[di].events.filter((_, i) => i !== ei) }
-    set('itinerary', arr)
+    setForm(f => {
+      const arr = [...f.itinerary]
+      arr[di] = { ...arr[di], events: arr[di].events.filter((_, i) => i !== ei) }
+      return { ...f, itinerary: arr }
+    })
   }
 
   const handleEventImageUpload = async (di, ei, file) => {
@@ -119,6 +146,21 @@ export default function PackageFormModal({ isOpen, onClose, onSubmit, initialDat
       console.error(getApiErrorMessage(err))
     } finally {
       setUploadingEvent(null)
+    }
+  }
+
+  const handleVendorSubmit = async (formData) => {
+    setCreatingVendor(true)
+    try {
+      await createVendor(formData)
+      const res = await listVendors()
+      setVendors(res.data?.data?.vendors || [])
+      setIsVendorModalOpen(false)
+      toast?.success?.('Vendor created')
+    } catch (err) {
+      toast?.error?.(getApiErrorMessage(err))
+    } finally {
+      setCreatingVendor(false)
     }
   }
 
@@ -143,9 +185,9 @@ export default function PackageFormModal({ isOpen, onClose, onSubmit, initialDat
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    const isEdit = !!initialData
+    const isEditMode = !!initialData && !isClone
     const payload = buildPayload()
-    if (isEdit) {
+    if (isEditMode) {
       onSubmit(null, payload)
     } else {
       const fd = new FormData()
@@ -166,15 +208,15 @@ export default function PackageFormModal({ isOpen, onClose, onSubmit, initialDat
     }
   }
 
-  const isEdit = !!initialData
+  const isEditMode = !!initialData && !isClone
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={isEdit ? 'Edit Package' : 'Create Package'} size="lg"
+    <Modal isOpen={isOpen} onClose={onClose} title={isEditMode ? 'Edit Package' : isClone ? 'Clone Package' : 'Create Package'} size="lg"
       footer={
         <div className="flex justify-end gap-3 p-4">
           <Button variant="secondary" onClick={onClose} disabled={loading}>Cancel</Button>
           <Button type="submit" form="pkg-form" disabled={loading}>
-            {loading ? 'Saving…' : isEdit ? 'Save Changes' : 'Create Package'}
+            {loading ? 'Saving…' : isEditMode ? 'Save Changes' : isClone ? 'Clone Package' : 'Create Package'}
           </Button>
         </div>
       }
@@ -200,7 +242,7 @@ export default function PackageFormModal({ isOpen, onClose, onSubmit, initialDat
             <input type="number" min="1" className="input-field" value={form.maxCapacity} onChange={e => set('maxCapacity', e.target.value)} />
           </div>
           <div className="sm:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Base Price *</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Base Price Incl GST *</label>
             <div className="flex gap-2">
               <select className="input-field w-24" value={form.currency} onChange={e => set('currency', e.target.value)}>
                 <option>INR</option><option>USD</option><option>EUR</option>
@@ -216,7 +258,7 @@ export default function PackageFormModal({ isOpen, onClose, onSubmit, initialDat
         </div>
 
         {/* Images — create only */}
-        {!isEdit && (
+        {(!isEditMode) && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Cover Image</label>
@@ -326,9 +368,9 @@ export default function PackageFormModal({ isOpen, onClose, onSubmit, initialDat
                           value={
                             day.dateSuffix
                               ? (() => {
-                                  const d = new Date(`${day.dateSuffix} ${new Date().getFullYear()}`)
-                                  return isNaN(d) ? '' : d.toISOString().split('T')[0]
-                                })()
+                                const d = new Date(`${day.dateSuffix} ${new Date().getFullYear()}`)
+                                return isNaN(d) ? '' : d.toISOString().split('T')[0]
+                              })()
                               : ''
                           }
                           onChange={e => {
@@ -363,29 +405,74 @@ export default function PackageFormModal({ isOpen, onClose, onSubmit, initialDat
                                 <input className="input-field" value={ev.title} onChange={e => updateEvent(di, ei, 'title', e.target.value)} placeholder="e.g. Visit Burj Al Arab" />
                               </div>
                               <div>
-                                <label className="block text-xs text-gray-500 mb-0.5">Type</label>
-                                <select className="input-field" value={ev.type} onChange={e => updateEvent(di, ei, 'type', e.target.value)}>
-                                  {EVENT_TYPES.map(t => <option key={t} value={t}>{t.replace('_', ' ')}</option>)}
-                                </select>
+                                <div className="flex items-center justify-between mb-0.5">
+                                  <label className="block text-xs text-gray-500">Type</label>
+                                  {ev.type === 'Activity' && (
+                                    <label className="flex items-center gap-1.5 cursor-pointer select-none">
+                                      <input
+                                        type="checkbox"
+                                        className="h-3 w-3 rounded border-gray-300 text-primary-600 focus:ring-primary-600"
+                                        checked={ev.includedInPrice === false}
+                                        onChange={e => {
+                                          updateEventFields(di, ei, {
+                                            includedInPrice: !e.target.checked,
+                                            ...(!e.target.checked ? { extraCost: '' } : {})
+                                          })
+                                        }}
+                                      />
+                                      <span className="text-[10px] font-semibold text-gray-600">Extra Chargeable</span>
+                                    </label>
+                                  )}
+                                </div>
+                                <div className="flex gap-2">
+                                  <select className="input-field flex-1 min-w-0" value={ev.type} onChange={e => {
+                                    updateEventFields(di, ei, {
+                                      type: e.target.value,
+                                      ...(e.target.value !== 'Activity' ? { includedInPrice: true, extraCost: '' } : {})
+                                    })
+                                  }}>
+                                    {EVENT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                                  </select>
+                                </div>
                               </div>
                               <div>
                                 <label className="block text-xs text-gray-500 mb-0.5">Start Time</label>
-                                <input className="input-field" value={ev.startTime} onChange={e => updateEvent(di, ei, 'startTime', e.target.value)} placeholder="10:00 AM" />
+                                <input type="time" className="input-field" value={ev.startTime} onChange={e => updateEvent(di, ei, 'startTime', e.target.value)} />
                               </div>
                               <div>
                                 <label className="block text-xs text-gray-500 mb-0.5">End Time</label>
-                                <input className="input-field" value={ev.endTime} onChange={e => updateEvent(di, ei, 'endTime', e.target.value)} placeholder="12:00 PM" />
+                                <input type="time" className="input-field" value={ev.endTime} onChange={e => updateEvent(di, ei, 'endTime', e.target.value)} />
                               </div>
                               <div>
                                 <label className="block text-xs text-gray-500 mb-0.5">Duration</label>
-                                <input className="input-field" value={ev.duration} onChange={e => updateEvent(di, ei, 'duration', e.target.value)} placeholder="2 Hours" />
+                                <select className="input-field" value={ev.duration || ''} onChange={e => updateEvent(di, ei, 'duration', e.target.value)}>
+                                  <option value="">— Select Duration —</option>
+                                  <option value="15 min">15 Minutes</option>
+                                  <option value="30 min">30 Minutes</option>
+                                  <option value="45 min">45 Minutes</option>
+                                  <option value="1 hr">1 Hour</option>
+                                  <option value="1.5 hr">1.5 Hours</option>
+                                  <option value="2 hr">2 Hours</option>
+                                  <option value="2.5 hr">2.5 Hours</option>
+                                  <option value="3 hr">3 Hours</option>
+                                  <option value="4 hr">4 Hours</option>
+                                  <option value="5 hr">5 Hours</option>
+                                  <option value="6 hr">6 Hours</option>
+                                  <option value="8 hr">8 hours</option>
+                                  <option value="10 hr">10+ hours</option>
+                                </select>
                               </div>
                               <div>
                                 <label className="block text-xs text-gray-500 mb-0.5">Location</label>
                                 <input className="input-field" value={ev.location} onChange={e => updateEvent(di, ei, 'location', e.target.value)} placeholder="Location" />
                               </div>
                               <div className="sm:col-span-2">
-                                <label className="block text-xs text-gray-500 mb-0.5">Vendor</label>
+                                <div className="flex items-center justify-between mb-0.5">
+                                  <label className="block text-xs text-gray-500">Vendor</label>
+                                  <button type="button" onClick={() => setIsVendorModalOpen(true)} className="text-[10px] font-semibold text-primary-600 hover:text-primary-700">
+                                    + Add Vendor
+                                  </button>
+                                </div>
                                 <select
                                   className="input-field"
                                   value={ev.vendor || ''}
@@ -406,7 +493,8 @@ export default function PackageFormModal({ isOpen, onClose, onSubmit, initialDat
                                 })()}
                               </div>
                             </div>
-                            <div>
+
+                            <div className="mt-2">
                               <label className="block text-xs text-gray-500 mb-0.5">Description</label>
                               <textarea rows={2} className="input-field resize-none" value={ev.description} onChange={e => updateEvent(di, ei, 'description', e.target.value)} placeholder="Event details…" />
                             </div>
@@ -462,6 +550,13 @@ export default function PackageFormModal({ isOpen, onClose, onSubmit, initialDat
         </div>
 
       </form>
+
+      <VendorFormModal
+        isOpen={isVendorModalOpen}
+        onClose={() => setIsVendorModalOpen(false)}
+        onSubmit={handleVendorSubmit}
+        loading={creatingVendor}
+      />
     </Modal>
   )
 }
