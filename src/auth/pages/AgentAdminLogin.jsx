@@ -8,7 +8,6 @@ import { getPostLoginRedirectPath } from '@/shared/utils/roleHelpers.js'
 const REGISTRATION_LINKS = [
   { to: '/travelAgency/parent/register', label: 'Parent agency' },
   { to: '/travelAgency/child/register', label: 'Child agent' },
-  { to: '/travelAgency/subchild/register', label: 'Sub-child' },
 ]
 
 export default function AgentAdminLogin() {

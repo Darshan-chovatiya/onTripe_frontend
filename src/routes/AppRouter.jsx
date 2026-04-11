@@ -11,7 +11,6 @@ import ForgotPassword from '@/auth/pages/ForgotPassword.jsx'
 import Landing from '@/pages/Landing.jsx'
 
 import ChildAgentRegister from '@/travelAgency/childAgency/auth/Register.jsx'
-import SubChildRegister from '@/travelAgency/subChild/auth/Register.jsx'
 
 import ParentAgentRegister from '@/travelAgency/parentAgency/auth/Register.jsx'
 
@@ -90,11 +89,7 @@ export default function AppRouter() {
 
       <Route path="/admin/login" element={<Navigate to="/login" replace />} />
 
-      {/* Child and Sub-child Auth Routes */}
-      <Route path="/travelAgency/child/login" element={<Navigate to="/login" replace />} />
       <Route path="/travelAgency/child/register" element={<ChildAgentRegister />} />
-      <Route path="/travelAgency/subchild/login" element={<Navigate to="/login" replace />} />
-      <Route path="/travelAgency/subchild/register" element={<SubChildRegister />} />
 
       {/* Parent Auth Routes */}
       <Route path="/travelAgency/parent/login" element={<Navigate to="/login" replace />} />

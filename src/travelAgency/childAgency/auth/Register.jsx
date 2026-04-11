@@ -59,8 +59,8 @@ export default function ChildRegister() {
 
   return (
     <AgencyRegisterShell
-      title="Child agent registration"
-      subtitle="Use the invitation code from your parent agency. KYC is required before your account is active."
+      title="Agent registration"
+      subtitle="Use the invitation code from your parent or child agency. KYC is required before your account is active."
     >
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
@@ -148,7 +148,7 @@ export default function ChildRegister() {
         <div>
           <label htmlFor="child-parent-code" className="mb-1.5 flex items-center gap-2 text-sm font-medium text-gray-700">
             <Key className="h-4 w-4 text-primary-600" strokeWidth={2} />
-            Parent invitation code <span className="text-red-500">*</span>
+            Invitation code <span className="text-red-500">*</span>
           </label>
           <input
             id="child-parent-code"
