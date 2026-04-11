@@ -19,8 +19,9 @@ import { useAuth } from '@/shared/context/AuthContext.jsx'
 import ConfirmDialog from '@/shared/components/ConfirmDialog.jsx'
 import { ROLES } from '@/shared/utils/constants.js'
 import { getApiErrorMessage } from '@/shared/services/apiHelpers.js'
+import { getApiOrigin } from '@/shared/config/api.js'
 
-const SOCKET_URL = import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || 'http://localhost:5001'
+const SOCKET_URL = getApiOrigin()
 const BASE_IMG_URL = SOCKET_URL
 const PAGE_SIZE = 30
 

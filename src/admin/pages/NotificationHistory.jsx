@@ -16,15 +16,12 @@ import {
 import adminApi from '@/admin/services/adminApi'
 import Loader from '@/shared/components/Loader.jsx'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
-
-const BASE_URL =
-  import.meta.env.VITE_API_BASE_URL?.replace('/api', '').replace(/\/$/, '') ||
-  'http://localhost:5001'
+import { joinUploadUrl } from '@/shared/config/api.js'
 
 function resolveUrl(p) {
   if (!p) return null
   if (String(p).startsWith('http')) return p
-  return `${BASE_URL}/${String(p).replace(/^\/+/, '')}`
+  return joinUploadUrl(p)
 }
 
 function isImage(filename = '', contentType = '') {

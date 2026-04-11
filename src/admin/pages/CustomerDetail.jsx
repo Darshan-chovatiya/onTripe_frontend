@@ -27,12 +27,12 @@ import { useToast } from '@/shared/components/ToastContainer.jsx'
 import Loader from '@/shared/components/Loader.jsx'
 import ExcelJS from 'exceljs'
 import { saveAs } from 'file-saver'
+import { joinUploadUrl } from '@/shared/config/api.js'
 
 const getFileUrl = (path) => {
   if (!path) return null
   if (path.startsWith('http')) return path
-  const base = import.meta.env.VITE_API_BASE_URL?.replace('/api', '').replace(/\/$/, '') || 'http://localhost:5001'
-  return `${base}/${String(path).replace(/^\//, '')}`
+  return joinUploadUrl(path)
 }
 
 function TicketsPopup({ tickets, bookingId, onClose }) {

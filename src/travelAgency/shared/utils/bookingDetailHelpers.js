@@ -1,13 +1,9 @@
-const BASE =
-  typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE_URL
-    ? String(import.meta.env.VITE_API_BASE_URL).replace('/api', '').replace(/\/$/, '')
-    : 'http://localhost:5001'
+import { joinUploadUrl } from '@/shared/config/api.js'
 
 /** @param {string | null | undefined} path */
 export function filePublicUrl(path) {
   if (!path || typeof path !== 'string') return null
-  const p = path.replace(/\\/g, '/')
-  return `${BASE}/${p.replace(/^\//, '')}`
+  return joinUploadUrl(path)
 }
 
 export function formatDateTime(v) {

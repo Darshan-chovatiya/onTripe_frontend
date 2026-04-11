@@ -1,20 +1,9 @@
 import axios from 'axios'
 import { AUTH_STORAGE_KEY } from '@/shared/utils/constants.js'
-
-function getApiBaseURL() {
-  const envUrl = import.meta.env.VITE_API_BASE_URL
-  if (!envUrl || envUrl.includes('VITE_API_BASE_URL')) {
-    return 'http://localhost:5001/api'
-  }
-  let baseURL = envUrl.trim()
-  if (!baseURL.endsWith('/api')) {
-    baseURL = baseURL.endsWith('/') ? `${baseURL}api` : `${baseURL}/api`
-  }
-  return baseURL.replace(/([^:]\/)\/+/g, '$1')
-}
+import { getApiBaseUrl } from '@/shared/config/api.js'
 
 const axiosInstance = axios.create({
-  baseURL: getApiBaseURL(),
+  baseURL: getApiBaseUrl(),
   headers: { 'Content-Type': 'application/json' },
 })
 
@@ -36,7 +25,6 @@ axiosInstance.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`
     }
     if (config.data instanceof FormData) {
-      // Let the browser set the correct multipart/form-data boundary
       config.headers = { ...config.headers }
       delete config.headers['Content-Type']
     }
@@ -60,8 +48,7 @@ axiosInstance.interceptors.response.use(
       url.includes('/auth/verify-otp')
 
     const isStaleSession =
-      (status === 401) ||
-      (status === 404 && message.toLowerCase().includes('user not found'))
+      status === 401 || (status === 404 && message.toLowerCase().includes('user not found'))
 
     if (isStaleSession && !isAuthUrl) {
       localStorage.removeItem(AUTH_STORAGE_KEY)

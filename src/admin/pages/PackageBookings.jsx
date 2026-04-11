@@ -20,12 +20,12 @@ import {
 import adminApi from '@/admin/services/adminApi'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
 import { exportBookingsExcel } from '@/admin/utils/exportExcel.js'
+import { joinUploadUrl } from '@/shared/config/api.js'
 
 const getFileUrl = (path) => {
   if (!path) return null
   if (path.startsWith('http')) return path
-  const base = import.meta.env.VITE_API_BASE_URL?.replace('/api', '').replace(/\/$/, '') || 'http://localhost:5001'
-  return `${base}/${String(path).replace(/^\//, '')}`
+  return joinUploadUrl(path)
 }
 
 const PLACEHOLDER_IMG =

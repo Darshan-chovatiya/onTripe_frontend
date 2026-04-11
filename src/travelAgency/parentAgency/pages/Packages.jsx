@@ -14,14 +14,12 @@ import Loader from '@/shared/components/Loader.jsx'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
 import { getApiErrorMessage } from '@/shared/services/apiHelpers.js'
 import { AGENCY_PANEL_BASE } from '@/travelAgency/agency/constants.js'
-
-const BASE_URL =
-  import.meta.env.VITE_API_BASE_URL?.replace('/api', '').replace(/\/$/, '') || 'http://localhost:5001'
+import { getApiOrigin } from '@/shared/config/api.js'
 
 const imgUrl = (p) => {
   if (!p) return null
   if (p.startsWith('http')) return p
-  return `${BASE_URL}/${String(p).replace(/^\//, '')}`
+  return `${getApiOrigin()}/${String(p).replace(/^\//, '')}`
 }
 
 const PLACEHOLDER = 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&q=80&w=600'

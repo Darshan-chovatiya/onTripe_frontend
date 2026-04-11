@@ -17,11 +17,11 @@ import {
   Star,
 } from 'lucide-react'
 import { destinationText } from '@/travelAgency/parentAgency/utils/packageDisplay.js'
+import { joinUploadUrl } from '@/shared/config/api.js'
 
 export default function PackageCard({ pkg, onEdit, onUpdateCover, onUpdateGallery, onDeactivate, onActivate, onChat, onRating }) {
   const navigate = useNavigate()
-  const base = import.meta.env.VITE_API_BASE_URL?.replace('/api', '').replace(/\/$/, '') || 'http://localhost:5001'
-  const coverSrc = pkg.coverImage ? `${base}/${pkg.coverImage.replace(/\\/g, '/')}` : null
+  const coverSrc = pkg.coverImage ? joinUploadUrl(pkg.coverImage) : null
 
   const fmtPrice = Number(pkg.basePrice).toLocaleString('en-IN')
   const dest = destinationText(pkg.destination)

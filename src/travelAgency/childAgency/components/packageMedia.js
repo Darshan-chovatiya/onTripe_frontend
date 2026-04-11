@@ -1,8 +1,8 @@
 /** Resolve uploaded package image paths from API (same pattern as parent PackageCard). */
+import { getApiOrigin } from '@/shared/config/api.js'
+
 export function getAssetBaseUrl() {
-  const env = import.meta.env.VITE_API_BASE_URL
-  if (!env || env.includes('VITE_API_BASE_URL')) return 'http://localhost:5001'
-  return env.replace(/\/api\/?$/, '').replace(/\/$/, '')
+  return getApiOrigin()
 }
 
 export function packageCoverUrl(coverImage) {

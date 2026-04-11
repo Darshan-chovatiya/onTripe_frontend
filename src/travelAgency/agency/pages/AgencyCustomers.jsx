@@ -32,6 +32,7 @@ import {
 import Pagination from '@/admin/components/Pagination.jsx'
 import { exportToExcel } from '@/admin/utils/exportExcel.js'
 import CustomerDetailModal from '@/travelAgency/shared/components/CustomerDetailModal.jsx'
+import { getApiOrigin } from '@/shared/config/api.js'
 
 const PAGE_SIZE = 10
 
@@ -73,11 +74,7 @@ export default function AgencyCustomers() {
   const [viewOpen, setViewOpen] = useState(false)
   const [viewTarget, setViewTarget] = useState(null)
 
-  const publicBaseUrl = useMemo(() => {
-    const envUrl = import.meta.env.VITE_API_BASE_URL
-    const base = !envUrl || envUrl.includes('VITE_API_BASE_URL') ? 'http://localhost:5001' : envUrl.trim().replace(/\/+$/, '')
-    return base.endsWith('/api') ? base.slice(0, -4) : base
-  }, [])
+  const publicBaseUrl = useMemo(() => getApiOrigin(), [])
 
   const attachmentHref = (attachment) =>
     attachment?.url

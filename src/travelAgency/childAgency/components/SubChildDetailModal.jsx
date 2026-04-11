@@ -5,6 +5,7 @@ import {
 } from 'lucide-react'
 import Modal from '@/shared/components/Modal.jsx'
 import Button from '@/shared/components/Button.jsx'
+import { getApiOrigin } from '@/shared/config/api.js'
 
 const KYC_STYLES = {
   approved: 'bg-emerald-50 text-emerald-900 ring-emerald-100',
@@ -66,13 +67,9 @@ export default function SubChildDetailModal({ isOpen, onClose, subId, fetchOne, 
     return () => { cancelled = true }
   }, [isOpen, subId, fetchOne])
 
-  const baseUrl = useMemo(() => {
-    const envUrl = import.meta.env.VITE_API_BASE_URL
-    const base = !envUrl || envUrl.includes('VITE_API_BASE_URL') ? 'http://localhost:5001' : envUrl.trim().replace(/\/+$/, '')
-    return base.endsWith('/api') ? base.slice(0, -4) : base
-  }, [])
+  const baseUrl = useMemo(() => getApiOrigin(), [])
 
-  const docHref = (path) => path ? `${baseUrl}/${String(path).replace(/^\/+/, '')}` : ''
+  const docHref = (path) => (path ? `${baseUrl}/${String(path).replace(/^\/+/, '')}` : '')
 
   const kyc = sub?.kyc || {}
   const kycStatus = kyc.status || 'pending'

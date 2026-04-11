@@ -5,8 +5,7 @@ import Button from '@/shared/components/Button.jsx'
 import { uploadBookingTickets, deleteBookingTicket } from '@/travelAgency/parentAgency/services/parentAgencyApi.js'
 import { getApiErrorMessage } from '@/shared/services/apiHelpers.js'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
-
-const BASE = import.meta.env.VITE_API_BASE_URL?.replace('/api', '').replace(/\/$/, '') || 'http://localhost:5001'
+import { joinUploadUrl } from '@/shared/config/api.js'
 
 /** @type {{ file: File, name: string }[]} */
 const EMPTY = []
@@ -175,7 +174,7 @@ export default function BookingTicketsModal({ isOpen, onClose, booking, onUpdate
                 </div>
                 <div className="flex items-center gap-1.5 flex-shrink-0">
                   <a
-                    href={`${BASE}/${t.fileUrl?.replace(/\\/g, '/')}`}
+                    href={joinUploadUrl(t.fileUrl)}
                     target="_blank"
                     rel="noreferrer"
                     className="p-1.5 rounded-lg text-gray-400 hover:text-primary-600 hover:bg-primary-50 transition-colors"

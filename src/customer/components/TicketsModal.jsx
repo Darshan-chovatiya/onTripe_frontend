@@ -1,8 +1,9 @@
 import { Ticket, Clock, FileText, Eye, Download, X } from 'lucide-react'
 import Modal from '@/shared/components/Modal.jsx'
 
-const BASE_IMG_URL = import.meta.env.VITE_API_BASE_URL?.replace('/api', '').replace(/\/$/, '') || 'http://localhost:5001'
-const getFullUrl = (path) => path ? `${BASE_IMG_URL}/${path.replace(/\\/g, '/')}` : null
+import { joinUploadUrl } from '@/shared/config/api.js'
+
+const getFullUrl = (path) => (path ? joinUploadUrl(path) : null)
 
 export default function TicketsModal({ isOpen, onClose, tickets = [] }) {
     return (

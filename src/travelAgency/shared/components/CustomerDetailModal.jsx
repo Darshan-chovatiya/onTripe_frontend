@@ -4,6 +4,7 @@ import {
   Clock, Briefcase, ShieldCheck, X, ChevronLeft, ChevronRight,
 } from 'lucide-react'
 import Modal from '@/shared/components/Modal.jsx'
+import { getApiOrigin } from '@/shared/config/api.js'
 
 function formatDateTime(v) {
   if (!v) return '—'
@@ -39,11 +40,7 @@ function isImage(url) {
   return /\.(jpg|jpeg|png|gif|webp|bmp|svg)(\?|$)/i.test(url)
 }
 
-const BASE_URL = (() => {
-  const envUrl = import.meta.env.VITE_API_BASE_URL
-  const base = !envUrl || envUrl.includes('VITE_API_BASE_URL') ? 'http://localhost:5001' : envUrl.trim().replace(/\/+$/, '')
-  return base.endsWith('/api') ? base.slice(0, -4) : base
-})()
+const BASE_URL = getApiOrigin()
 
 function fileHref(path) {
   return path ? `${BASE_URL}/${String(path).replace(/^\/+/, '')}` : ''

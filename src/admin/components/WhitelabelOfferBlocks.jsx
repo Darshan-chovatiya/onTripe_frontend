@@ -12,12 +12,12 @@ import {
   Sparkles,
   Users,
 } from 'lucide-react'
+import { joinUploadUrl } from '@/shared/config/api.js'
 
 export function getFileUrl(path) {
   if (!path) return null
   if (path.startsWith('http')) return path
-  const base = import.meta.env.VITE_API_BASE_URL?.replace('/api', '').replace(/\/$/, '') || 'http://localhost:5001'
-  return `${base}/${String(path).replace(/^\//, '')}`
+  return joinUploadUrl(path)
 }
 
 function formatCommission(wl) {

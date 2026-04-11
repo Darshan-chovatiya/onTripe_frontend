@@ -21,6 +21,7 @@ import Loader from '@/shared/components/Loader.jsx'
 import Modal from '@/shared/components/Modal.jsx'
 import CustomDropdown from '@/shared/components/CustomDropdown.jsx'
 import Pagination from '@/admin/components/Pagination.jsx'
+import { joinUploadUrl } from '@/shared/config/api.js'
 
 /** Neutral count pill — matches other admin tables (gray border / soft bg) */
 const countPillClass =
@@ -29,8 +30,7 @@ const countPillClass =
 const getFileUrl = (path) => {
   if (!path) return null
   if (path.startsWith('http')) return path
-  const base = import.meta.env.VITE_API_BASE_URL?.replace('/api', '').replace(/\/$/, '') || 'http://localhost:5001'
-  return `${base}/${String(path).replace(/^\//, '')}`
+  return joinUploadUrl(path)
 }
 
 const dayActivities = (day) => {

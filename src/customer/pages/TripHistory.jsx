@@ -15,9 +15,9 @@ import {
 import axiosInstance from '@/shared/services/axiosInstance.js'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
 import Loader from '@/shared/components/Loader.jsx'
+import { joinUploadUrl } from '@/shared/config/api.js'
 
-const BASE_IMG_URL = import.meta.env.VITE_API_BASE_URL?.replace('/api', '').replace(/\/$/, '') || 'http://localhost:5001'
-const getFullUrl = (path) => path ? `${BASE_IMG_URL}/${path.replace(/\\/g, '/')}` : null
+const getFullUrl = (path) => (path ? joinUploadUrl(path) : null)
 
 export default function TripHistory() {
   const navigate = useNavigate()

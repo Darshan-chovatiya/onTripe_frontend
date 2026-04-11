@@ -4,9 +4,9 @@ import {
   CalendarDays, Image, AlertTriangle, X, ChevronLeft, ChevronRight,
 } from 'lucide-react'
 import Modal from '@/shared/components/Modal.jsx'
+import { joinUploadUrl } from '@/shared/config/api.js'
 
-const BASE = import.meta.env.VITE_API_BASE_URL?.replace('/api', '').replace(/\/$/, '') || 'http://localhost:5001'
-const imgUrl = (path) => path ? `${BASE}/${path.replace(/\\/g, '/')}` : null
+const imgUrl = (path) => (path ? joinUploadUrl(path) : null)
 
 function Row({ label, children }) {
   return (

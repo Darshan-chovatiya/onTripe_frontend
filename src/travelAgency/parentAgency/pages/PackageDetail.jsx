@@ -12,9 +12,9 @@ import { getPackageById } from '@/travelAgency/parentAgency/services/parentAgenc
 import { getApiErrorMessage } from '@/shared/services/apiHelpers.js'
 import { getDetailExperiencesForDay } from '@/travelAgency/parentAgency/utils/packageItineraryTransforms.js'
 import { destinationText } from '@/travelAgency/parentAgency/utils/packageDisplay.js'
+import { joinUploadUrl } from '@/shared/config/api.js'
 
-const BASE = import.meta.env.VITE_API_BASE_URL?.replace('/api', '').replace(/\/$/, '') || 'http://localhost:5001'
-const imgUrl = (path) => (path ? `${BASE}/${path.replace(/\\/g, '/')}` : null)
+const imgUrl = (path) => (path ? joinUploadUrl(path) : null)
 
 const EVENT_TYPE_COLORS = {
   activity:      'bg-blue-50 text-blue-800 ring-blue-100',

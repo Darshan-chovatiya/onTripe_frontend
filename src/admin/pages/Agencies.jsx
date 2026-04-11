@@ -36,12 +36,11 @@ import Modal from '@/shared/components/Modal.jsx'
 import CustomDropdown from '@/shared/components/CustomDropdown.jsx'
 import Pagination from '@/admin/components/Pagination.jsx'
 import { exportToExcel } from '@/admin/utils/exportExcel.js'
+import { joinUploadUrl } from '@/shared/config/api.js'
 
 const getFileUrl = (path) => {
   if (!path) return '#'
-  const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001'
-  const cleanBase = baseUrl.trim().replace(/\/api$/, '')
-  return `${cleanBase}/${path.replace(/\\/g, '/')}`
+  return joinUploadUrl(path)
 }
 
 const isPdfPath = (path) => typeof path === 'string' && /\.pdf$/i.test(path)

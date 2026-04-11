@@ -7,6 +7,7 @@ import { getApiErrorMessage } from '@/shared/services/apiHelpers.js'
 import { formItineraryToApi, apiItineraryToForm } from '@/travelAgency/parentAgency/utils/packageItineraryTransforms.js'
 import VendorFormModal from './VendorFormModal.jsx'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
+import { joinUploadUrl } from '@/shared/config/api.js'
 
 const EVENT_TYPES = ['Activity', 'Hotel CheckIn', 'Hotel CheckOut', 'Transfer', 'Other']
 
@@ -505,7 +506,7 @@ export default function PackageFormModal({ isOpen, onClose, onSubmit, initialDat
                               {ev.image ? (
                                 <div className="relative inline-block">
                                   <img
-                                    src={`${import.meta.env.VITE_API_BASE_URL?.replace('/api', '').replace(/\/$/, '') || 'http://localhost:5001'}/${ev.image.replace(/\\/g, '/')}`}
+                                    src={joinUploadUrl(ev.image)}
                                     alt="event"
                                     className="h-20 w-32 object-cover rounded-lg border border-gray-200"
                                   />
