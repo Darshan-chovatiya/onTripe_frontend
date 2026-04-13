@@ -1,80 +1,171 @@
-import { Ticket, Clock, FileText, Eye, Download, X } from 'lucide-react'
+import { useState, useCallback } from 'react'
+import { Ticket, Clock, FileText, Eye, Download, Loader2 } from 'lucide-react'
 import Modal from '@/shared/components/Modal.jsx'
-
+import { useToast } from '@/shared/components/ToastContainer.jsx'
 import { joinUploadUrl } from '@/shared/config/api.js'
 
 const getFullUrl = (path) => (path ? joinUploadUrl(path) : null)
 
+/** Safe filename for download; preserves extension from path when missing on name. */
+function downloadFileName(ticket) {
+  const raw = (ticket?.name || 'travel-ticket').trim() || 'travel-ticket'
+  const cleaned = raw.replace(/[/\\?%*:|"<>]/g, '-').replace(/\s+/g, ' ').trim()
+  const path = String(ticket?.fileUrl || '')
+  const extMatch = path.match(/\.([a-z0-9]{2,5})$/i)
+  const ext = extMatch ? `.${extMatch[1].toLowerCase()}` : ''
+  const base = cleaned.slice(0, 120)
+  if (ext && !base.toLowerCase().endsWith(ext)) return `${base}${ext}`
+  return base || `ticket${ext || ''}`
+}
+
+function isImagePath(fileUrl) {
+  return /\.(jpg|jpeg|png|webp|gif|svg)$/i.test(String(fileUrl || ''))
+}
+
+function isPdfPath(fileUrl) {
+  return /\.pdf$/i.test(String(fileUrl || ''))
+}
+
 export default function TicketsModal({ isOpen, onClose, tickets = [] }) {
-    return (
-        <Modal
-            isOpen={isOpen}
-            onClose={onClose}
-            title="Your Travel Tickets"
-            size="lg"
-        >
-            <div className="space-y-6">
-                {!tickets || tickets.length === 0 ? (
-                    <div className="text-center py-12">
-                        <div className="w-16 h-16 rounded-full bg-gray-50 flex items-center justify-center mx-auto mb-4">
-                            <Ticket className="text-gray-300" size={32} />
-                        </div>
-                        <p className="text-gray-500 font-bold uppercase tracking-widest text-xs">No tickets uploaded yet</p>
-                        <p className="text-gray-400 text-xs mt-1">Check back later or contact your agent.</p>
-                    </div>
-                ) : (
-                    <div className="grid gap-4">
-                        {tickets.map((ticket, idx) => {
-                            const url = getFullUrl(ticket.fileUrl)
-                            const isImage = /\.(jpg|jpeg|png|webp|gif|svg)$/i.test(ticket.fileUrl || '')
+  const { toast } = useToast()
+  const [downloadingIdx, setDownloadingIdx] = useState(null)
 
-                            return (
-                                <div key={idx} className="flex flex-col sm:flex-row items-center gap-6 p-5 rounded-3xl bg-gray-50 border border-gray-100 group transition-all hover:bg-white hover:shadow-xl hover:shadow-gray-200/50">
-                                    {/* Preview */}
-                                    <div className="w-full sm:w-24 h-24 rounded-2xl overflow-hidden bg-white border border-gray-100 flex items-center justify-center shrink-0">
-                                        {isImage ? (
-                                            <img src={url} alt={ticket.name} className="w-full h-full object-cover" />
-                                        ) : (
-                                            <div className="flex flex-col items-center gap-2 text-primary-300">
-                                                <FileText size={32} />
-                                                <span className="text-[8px] font-black uppercase tracking-widest">PDF DOCUMENT</span>
-                                            </div>
-                                        )}
-                                    </div>
+  const handleDownload = useCallback(
+    async (ticket, idx) => {
+      const url = getFullUrl(ticket.fileUrl)
+      if (!url) {
+        toast.error('No file URL for this ticket')
+        return
+      }
+      const filename = downloadFileName(ticket)
+      setDownloadingIdx(idx)
+      try {
+        const res = await fetch(url, { method: 'GET', mode: 'cors', credentials: 'omit' })
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        const blob = await res.blob()
+        const objectUrl = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = objectUrl
+        a.download = filename
+        a.rel = 'noopener'
+        a.style.display = 'none'
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        URL.revokeObjectURL(objectUrl)
+      } catch {
+        try {
+          const res2 = await fetch(url, { method: 'GET', mode: 'cors', credentials: 'include' })
+          if (!res2.ok) throw new Error(`HTTP ${res2.status}`)
+          const blob = await res2.blob()
+          const objectUrl = URL.createObjectURL(blob)
+          const a = document.createElement('a')
+          a.href = objectUrl
+          a.download = filename
+          a.rel = 'noopener'
+          a.style.display = 'none'
+          document.body.appendChild(a)
+          a.click()
+          document.body.removeChild(a)
+          URL.revokeObjectURL(objectUrl)
+        } catch {
+          toast.error('Download failed. Try View to open the file, or check your connection.')
+        }
+      } finally {
+        setDownloadingIdx(null)
+      }
+    },
+    [toast]
+  )
 
-                                    {/* Details */}
-                                    <div className="flex-1 text-center sm:text-left">
-                                        <h4 className="text-xl font-black text-gray-900 group-hover:text-primary-600 transition-colors">{ticket.name}</h4>
-                                        <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mt-1 flex items-center justify-center sm:justify-start gap-2">
-                                            <Clock size={12} />
-                                            Issued on {new Date(ticket.uploadedAt).toLocaleDateString()}
-                                        </p>
-                                    </div>
-
-                                    {/* Actions */}
-                                    <div className="flex items-center gap-3 w-full sm:w-auto mt-4 sm:mt-0">
-                                        <a
-                                            href={url}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-2xl bg-white border border-gray-100 text-gray-700 font-black text-xs uppercase tracking-widest hover:text-primary-600 hover:border-primary-200 transition-all active:scale-95 shadow-sm"
-                                        >
-                                            <Eye size={16} /> View
-                                        </a>
-                                        <a
-                                            href={url}
-                                            download
-                                            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-2xl bg-primary-600 text-white font-black text-xs uppercase tracking-widest hover:bg-primary-700 transition-all active:scale-95 shadow-lg shadow-primary-100"
-                                        >
-                                            <Download size={16} /> Download
-                                        </a>
-                                    </div>
-                                </div>
-                            )
-                        })}
-                    </div>
-                )}
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title="Your Travel Tickets" size="lg">
+      <div className="space-y-5">
+        {!tickets || tickets.length === 0 ? (
+          <div className="flex flex-col items-center py-12 text-center">
+            <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gray-100">
+              <Ticket className="h-7 w-7 text-gray-400" strokeWidth={1.75} />
             </div>
-        </Modal>
-    )
+            <p className="text-sm font-medium text-gray-900">No tickets yet</p>
+            <p className="mt-1 max-w-xs text-xs text-gray-500">Your agency can upload tickets here. Check back later or contact them.</p>
+          </div>
+        ) : (
+          <ul className="space-y-4">
+            {tickets.map((ticket, idx) => {
+              const url = getFullUrl(ticket.fileUrl)
+              const isImage = isImagePath(ticket.fileUrl)
+              const isPdf = isPdfPath(ticket.fileUrl)
+              const isBusy = downloadingIdx === idx
+
+              return (
+                <li
+                  key={`${ticket.fileUrl || ''}-${idx}`}
+                  className="flex flex-col gap-4 rounded-2xl border border-gray-200/90 bg-gray-50/50 p-4 transition hover:border-gray-300 hover:bg-white sm:flex-row sm:items-center sm:gap-5 sm:p-5"
+                >
+                  <div className="flex min-w-0 flex-1 items-start gap-4 sm:items-center">
+                    <div className="h-20 w-20 shrink-0 overflow-hidden rounded-xl border border-gray-200 bg-white sm:h-[5.5rem] sm:w-[5.5rem]">
+                      {isImage && url ? (
+                        <img src={url} alt="" className="h-full w-full object-cover" />
+                      ) : (
+                        <div className="flex h-full w-full flex-col items-center justify-center gap-1 text-primary-500">
+                          <FileText className="h-8 w-8" strokeWidth={1.5} />
+                          <span className="text-[10px] font-medium uppercase tracking-wide text-gray-400">
+                            {isPdf ? 'PDF' : 'File'}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1 text-left">
+                      <h4 className="truncate text-base font-semibold text-gray-900">{ticket.name || 'Ticket'}</h4>
+                      <p className="mt-1 flex items-center gap-1.5 text-xs text-gray-500">
+                        <Clock className="h-3.5 w-3.5 shrink-0" />
+                        {ticket.uploadedAt
+                          ? `Issued ${new Date(ticket.uploadedAt).toLocaleDateString(undefined, {
+                              day: 'numeric',
+                              month: 'short',
+                              year: 'numeric',
+                            })}`
+                          : '—'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex w-full gap-2 sm:w-auto sm:shrink-0">
+                    {url ? (
+                      <>
+                        <a
+                          href={url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:border-primary-200 hover:bg-primary-50/50 hover:text-primary-700 sm:flex-initial"
+                        >
+                          <Eye className="h-4 w-4" strokeWidth={2} />
+                          View
+                        </a>
+                        <button
+                          type="button"
+                          disabled={isBusy}
+                          onClick={() => handleDownload(ticket, idx)}
+                          className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-primary-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-primary-700 disabled:opacity-60 sm:flex-initial"
+                        >
+                          {isBusy ? (
+                            <Loader2 className="h-4 w-4 animate-spin" strokeWidth={2} />
+                          ) : (
+                            <Download className="h-4 w-4" strokeWidth={2} />
+                          )}
+                          Download
+                        </button>
+                      </>
+                    ) : (
+                      <p className="text-xs text-gray-400">File unavailable</p>
+                    )}
+                  </div>
+                </li>
+              )
+            })}
+          </ul>
+        )}
+      </div>
+    </Modal>
+  )
 }

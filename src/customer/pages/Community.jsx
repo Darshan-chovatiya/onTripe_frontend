@@ -83,7 +83,7 @@ export default function Community() {
   )
 
   return (
-    <div className="flex h-[calc(100vh-5.5rem)] rounded-[2rem] overflow-hidden shadow-2xl shadow-gray-200/50 bg-white animate-fade-in">
+    <div className="flex h-[calc(100vh-5.5rem)] overflow-hidden shadow-2xl shadow-gray-200/50 bg-white animate-fade-in">
 
       {/* Mobile overlay */}
       {sidebarOpen && (
@@ -158,6 +158,8 @@ export default function Community() {
               key={selected.packageId}
               packageId={selected.packageId}
               customerId={selected.customerId}
+              layout="page"
+              flush
               onToggleSidebar={() => setSidebarOpen(true)}
             />
           </div>

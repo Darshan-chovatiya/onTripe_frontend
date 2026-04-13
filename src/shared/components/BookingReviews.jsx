@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
-import { Star, Edit2, Trash2, MessageSquare, Calendar, ChevronLeft, ChevronRight, Eye, EyeOff } from 'lucide-react'
+import { Star, Edit2, Trash2, MessageSquare, Calendar, ChevronLeft, ChevronRight, Eye, EyeOff, Info, AlertCircle } from 'lucide-react'
 import axiosInstance from '@/shared/services/axiosInstance.js'
 import { useAuth } from '@/shared/context/AuthContext'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
@@ -8,6 +8,21 @@ import Loader from '@/shared/components/Loader.jsx'
 import ConfirmDialog from '@/shared/components/ConfirmDialog.jsx'
 
 const PAGE_SIZE = 5
+
+function normalizeBookingStatus(s) {
+    return String(s ?? '').toLowerCase().trim()
+}
+
+function formatScheduleDateDisplay(iso) {
+    if (!iso) return null
+    try {
+        const d = new Date(iso)
+        if (Number.isNaN(d.getTime())) return null
+        return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })
+    } catch {
+        return null
+    }
+}
 
 // Star rating input component
 function StarInput({ value, onChange, label }) {
@@ -64,16 +79,17 @@ function StarDisplay({ value, size = 14, showLabel = false }) {
 function ReadMore({ text, limit = 200 }) {
     const [expanded, setExpanded] = useState(false)
     if (!text) return null
-    if (text.length <= limit) return <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-wrap break-words">{text}</p>
+    if (text.length <= limit) return <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-gray-600 dark:text-gray-300">{text}</p>
 
     return (
         <div className="space-y-1">
-            <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-wrap break-words">
+            <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-gray-600 dark:text-gray-300">
                 {expanded ? text : `${text.substring(0, limit)}...`}
             </p>
             <button
+                type="button"
                 onClick={() => setExpanded(!expanded)}
-                className="text-[10px] font-bold text-primary-600 hover:text-primary-700 uppercase tracking-wider"
+                className="text-[10px] font-semibold uppercase tracking-wider text-primary-600 hover:text-primary-700"
             >
                 {expanded ? 'Show Less' : 'Read More'}
             </button>
@@ -95,10 +111,21 @@ export default function BookingReviews({
     bookingStatus,
     readOnly = false,
     reviewsApiEndpoint,
+    variant = 'default',
 }) {
+    const isCustomerVariant = variant === 'customer'
     const { toast } = useToast()
     const { user } = useAuth()
     const isAdmin = user?.role === 'admin' || user?.role === 'super_admin'
+
+    const needsEligibility = isCustomerVariant && !readOnly && Boolean(bookingId)
+    const [eligibilityLoading, setEligibilityLoading] = useState(needsEligibility)
+    const [liveBookingStatus, setLiveBookingStatus] = useState(null)
+    const [eligibilityErr, setEligibilityErr] = useState(null)
+    const [pkgMismatch, setPkgMismatch] = useState(false)
+    const [reviewWindowOpen, setReviewWindowOpen] = useState(false)
+    const [scheduleDateIso, setScheduleDateIso] = useState(null)
+    const [scheduleSource, setScheduleSource] = useState(null)
 
     // ── Summary stats ──────────────────────────────────────────────
     const [avgOverallRating, setAvgOverallRating] = useState(0)
@@ -112,6 +139,7 @@ export default function BookingReviews({
 
     // ── My review (write mode) ─────────────────────────────────────
     const [myReview, setMyReview] = useState(null)
+    const [myReviewLoading, setMyReviewLoading] = useState(() => !readOnly && Boolean(bookingId))
     const [summaryLoading, setSummaryLoading] = useState(true)
 
     // ── Modal state ────────────────────────────────────────────────
@@ -123,7 +151,75 @@ export default function BookingReviews({
     // ── Visibility Toggling ────────────────────────────────────────
     const [confirmVisibility, setConfirmVisibility] = useState({ open: false, reviewId: null, currentlyVisible: true })
 
-    const canReview = !readOnly && ['ongoing', 'completed'].includes(bookingStatus)
+    useEffect(() => {
+        if (!needsEligibility) {
+            setEligibilityLoading(false)
+            setLiveBookingStatus(null)
+            setEligibilityErr(null)
+            setPkgMismatch(false)
+            setReviewWindowOpen(false)
+            setScheduleDateIso(null)
+            setScheduleSource(null)
+            return
+        }
+        let cancelled = false
+        setEligibilityLoading(true)
+        setEligibilityErr(null)
+        setPkgMismatch(false)
+        ;(async () => {
+            try {
+                const res = await axiosInstance.get(`/customer/bookings/${bookingId}/review-eligibility`)
+                if (cancelled) return
+                if (res.data?.success && res.data.data) {
+                    const d = res.data.data
+                    setLiveBookingStatus(d.bookingStatus)
+                    setPkgMismatch(Boolean(packageId && d.packageId && String(d.packageId) !== String(packageId)))
+                    setReviewWindowOpen(Boolean(d.reviewWindowOpen))
+                    setScheduleDateIso(d.scheduleDate || null)
+                    setScheduleSource(d.scheduleSource ?? null)
+                } else {
+                    setLiveBookingStatus(null)
+                    setReviewWindowOpen(false)
+                    setScheduleDateIso(null)
+                    setScheduleSource(null)
+                    setEligibilityErr(res.data?.message || 'Could not load trip status')
+                }
+            } catch (e) {
+                if (cancelled) return
+                setLiveBookingStatus(null)
+                setReviewWindowOpen(false)
+                setScheduleDateIso(null)
+                setScheduleSource(null)
+                setEligibilityErr(e?.response?.data?.message || 'Could not verify your trip. Try again from your booking.')
+            } finally {
+                if (!cancelled) setEligibilityLoading(false)
+            }
+        })()
+        return () => {
+            cancelled = true
+        }
+    }, [needsEligibility, bookingId, packageId])
+
+    const normalizedPropStatus = normalizeBookingStatus(bookingStatus)
+    const effectiveStatus = needsEligibility
+        ? eligibilityErr || eligibilityLoading
+            ? null
+            : normalizeBookingStatus(liveBookingStatus)
+        : normalizedPropStatus
+
+    const canReview =
+        !readOnly &&
+        Boolean(bookingId) &&
+        !eligibilityErr &&
+        !pkgMismatch &&
+        (needsEligibility
+            ? reviewWindowOpen
+            : Boolean(effectiveStatus) && ['ongoing', 'completed'].includes(effectiveStatus))
+
+    const showFullLoader =
+        summaryLoading ||
+        (needsEligibility && eligibilityLoading) ||
+        (!readOnly && Boolean(bookingId) && myReviewLoading)
 
     // ── Resolve which endpoint to use ──────────────────────────────
     // Admin passes reviewsApiEndpoint = '/admin/reviews?packageId=xxx'
@@ -180,12 +276,20 @@ export default function BookingReviews({
 
     // ── Fetch my review (write mode) ───────────────────────────────
     const fetchMyReview = useCallback(async () => {
-        if (readOnly || !bookingId) return
+        if (readOnly || !bookingId) {
+            setMyReview(null)
+            setMyReviewLoading(false)
+            return
+        }
+        setMyReviewLoading(true)
         try {
             const res = await axiosInstance.get(`/customer/bookings/${bookingId}/review`)
             if (res.data?.success) setMyReview(res.data.data.review)
+            else setMyReview(null)
         } catch {
             setMyReview(null)
+        } finally {
+            setMyReviewLoading(false)
         }
     }, [readOnly, bookingId])
 
@@ -281,58 +385,143 @@ export default function BookingReviews({
         }
     }
 
-    if (summaryLoading) {
+    if (showFullLoader) {
         return (
             <div className="flex flex-col items-center justify-center py-16">
                 <Loader size="lg" />
-                <p className="mt-3 text-sm text-gray-400">Loading reviews...</p>
+                <p className="mt-3 text-sm text-gray-400 dark:text-gray-500">
+                    {needsEligibility && eligibilityLoading
+                        ? 'Loading your trip and reviews…'
+                        : myReviewLoading
+                          ? 'Loading your review…'
+                          : 'Loading reviews…'}
+                </p>
             </div>
         )
     }
 
     const visibleReviews = allReviews.filter(r => r._id !== myReview?._id)
 
+    const listMaxH = isCustomerVariant ? 'max-h-[min(60vh,36rem)]' : 'max-h-[55vh]'
+
     return (
-        <div className="grid grid-cols-1 md:grid-cols-[260px_1fr] gap-0 min-h-0">
+        <div className="grid min-h-0 grid-cols-1 gap-0 md:grid-cols-[minmax(0,240px)_1fr] lg:grid-cols-[minmax(0,260px)_1fr]">
 
             {/* ── LEFT: Stats + My Review ────────────────────────── */}
-            <div className="border-r border-gray-100 pr-6 space-y-5 md:sticky md:top-0 h-fit">
+            <div className="mb-6 space-y-5 border-b border-gray-100 pb-6 md:sticky md:top-0 md:mb-0 md:h-fit md:border-b-0 md:border-r md:pr-6 md:pb-0 dark:border-white/10">
 
                 {/* Summary Stats Cards */}
                 <div className="space-y-3">
-                    <h4 className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Review Summary</h4>
+                    <h4 className="text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">Review summary</h4>
 
                     {/* Score Card */}
-                    <div className="bg-gray-50 border border-gray-100 rounded-2xl p-5">
-                        <p className="text-[10px] font-bold opacity-70 mb-1 uppercase tracking-wider">Experience Score</p>
+                    <div className="rounded-2xl border border-gray-100 bg-gray-50/80 p-5 dark:border-white/10 dark:bg-white/[0.04]">
+                        <p className="mb-1 text-[10px] font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Experience score</p>
                         <div className="flex items-center gap-3">
-                            <span className="text-4xl font-black">{avgOverallRating.toFixed(1)}</span>
+                            <span className="text-3xl font-semibold tabular-nums text-gray-900 dark:text-white">{avgOverallRating.toFixed(1)}</span>
                             <StarDisplay value={Math.round(avgOverallRating)} size={16} />
                         </div>
                     </div>
 
                     {/* Count Card */}
-                    <div className="bg-gray-50 border border-gray-100 rounded-2xl p-5">
-                        <p className="text-[10px] font-bold text-gray-400 mb-1 uppercase tracking-wider">Total Feedback</p>
+                    <div className="rounded-2xl border border-gray-100 bg-gray-50/80 p-5 dark:border-white/10 dark:bg-white/[0.04]">
+                        <p className="mb-1 text-[10px] font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Total feedback</p>
                         <div className="flex items-center justify-between">
-                            <span className="text-3xl font-black text-gray-900">{totalReviews}</span>
-                            <div className="p-2 bg-white rounded-xl border border-gray-100">
-                                <MessageSquare size={16} className="text-primary-600" />
+                            <span className="text-2xl font-semibold tabular-nums text-gray-900 dark:text-white">{totalReviews}</span>
+                            <div className="rounded-xl border border-gray-100 bg-white p-2 dark:border-white/10 dark:bg-gray-900">
+                                <MessageSquare size={16} className="text-primary-600 dark:text-primary-400" />
                             </div>
                         </div>
                     </div>
                 </div>
 
+                {/* Customer guidance & errors */}
+                {!readOnly && isCustomerVariant && pkgMismatch ? (
+                    <div className="flex gap-3 rounded-2xl border border-amber-200/90 bg-amber-50/90 p-4 text-sm text-amber-950 dark:border-amber-900/45 dark:bg-amber-950/35 dark:text-amber-100">
+                        <AlertCircle className="h-5 w-5 shrink-0" strokeWidth={2} aria-hidden />
+                        <p>
+                            This page doesn&apos;t match your booking&apos;s package. Go back to{' '}
+                            <span className="font-medium">Trips</span>, open your booking, and tap <span className="font-medium">Review</span>{' '}
+                            again so your experience score is saved to the right trip.
+                        </p>
+                    </div>
+                ) : null}
+
+                {!readOnly && isCustomerVariant && eligibilityErr ? (
+                    <div className="flex gap-3 rounded-2xl border border-red-200/90 bg-red-50/90 p-4 text-sm text-red-950 dark:border-red-900/45 dark:bg-red-950/35 dark:text-red-100">
+                        <AlertCircle className="h-5 w-5 shrink-0" strokeWidth={2} aria-hidden />
+                        <p>{eligibilityErr}</p>
+                    </div>
+                ) : null}
+
+                {!readOnly && isCustomerVariant && !bookingId ? (
+                    <div className="flex gap-3 rounded-2xl border border-gray-200 bg-gray-50/90 p-4 text-sm text-gray-700 dark:border-white/10 dark:bg-gray-900/40 dark:text-gray-200">
+                        <Info className="h-5 w-5 shrink-0 text-primary-600 dark:text-primary-400" strokeWidth={2} aria-hidden />
+                        <p>
+                            Your experience score is tied to a specific booking. Open <span className="font-medium">Guest experience</span>{' '}
+                            from <span className="font-medium">Trips</span> → your trip → <span className="font-medium">Review</span> to add
+                            or edit a rating.
+                        </p>
+                    </div>
+                ) : null}
+
+                {!readOnly &&
+                bookingId &&
+                !myReview &&
+                !pkgMismatch &&
+                !eligibilityErr &&
+                needsEligibility &&
+                !reviewWindowOpen &&
+                effectiveStatus !== 'cancelled' ? (
+                    <div className="flex gap-3 rounded-2xl border border-sky-200/80 bg-sky-50/80 p-4 text-sm text-sky-950 dark:border-sky-900/40 dark:bg-sky-950/30 dark:text-sky-100">
+                        <Info className="h-5 w-5 shrink-0 text-sky-600 dark:text-sky-400" strokeWidth={2} aria-hidden />
+                        <div className="space-y-1">
+                            <p className="font-medium">Reviews open from the first day on your itinerary</p>
+                            <p className="text-sky-900/90 dark:text-sky-100/90">
+                                {scheduleDateIso ? (
+                                    <>
+                                        You can add your experience score on or after{' '}
+                                        <span className="font-medium">{formatScheduleDateDisplay(scheduleDateIso)}</span>
+                                        {scheduleSource === 'itinerary'
+                                            ? ' (the date on day 1 of your itinerary).'
+                                            : scheduleSource === 'travelDate'
+                                              ? ' (your trip travel date — day 1 has no date on the itinerary).'
+                                              : '.'}
+                                    </>
+                                ) : (
+                                    <>
+                                        We couldn&apos;t find a date on day 1 of your itinerary or a travel date for this
+                                        booking. Add a date in the agency app or contact your agency; then you can rate
+                                        here from that day onward.
+                                    </>
+                                )}
+                            </p>
+                        </div>
+                    </div>
+                ) : null}
+
+                {!readOnly && bookingId && !myReview && !pkgMismatch && !eligibilityErr && effectiveStatus === 'cancelled' ? (
+                    <div className="flex gap-3 rounded-2xl border border-gray-200 bg-gray-50/90 p-4 text-sm text-gray-700 dark:border-white/10 dark:bg-gray-900/40 dark:text-gray-200">
+                        <Info className="h-5 w-5 shrink-0 text-gray-500 dark:text-gray-400" strokeWidth={2} aria-hidden />
+                        <p>
+                            This trip was <span className="font-medium">cancelled</span>, so experience ratings aren&apos;t available. You can still read feedback from other guests below.
+                        </p>
+                    </div>
+                ) : null}
+
                 {/* Write review CTA */}
                 {!readOnly && canReview && !myReview && (
-                    <div className="bg-primary-50 border border-primary-100 rounded-2xl p-4 text-center space-y-2">
-                        <p className="text-sm font-bold text-gray-800">Share your experience</p>
-                        <p className="text-xs text-gray-500">How was the trip?</p>
+                    <div className="space-y-3 rounded-2xl border border-primary-100 bg-primary-50/60 p-4 text-center dark:border-primary-900/40 dark:bg-primary-950/25">
+                        <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">Share your experience</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                            Rate your trip from 1 to 5 stars. Optional short comment — you can edit or remove your review later.
+                        </p>
                         <button
+                            type="button"
                             onClick={openAddModal}
-                            className="w-full bg-primary-600 text-white rounded-xl py-2 text-xs font-bold hover:bg-primary-700 transition-colors"
+                            className="w-full rounded-xl bg-primary-600 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary-700"
                         >
-                            Write a Review
+                            Add your experience score
                         </button>
                     </div>
                 )}
@@ -340,18 +529,23 @@ export default function BookingReviews({
                 {/* My Review */}
                 {!readOnly && myReview && (
                     <div className="space-y-2">
-                        <h4 className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Your Review</h4>
-                        <div className="bg-primary-50/50 border border-primary-100 rounded-2xl p-4">
-                            <div className="flex justify-between items-start mb-3">
+                        <h4 className="text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">Your review</h4>
+                        {isCustomerVariant ? (
+                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                                Your score is included in this package&apos;s guest experience average when your review is visible to others.
+                            </p>
+                        ) : null}
+                        <div className="rounded-2xl border border-primary-100 bg-primary-50/40 p-4 dark:border-primary-900/35 dark:bg-primary-950/20">
+                            <div className="mb-3 flex items-start justify-between">
                                 <div>
-                                    <p className="text-[9px] text-gray-400 uppercase font-bold">Your Rating</p>
+                                    <p className="text-[10px] font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Your rating</p>
                                     <StarDisplay value={myReview.overallRating} size={14} showLabel />
                                 </div>
                                 <div className="flex gap-1">
-                                    <button onClick={openEditModal} className="p-1.5 text-gray-400 hover:text-primary-600 transition-colors rounded-lg hover:bg-white">
+                                    <button type="button" onClick={openEditModal} className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-white hover:text-primary-600 dark:hover:bg-white/10">
                                         <Edit2 size={13} />
                                     </button>
-                                    <button onClick={handleDelete} className="p-1.5 text-gray-400 hover:text-red-600 transition-colors rounded-lg hover:bg-white">
+                                    <button type="button" onClick={handleDelete} className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-white hover:text-red-600 dark:hover:bg-white/10">
                                         <Trash2 size={13} />
                                     </button>
                                 </div>
@@ -361,7 +555,7 @@ export default function BookingReviews({
                                     <ReadMore text={myReview.comment} limit={150} />
                                 </div>
                             )}
-                            <p className="mt-3 text-[9px] text-gray-400 flex items-center gap-1">
+                            <p className="mt-3 flex items-center gap-1 text-[10px] text-gray-400 dark:text-gray-500">
                                 <Calendar size={9} /> {new Date(myReview.createdAt).toLocaleDateString()}
                             </p>
                         </div>
@@ -370,10 +564,10 @@ export default function BookingReviews({
             </div>
 
             {/* ── RIGHT: Paginated Reviews ─────────────────────────── */}
-            <div className="pl-6 flex flex-col gap-4 min-h-0">
+            <div className="flex min-h-0 flex-col gap-4 md:pl-6">
                 <div className="flex items-center justify-between">
-                    <h4 className="text-[10px] font-bold uppercase tracking-widest text-gray-400">
-                        Guest Feedback {totalReviews > 0 && <span className="normal-case text-gray-300">({totalReviews})</span>}
+                    <h4 className="text-xs font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                        Guest feedback {totalReviews > 0 && <span className="normal-case text-gray-300 dark:text-gray-600">({totalReviews})</span>}
                     </h4>
                     {totalReviews === 0 && !reviewsLoading && (
                         <span className="text-xs text-gray-400">No reviews yet</span>
@@ -381,34 +575,34 @@ export default function BookingReviews({
                 </div>
 
                 {/* Review Cards */}
-                <div className="flex-1 space-y-3 overflow-y-auto max-h-[55vh] pr-1" style={{ scrollbarWidth: 'thin' }}>
+                <div className={`flex-1 space-y-3 overflow-y-auto pr-1 ${listMaxH}`} style={{ scrollbarWidth: 'thin' }}>
                     {reviewsLoading ? (
                         <div className="flex justify-center py-12">
                             <Loader size="md" />
                         </div>
                     ) : visibleReviews.length === 0 ? (
-                        <div className="py-16 text-center text-gray-400">
+                        <div className="py-16 text-center text-gray-400 dark:text-gray-500">
                             <MessageSquare className="mx-auto mb-2 opacity-20" size={28} />
-                            <p className="text-sm">No reviews found.</p>
+                            <p className="text-sm">No reviews yet.</p>
                         </div>
                     ) : (
                         visibleReviews.map((r) => (
                             <div
                                 key={r._id}
-                                className={`group relative border rounded-2xl p-4 transition-all ${!r.isVisible
-                                        ? 'bg-red-50/30 border-red-100 shadow-inner'
-                                        : 'bg-white border-gray-100 hover:border-gray-200 hover:shadow-sm'
+                                className={`group relative rounded-2xl border p-4 transition-all ${!r.isVisible
+                                        ? 'border-red-100 bg-red-50/30 shadow-inner dark:border-red-900/40 dark:bg-red-950/20'
+                                        : 'border-gray-100 bg-white hover:border-gray-200 hover:shadow-sm dark:border-white/10 dark:bg-gray-950/50 dark:hover:border-white/15'
                                     }`}
                             >
                                 {/* Header */}
-                                <div className="flex items-center justify-between mb-3">
+                                <div className="mb-3 flex items-center justify-between">
                                     <div className="flex items-center gap-2.5">
-                                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary-100 to-indigo-100 flex items-center justify-center text-primary-700 font-bold text-sm shrink-0">
+                                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary-100 to-indigo-100 text-sm font-semibold text-primary-700 dark:from-primary-900/50 dark:to-indigo-900/50 dark:text-primary-300">
                                             {(r.customer?.name || 'G')[0].toUpperCase()}
                                         </div>
                                         <div>
-                                            <p className="text-sm font-bold text-gray-900 leading-tight">{r.customer?.name || 'Guest'}</p>
-                                            <p className="text-[10px] text-gray-400">{new Date(r.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                                            <p className="text-sm font-semibold leading-tight text-gray-900 dark:text-white">{r.customer?.name || 'Guest'}</p>
+                                            <p className="text-[10px] text-gray-400 dark:text-gray-500">{new Date(r.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
                                         </div>
                                     </div>
                                     <div className="text-right flex items-center gap-3">
@@ -456,15 +650,16 @@ export default function BookingReviews({
 
                 {/* Pagination */}
                 {totalPages > 1 && (
-                    <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-                        <p className="text-xs text-gray-400">
-                            Page <span className="font-bold text-gray-700">{page}</span> of <span className="font-bold text-gray-700">{totalPages}</span>
+                    <div className="flex items-center justify-between border-t border-gray-100 pt-3 dark:border-white/10">
+                        <p className="text-xs text-gray-400 dark:text-gray-500">
+                            Page <span className="font-semibold text-gray-700 dark:text-gray-300">{page}</span> of <span className="font-semibold text-gray-700 dark:text-gray-300">{totalPages}</span>
                         </p>
                         <div className="flex items-center gap-1">
                             <button
+                                type="button"
                                 onClick={() => handlePageChange(page - 1)}
                                 disabled={page <= 1 || reviewsLoading}
-                                className="p-1.5 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                                className="rounded-lg border border-gray-200 p-1.5 text-gray-500 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-30 dark:border-white/10 dark:hover:bg-white/5"
                             >
                                 <ChevronLeft size={14} />
                             </button>
@@ -477,12 +672,13 @@ export default function BookingReviews({
                                 }
                                 return (
                                     <button
+                                        type="button"
                                         key={pg}
                                         onClick={() => handlePageChange(pg)}
                                         disabled={reviewsLoading}
-                                        className={`w-7 h-7 rounded-lg text-xs font-bold transition-colors ${pg === page
+                                        className={`h-7 w-7 rounded-lg text-xs font-semibold transition-colors ${pg === page
                                             ? 'bg-primary-600 text-white'
-                                            : 'border border-gray-200 text-gray-500 hover:bg-gray-50'
+                                            : 'border border-gray-200 text-gray-500 hover:bg-gray-50 dark:border-white/10 dark:hover:bg-white/5'
                                             }`}
                                     >
                                         {pg}
@@ -490,9 +686,10 @@ export default function BookingReviews({
                                 )
                             })}
                             <button
+                                type="button"
                                 onClick={() => handlePageChange(page + 1)}
                                 disabled={page >= totalPages || reviewsLoading}
-                                className="p-1.5 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                                className="rounded-lg border border-gray-200 p-1.5 text-gray-500 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-30 dark:border-white/10 dark:hover:bg-white/5"
                             >
                                 <ChevronRight size={14} />
                             </button>
@@ -508,21 +705,23 @@ export default function BookingReviews({
                 title={isEditing ? 'Update your review' : 'Write a review'}
                 size="md"
                 footer={
-                    <div className="flex justify-end gap-3 p-4 border-t border-gray-100">
-                        <button onClick={() => setModalOpen(false)} className="px-4 py-2 text-sm text-gray-500 hover:text-gray-800 transition-colors">Cancel</button>
+                    <div className="flex justify-end gap-3 border-t border-gray-100 p-4 dark:border-white/10">
+                        <button type="button" onClick={() => setModalOpen(false)} className="rounded-xl px-4 py-2 text-sm text-gray-500 transition-colors hover:text-gray-800 dark:hover:text-gray-200">Cancel</button>
                         <button
+                            type="button"
                             onClick={handleSubmit}
                             disabled={submitting}
-                            className="px-6 py-2 bg-primary-600 text-white rounded-xl text-sm font-bold hover:bg-primary-700 disabled:opacity-50 transition-colors"
+                            className="rounded-xl bg-primary-600 px-6 py-2 text-sm font-medium text-white transition-colors hover:bg-primary-700 disabled:opacity-50"
                         >
                             {submitting ? 'Saving...' : isEditing ? 'Update' : 'Submit'}
                         </button>
                     </div>
                 }
             >
-                <div className="p-6 space-y-5">
+                <div className="space-y-5 p-6">
                     <div className="text-center">
-                        <p className="text-sm font-bold text-gray-700 mb-3">How was your experience?</p>
+                        <p className="mb-1 text-sm font-semibold text-gray-700 dark:text-gray-200">How was your experience?</p>
+                        <p className="mb-3 text-xs text-gray-500 dark:text-gray-400">Tap 1–5 stars for your experience score (required).</p>
                         <StarInput
                             label=""
                             value={form.rating}
@@ -541,7 +740,7 @@ export default function BookingReviews({
                             value={form.comment}
                             onChange={(e) => setForm((f) => ({ ...f, comment: e.target.value }))}
                             placeholder="Tell us more about your experience (max 500 words)..."
-                            className="w-full border border-gray-200 rounded-xl p-3.5 text-sm text-gray-700 focus:ring-2 focus:ring-primary-100 focus:border-primary-200 outline-none transition-all resize-none bg-gray-50/50"
+                            className="w-full resize-none rounded-xl border border-gray-200 bg-gray-50/50 p-3.5 text-sm text-gray-700 outline-none transition-all focus:border-primary-200 focus:ring-2 focus:ring-primary-100 dark:border-white/10 dark:bg-white/[0.04] dark:text-gray-200 dark:focus:border-primary-800 dark:focus:ring-primary-900/40"
                         />
                     </div>
                 </div>
