@@ -274,7 +274,7 @@ export default function AgencyCreateBookingModal({
           </div>
         )}
 
-        {availablePackages?.length > 0 && (
+        {/* {availablePackages?.length > 0 && (
           <div>
             <label htmlFor="bk-pkg" className="mb-1 block text-sm font-medium text-gray-700">Package</label>
             <select id="bk-pkg" className="input-field w-full" value={packageId}
@@ -286,7 +286,7 @@ export default function AgencyCreateBookingModal({
               ))}
             </select>
           </div>
-        )}
+        )} */}
 
         {!activeWhitelabels.length && !availablePackages?.length && (
           <p className="text-xs text-amber-700">No packages available. Create a white-label under Packages first.</p>
