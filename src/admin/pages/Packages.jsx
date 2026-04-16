@@ -4,12 +4,10 @@ import {
   Package,
   MapPin,
   User,
-  Clock,
   Search,
   Eye,
   Download,
   MessageSquare,
-  Calendar,
   Layers,
   Ticket,
   Star,
@@ -18,7 +16,6 @@ import {
 import adminApi from '@/admin/services/adminApi'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
 import Loader from '@/shared/components/Loader.jsx'
-import Modal from '@/shared/components/Modal.jsx'
 import CustomDropdown from '@/shared/components/CustomDropdown.jsx'
 import Pagination from '@/admin/components/Pagination.jsx'
 
@@ -31,248 +28,6 @@ const getFileUrl = (path) => {
   if (path.startsWith('http')) return path
   const base = import.meta.env.VITE_API_BASE_URL?.replace('/api', '').replace(/\/$/, '') || 'http://localhost:5001'
   return `${base}/${String(path).replace(/^\//, '')}`
-}
-
-const dayActivities = (day) => {
-  if (!day) return []
-  if (Array.isArray(day.experiences) && day.experiences.length) return day.experiences
-  if (Array.isArray(day.events) && day.events.length) return day.events
-  return []
-}
-
-const activityTitle = (ev) => ev?.name || ev?.title || 'Activity'
-
-function PackageDetailModal({ isOpen, onClose, pkg }) {
-  if (!isOpen || !pkg) return null
-
-  const price = Number(pkg.basePrice) || 0
-
-  return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Package details" size="xl">
-      <div className="space-y-6">
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-          <div className="min-w-0 flex-1 space-y-3">
-            <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-              <h2 className="text-lg font-semibold tracking-tight text-gray-900">{pkg.title}</h2>
-              {pkg.destination ? (
-                <span className="inline-flex items-center gap-1 text-xs font-medium text-primary-700">
-                  <MapPin className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
-                  {pkg.destination}
-                </span>
-              ) : null}
-            </div>
-            <p className="text-sm leading-relaxed text-gray-600">
-              {pkg.description?.trim() || 'No description provided.'}
-            </p>
-            <div className="flex flex-wrap gap-2">
-              <span className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-gray-50 px-2.5 py-1 text-[11px] font-medium text-gray-800">
-                <Clock className="h-3.5 w-3.5 text-gray-500" strokeWidth={2} />
-                {pkg.totalDays ?? '—'} days
-              </span>
-              <span className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-gray-50 px-2.5 py-1 text-[11px] font-medium text-gray-800">
-                <User className="h-3.5 w-3.5 text-gray-500" strokeWidth={2} />
-                Max {pkg.maxCapacity ?? '—'}
-              </span>
-              <span className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-gray-50 px-2.5 py-1 text-[11px] font-medium text-gray-800">
-                <Package className="h-3.5 w-3.5 text-gray-500" strokeWidth={2} />
-                {pkg.currency || 'INR'}
-              </span>
-              <span
-                className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[11px] font-medium ${pkg.isActive
-                  ? 'border-emerald-200 bg-emerald-50 text-emerald-900'
-                  : 'border-gray-200 bg-gray-100 text-gray-700'
-                  }`}
-              >
-                <span className={`h-1.5 w-1.5 rounded-full ${pkg.isActive ? 'bg-emerald-500' : 'bg-gray-400'}`} />
-                {pkg.isActive ? 'Active' : 'Inactive'}
-              </span>
-              <span
-                className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-gray-50 px-2.5 py-1 text-[11px] font-medium text-gray-800"
-                title="Total bookings for this package"
-              >
-                <Ticket className="h-3.5 w-3.5 text-gray-500" strokeWidth={2} />
-                {`${Number(pkg.bookingCount) || 0} booking${(Number(pkg.bookingCount) || 0) === 1 ? '' : 's'
-                  }`}
-              </span>
-              <span
-                className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-gray-50 px-2.5 py-1 text-[11px] font-medium text-gray-800"
-                title="Whitelabel copies of this package"
-              >
-                <Layers className="h-3.5 w-3.5 text-gray-500" strokeWidth={2} />
-                {`${Number(pkg.whitelabelCount) || 0} whitelabel${(Number(pkg.whitelabelCount) || 0) === 1 ? '' : 's'
-                  }`}
-              </span>
-            </div>
-          </div>
-          <div className="min-w-[160px] shrink-0 rounded-xl border border-gray-200 bg-gray-50/80 px-5 py-4 text-center">
-            <div className="text-[10px] font-medium uppercase tracking-wide text-gray-500">Base price</div>
-            <div className="mt-1 text-2xl font-semibold tabular-nums text-gray-900">₹{price.toLocaleString('en-IN')}</div>
-            <div className="mt-0.5 text-[11px] text-gray-500">Per person</div>
-          </div>
-        </div>
-
-        <div>
-          <h3 className="text-xs font-medium uppercase tracking-wide text-gray-500">Parent agency</h3>
-          <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <div className="rounded-lg border border-gray-200 bg-white p-3 shadow-sm">
-              <div className="text-[11px] font-medium text-gray-500">Name</div>
-              <div className="mt-0.5 text-sm font-semibold text-gray-900">{pkg.createdBy?.name || '—'}</div>
-              <div className="mt-1 text-xs font-medium text-primary-700">{pkg.createdBy?.agentCode || '—'}</div>
-            </div>
-            <div className="rounded-lg border border-gray-200 bg-white p-3 shadow-sm">
-              <div className="text-[11px] font-medium text-gray-500">Email</div>
-              <div className="mt-0.5 truncate text-sm font-medium text-gray-900">{pkg.createdBy?.email || '—'}</div>
-            </div>
-            <div className="rounded-lg border border-gray-200 bg-white p-3 shadow-sm">
-              <div className="text-[11px] font-medium text-gray-500">Phone</div>
-              <div className="mt-0.5 text-sm font-medium text-gray-900">{pkg.createdBy?.phone || '—'}</div>
-            </div>
-          </div>
-        </div>
-
-        {(pkg.inclusions?.length > 0 || pkg.exclusions?.length > 0 || pkg.importantNotes?.length > 0) && (
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-            {pkg.inclusions?.length > 0 ? (
-              <div className="rounded-lg border border-gray-100 bg-white p-3">
-                <h4 className="text-[11px] font-medium uppercase tracking-wide text-gray-500">Inclusions</h4>
-                <ul className="mt-2 list-inside list-disc space-y-1 text-sm text-gray-700">
-                  {pkg.inclusions.map((line, i) => (
-                    <li key={i}>{line}</li>
-                  ))}
-                </ul>
-              </div>
-            ) : null}
-            {pkg.exclusions?.length > 0 ? (
-              <div className="rounded-lg border border-gray-100 bg-white p-3">
-                <h4 className="text-[11px] font-medium uppercase tracking-wide text-gray-500">Exclusions</h4>
-                <ul className="mt-2 list-inside list-disc space-y-1 text-sm text-gray-700">
-                  {pkg.exclusions.map((line, i) => (
-                    <li key={i}>{line}</li>
-                  ))}
-                </ul>
-              </div>
-            ) : null}
-            {pkg.importantNotes?.length > 0 ? (
-              <div className="rounded-lg border border-amber-100 bg-amber-50/40 p-3 md:col-span-3">
-                <h4 className="text-[11px] font-medium uppercase tracking-wide text-amber-900/80">Important notes</h4>
-                <ul className="mt-2 list-inside list-disc space-y-1 text-sm text-amber-950/90">
-                  {pkg.importantNotes.map((line, i) => (
-                    <li key={i}>{line}</li>
-                  ))}
-                </ul>
-              </div>
-            ) : null}
-          </div>
-        )}
-
-        <div>
-          <div className="mb-4 flex items-center justify-between gap-2">
-            <h3 className="text-xs font-medium uppercase tracking-wide text-gray-500">Itinerary</h3>
-            <span className="text-xs text-gray-400">{pkg.itinerary?.length || 0} days</span>
-          </div>
-          <div className="max-h-[min(60vh,520px)] overflow-y-auto pr-1">
-            {pkg.itinerary?.length ? (
-              <div className="relative">
-                {/* Vertical line */}
-                <div className="absolute left-[18px] top-0 h-full w-px bg-gray-200" />
-
-                <div className="space-y-0">
-                  {pkg.itinerary.map((day, idx) => {
-                    const acts = dayActivities(day)
-                    return (
-                      <div key={idx} className="relative pl-12 pb-6 last:pb-0">
-                        {/* Day circle */}
-                        <div className="absolute left-0 top-0 flex h-9 w-9 items-center justify-center rounded-full bg-gray-900 text-xs font-bold text-white ring-4 ring-white">
-                          {day.day ?? idx + 1}
-                        </div>
-
-                        {/* Day header */}
-                        <div className="mb-2 flex items-baseline gap-2 pt-1">
-                          <span className="text-sm font-semibold text-gray-900">
-                            {day.title || `Day ${day.day ?? idx + 1}`}
-                          </span>
-                          {day.dateSuffix && (
-                            <span className="text-[11px] text-gray-400">{day.dateSuffix}</span>
-                          )}
-                        </div>
-
-                        {day.description && (
-                          <p className="mb-3 text-xs leading-relaxed text-gray-500">{day.description}</p>
-                        )}
-
-                        {/* Events timeline */}
-                        {acts.length > 0 && (
-                          <div className="space-y-2">
-                            {acts.map((ev, eIdx) => (
-                              <div key={eIdx} className="flex gap-3 rounded-xl border border-gray-100 bg-gray-50/60 p-3">
-                                {/* Time dot */}
-                                <div className="flex flex-col items-center pt-0.5">
-                                  <div className="h-2 w-2 rounded-full bg-primary-500 ring-2 ring-primary-100" />
-                                  {eIdx < acts.length - 1 && (
-                                    <div className="mt-1 w-px flex-1 bg-gray-200" />
-                                  )}
-                                </div>
-                                <div className="min-w-0 flex-1 pb-1">
-                                  <div className="flex flex-wrap items-center gap-2">
-                                    <span className="text-xs font-semibold text-gray-900">{activityTitle(ev)}</span>
-                                    {(ev.category || ev.type) && (
-                                      <span className="rounded-md bg-primary-50 px-1.5 py-0.5 text-[10px] font-medium capitalize text-primary-700 ring-1 ring-primary-100">
-                                        {ev.category || ev.type}
-                                      </span>
-                                    )}
-                                    {ev.startTime && (
-                                      <span className="text-[11px] text-gray-400">
-                                        {ev.startTime}{ev.endTime ? ` – ${ev.endTime}` : ''}
-                                      </span>
-                                    )}
-                                  </div>
-                                  {ev.location && (
-                                    <p className="mt-0.5 text-[11px] text-gray-400">📍 {ev.location}</p>
-                                  )}
-                                  {ev.description && (
-                                    <p className="mt-1 text-[11px] leading-snug text-gray-500">{ev.description}</p>
-                                  )}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-
-                        {!acts.length && (
-                          <p className="text-xs text-gray-400 italic">No activities scheduled</p>
-                        )}
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-            ) : (
-              <p className="text-sm text-gray-500">No itinerary data.</p>
-            )}
-          </div>
-        </div>
-
-        <div>
-          <h3 className="text-xs font-medium uppercase tracking-wide text-gray-500">Cover & gallery</h3>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {pkg.coverImage ? (
-              <img
-                src={getFileUrl(pkg.coverImage)}
-                alt=""
-                className="h-24 w-32 rounded-lg border border-gray-200 object-cover"
-              />
-            ) : null}
-            {pkg.images?.map((img, i) => (
-              <img key={i} src={getFileUrl(img)} alt="" className="h-24 w-32 rounded-lg border border-gray-200 object-cover" />
-            ))}
-            {!pkg.coverImage && (!pkg.images || pkg.images.length === 0) ? (
-              <p className="text-xs text-gray-400">No images</p>
-            ) : null}
-          </div>
-        </div>
-      </div>
-    </Modal>
-  )
 }
 
 function activeStatusBadgeClass(isActive) {
@@ -312,12 +67,7 @@ export default function Packages() {
   const [statusFilter, setStatusFilter] = useState('all')
   const [parentFilter, setParentFilter] = useState(readParentAgencyIdFromUrl)
   const [parentOptions, setParentOptions] = useState([{ value: 'all', label: 'All parent agencies' }])
-  const [selectedPkg, setSelectedPkg] = useState(null)
-  const [isDetailOpen, setIsDetailOpen] = useState(false)
-  const [chatContext, setChatContext] = useState(null)
   const [exportLoading, setExportLoading] = useState(false)
-
-  /** Ignore stale listPackages responses when parent/page/search changes quickly (e.g. deep link from Agencies). */
   const packagesFetchIdRef = useRef(0)
 
   const statusOptions = useMemo(
@@ -430,11 +180,6 @@ export default function Packages() {
   useEffect(() => {
     loadPackages()
   }, [loadPackages])
-
-  const closeDetail = useCallback(() => {
-    setIsDetailOpen(false)
-    setSelectedPkg(null)
-  }, [])
 
   const openChat = useCallback(
     (pkg) => {
@@ -757,10 +502,7 @@ export default function Packages() {
                         <div className="flex items-center justify-end gap-1.5">
                           <button
                             type="button"
-                            onClick={() => {
-                              setSelectedPkg(pkg)
-                              setIsDetailOpen(true)
-                            }}
+                            onClick={() => navigate(`/admin/packages/${pkg._id}/detail`)}
                             className="inline-flex cursor-pointer rounded-lg border border-gray-200 bg-white p-2 text-gray-500 transition-colors hover:border-primary-200 hover:text-primary-700 active:scale-95"
                             title="View details"
                             aria-label={`View ${pkg.title}`}
@@ -803,8 +545,6 @@ export default function Packages() {
           </>
         )}
       </div>
-
-      <PackageDetailModal isOpen={isDetailOpen} onClose={closeDetail} pkg={selectedPkg} />
     </div>
   )
 }

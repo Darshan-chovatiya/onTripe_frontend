@@ -22,6 +22,7 @@ import AdminSettings from '@/admin/pages/Settings.jsx'
 import AdminCustomers from '@/admin/pages/Customers.jsx'
 import AdminCustomerDetail from '@/admin/pages/CustomerDetail.jsx'
 import AdminPackages from '@/admin/pages/Packages.jsx'
+import AdminPackageDetail from '@/admin/pages/PackageDetail.jsx'
 import AdminPackageWhitelabels from '@/admin/pages/PackageWhitelabels.jsx'
 import AdminPackageBookings from '@/admin/pages/PackageBookings.jsx'
 import AdminPackageCommunity from '@/admin/pages/PackageCommunity.jsx'
@@ -122,6 +123,7 @@ export default function AppRouter() {
         <Route path="packages/:packageId/community" element={<AdminPackageCommunity />} />
         <Route path="packages/:packageId/reviews" element={<PackageReviewsPage />} />
         <Route path="packages" element={<AdminPackages />} />
+        <Route path="packages/:packageId/detail" element={<AdminPackageDetail />} />
         <Route path="agencies" element={<AdminAgencies />} />
         <Route path="agencies/network/:parentId" element={<AdminAgencyNetwork />} />
         <Route path="child-agencies/:agentId/whitelabels" element={<AdminAgentWhitelabels />} />
