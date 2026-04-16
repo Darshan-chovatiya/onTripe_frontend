@@ -1,14 +1,10 @@
-import { useMemo, useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { CalendarDays, Eye, IndianRupee, Plus, Ticket, MessageSquare, Pencil, Search, Download, RefreshCw } from 'lucide-react'
 import { useChildBookings } from '@/travelAgency/childAgency/hooks/useChildBookings.js'
-import { useChildPackages } from '@/travelAgency/childAgency/hooks/useChildPackages.js'
 import { listBookings } from '@/travelAgency/childAgency/services/childAgencyApi.js'
-import CreateBookingModal from '@/travelAgency/childAgency/components/CreateBookingModal.jsx'
-import BookingDetailModal from '@/travelAgency/childAgency/components/BookingDetailModal.jsx'
 import Button from '@/shared/components/Button.jsx'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
-import { getApiErrorMessage } from '@/shared/services/apiHelpers.js'
 import { basePackageFromBooking } from '@/travelAgency/shared/utils/bookingDetailHelpers.js'
 import Pagination from '@/admin/components/Pagination.jsx'
 import { exportToExcel } from '@/admin/utils/exportExcel.js'
@@ -41,13 +37,8 @@ function statusClass(status) {
 
 export default function Bookings() {
   const navigate = useNavigate()
-  const { bookings, loading, error, create, fetchBooking, updateBooking, currentUserId, fetchBookings, pagination } = useChildBookings()
-  const { availablePackages, whitelabels } = useChildPackages()
+  const { bookings, loading, error, currentUserId, fetchBookings, pagination } = useChildBookings()
   const { toast } = useToast()
-  const [modalOpen, setModalOpen] = useState(false)
-  const [detailId, setDetailId] = useState(null)
-  const [detailOpenEdit, setDetailOpenEdit] = useState(false)
-  const [submitting, setSubmitting] = useState(false)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [page, setPage] = useState(1)
@@ -67,31 +58,6 @@ export default function Bookings() {
       status: statusFilter === 'all' ? undefined : statusFilter
     })
   }, [fetchBookings, page, search, statusFilter])
-
-  const handleCreate = async (formData) => {
-    setSubmitting(true)
-    try {
-      await create(formData)
-      toast.success('Booking created successfully')
-      setModalOpen(false)
-    } catch (err) {
-      toast.error(getApiErrorMessage(err))
-      throw err
-    } finally {
-      setSubmitting(false)
-    }
-  }
-
-  const handleUpdateBooking = async (id, body) => {
-    try {
-      const updated = await updateBooking(id, body)
-      toast.success('Booking updated')
-      return updated
-    } catch (err) {
-      toast.error(getApiErrorMessage(err))
-      throw err
-    }
-  }
 
   const handleExport = async () => {
     setExportLoading(true)
@@ -125,8 +91,6 @@ export default function Bookings() {
     }
   }
 
-  console.log('Bookings pagination:', pagination)
-
   return (
     <div className="animate-fade-in space-y-6">
       <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -146,7 +110,7 @@ export default function Bookings() {
             {exportLoading ? <RefreshCw size={15} className="animate-spin" /> : <Download size={15} />}
             Export Excel
           </button>
-          <Button type="button" onClick={() => setModalOpen(true)}>
+          <Button type="button" onClick={() => navigate('/agency/bookings/create')}>
             <Plus className="mr-1.5 inline h-4 w-4" />
             New booking
           </Button>
@@ -207,7 +171,7 @@ export default function Bookings() {
                 <p className="mt-1 text-sm text-gray-500">
                   When you or a sub-child agent confirms a trip, it will show up here.
                 </p>
-                <Button type="button" className="mt-4" onClick={() => setModalOpen(true)}>
+                <Button type="button" className="mt-4" onClick={() => navigate('/agency/bookings/create')}>
                   <Plus className="mr-1.5 inline h-4 w-4" />
                   New booking
                 </Button>
@@ -296,7 +260,7 @@ export default function Bookings() {
                         <div className="inline-flex items-center gap-1.5">
                           <button
                             type="button"
-                            onClick={() => { setDetailId(b._id); setDetailOpenEdit(false) }}
+                            onClick={() => navigate('/agency/bookings/' + b._id)}
                             className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border border-gray-200 bg-white text-gray-600 transition-colors hover:bg-gray-50 hover:text-gray-900"
                             title="View"
                           >
@@ -304,7 +268,7 @@ export default function Bookings() {
                           </button>
                           <button
                             type="button"
-                            onClick={() => { setDetailId(b._id); setDetailOpenEdit(true) }}
+                            onClick={() => navigate('/agency/bookings/' + b._id + '/edit')}
                             className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border border-gray-200 bg-white text-gray-600 transition-colors hover:bg-primary-50 hover:text-primary-600 hover:border-primary-200"
                             title="Edit"
                           >
@@ -347,24 +311,6 @@ export default function Bookings() {
           />
         ) : null}
       </div>
-
-      <CreateBookingModal
-        isOpen={modalOpen}
-        onClose={() => setModalOpen(false)}
-        onSubmit={handleCreate}
-        loading={submitting}
-        availablePackages={availablePackages}
-        whitelabels={whitelabels}
-      />
-
-      <BookingDetailModal
-        isOpen={Boolean(detailId)}
-        onClose={() => { setDetailId(null); setDetailOpenEdit(false) }}
-        bookingId={detailId}
-        fetchBooking={fetchBooking}
-        updateBooking={handleUpdateBooking}
-        openInEdit={detailOpenEdit}
-      />
     </div>
   )
 }

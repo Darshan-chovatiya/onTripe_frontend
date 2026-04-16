@@ -152,7 +152,7 @@ export default function SubChildPackages() {
           <h1 className="text-2xl font-bold tracking-tight text-gray-900">Packages</h1>
           <p className="mt-1 text-sm text-gray-500">Browse packages from your parent network and manage your white-label offers.</p>
         </div>
-        {packagesEligibleForNewWhitelabel.length > 0 && (
+        {/* {packagesEligibleForNewWhitelabel.length > 0 && (
           <button
             type="button"
             onClick={() => setModal({ open: true, mode: 'create', sourcePackage: null, whitelabel: null })}
@@ -161,7 +161,7 @@ export default function SubChildPackages() {
             <Plus className="h-4 w-4" strokeWidth={2.5} />
             New white-label
           </button>
-        )}
+        )} */}
       </div>
 
       {/* Stats */}

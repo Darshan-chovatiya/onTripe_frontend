@@ -39,9 +39,18 @@ import AgencyDashboard from '@/travelAgency/agency/pages/AgencyDashboard.jsx'
 import AgencyPackages from '@/travelAgency/agency/pages/AgencyPackages.jsx'
 import AgencyPackageDetail from '@/travelAgency/agency/pages/AgencyPackageDetail.jsx'
 import AgencyPackageCommunity from '@/travelAgency/agency/pages/AgencyPackageCommunity.jsx'
+import CreatePackage from '@/travelAgency/parentAgency/pages/CreatePackage.jsx'
+import EditPackage from '@/travelAgency/parentAgency/pages/EditPackage.jsx'
+import ClonePackage from '@/travelAgency/parentAgency/pages/ClonePackage.jsx'
 import AgencyVendors from '@/travelAgency/agency/pages/AgencyVendors.jsx'
 import AgencyBookings from '@/travelAgency/agency/pages/AgencyBookings.jsx'
 import AgencyMyBookings from '@/travelAgency/agency/pages/AgencyMyBookings.jsx'
+import CreateBooking from '@/travelAgency/childAgency/pages/CreateBooking.jsx'
+import EditBooking from '@/travelAgency/childAgency/pages/EditBooking.jsx'
+import BookingDetail from '@/travelAgency/childAgency/pages/BookingDetail.jsx'
+import SubCreateBooking from '@/travelAgency/subChild/pages/CreateBooking.jsx'
+import SubEditBooking from '@/travelAgency/subChild/pages/EditBooking.jsx'
+import SubBookingDetail from '@/travelAgency/subChild/pages/BookingDetail.jsx'
 import AgencyManageDownstream from '@/travelAgency/agency/pages/AgencyManageDownstream.jsx'
 import ParentNotificationHistory from '@/travelAgency/parentAgency/pages/ParentNotificationHistory.jsx'
 import ChildNotificationHistory from '@/travelAgency/childAgency/pages/ChildNotificationHistory.jsx'
@@ -189,6 +198,30 @@ export default function AppRouter() {
           }
         />
         <Route
+          path="packages/create"
+          element={
+            <AgencyPermissionRoute permission={P.PACKAGES_FULL}>
+              <CreatePackage />
+            </AgencyPermissionRoute>
+          }
+        />
+        <Route
+          path="packages/edit/:id"
+          element={
+            <AgencyPermissionRoute permission={P.PACKAGES_FULL}>
+              <EditPackage />
+            </AgencyPermissionRoute>
+          }
+        />
+        <Route
+          path="packages/clone/:id"
+          element={
+            <AgencyPermissionRoute anyOf={[P.PACKAGES_FULL, P.PACKAGES_CLONE]}>
+              <ClonePackage />
+            </AgencyPermissionRoute>
+          }
+        />
+        <Route
           path="packages/:packageId/community"
           element={
             <AgencyPermissionRoute anyOf={[P.PACKAGES_FULL, P.PACKAGES_CLONE]}>
@@ -229,10 +262,74 @@ export default function AppRouter() {
           }
         />
         <Route
+          path="bookings/create"
+          element={
+            <AgencyPermissionRoute anyOf={[P.BOOKINGS_NETWORK, P.BOOKINGS_SALES]}>
+              <CreateBooking />
+            </AgencyPermissionRoute>
+          }
+        />
+        <Route
+          path="bookings/:id"
+          element={
+            <AgencyPermissionRoute anyOf={[P.BOOKINGS_NETWORK, P.BOOKINGS_SALES]}>
+              <BookingDetail />
+            </AgencyPermissionRoute>
+          }
+        />
+        <Route
+          path="bookings/:id/edit"
+          element={
+            <AgencyPermissionRoute anyOf={[P.BOOKINGS_NETWORK, P.BOOKINGS_SALES]}>
+              <EditBooking />
+            </AgencyPermissionRoute>
+          }
+        />
+        <Route
+          path="bookings/create"
+          element={
+            <AgencyPermissionRoute anyOf={[P.BOOKINGS_NETWORK, P.BOOKINGS_SALES]}>
+              <CreateBooking />
+            </AgencyPermissionRoute>
+          }
+        />
+        <Route
+          path="bookings/edit/:id"
+          element={
+            <AgencyPermissionRoute anyOf={[P.BOOKINGS_NETWORK, P.BOOKINGS_SALES]}>
+              <EditBooking />
+            </AgencyPermissionRoute>
+          }
+        />
+        <Route
           path="my-bookings"
           element={
             <AgencyPermissionRoute permission={P.BOOKINGS_OWN}>
               <AgencyMyBookings />
+            </AgencyPermissionRoute>
+          }
+        />
+        <Route
+          path="my-bookings/create"
+          element={
+            <AgencyPermissionRoute permission={P.BOOKINGS_OWN}>
+              <SubCreateBooking />
+            </AgencyPermissionRoute>
+          }
+        />
+        <Route
+          path="my-bookings/:id"
+          element={
+            <AgencyPermissionRoute permission={P.BOOKINGS_OWN}>
+              <SubBookingDetail />
+            </AgencyPermissionRoute>
+          }
+        />
+        <Route
+          path="my-bookings/edit/:id"
+          element={
+            <AgencyPermissionRoute permission={P.BOOKINGS_OWN}>
+              <SubEditBooking />
             </AgencyPermissionRoute>
           }
         />

@@ -11,7 +11,7 @@ export default function AgencySidebar({ isOpen, onClose }) {
   const navigate = useNavigate()
   const { logout } = useAuth()
   const [confirm, setConfirm] = useState(false)
-  const [logoError, setLogoError] = useState(false)
+  const [logoError, setLogoError] = useState(true)
 
   const navItems = [
     { path: `${BASE}/dashboard`, icon: LayoutDashboard, label: 'Dashboard' },
@@ -39,7 +39,7 @@ export default function AgencySidebar({ isOpen, onClose }) {
           <div className="flex items-center gap-3">
             <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${logoError ? 'bg-primary-600' : 'overflow-hidden'}`}>
               {logoError ? (
-                <LayoutDashboard className="h-5 w-5 text-white" />
+                <span className="text-sm font-bold tracking-tight text-white">OT</span>
               ) : (
                 <img src={logoIcon} alt="" className="h-full w-full object-contain" onError={() => setLogoError(true)} />
               )}

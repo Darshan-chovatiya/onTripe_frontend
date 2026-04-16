@@ -10,7 +10,7 @@ export default function Sidebar({ isOpen, onClose }) {
   const { pathname } = useLocation()
   const { logout } = useAuth()
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
-  const [logoError, setLogoError] = useState(false)
+  const [logoError, setLogoError] = useState(true)
   const [agenciesOpen, setAgenciesOpen] = useState(true)
 
   const handleLogout = () => {

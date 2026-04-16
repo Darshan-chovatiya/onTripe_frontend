@@ -1,32 +1,54 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
-  Users,
-  Package,
-  BookOpen,
-  Store,
-  Copy,
-  Check,
-  ArrowRight,
-  Calendar,
-  TrendingUp,
+  Users, Package, BookOpen, Store,
+  Copy, Check, ArrowRight, TrendingUp,
+  CalendarDays,
 } from 'lucide-react'
 import { useAuth } from '@/shared/context/AuthContext.jsx'
 import { getAnalytics } from '@/travelAgency/parentAgency/services/parentAgencyApi.js'
 import { getApiErrorMessage } from '@/shared/services/apiHelpers.js'
 
+function todayStr() { return new Date().toISOString().slice(0, 10) }
+function daysAgoStr(n) { const d = new Date(); d.setUTCDate(d.getUTCDate() - n); return d.toISOString().slice(0, 10) }
+function startOfMonthStr() {
+  const d = new Date()
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-01`
+}
+function startOfYearStr() { return `${new Date().getUTCFullYear()}-01-01` }
+function lastMonthRange() {
+  const d = new Date()
+  const y = d.getUTCFullYear(), m = d.getUTCMonth()
+  const sy = m === 0 ? y - 1 : y, sm = m === 0 ? 12 : m
+  return {
+    start: `${sy}-${String(sm).padStart(2, '0')}-01`,
+    end: new Date(Date.UTC(y, m, 0)).toISOString().slice(0, 10),
+  }
+}
+
+const PRESETS = [
+  { label: 'Today',        getRange: () => { const t = todayStr(); return { start: t, end: t } } },
+  { label: 'Last 7 days',  getRange: () => ({ start: daysAgoStr(6), end: todayStr() }) },
+  { label: 'Last 30 days', getRange: () => ({ start: daysAgoStr(29), end: todayStr() }) },
+  { label: 'This month',   getRange: () => ({ start: startOfMonthStr(), end: todayStr() }) },
+  { label: 'Last month',   getRange: () => lastMonthRange() },
+  { label: 'This year',    getRange: () => ({ start: startOfYearStr(), end: todayStr() }) },
+]
+
+const DEFAULT_RANGE = { start: startOfMonthStr(), end: todayStr() }
+
 const STATS_CONFIG = [
-  { key: 'totalPackages', label: 'Total packages', icon: Package, iconClass: 'bg-blue-50 text-blue-700' },
-  { key: 'totalVendors', label: 'Vendors', icon: Store, iconClass: 'bg-violet-50 text-violet-700' },
-  { key: 'totalBookings', label: 'Bookings', icon: BookOpen, iconClass: 'bg-emerald-50 text-emerald-700' },
-  { key: 'totalChildAgencies', label: 'Child agencies', icon: Users, iconClass: 'bg-amber-50 text-amber-800' },
+  { key: 'totalPackages',     label: 'Total packages',  icon: Package,  iconClass: 'bg-blue-50 text-blue-700' },
+  { key: 'totalVendors',      label: 'Vendors',          icon: Store,    iconClass: 'bg-violet-50 text-violet-700' },
+  { key: 'totalBookings',     label: 'Bookings',         icon: BookOpen, iconClass: 'bg-emerald-50 text-emerald-700' },
+  { key: 'totalChildAgencies',label: 'Child agencies',   icon: Users,    iconClass: 'bg-amber-50 text-amber-800' },
 ]
 
 const QUICK_LINKS = [
-  { to: '/agency/packages', label: 'Manage packages', desc: 'Update packages and availability' },
-  { to: '/agency/bookings', label: 'View bookings', desc: 'Track your network booking flow' },
-  { to: '/agency/manage-downstream', label: 'Manage children', desc: 'Review linked agencies and KYC' },
-  { to: '/agency/settings', label: 'Account settings', desc: 'Profile and password controls' },
+  { to: '/agency/packages',           label: 'Manage packages',  desc: 'Update packages and availability' },
+  { to: '/agency/bookings',           label: 'View bookings',    desc: 'Track your network booking flow' },
+  { to: '/agency/manage-downstream',  label: 'Manage children',  desc: 'Review linked agencies and KYC' },
+  { to: '/agency/settings',           label: 'Account settings', desc: 'Profile and password controls' },
 ]
 
 export default function ParentDashboard() {
@@ -35,6 +57,7 @@ export default function ParentDashboard() {
   const [loading, setLoading] = useState(true)
   const [err, setErr] = useState('')
   const [copied, setCopied] = useState(false)
+  const [dateRange, setDateRange] = useState(DEFAULT_RANGE)
 
   const handleCopy = async () => {
     if (!user?.agentCode) return
@@ -42,16 +65,17 @@ export default function ParentDashboard() {
       await navigator.clipboard.writeText(user.agentCode)
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
-    } catch {
-      // no-op
-    }
+    } catch { /* no-op */ }
   }
 
-  const fetchAnalytics = async () => {
+  const fetchAnalytics = async (range) => {
     setLoading(true)
     setErr('')
     try {
-      const res = await getAnalytics()
+      const params = range?.start && range?.end
+        ? { startDate: range.start, endDate: range.end }
+        : {}
+      const res = await getAnalytics(params)
       setAnalytics(res.data?.data || null)
     } catch (e) {
       setErr(getApiErrorMessage(e))
@@ -60,30 +84,97 @@ export default function ParentDashboard() {
     }
   }
 
-  useEffect(() => {
-    fetchAnalytics()
-  }, [])
+  useEffect(() => { fetchAnalytics(DEFAULT_RANGE) }, [])
+
+  const rangeLabel = dateRange.start && dateRange.end
+    ? `${dateRange.start} – ${dateRange.end}`
+    : 'All time'
 
   return (
     <div className="animate-fade-in space-y-6">
-      <section className="rounded-xl border border-gray-200 bg-white p-5 sm:p-6">
-        <div className="flex flex-wrap items-start justify-between gap-4">
+
+      {/* ── Header + Date filter ── */}
+      <section className="rounded-xl border border-gray-200 bg-white p-5">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <p className="text-xs font-medium uppercase tracking-wider text-primary-700">Parent panel</p>
             <h1 className="mt-1 text-2xl font-semibold tracking-tight text-gray-900">Welcome, {user?.name || 'Partner'}</h1>
             <p className="mt-1 text-sm text-gray-500">Overview of your package network, bookings, and child agency activity.</p>
           </div>
-          <div className="hidden items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-600 sm:inline-flex">
-            <Calendar className="h-3.5 w-3.5" strokeWidth={2} />
-            {new Date().toLocaleDateString()}
+          <span className="inline-flex items-center gap-1.5 self-start rounded-lg bg-primary-50 px-3 py-1.5 text-xs font-medium text-primary-700">
+            <CalendarDays className="h-3.5 w-3.5" strokeWidth={2} />
+            {rangeLabel}
+          </span>
+        </div>
+
+        {/* From / To inputs */}
+        <div className="mt-4 flex flex-wrap items-end gap-3">
+          <div className="min-w-[140px] flex-1">
+            <label className="mb-1 block text-xs font-medium text-gray-500">From</label>
+            <input
+              type="date"
+              value={dateRange.start}
+              max={dateRange.end || todayStr()}
+              onChange={e => {
+                const r = { ...dateRange, start: e.target.value }
+                setDateRange(r)
+                if (r.start && r.end) fetchAnalytics(r)
+              }}
+              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 focus:border-primary-400 focus:outline-none focus:ring-1 focus:ring-primary-200"
+            />
           </div>
+          <div className="min-w-[140px] flex-1">
+            <label className="mb-1 block text-xs font-medium text-gray-500">To</label>
+            <input
+              type="date"
+              value={dateRange.end}
+              min={dateRange.start}
+              max={todayStr()}
+              onChange={e => {
+                const r = { ...dateRange, end: e.target.value }
+                setDateRange(r)
+                if (r.start && r.end) fetchAnalytics(r)
+              }}
+              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 focus:border-primary-400 focus:outline-none focus:ring-1 focus:ring-primary-200"
+            />
+          </div>
+          <button
+            type="button"
+            onClick={() => { setDateRange(DEFAULT_RANGE); fetchAnalytics(DEFAULT_RANGE) }}
+            className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-500 transition hover:bg-gray-50"
+          >
+            Reset
+          </button>
+        </div>
+
+        {/* Quick presets */}
+        <div className="mt-3 flex flex-wrap gap-1.5">
+          {PRESETS.map(p => {
+            const r = p.getRange()
+            const active = dateRange.start === r.start && dateRange.end === r.end
+            return (
+              <button
+                key={p.label}
+                type="button"
+                onClick={() => { setDateRange(r); fetchAnalytics(r) }}
+                className={`rounded-md border px-2.5 py-1 text-xs font-medium transition ${
+                  active
+                    ? 'border-primary-400 bg-primary-50 text-primary-700'
+                    : 'border-gray-200 text-gray-600 hover:border-primary-300 hover:bg-primary-50 hover:text-primary-700'
+                }`}
+              >
+                {p.label}
+              </button>
+            )
+          })}
         </div>
       </section>
 
-      {err ? (
+      {err && (
         <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{err}</div>
-      ) : null}
+      )}
 
+      {/* ── Stat cards ── */}
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {STATS_CONFIG.map(({ key, label, icon: Icon, iconClass }) => (
           <article key={key} className="rounded-xl border border-gray-200 bg-white p-5">
@@ -91,8 +182,11 @@ export default function ParentDashboard() {
               <div>
                 <p className="text-xs font-medium text-gray-500">{label}</p>
                 <p className="mt-2 text-2xl font-semibold text-gray-900 tabular-nums">
-                  {loading ? <span className="inline-block h-7 w-12 animate-pulse rounded bg-gray-200" /> : analytics?.[key] ?? '?'}
+                  {loading
+                    ? <span className="inline-block h-7 w-12 animate-pulse rounded bg-gray-200" />
+                    : analytics?.[key] ?? 0}
                 </p>
+                <p className="mt-1 text-xs text-gray-400">{rangeLabel}</p>
               </div>
               <span className={`inline-flex h-10 w-10 items-center justify-center rounded-lg ${iconClass}`}>
                 <Icon className="h-5 w-5" strokeWidth={2} />
@@ -102,6 +196,7 @@ export default function ParentDashboard() {
         ))}
       </section>
 
+      {/* ── Quick links + Agent code ── */}
       <section className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <article className="rounded-xl border border-gray-200 bg-white lg:col-span-2">
           <div className="border-b border-gray-100 px-5 py-4">
@@ -124,7 +219,7 @@ export default function ParentDashboard() {
         </article>
 
         <div className="space-y-6">
-          {user?.agentCode ? (
+          {user?.agentCode && (
             <article className="rounded-xl border border-primary-100 bg-primary-50/70 p-5">
               <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-primary-700">Agent code</p>
               <div className="mt-2 flex items-center justify-between gap-2">
@@ -144,7 +239,7 @@ export default function ParentDashboard() {
               </div>
               <p className="mt-2 text-xs text-primary-700/80">Share this with child agencies to onboard under your account.</p>
             </article>
-          ) : null}
+          )}
 
           <article className="rounded-xl border border-gray-200 bg-white p-5">
             <h2 className="text-sm font-semibold text-gray-900">Performance</h2>

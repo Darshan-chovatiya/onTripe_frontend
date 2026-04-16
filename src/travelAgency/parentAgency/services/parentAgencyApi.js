@@ -137,8 +137,8 @@ export function getSentNotifications() {
   return axiosInstance.get('/notifications/sent')
 }
 // Analytics
-export function getAnalytics() {
-  return axiosInstance.get('/parent-agent/analytics')
+export function getAnalytics(params) {
+  return axiosInstance.get('/parent-agent/analytics', { params })
 }
 
 // Booking Tickets

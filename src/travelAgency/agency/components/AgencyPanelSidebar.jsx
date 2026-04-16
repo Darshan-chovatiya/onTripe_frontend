@@ -29,7 +29,7 @@ export default function AgencyPanelSidebar({ isOpen, onClose }) {
   const { logout } = useAuth()
   const { can, roleLabel, loginPathForLogout, isKycPending } = useAgencyPermissions()
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
-  const [logoError, setLogoError] = useState(false)
+  const [logoError, setLogoError] = useState(true)
   const panelName = `${(roleLabel || 'Agency').replace(/agency/gi, '').trim() || 'Agency'} panel`
 
   const navItems = useMemo(() => {

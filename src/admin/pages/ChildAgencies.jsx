@@ -148,83 +148,152 @@ export default function ChildAgencies({ agentRole = 'child_agent', pageTitle = '
       ? `/admin/sub-child-agencies/${id}/customers`
       : `/admin/child-agencies/${id}/customers`
 
-  const AgentDetailModal = () => (
-    <Modal isOpen={isDetailModalOpen} onClose={() => setIsDetailModalOpen(false)} title="Agency overview" size="lg">
-      {selectedAgent && (
-        <div className="space-y-6">
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900">{selectedAgent.name}</h3>
-            <p className="mt-1 text-sm text-gray-500">
-              {agentRole === 'sub_child_agent' ? 'Sub-child agency details' : 'Child agency details'}
-            </p>
-          </div>
-          <div className={`grid gap-3 ${agentRole === 'sub_child_agent' ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1 sm:grid-cols-3'}`}>
-            {agentRole !== 'sub_child_agent' ? (
-              <div className="rounded-xl border border-gray-200 bg-gray-50/80 px-4 py-3 text-center">
-                <div className="text-xs font-medium text-gray-500">Sub-child</div>
-                <p className="mt-1 text-xl font-semibold text-gray-900">{selectedAgent.childCount ?? 0}</p>
+  const AgentDetailModal = () => {
+    const parents = selectedAgent
+      ? (Array.isArray(selectedAgent.allParents) && selectedAgent.allParents.length > 0
+          ? selectedAgent.allParents
+          : selectedAgent.parentName
+            ? [{ name: selectedAgent.parentName, agentCode: selectedAgent.parentCode }]
+            : [])
+      : []
+
+    return (
+      <Modal isOpen={isDetailModalOpen} onClose={() => { setIsDetailModalOpen(false); setRejectionReason('') }} title="Agency overview" size="md">
+        {selectedAgent && (
+          <div className="divide-y divide-gray-100">
+
+            {/* ── Header + Network side by side ── */}
+            <div className="flex items-start gap-2 px-6 py-4">
+              {/* Left: avatar + name + label + status */}
+              <div className="flex min-w-0 flex-1 items-start gap-3">
+                {/* <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-gray-200 bg-gray-50 text-gray-500">
+                  <Building2 className="h-6 w-6" strokeWidth={1.5} />
+                </div> */}
+                <div className="min-w-0">
+                  <p className="truncate text-base font-semibold text-gray-900">{selectedAgent.name}</p>
+                  <p className="mt-0.5 text-xs text-gray-400">
+                    {agentRole === 'sub_child_agent' ? 'Sub-child agency details' : 'Child agency details'}
+                  </p>
+                  <span className={`mt-1.5 inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${selectedAgent.isActive ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-red-200 bg-red-50 text-red-700'}`}>
+                    <span className={`h-1.5 w-1.5 rounded-full ${selectedAgent.isActive ? 'bg-emerald-500' : 'bg-red-500'}`} />
+                    {selectedAgent.isActive ? 'Active' : 'Inactive'}
+                  </span>
+                </div>
               </div>
-            ) : null}
-            <button type="button"
-              onClick={() => { setIsDetailModalOpen(false); navigate(agentRole === 'sub_child_agent' ? `/admin/sub-child-agencies/${selectedAgent._id}/whitelabels` : `/admin/child-agencies/${selectedAgent._id}/whitelabels`) }}
-              className="rounded-xl border border-gray-200 bg-gray-50/80 px-4 py-3 text-center transition-colors hover:border-primary-200 hover:bg-primary-50/60">
-              <div className="text-xs font-medium text-gray-500">Whitelabels</div>
-              <p className="mt-1 text-xl font-semibold text-gray-900">{selectedAgent.whitelabelCount ?? 0}</p>
-            </button>
-            <button type="button"
-              onClick={() => { setIsDetailModalOpen(false); navigate(customersPathForAgent(selectedAgent._id)) }}
-              className="rounded-xl border border-gray-200 bg-gray-50/80 px-4 py-3 text-center transition-colors hover:border-primary-200 hover:bg-primary-50/60">
-              <div className="text-xs font-medium text-gray-500">Customers</div>
-              <p className="mt-1 text-xl font-semibold text-gray-900">{selectedAgent.customerCount ?? 0}</p>
-            </button>
-          </div>
-          <div className="grid gap-4 rounded-xl border border-gray-200 bg-white p-4 sm:grid-cols-2">
-            <div>
-              <p className="text-xs font-medium text-gray-500">Agent code</p>
-              <p className="mt-1 text-sm font-semibold text-gray-900">{selectedAgent.agentCode || '—'}</p>
-            </div>
-            <div>
-              <p className="text-xs font-medium text-gray-500">KYC status</p>
-              <div className="mt-1">{getStatusBadge(selectedAgent.kyc?.status)}</div>
-            </div>
-            <div className="sm:col-span-2">
-              <p className="text-xs font-medium text-gray-500">Email</p>
-              <p className="mt-1 break-all text-sm text-gray-900">{selectedAgent.email}</p>
-            </div>
-            <div>
-              <p className="text-xs font-medium text-gray-500">Phone</p>
-              <p className="mt-1 text-sm text-gray-900">{selectedAgent.phone || 'N/A'}</p>
-            </div>
-            <div>
-              <p className="text-xs font-medium text-gray-500">
-                {agentRole === 'sub_child_agent' ? 'Child agencies' : 'Parent agencies'}
-              </p>
-              {(() => {
-                const parents = Array.isArray(selectedAgent.allParents) && selectedAgent.allParents.length > 0
-                  ? selectedAgent.allParents
-                  : selectedAgent.parentName
-                    ? [{ name: selectedAgent.parentName, agentCode: selectedAgent.parentCode, email: selectedAgent.parentEmail }]
-                    : []
-                if (parents.length === 0) {
-                  return <p className="mt-1 text-sm text-gray-400">{agentRole === 'sub_child_agent' ? 'Direct child agency link unavailable' : 'Direct node'}</p>
-                }
-                return (
-                  <div className="mt-1 space-y-1">
-                    {parents.map((p, i) => (
-                      <div key={i} className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-gray-900">{p.name}</span>
-                        {p.agentCode && <span className="rounded bg-primary-50 px-1.5 py-0.5 font-mono text-[10px] text-primary-700">{p.agentCode}</span>}
-                      </div>
-                    ))}
+
+              {/* Right: network stats column */}
+              <div className="shrink-0 space-y-1.5 min-w-[140px]">
+                {agentRole !== 'sub_child_agent' && (
+                  <div className="flex items-center justify-between gap-4 rounded-lg border border-gray-200 bg-gray-50/60 px-3 py-2">
+                    <span className="text-xs font-medium text-gray-500">Sub-children</span>
+                    <span className="text-sm font-bold tabular-nums text-gray-900">{selectedAgent.childCount ?? 0}</span>
                   </div>
-                )
-              })()}
+                )}
+                <button
+                  type="button"
+                  onClick={() => { setIsDetailModalOpen(false); navigate(agentRole === 'sub_child_agent' ? `/admin/sub-child-agencies/${selectedAgent._id}/whitelabels` : `/admin/child-agencies/${selectedAgent._id}/whitelabels`) }}
+                  className="flex w-full items-center justify-between gap-4 rounded-lg border border-gray-200 bg-gray-50/60 px-3 py-2 transition-colors hover:border-primary-200 hover:bg-primary-50/50"
+                >
+                  <span className="text-xs font-medium text-gray-500">Whitelabels</span>
+                  <span className="text-sm font-bold tabular-nums text-gray-900">{selectedAgent.whitelabelCount ?? 0}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setIsDetailModalOpen(false); navigate(customersPathForAgent(selectedAgent._id)) }}
+                  className="flex w-full items-center justify-between gap-4 rounded-lg border border-gray-200 bg-gray-50/60 px-3 py-2 transition-colors hover:border-primary-200 hover:bg-primary-50/50"
+                >
+                  <span className="text-xs font-medium text-gray-500">Customers</span>
+                  <span className="text-sm font-bold tabular-nums text-gray-900">{selectedAgent.customerCount ?? 0}</span>
+                </button>
+              </div>
             </div>
+
+            {/* ── Details ── */}
+            <div className="px-6 py-5">
+              <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-400">Details</p>
+
+              {/* Row 1: agent code · parent/child agencies · KYC status */}
+              <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <div>
+                  <p className="text-xs font-medium text-gray-400">Agent code</p>
+                  <p className="mt-0.5 text-sm font-semibold text-primary-700">{selectedAgent.agentCode || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-gray-400">{agentRole === 'sub_child_agent' ? 'Child agency' : 'Parent agency'}</p>
+                  {parents.length === 0 ? (
+                    <p className="mt-0.5 text-sm text-gray-400">—</p>
+                  ) : (
+                    <div className="mt-0.5 space-y-0.5">
+                      {parents.map((p, i) => (
+                        <div key={i} className="flex items-center gap-1.5">
+                          <span className="text-sm font-medium text-gray-900">{p.name}</span>
+                          {p.agentCode && <span className="rounded bg-primary-50 px-1.5 py-0.5 font-mono text-[10px] text-primary-700">{p.agentCode}</span>}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-gray-400">KYC status</p>
+                  <div className="mt-1">{getStatusBadge(selectedAgent.kyc?.status)}</div>
+                </div>
+              </div>
+
+              {/* Row 2: email · phone */}
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div>
+                  <p className="text-xs font-medium text-gray-400">Email</p>
+                  <p className="mt-0.5 break-all text-sm text-gray-900">{selectedAgent.email || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-gray-400">Phone</p>
+                  <p className="mt-0.5 text-sm text-gray-900">{selectedAgent.phone || '—'}</p>
+                </div>
+              </div>
+
+              {selectedAgent.kyc?.status === 'rejected' && selectedAgent.kyc?.rejectionReason && (
+                <div className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2">
+                  <p className="text-xs font-semibold text-red-700">Rejection reason</p>
+                  <p className="mt-0.5 text-xs text-red-600">{selectedAgent.kyc.rejectionReason}</p>
+                </div>
+              )}
+            </div>
+
+            {/* ── KYC actions (pending only) ── */}
+            {selectedAgent.kyc?.status === 'pending' && (
+              <div className="px-6 py-5">
+                <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-400">Review KYC</p>
+                <div className="mb-3">
+                  <label className="mb-1.5 block text-xs font-medium text-gray-600" htmlFor="kyc-reject-reason-child">
+                    Rejection reason <span className="text-gray-400">(required to reject)</span>
+                  </label>
+                  <textarea
+                    id="kyc-reject-reason-child"
+                    rows={3}
+                    className="w-full resize-none rounded-xl border border-gray-200 bg-gray-50/50 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-200"
+                    placeholder="Explain what is missing or incorrect…"
+                    value={rejectionReason}
+                    onChange={(e) => setRejectionReason(e.target.value)}
+                  />
+                </div>
+                <div className="flex gap-3">
+                  <button type="button" onClick={() => handleKycAction('approve')} disabled={isActionLoading}
+                    className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-emerald-700 disabled:opacity-50">
+                    {isActionLoading ? <Loader size="sm" color="white" /> : <><ShieldCheck className="h-4 w-4" strokeWidth={2} /> Approve</>}
+                  </button>
+                  <button type="button" onClick={() => handleKycAction('reject')} disabled={isActionLoading}
+                    className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm font-semibold text-red-700 transition-colors hover:bg-red-50 disabled:opacity-50">
+                    {isActionLoading ? <Loader size="sm" /> : <><ShieldAlert className="h-4 w-4" strokeWidth={2} /> Reject</>}
+                  </button>
+                </div>
+              </div>
+            )}
+
           </div>
-        </div>
-      )}
-    </Modal>
-  )
+        )}
+      </Modal>
+    )
+  }
 
   const handleExport = async () => {
     setExportLoading(true)

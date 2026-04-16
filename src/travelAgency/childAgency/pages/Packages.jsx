@@ -115,7 +115,7 @@ export default function Packages() {
           <h1 className="text-2xl font-bold tracking-tight text-gray-900">Packages</h1>
           <p className="mt-1 text-sm text-gray-500">Browse parent packages and manage your white-label offers.</p>
         </div>
-        {packagesEligibleForNewWhitelabel.length > 0 && (
+        {/* {packagesEligibleForNewWhitelabel.length > 0 && (
           <button
             type="button"
             onClick={() => setModal({ open: true, mode: 'create', sourcePackage: null, whitelabel: null })}
@@ -124,7 +124,7 @@ export default function Packages() {
             <Plus className="h-4 w-4" strokeWidth={2.5} />
             New white-label
           </button>
-        )}
+        )} */}
       </div>
 
       {/* Stats */}

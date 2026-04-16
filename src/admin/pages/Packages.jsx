@@ -166,68 +166,86 @@ function PackageDetailModal({ isOpen, onClose, pkg }) {
         )}
 
         <div>
-          <div className="mb-3 flex items-center justify-between gap-2">
+          <div className="mb-4 flex items-center justify-between gap-2">
             <h3 className="text-xs font-medium uppercase tracking-wide text-gray-500">Itinerary</h3>
             <span className="text-xs text-gray-400">{pkg.itinerary?.length || 0} days</span>
           </div>
-          <div className="max-h-[min(55vh,480px)] space-y-3 overflow-y-auto pr-1">
+          <div className="max-h-[min(60vh,520px)] overflow-y-auto pr-1">
             {pkg.itinerary?.length ? (
-              pkg.itinerary.map((day, idx) => {
-                const acts = dayActivities(day)
-                return (
-                  <div key={idx} className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
-                    <div className="flex items-center justify-between border-b border-gray-100 bg-gray-50 px-3 py-2">
-                      <div className="flex min-w-0 items-center gap-2">
-                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-gray-900 text-xs font-semibold text-white">
+              <div className="relative">
+                {/* Vertical line */}
+                <div className="absolute left-[18px] top-0 h-full w-px bg-gray-200" />
+
+                <div className="space-y-0">
+                  {pkg.itinerary.map((day, idx) => {
+                    const acts = dayActivities(day)
+                    return (
+                      <div key={idx} className="relative pl-12 pb-6 last:pb-0">
+                        {/* Day circle */}
+                        <div className="absolute left-0 top-0 flex h-9 w-9 items-center justify-center rounded-full bg-gray-900 text-xs font-bold text-white ring-4 ring-white">
                           {day.day ?? idx + 1}
                         </div>
-                        <span className="truncate text-sm font-semibold text-gray-900">{day.title || `Day ${day.day ?? idx + 1}`}</span>
-                      </div>
-                      {day.dateSuffix ? (
-                        <span className="shrink-0 text-[11px] text-gray-500">{day.dateSuffix}</span>
-                      ) : null}
-                    </div>
-                    {day.description ? (
-                      <p className="border-b border-gray-100 bg-white px-3 py-2 text-xs text-gray-600">{day.description}</p>
-                    ) : null}
-                    <div className="grid grid-cols-1 gap-2 p-3 sm:grid-cols-2">
-                      {acts.length ? (
-                        acts.map((ev, eIdx) => (
-                          <div
-                            key={eIdx}
-                            className="flex gap-2 rounded-lg border border-gray-100 bg-gray-50/50 p-2.5"
-                          >
-                            <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-gray-200 bg-white text-gray-400">
-                              <Calendar className="h-3.5 w-3.5" strokeWidth={2} />
-                            </div>
-                            <div className="min-w-0">
-                              <div className="text-xs font-semibold text-gray-900">{activityTitle(ev)}</div>
-                              <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[11px] text-gray-500">
-                                {(ev.category || ev.type) && (
-                                  <span className="rounded bg-white px-1.5 py-0.5 font-medium capitalize text-primary-800 ring-1 ring-primary-100">
-                                    {ev.category || ev.type}
-                                  </span>
-                                )}
-                                {ev.startTime ? (
-                                  <span>
-                                    {ev.startTime}
-                                    {ev.endTime ? ` – ${ev.endTime}` : ''}
-                                  </span>
-                                ) : null}
+
+                        {/* Day header */}
+                        <div className="mb-2 flex items-baseline gap-2 pt-1">
+                          <span className="text-sm font-semibold text-gray-900">
+                            {day.title || `Day ${day.day ?? idx + 1}`}
+                          </span>
+                          {day.dateSuffix && (
+                            <span className="text-[11px] text-gray-400">{day.dateSuffix}</span>
+                          )}
+                        </div>
+
+                        {day.description && (
+                          <p className="mb-3 text-xs leading-relaxed text-gray-500">{day.description}</p>
+                        )}
+
+                        {/* Events timeline */}
+                        {acts.length > 0 && (
+                          <div className="space-y-2">
+                            {acts.map((ev, eIdx) => (
+                              <div key={eIdx} className="flex gap-3 rounded-xl border border-gray-100 bg-gray-50/60 p-3">
+                                {/* Time dot */}
+                                <div className="flex flex-col items-center pt-0.5">
+                                  <div className="h-2 w-2 rounded-full bg-primary-500 ring-2 ring-primary-100" />
+                                  {eIdx < acts.length - 1 && (
+                                    <div className="mt-1 w-px flex-1 bg-gray-200" />
+                                  )}
+                                </div>
+                                <div className="min-w-0 flex-1 pb-1">
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    <span className="text-xs font-semibold text-gray-900">{activityTitle(ev)}</span>
+                                    {(ev.category || ev.type) && (
+                                      <span className="rounded-md bg-primary-50 px-1.5 py-0.5 text-[10px] font-medium capitalize text-primary-700 ring-1 ring-primary-100">
+                                        {ev.category || ev.type}
+                                      </span>
+                                    )}
+                                    {ev.startTime && (
+                                      <span className="text-[11px] text-gray-400">
+                                        {ev.startTime}{ev.endTime ? ` – ${ev.endTime}` : ''}
+                                      </span>
+                                    )}
+                                  </div>
+                                  {ev.location && (
+                                    <p className="mt-0.5 text-[11px] text-gray-400">📍 {ev.location}</p>
+                                  )}
+                                  {ev.description && (
+                                    <p className="mt-1 text-[11px] leading-snug text-gray-500">{ev.description}</p>
+                                  )}
+                                </div>
                               </div>
-                              {ev.description ? (
-                                <p className="mt-1 text-[11px] leading-snug text-gray-600">{ev.description}</p>
-                              ) : null}
-                            </div>
+                            ))}
                           </div>
-                        ))
-                      ) : (
-                        <p className="col-span-full text-center text-xs text-gray-400">No activities for this day</p>
-                      )}
-                    </div>
-                  </div>
-                )
-              })
+                        )}
+
+                        {!acts.length && (
+                          <p className="text-xs text-gray-400 italic">No activities scheduled</p>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
             ) : (
               <p className="text-sm text-gray-500">No itinerary data.</p>
             )}

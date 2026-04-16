@@ -358,11 +358,11 @@ export default function Packages() {
     bookings: packages.reduce((s, p) => s + (Number(p.bookingCount) || 0), 0),
   }), [packages])
 
-  const handleFormSubmit = async (formData, rawForm) => {
+  const handleFormSubmit = async (formData) => {
     setSubmitting(true)
     try {
-      if (formModal.data && !formModal.isClone) { await update(formModal.data._id, rawForm); toast.success('Package updated') }
-      else { await create(formData); toast.success('Package created') }
+      await create(formData)
+      toast.success('Package cloned')
       setFormModal({ open: false, data: null, isClone: false })
     } catch (err) { toast.error(getApiErrorMessage(err)) }
     finally { setSubmitting(false) }
@@ -398,7 +398,7 @@ export default function Packages() {
         </div>
         <button
           type="button"
-          onClick={() => setFormModal({ open: true, data: null, isClone: false })}
+          onClick={() => navigate('/agency/packages/create')}
           className="inline-flex items-center gap-2 rounded-xl bg-primary-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-primary-900/20 transition hover:bg-primary-700 active:scale-[0.98]"
         >
           <Plus className="h-4 w-4" strokeWidth={2.5} />
@@ -504,7 +504,7 @@ export default function Packages() {
           {packages.length === 0 && (
             <button
               type="button"
-              onClick={() => setFormModal({ open: true, data: null, isClone: false })}
+              onClick={() => navigate('/agency/packages/create')}
               className="mt-6 inline-flex items-center gap-2 rounded-xl bg-primary-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-primary-700"
             >
               <Plus className="h-4 w-4" strokeWidth={2.5} />
@@ -519,8 +519,8 @@ export default function Packages() {
               key={pkg._id}
               pkg={pkg}
               navigate={navigate}
-              onEdit={(p) => setFormModal({ open: true, data: p, isClone: false })}
-              onClone={(p) => setFormModal({ open: true, data: p, isClone: true })}
+              onEdit={(p) => navigate(`/agency/packages/edit/${p._id}`)}
+              onClone={(p) => navigate(`/agency/packages/clone/${p._id}`)}
               onCover={(p) => setImageModal({ open: true, pkg: p, mode: 'cover' })}
               onGallery={(p) => setImageModal({ open: true, pkg: p, mode: 'gallery' })}
               onToggle={(p) => setConfirmToggle({ open: true, pkg: p })}
@@ -534,8 +534,8 @@ export default function Packages() {
               key={pkg._id}
               pkg={pkg}
               navigate={navigate}
-              onEdit={(p) => setFormModal({ open: true, data: p, isClone: false })}
-              onClone={(p) => setFormModal({ open: true, data: p, isClone: true })}
+              onEdit={(p) => navigate(`/agency/packages/edit/${p._id}`)}
+              onClone={(p) => navigate(`/agency/packages/clone/${p._id}`)}
               onCover={(p) => setImageModal({ open: true, pkg: p, mode: 'cover' })}
               onGallery={(p) => setImageModal({ open: true, pkg: p, mode: 'gallery' })}
               onToggle={(p) => setConfirmToggle({ open: true, pkg: p })}
@@ -545,14 +545,6 @@ export default function Packages() {
       )}
 
       {/* ── Modals ── */}
-      <PackageFormModal
-        isOpen={formModal.open}
-        onClose={() => setFormModal({ open: false, data: null, isClone: false })}
-        onSubmit={handleFormSubmit}
-        initialData={formModal.data}
-        isClone={formModal.isClone}
-        loading={submitting}
-      />
 
       <PackageImageModal
         isOpen={imageModal.open}

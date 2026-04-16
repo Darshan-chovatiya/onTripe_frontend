@@ -33,8 +33,8 @@ export function deleteAgent(userId) {
   return axiosInstance.delete(`/admin/agents/${userId}`)
 }
 
-export function getAnalytics() {
-  return axiosInstance.get('/admin/analytics')
+export function getAnalytics(params) {
+  return axiosInstance.get('/admin/analytics', { params })
 }
 
 // Legacy exports for compatibility with existing components
