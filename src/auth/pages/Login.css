@@ -1,0 +1,520 @@
+/* ── Customer Login Page ── */
+
+.clogin-loading {
+  display: flex;
+  min-height: 100vh;
+  align-items: center;
+  justify-content: center;
+  background: #0f172a;
+}
+
+.clogin-root {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  font-family: 'Inter', sans-serif;
+}
+
+/* Background */
+.clogin-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.clogin-bg-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+.clogin-bg-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(10, 15, 40, 0.82) 0%,
+    rgba(15, 25, 60, 0.65) 50%,
+    rgba(10, 15, 40, 0.55) 100%
+  );
+}
+
+/* Back button */
+.clogin-back-btn {
+  position: absolute;
+  top: 24px;
+  left: 28px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.clogin-back-btn:hover {
+  color: #fff;
+}
+
+/* Layout */
+.clogin-layout {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 64px;
+  width: 100%;
+  max-width: 960px;
+  padding: 40px 24px;
+}
+
+/* Left branding */
+.clogin-left {
+  flex: 1;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 36px;
+}
+
+.clogin-logo {
+  height: 80px;
+  width: auto;
+  object-fit: contain;
+}
+
+.clogin-tagline-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.clogin-tagline-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.clogin-badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #60a5fa;
+  box-shadow: 0 0 8px #60a5fa;
+  flex-shrink: 0;
+}
+
+.clogin-tagline {
+  font-size: clamp(44px, 5.5vw, 68px);
+  font-weight: 800;
+  line-height: 1.0;
+  letter-spacing: -0.03em;
+  color: #fff;
+  margin: 0;
+  text-shadow: 0 2px 20px rgba(0,0,0,0.3);
+}
+
+.clogin-tagline-desc {
+  font-size: 15px;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.65);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.clogin-stats {
+  display: flex;
+  gap: 0;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  overflow: hidden;
+  width: fit-content;
+}
+
+.clogin-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 14px 22px;
+  position: relative;
+}
+
+.clogin-stat + .clogin-stat::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 20%;
+  height: 60%;
+  width: 1px;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.clogin-stat-val {
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1;
+}
+
+.clogin-stat-lbl {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.45);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+/* Trust row */
+.clogin-trust {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.clogin-trust-avatars {
+  display: flex;
+}
+
+.clogin-trust-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  border: 2px solid rgba(255,255,255,0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+  margin-left: -8px;
+}
+
+.clogin-trust-avatar:first-child {
+  margin-left: 0;
+}
+
+.clogin-trust-text {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+  margin: 0;
+}
+
+.clogin-trust-text strong {
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 600;
+}
+
+/* Glass Card */
+.clogin-card {
+  width: 100%;
+  max-width: 400px;
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
+  padding: 36px 32px;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+.clogin-card-header {
+  margin-bottom: 28px;
+}
+
+.clogin-card-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #fff;
+  margin: 0 0 6px;
+}
+
+.clogin-card-sub {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0;
+}
+
+/* Form */
+.clogin-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.clogin-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.clogin-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.clogin-input-wrap {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1.5px solid transparent;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.clogin-input-wrap:focus-within {
+  border-color: rgba(99, 179, 237, 0.8);
+  box-shadow: 0 0 0 3px rgba(99, 179, 237, 0.2);
+}
+
+.clogin-input-prefix {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px;
+  color: #64748b;
+  border-right: 1px solid #e2e8f0;
+  height: 46px;
+  flex-shrink: 0;
+}
+
+.clogin-prefix-code {
+  font-size: 13px;
+  font-weight: 600;
+  color: #475569;
+}
+
+.clogin-input {
+  flex: 1;
+  height: 46px;
+  padding: 0 14px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #1e293b;
+  background: transparent;
+  border: none;
+  outline: none;
+}
+
+.clogin-input::placeholder {
+  color: #94a3b8;
+  font-weight: 400;
+}
+
+/* Standalone input (OTP) */
+.clogin-otp-input {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 10px;
+  border: 1.5px solid transparent;
+  padding: 10px 20px;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.5em;
+  color: #1e293b;
+  text-align: center;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-sizing: border-box;
+}
+
+.clogin-otp-input:focus {
+  border-color: rgba(99, 179, 237, 0.8);
+  box-shadow: 0 0 0 3px rgba(99, 179, 237, 0.2);
+}
+
+.clogin-otp-input::placeholder {
+  color: #cbd5e1;
+  letter-spacing: 0.3em;
+}
+
+/* Primary button */
+.clogin-btn-primary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  height: 48px;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
+  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.45);
+  letter-spacing: 0.02em;
+}
+
+.clogin-btn-primary:hover:not(:disabled) {
+  opacity: 0.92;
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.55);
+}
+
+.clogin-btn-primary:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.clogin-btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.clogin-btn-loading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.clogin-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: clogin-spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes clogin-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* OTP actions */
+.clogin-otp-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.clogin-link-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.65);
+  padding: 0;
+  transition: color 0.2s;
+}
+
+.clogin-link-btn:hover:not(:disabled) {
+  color: #fff;
+}
+
+.clogin-link-btn:disabled {
+  color: rgba(255, 255, 255, 0.35);
+  cursor: not-allowed;
+}
+
+/* Divider */
+.clogin-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 20px 0 16px;
+  color: rgba(255, 255, 255, 0.35);
+  font-size: 12px;
+}
+
+.clogin-divider::before,
+.clogin-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* Agency link */
+.clogin-agency-link {
+  text-align: center;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.5);
+  margin: 0;
+}
+
+.clogin-agency-anchor {
+  color: rgba(147, 197, 253, 0.9);
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.clogin-agency-anchor:hover {
+  color: #93c5fd;
+  text-decoration: underline;
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .clogin-left {
+    display: none;
+  }
+
+  .clogin-back-btn {
+    display: none;
+  }
+
+  .clogin-layout {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    min-height: 100vh;
+  }
+
+  .clogin-card {
+    max-width: 100%;
+    width: 100%;
+    padding: 28px 24px;
+  }
+
+  /* Logo top-center on mobile */
+  .clogin-card::before {
+    content: '';
+    display: block;
+  }
+
+  .clogin-mobile-logo {
+    display: flex !important;
+  }
+}
+
+.clogin-mobile-logo {
+  display: none;
+  justify-content: center;
+  margin-bottom: 28px;
+}
+
+.clogin-mobile-logo img {
+  height: 80px;
+}
+
+@media (max-width: 480px) {
+  .clogin-card {
+    padding: 24px 20px;
+  }
+}

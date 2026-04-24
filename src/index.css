@@ -53,9 +53,3 @@
 }
 .animate-fade-in { animation: fade-in 0.3s ease-out; }
 .animate-scale-in { animation: scale-in 0.2s ease-out; }
-
-html { scroll-behavior: smooth; }
-*:focus-visible {
-  outline: 2px solid var(--color-primary-500);
-  outline-offset: 2px;
-}

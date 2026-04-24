@@ -2,12 +2,14 @@ import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { Calendar, History, LogOut, User, MessageSquare, Menu, X } from 'lucide-react'
 import { useAuth } from '@/shared/context/AuthContext.jsx'
 import { useState } from 'react'
+import { useSocketNotifications } from '@/hooks/useSocketNotifications.js'
 
 export default function CustomerLayout() {
   const { logout } = useAuth()
   const navigate = useNavigate()
   const [showConfirmLogout, setShowConfirmLogout] = useState(false)
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+  useSocketNotifications()
 
   const handleLogout = () => {
     logout()

@@ -1,11 +1,15 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Navigate, useNavigate } from 'react-router-dom'
-import { Phone, Ticket } from 'lucide-react'
+import { Navigate, useNavigate, Link } from 'react-router-dom'
+import { Phone, ArrowRight, RotateCcw, ChevronLeft } from 'lucide-react'
 import { useAuth } from '@/shared/context/AuthContext.jsx'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
 import { getRoleRedirectPath } from '@/shared/utils/roleHelpers.js'
 import { ROLES } from '@/shared/utils/constants.js'
 import Loader from '@/shared/components/Loader.jsx'
+import logo from '@/assets/onTripLogo.png'
+import './Login.css'
+
+const BG_IMAGE = 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1800&q=85'
 
 export default function Login() {
   const navigate = useNavigate()
@@ -14,8 +18,7 @@ export default function Login() {
 
   const [mobile, setMobile] = useState('')
   const [otp, setOtp] = useState('')
-  const [step, setStep] = useState('phone') // 'phone' or 'otp'
-  /** Seconds until customer can resend OTP (countdown after send). */
+  const [step, setStep] = useState('phone')
   const [resendCooldownSec, setResendCooldownSec] = useState(0)
 
   useEffect(() => {
@@ -32,7 +35,7 @@ export default function Login() {
     return `${m}:${String(s).padStart(2, '0')}`
   }
 
-  const OTP_RESEND_COOLDOWN = 120 // 2 minutes before resend
+  const OTP_RESEND_COOLDOWN = 120
 
   const sendOtpToMobile = useCallback(async () => {
     const cleanedMobile = mobile.replace(/\D/g, '')
@@ -52,7 +55,7 @@ export default function Login() {
 
   if (isCheckingAuth) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50">
+      <div className="clogin-loading">
         <Loader size="lg" text="Loading…" />
       </div>
     )
@@ -75,12 +78,10 @@ export default function Login() {
 
   const handleLogin = async (e) => {
     e.preventDefault()
-    
     if (otp.length !== 4) {
       toast.error('Enter a valid 4-digit OTP')
       return
     }
-
     const res = await loginCustomer(mobile, otp)
     if (res.success) {
       toast.success('Welcome back!')
@@ -91,118 +92,159 @@ export default function Login() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
-      <div className="w-full max-w-md animate-scale-in rounded-xl border border-gray-200 bg-white p-8 shadow-sm">
-        <div className="mb-6 text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-xl bg-primary-600 shadow-lg">
-            <Ticket className="h-8 w-8 text-white" />
+    <div className="clogin-root">
+      {/* Background */}
+      <div className="clogin-bg">
+        <img src={BG_IMAGE} alt="" className="clogin-bg-img" />
+        <div className="clogin-bg-overlay" />
+      </div>
+
+      {/* Back to home */}
+      <Link to="/" className="clogin-back-btn">
+        <ChevronLeft size={16} />
+        Back to Home
+      </Link>
+
+      <div className="clogin-layout">
+        {/* Left — Branding */}
+        <div className="clogin-left">
+          <div className="clogin-tagline-wrap">
+            <div className="clogin-tagline-badge">
+              <span className="clogin-badge-dot" />
+              Travel Platform
+            </div>
+            <h1 className="clogin-tagline">
+              Explore<br />Horizons
+            </h1>
+            <p className="clogin-tagline-desc">
+              Where your dream destinations<br />become reality.
+            </p>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            {step === 'phone' ? 'Sign in' : 'Verify OTP'}
-          </h1>
-          <p className="mt-1 text-sm text-gray-600">
-            {step === 'phone' ? 'OnTrip — unified app' : `OTP sent to +91 ${mobile}`}
-          </p>
+
+          <div className="clogin-stats">
+            {[['500+', 'Agencies'], ['150+', 'Destinations'], ['4.9 ★', 'Rating']].map(([val, lbl]) => (
+              <div key={lbl} className="clogin-stat">
+                <span className="clogin-stat-val">{val}</span>
+                <span className="clogin-stat-lbl">{lbl}</span>
+              </div>
+            ))}
+          </div>
+
+          <div className="clogin-trust">
+            <div className="clogin-trust-avatars">
+              {['A', 'R', 'P', 'S'].map((l, i) => (
+                <div key={i} className="clogin-trust-avatar" style={{ zIndex: 4 - i }}>{l}</div>
+              ))}
+            </div>
+            <p className="clogin-trust-text">Trusted by <strong>2M+</strong> travelers worldwide</p>
+          </div>
         </div>
 
-        {step === 'phone' ? (
-          <form onSubmit={handleSendOtp} className="space-y-6">
-            <div>
-              <label className="mb-1 flex items-center gap-2 text-sm font-medium text-gray-700">
-                <Phone className="h-4 w-4 text-primary-500" /> Phone Number <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="tel"
-                className="input-field"
-                value={mobile}
-                onChange={(e) => setMobile(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                placeholder="10-digit mobile number"
-                autoComplete="tel"
-                required
-              />
-            </div>
-            <button 
-              type="submit" 
-              disabled={isLoading} 
-              className="btn-primary w-full py-3 text-lg font-semibold shadow-md active:scale-95 transition-transform"
-            >
-              {isLoading ? 'Sending OTP…' : 'Send OTP'}
-            </button>
-          </form>
-        ) : (
-          <form onSubmit={handleLogin} className="space-y-6">
-            {/* {resendCooldownSec > 0 && (
-              <div
-                className="rounded-lg border border-primary-100 bg-primary-50/90 px-4 py-3 text-center"
-                role="status"
-                aria-live="polite"
-              >
-                <p className="text-xs font-medium uppercase tracking-wide text-primary-800/80">OTP sent</p>
-                <p className="mt-1 text-2xl font-semibold tabular-nums text-primary-900">
-                  {formatTimer(resendCooldownSec)}
-                </p>
-                <p className="mt-1 text-xs text-primary-800/75">
-                  Resend is available after 2 minutes when this timer reaches 0:00.
-                </p>
+        {/* Right — Glass Card */}
+        <div className="clogin-card">
+          {/* Mobile-only logo */}
+          <div className="clogin-mobile-logo">
+            <img src={logo} alt="OnTrip" />
+          </div>
+          <div className="clogin-card-header">
+            <h2 className="clogin-card-title">
+              {step === 'phone' ? 'Welcome Back' : 'Verify OTP'}
+            </h2>
+            <p className="clogin-card-sub">
+              {step === 'phone'
+                ? 'Sign in to access your trips'
+                : `OTP sent to +91 ${mobile}`}
+            </p>
+          </div>
+
+          {step === 'phone' ? (
+            <form onSubmit={handleSendOtp} className="clogin-form">
+              <div className="clogin-field">
+                <label className="clogin-label">Phone Number</label>
+                <div className="clogin-input-wrap">
+                  <span className="clogin-input-prefix">
+                    <Phone size={15} />
+                    <span className="clogin-prefix-code">+91</span>
+                  </span>
+                  <input
+                    type="tel"
+                    className="clogin-input"
+                    value={mobile}
+                    onChange={(e) => setMobile(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                    placeholder="10-digit mobile number"
+                    autoComplete="tel"
+                    required
+                  />
+                </div>
               </div>
-            )} */}
-            <div>
-              <label className="mb-1 flex items-center gap-2 text-sm font-medium text-gray-700">
-                OTP <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                className="input-field text-center text-2xl tracking-[1em]"
-                value={otp}
-                onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 4))}
-                placeholder="0000"
-                maxLength={4}
-                required
-                autoFocus
-              />
-            </div>
-            <div className="space-y-3">
-              <button 
-                type="submit" 
-                disabled={isLoading} 
-                className="btn-primary w-full py-3 text-lg font-semibold shadow-md active:scale-95 transition-transform"
-              >
-                {isLoading ? 'Verifying…' : 'Login'}
+
+              <button type="submit" disabled={isLoading} className="clogin-btn-primary">
+                {isLoading ? (
+                  <span className="clogin-btn-loading">
+                    <span className="clogin-spinner" /> Sending OTP…
+                  </span>
+                ) : (
+                  <>Send OTP <ArrowRight size={16} /></>
+                )}
               </button>
-              <div className="flex flex-col items-center gap-2">
+            </form>
+          ) : (
+            <form onSubmit={handleLogin} className="clogin-form">
+              <div className="clogin-field">
+                <label className="clogin-label">Enter OTP</label>
+                <input
+                  type="text"
+                  className="clogin-input clogin-otp-input"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                  placeholder="• • • •"
+                  maxLength={4}
+                  required
+                  autoFocus
+                />
+              </div>
+
+              <button type="submit" disabled={isLoading} className="clogin-btn-primary">
+                {isLoading ? (
+                  <span className="clogin-btn-loading">
+                    <span className="clogin-spinner" /> Verifying…
+                  </span>
+                ) : (
+                  <>Verify & Login <ArrowRight size={16} /></>
+                )}
+              </button>
+
+              <div className="clogin-otp-actions">
                 <button
                   type="button"
                   onClick={handleResendOtp}
                   disabled={isLoading || resendCooldownSec > 0}
-                  className="text-sm font-medium text-primary-600 hover:text-primary-700 disabled:cursor-not-allowed disabled:text-gray-400 disabled:no-underline"
+                  className="clogin-link-btn"
                 >
-                  {resendCooldownSec > 0
-                    ? `Resend OTP in ${formatTimer(resendCooldownSec)}`
-                    : 'Resend OTP'}
+                  <RotateCcw size={13} />
+                  {resendCooldownSec > 0 ? `Resend in ${formatTimer(resendCooldownSec)}` : 'Resend OTP'}
                 </button>
-                <button 
+                <button
                   type="button"
-                  onClick={() => {
-                    setStep('phone')
-                    setOtp('')
-                    setResendCooldownSec(0)
-                  }}
-                  className="text-sm text-gray-600 hover:text-gray-800 font-medium"
+                  onClick={() => { setStep('phone'); setOtp(''); setResendCooldownSec(0) }}
+                  className="clogin-link-btn"
                 >
-                  Change Phone Number
+                  <ChevronLeft size={13} /> Change Number
                 </button>
               </div>
-            </div>
-          </form>
-        )}
+            </form>
+          )}
 
-        <div className="mt-8 border-t pt-6 text-center">
-          <p className="text-sm text-gray-500">
-            Need help? Contact support or your travel agency.
+          <div className="clogin-divider">
+            <span>or</span>
+          </div>
+
+          <p className="clogin-agency-link">
+            Travel agency?{' '}
+            <Link to="/login" className="clogin-agency-anchor">Agency Login</Link>
           </p>
         </div>
       </div>
     </div>
   )
 }
-

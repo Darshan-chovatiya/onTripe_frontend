@@ -1,13 +1,17 @@
 import { useState } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
-import { Mail, Lock, Eye, EyeOff, Clock } from 'lucide-react'
+import { Mail, Lock, Eye, EyeOff, ArrowRight, ChevronLeft } from 'lucide-react'
 import { useAuth } from '@/shared/context/AuthContext.jsx'
 import Loader from '@/shared/components/Loader.jsx'
 import { getPostLoginRedirectPath } from '@/shared/utils/roleHelpers.js'
+import logo from '@/assets/onTripLogo.png'
+import './AgentAdminLogin.css'
+
+const BG_IMAGE = 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=1800&q=85'
 
 const REGISTRATION_LINKS = [
-  { to: '/travelAgency/parent/register', label: 'Parent agency' },
-  { to: '/travelAgency/child/register', label: 'Child agent' },
+  { to: '/travelAgency/parent/register', label: 'Parent Agency' },
+  { to: '/travelAgency/child/register', label: 'Child Agent' },
 ]
 
 export default function AgentAdminLogin() {
@@ -20,7 +24,7 @@ export default function AgentAdminLogin() {
 
   if (isCheckingAuth) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50">
+      <div className="alogin-loading">
         <Loader size="lg" text="Loading…" />
       </div>
     )
@@ -35,41 +39,84 @@ export default function AgentAdminLogin() {
     setError('')
     const res = await login({ email: email.trim(), password })
     if (!res.success) {
-      const msg = res.message || 'Login failed'
-      setError(msg)
+      setError(res.message || 'Login failed')
       return
     }
-
     navigate(getPostLoginRedirectPath(res.user ?? { role: res.role }), { replace: true })
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 px-4 py-10">
-      <div className="w-full max-w-[400px] animate-fade-in">
-        <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-          <header className="bg-primary-700 px-8 py-7 text-center">
-            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-primary-200">OnTrip</p>
-            <h1 className="mt-3 text-xl font-semibold tracking-tight text-white sm:text-2xl">Sign in</h1>
-            <p className="mt-2 text-sm leading-snug text-primary-100">
-              Administrator and agency accounts. Use your registered email and password.
+    <div className="alogin-root">
+      {/* Background */}
+      <div className="alogin-bg">
+        <img src={BG_IMAGE} alt="" className="alogin-bg-img" />
+        <div className="alogin-bg-overlay" />
+      </div>
+
+      {/* Back to home */}
+      <Link to="/" className="alogin-back-btn">
+        <ChevronLeft size={16} /> Back to Home
+      </Link>
+
+      <div className="alogin-layout">
+        {/* Left — Branding */}
+        <div className="alogin-left">
+          <div className="alogin-tagline-wrap">
+            <div className="alogin-tagline-badge">
+              <span className="alogin-badge-dot" />
+              Agency Portal
+            </div>
+            <h1 className="alogin-tagline">
+              Beyond<br />Borders
+            </h1>
+            <p className="alogin-tagline-desc">
+              Unlock the world. Let your wanderlust<br />lead you to your dream destinations.
             </p>
-          </header>
+          </div>
 
-          <div className="p-8">
-            <form onSubmit={handleSubmit} className="space-y-5">
-              {error ? (
-                <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">{error}</div>
-              ) : null}
+          <div className="alogin-stats">
+            {[['500+', 'Agencies'], ['2M+', 'Bookings'], ['150+', 'Destinations']].map(([val, lbl]) => (
+              <div key={lbl} className="alogin-stat">
+                <span className="alogin-stat-val">{val}</span>
+                <span className="alogin-stat-lbl">{lbl}</span>
+              </div>
+            ))}
+          </div>
 
-              <div>
-                <label htmlFor="agency-email" className="mb-1.5 flex items-center gap-2 text-sm font-medium text-gray-700">
-                  <Mail className="h-4 w-4 text-primary-600" strokeWidth={2} />
-                  Email
-                </label>
+          <div className="alogin-trust">
+            <div className="alogin-trust-avatars">
+              {['A', 'R', 'P', 'S'].map((l, i) => (
+                <div key={i} className="alogin-trust-avatar" style={{ zIndex: 4 - i }}>{l}</div>
+              ))}
+            </div>
+            <p className="alogin-trust-text">Trusted by <strong>500+</strong> travel agencies</p>
+          </div>
+        </div>
+
+        {/* Right — Glass Card */}
+        <div className="alogin-card">
+          {/* Mobile-only logo */}
+          <div className="alogin-mobile-logo">
+            <img src={logo} alt="OnTrip" />
+          </div>
+
+          <div className="alogin-card-header">
+            <h2 className="alogin-card-title">Agency Sign In</h2>
+            <p className="alogin-card-sub">Administrator &amp; agency accounts</p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="alogin-form">
+            {error && (
+              <div className="alogin-error">{error}</div>
+            )}
+
+            <div className="alogin-field">
+              <label className="alogin-label">Email</label>
+              <div className="alogin-input-wrap">
+                <span className="alogin-input-icon"><Mail size={15} /></span>
                 <input
-                  id="agency-email"
                   type="email"
-                  className="input-field"
+                  className="alogin-input"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="name@company.com"
@@ -77,70 +124,61 @@ export default function AgentAdminLogin() {
                   required
                 />
               </div>
-
-              <div>
-                <label htmlFor="agency-password" className="mb-1.5 flex items-center gap-2 text-sm font-medium text-gray-700">
-                  <Lock className="h-4 w-4 text-primary-600" strokeWidth={2} />
-                  Password
-                </label>
-                <div className="relative">
-                  <input
-                    id="agency-password"
-                    type={showPassword ? 'text' : 'password'}
-                    className="input-field pr-11"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Enter your password"
-                    autoComplete="current-password"
-                    required
-                  />
-                  <button
-                    type="button"
-                    className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
-                    onClick={() => setShowPassword((v) => !v)}
-                    aria-label={showPassword ? 'Hide password' : 'Show password'}
-                  >
-                    {showPassword ? <EyeOff className="h-4 w-4" strokeWidth={2} /> : <Eye className="h-4 w-4" strokeWidth={2} />}
-                  </button>
-                </div>
-              </div>
-
-              <button type="submit" disabled={isLoading} className="btn-primary w-full py-3 text-sm font-semibold">
-                {isLoading ? (
-                  <span className="inline-flex items-center justify-center gap-2">
-                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                    Signing in…
-                  </span>
-                ) : (
-                  'Sign in'
-                )}
-              </button>
-            </form>
-
-            <div className="mt-4">
-              <nav className="text-center" aria-label="Agency registration">
-                <p className="text-xs text-gray-500">New agency account</p>
-                <p className="mt-1 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-sm leading-relaxed text-gray-600">
-                  {REGISTRATION_LINKS.map((item, i) => (
-                    <span key={item.to} className="inline-flex items-center">
-                      {i > 0 ? <span className="mr-2 text-gray-300 select-none">·</span> : null}
-                      <Link
-                        to={item.to}
-                        className="font-medium text-primary-600 underline-offset-2 transition-colors hover:text-primary-700 hover:underline"
-                      >
-                        {item.label}
-                      </Link>
-                    </span>
-                  ))}
-                </p>
-              </nav>
             </div>
-          </div>
-        </div>
 
-        <p className="mt-8 text-center text-xs text-gray-400">
-          © {new Date().getFullYear()} OnTrip. All rights reserved.
-        </p>
+            <div className="alogin-field">
+              <div className="alogin-label-row">
+                <label className="alogin-label">Password</label>
+                <Link to="/forgot-password" className="alogin-forgot">Forgot password?</Link>
+              </div>
+              <div className="alogin-input-wrap">
+                <span className="alogin-input-icon"><Lock size={15} /></span>
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  className="alogin-input"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Enter your password"
+                  autoComplete="current-password"
+                  required
+                />
+                <button
+                  type="button"
+                  className="alogin-eye-btn"
+                  onClick={() => setShowPassword((v) => !v)}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                </button>
+              </div>
+            </div>
+
+            <button type="submit" disabled={isLoading} className="alogin-btn-primary">
+              {isLoading ? (
+                <span className="alogin-btn-loading">
+                  <span className="alogin-spinner" /> Signing in…
+                </span>
+              ) : (
+                <>Sign In <ArrowRight size={16} /></>
+              )}
+            </button>
+          </form>
+
+          <div className="alogin-divider"><span>New agency?</span></div>
+
+          <div className="alogin-register-links">
+            {REGISTRATION_LINKS.map((item) => (
+              <Link key={item.to} to={item.to} className="alogin-register-btn">
+                {item.label}
+              </Link>
+            ))}
+          </div>
+
+          <p className="alogin-customer-link">
+            Customer?{' '}
+            <Link to="/customer/login" className="alogin-customer-anchor">Customer Login</Link>
+          </p>
+        </div>
       </div>
     </div>
   )

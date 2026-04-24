@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { useLocation } from 'react-router-dom'
+import { useEffect, useState, useCallback } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { MapPin, Users, MessageSquare } from 'lucide-react'
 import axiosInstance from '@/shared/services/axiosInstance.js'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
@@ -16,15 +16,25 @@ const getFullUrl = (path) =>
 export default function Community() {
   const { toast } = useToast()
   const location = useLocation()
-  const statePackageId = location.state?.selectedPackageId
+  const navigate = useNavigate()
+
+  // Read ?pkg= from URL — this is the source of truth for which chat is open
+  const urlPackageId = new URLSearchParams(location.search).get('pkg')
 
   const [bookings, setBookings] = useState([])
   const [loading, setLoading] = useState(true)
   const [selected, setSelected] = useState(null)
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
+  const pickTrip = useCallback((b, replace = false) => {
+    const pkgId = b.package._id
+    // Update URL — this drives the selected state
+    navigate(`/customer/community?pkg=${pkgId}`, { replace })
+    setSidebarOpen(false)
+  }, [navigate])
+
   useEffect(() => {
-    ; (async () => {
+    ;(async () => {
       try {
         const { data } = await axiosInstance.get('/customer/bookings')
         if (data?.success) {
@@ -37,11 +47,13 @@ export default function Community() {
               return true
             })
           setBookings(unique)
+
           if (unique.length > 0) {
-            const target = statePackageId
-              ? unique.find(b => b.package?._id === statePackageId)
-              : unique[0]
-            pickTrip(target || unique[0])
+            // If URL already has a pkg param, honour it; else pick first
+            const hasUrlParam = urlPackageId && unique.some(b => b.package._id === urlPackageId)
+            if (!hasUrlParam) {
+              pickTrip(unique[0], true)
+            }
           }
         }
       } catch {
@@ -50,20 +62,25 @@ export default function Community() {
         setLoading(false)
       }
     })()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const pickTrip = (b) => {
-    setSelected({
-      packageId: b.package._id,
-      customerId: b.customer?._id,
-      title: b.package.title,
-      destination: b.package.destination,
-      coverImage: b.package.coverImage,
-      travelDate: b.travelDate,
-      status: b.bookingStatus,
-    })
-    setSidebarOpen(false)
-  }
+  // Sync selected state whenever URL param or bookings change
+  useEffect(() => {
+    if (!bookings.length || !urlPackageId) return
+    const match = bookings.find(b => b.package._id === urlPackageId)
+    if (match) {
+      setSelected({
+        packageId: match.package._id,
+        customerId: match.customer?._id,
+        title: match.package.title,
+        destination: match.package.destination,
+        coverImage: match.package.coverImage,
+        travelDate: match.travelDate,
+        status: match.bookingStatus,
+      })
+    }
+  }, [urlPackageId, bookings])
 
   if (loading) return (
     <div className="flex min-h-[80vh] items-center justify-center">
@@ -115,13 +132,12 @@ export default function Community() {
         <div className="flex-1 overflow-y-auto px-3 pb-4 space-y-1">
           {bookings.map((b) => {
             const pkg = b.package
-            const isActive = selected?.packageId === pkg._id
 
             return (
               <button
                 key={pkg._id}
                 onClick={() => pickTrip(b)}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors text-left ${isActive ? 'bg-primary-50 border border-primary-200' : 'hover:bg-gray-100 border border-transparent'
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors text-left ${urlPackageId === pkg._id ? 'bg-primary-50 border border-primary-200' : 'hover:bg-gray-100 border border-transparent'
                   }`}
               >
                 {/* Square image */}
@@ -134,7 +150,7 @@ export default function Community() {
 
                 {/* Text */}
                 <div className="flex-1 min-w-0">
-                  <p className={`text-sm font-semibold truncate ${isActive ? 'text-primary-700' : 'text-gray-800'}`}>
+                  <p className={`text-sm font-semibold truncate ${urlPackageId === pkg._id ? 'text-primary-700' : 'text-gray-800'}`}>
                     {pkg.title}
                   </p>
                   {pkg.destination && (

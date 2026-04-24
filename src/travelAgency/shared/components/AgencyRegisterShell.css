@@ -1,0 +1,603 @@
+/* ── Agency Register Shell ── */
+
+.areg-root {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  font-family: 'Inter', sans-serif;
+}
+
+/* Background */
+.areg-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.areg-bg-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 40%;
+}
+
+.areg-bg-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(5,20,10,0.82) 0%, rgba(10,30,15,0.62) 50%, rgba(5,20,10,0.52) 100%);
+}
+
+/* Layout */
+.areg-layout {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 56px;
+  width: 100%;
+  max-width: 1060px;
+  padding: 48px 40px;
+  min-height: 100vh;
+}
+
+/* ── Left Branding ── */
+.areg-left {
+  flex: 1;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  padding-top: 12px;
+}
+
+.areg-logo {
+  height: 34px;
+  width: auto;
+  object-fit: contain;
+  filter: brightness(0) invert(1);
+}
+
+.areg-tagline-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.areg-tagline-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.55);
+}
+
+.areg-badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #a3e635;
+  box-shadow: 0 0 8px #a3e635;
+  flex-shrink: 0;
+}
+
+.areg-tagline {
+  font-size: clamp(40px, 5vw, 60px);
+  font-weight: 800;
+  line-height: 1.0;
+  letter-spacing: -0.03em;
+  color: #fff;
+  margin: 0;
+  text-shadow: 0 2px 20px rgba(0,0,0,0.4);
+}
+
+.areg-tagline-desc {
+  font-size: 15px;
+  font-weight: 400;
+  color: rgba(255,255,255,0.6);
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* Stats pill — same as agency login */
+.areg-stats {
+  display: flex;
+  gap: 0;
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 14px;
+  overflow: hidden;
+  width: fit-content;
+}
+
+.areg-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 13px 20px;
+  position: relative;
+}
+
+.areg-stat + .areg-stat::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 20%;
+  height: 60%;
+  width: 1px;
+  background: rgba(255,255,255,0.12);
+}
+
+.areg-stat-val {
+  font-size: 17px;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1;
+}
+
+.areg-stat-lbl {
+  font-size: 10px;
+  color: rgba(255,255,255,0.45);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+/* Perks — card style */
+.areg-perks {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.areg-perk {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 14px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 10px;
+  font-size: 13px;
+  color: rgba(255,255,255,0.8);
+  transition: background 0.2s;
+}
+
+.areg-perk:hover {
+  background: rgba(255,255,255,0.1);
+}
+
+.areg-perk-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  background: rgba(163,230,53,0.15);
+  border: 1px solid rgba(163,230,53,0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #a3e635;
+  flex-shrink: 0;
+}
+
+/* ── Glass Card ── */
+.areg-card {
+  width: 100%;
+  max-width: 580px;
+  flex-shrink: 0;
+  background: rgba(12, 22, 12, 0.60);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  border: 1px solid rgba(255,255,255,0.13);
+  border-radius: 22px;
+  padding: 36px 32px;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.1);
+}
+
+.areg-card-header {
+  margin-bottom: 20px;
+}
+
+.areg-card-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #fff;
+  margin: 0 0 6px;
+}
+
+.areg-card-sub {
+  font-size: 13px;
+  color: rgba(255,255,255,0.55);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.areg-card-body {
+  margin-bottom: 20px;
+}
+
+/* Step indicator */
+.areg-steps {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding: 16px 20px;
+  background: rgba(255,255,255,0.07);
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.11);
+}
+
+.areg-step-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  justify-content: flex-start;
+}
+
+.areg-step-item:last-child {
+  flex: 0 0 auto;
+}
+
+.areg-step-circle {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+  transition: all 0.3s;
+}
+
+.areg-step-idle {
+  background: rgba(255,255,255,0.11);
+  color: rgba(255,255,255,0.4);
+  border: 1.5px solid rgba(255,255,255,0.14);
+}
+
+.areg-step-active {
+  background: linear-gradient(135deg, #a3e635, #84cc16);
+  color: #1a2e05;
+  border: 1.5px solid #a3e635;
+  box-shadow: 0 0 14px rgba(163,230,53,0.45);
+}
+
+.areg-step-done {
+  background: rgba(163,230,53,0.22);
+  color: #a3e635;
+  border: 1.5px solid rgba(163,230,53,0.45);
+}
+
+.areg-step-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.48);
+  white-space: nowrap;
+}
+
+.areg-step-label-active {
+  color: rgba(255,255,255,0.88);
+}
+
+.areg-step-line {
+  position: absolute;
+  left: calc(100% - 8px);
+  width: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 2px;
+  background: rgba(255,255,255,0.11);
+  transition: background 0.3s;
+}
+
+.areg-step-line-done {
+  background: rgba(163,230,53,0.5);
+}
+
+/* Connector between steps */
+.areg-step-connector {
+  flex: 1;
+  height: 2px;
+  background: rgba(255,255,255,0.15);
+  border-radius: 2px;
+  margin: 0 10px;
+  transition: background 0.3s;
+}
+
+.areg-step-connector-done {
+  background: rgba(163,230,53,0.55);
+}
+
+/* Sign in link */
+.areg-signin-link {
+  text-align: center;
+  font-size: 13px;
+  color: rgba(255,255,255,0.45);
+  margin: 0;
+}
+
+.areg-signin-anchor {
+  color: rgba(163,230,53,0.85);
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.areg-signin-anchor:hover {
+  color: #a3e635;
+  text-decoration: underline;
+}
+
+/* Mobile logo */
+.areg-mobile-logo {
+  display: none;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+.areg-mobile-logo img {
+  height: 32px;
+  filter: brightness(0) invert(1);
+}
+
+.areg-mobile-logo-text {
+  font-size: 20px;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: 0.05em;
+}
+
+/* ── KYC Uploads ── */
+.kyc-wrap {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 14px;
+  padding: 20px;
+}
+
+.kyc-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 18px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.kyc-header-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #a3e635, #84cc16);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #1a2e05;
+  flex-shrink: 0;
+}
+
+.kyc-header-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  margin: 0 0 3px;
+}
+
+.kyc-header-sub {
+  font-size: 11px;
+  color: rgba(255,255,255,0.5);
+  margin: 0;
+}
+
+.kyc-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.kyc-slot {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.kyc-slot-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.kyc-slot-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.65);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 0;
+}
+
+.kyc-slot-req {
+  color: #fca5a5;
+}
+
+.kyc-slot-remove {
+  background: rgba(239,68,68,0.15);
+  border: 1px solid rgba(239,68,68,0.3);
+  border-radius: 6px;
+  padding: 4px;
+  color: #fca5a5;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+}
+
+.kyc-slot-remove:hover {
+  background: rgba(239,68,68,0.25);
+  border-color: rgba(239,68,68,0.5);
+}
+
+.kyc-slot-drop {
+  position: relative;
+  display: block;
+  cursor: pointer;
+  border-radius: 10px;
+  overflow: hidden;
+  background: rgba(255,255,255,0.92);
+  border: 1.5px dashed rgba(148,163,184,0.5);
+  transition: border-color 0.2s, box-shadow 0.2s;
+  min-height: 140px;
+}
+
+.kyc-slot-drop:hover {
+  border-color: rgba(163,230,53,0.6);
+  box-shadow: 0 0 0 3px rgba(163,230,53,0.1);
+}
+
+.kyc-slot-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 20px 12px;
+  min-height: 140px;
+  color: #64748b;
+}
+
+.kyc-slot-icon-wrap {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(163,230,53,0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #84cc16;
+}
+
+.kyc-slot-upload-text {
+  font-size: 12px;
+  font-weight: 600;
+  color: #475569;
+}
+
+.kyc-slot-hint {
+  font-size: 10px;
+  color: #94a3b8;
+}
+
+.kyc-slot-preview {
+  position: relative;
+  height: 140px;
+  background: #f1f5f9;
+}
+
+.kyc-slot-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.kyc-slot-img-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 50%);
+  display: flex;
+  align-items: flex-end;
+  padding: 8px;
+}
+
+.kyc-slot-filename {
+  font-size: 10px;
+  font-weight: 500;
+  color: #fff;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.kyc-slot-pdf {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 20px 12px;
+  min-height: 140px;
+}
+
+.kyc-slot-pdf-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: rgba(239,68,68,0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #dc2626;
+}
+
+.kyc-slot-hover-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.kyc-slot-drop:hover .kyc-slot-hover-overlay {
+  opacity: 1;
+}
+
+.kyc-slot-hover-overlay span {
+  background: rgba(255,255,255,0.95);
+  color: #1e293b;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 6px;
+}
+
+.kyc-disclaimer {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255,255,255,0.1);
+  font-size: 11px;
+  line-height: 1.5;
+  color: rgba(255,255,255,0.45);
+}
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+  .areg-left { display: none; }
+  .areg-layout {
+    justify-content: center;
+    padding: 40px 20px;
+  }
+  .areg-card {
+    max-width: 100%;
+  }
+  .areg-mobile-logo { display: flex !important; }
+}
+
+@media (max-width: 480px) {
+  .areg-card { padding: 24px 20px; }
+  .areg-steps { padding: 12px 14px; }
+  .areg-step-label { font-size: 11px; }
+  .kyc-grid { grid-template-columns: 1fr; }
+}

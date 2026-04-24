@@ -48,13 +48,9 @@ export default function Header({ onMenuClick }) {
   useEffect(() => {
     if (!menuOpen) return
     const onDocDown = (e) => {
-      if (menuRef.current && !menuRef.current.contains(/** @type {Node} */(e.target))) {
-        setMenuOpen(false)
-      }
+      if (menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false)
     }
-    const onKey = (e) => {
-      if (e.key === 'Escape') setMenuOpen(false)
-    }
+    const onKey = (e) => { if (e.key === 'Escape') setMenuOpen(false) }
     document.addEventListener('mousedown', onDocDown)
     document.addEventListener('keydown', onKey)
     return () => {
@@ -63,25 +59,11 @@ export default function Header({ onMenuClick }) {
     }
   }, [menuOpen])
 
-  useEffect(() => {
-    setMenuOpen(false)
-  }, [pathname])
+  useEffect(() => { setMenuOpen(false) }, [pathname])
 
-  const goSettings = () => {
-    setMenuOpen(false)
-    navigate('/admin/settings')
-  }
-
-  const requestLogout = () => {
-    setMenuOpen(false)
-    setShowLogoutConfirm(true)
-  }
-
-  const handleLogout = () => {
-    setShowLogoutConfirm(false)
-    logout()
-    navigate('/login', { replace: true })
-  }
+  const goSettings = () => { setMenuOpen(false); navigate('/admin/settings') }
+  const requestLogout = () => { setMenuOpen(false); setShowLogoutConfirm(true) }
+  const handleLogout = () => { setShowLogoutConfirm(false); logout(); navigate('/login', { replace: true }) }
 
   return (
     <>

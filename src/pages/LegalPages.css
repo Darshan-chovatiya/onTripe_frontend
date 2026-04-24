@@ -1,0 +1,466 @@
+/* ── Legal & Contact Pages ── */
+
+.legal-root {
+  min-height: 100vh;
+  background: #f8f9fc;
+  font-family: 'DM Sans', sans-serif;
+  color: #1a1a2e;
+}
+
+/* Nav */
+.legal-nav {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: rgba(255,255,255,0.92);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid #e8e8f0;
+}
+
+.legal-nav-inner {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 24px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.legal-back {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #6b6b8a;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.legal-back:hover { color: #3B2FA3; }
+
+.legal-brand {
+  font-family: 'Sora', sans-serif;
+  font-size: 16px;
+  font-weight: 800;
+  color: #3B2FA3;
+  letter-spacing: -0.02em;
+}
+
+/* Hero */
+.legal-hero {
+  background: linear-gradient(135deg, #3B2FA3 0%, #1E1860 100%);
+  padding: 56px 24px 48px;
+  text-align: center;
+  color: #fff;
+}
+
+.legal-hero-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+  color: #fff;
+}
+
+.legal-hero-title {
+  font-family: 'Sora', sans-serif;
+  font-size: clamp(28px, 5vw, 40px);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  margin: 0 0 10px;
+  color: #fff;
+}
+
+.legal-hero-sub {
+  font-size: 14px;
+  color: rgba(255,255,255,0.65);
+  margin: 0;
+}
+
+/* Body */
+.legal-body {
+  padding: 48px 24px 64px;
+}
+
+.legal-container {
+  max-width: 760px;
+  margin: 0 auto;
+}
+
+/* Sections */
+.legal-section {
+  background: #fff;
+  border: 1px solid #e8e8f0;
+  border-radius: 16px;
+  padding: 28px 32px;
+  margin-bottom: 16px;
+}
+
+.legal-section h2 {
+  font-family: 'Sora', sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin: 0 0 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #f0f0f8;
+}
+
+.legal-section h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #3B2FA3;
+  margin: 16px 0 8px;
+}
+
+.legal-section p {
+  font-size: 14px;
+  line-height: 1.75;
+  color: #4a4a6a;
+  margin: 0 0 10px;
+}
+
+.legal-section p:last-child { margin-bottom: 0; }
+
+.legal-section ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.legal-section ul li {
+  font-size: 14px;
+  line-height: 1.75;
+  color: #4a4a6a;
+  margin-bottom: 6px;
+}
+
+.legal-link {
+  color: #3B2FA3;
+  font-weight: 500;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* Footer */
+.legal-footer {
+  background: #1a1a2e;
+  padding: 24px;
+}
+
+.legal-footer-inner {
+  max-width: 900px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.legal-footer p {
+  font-size: 13px;
+  color: rgba(255,255,255,0.45);
+  margin: 0;
+}
+
+.legal-footer-links {
+  display: flex;
+  gap: 20px;
+}
+
+.legal-footer-links a {
+  font-size: 13px;
+  color: rgba(255,255,255,0.55);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.legal-footer-links a:hover { color: #fff; }
+
+/* ── Contact Page ── */
+.contact-layout {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr;
+  gap: 24px;
+  max-width: 900px;
+}
+
+.contact-info {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.contact-info-title {
+  font-family: 'Sora', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin: 0;
+}
+
+.contact-info-desc {
+  font-size: 14px;
+  line-height: 1.7;
+  color: #6b6b8a;
+  margin: 0;
+}
+
+.contact-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.contact-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  background: #fff;
+  border: 1px solid #e8e8f0;
+  border-radius: 12px;
+  padding: 14px 16px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.contact-card:hover {
+  border-color: #c4bef5;
+  box-shadow: 0 4px 16px rgba(59,47,163,0.08);
+}
+
+.contact-card-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  background: #eae8f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #3B2FA3;
+  flex-shrink: 0;
+}
+
+.contact-card-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #9896be;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 0 0 3px;
+}
+
+.contact-card-value {
+  font-size: 14px;
+  font-weight: 500;
+  color: #1a1a2e;
+  text-decoration: none;
+  margin: 0;
+  transition: color 0.2s;
+}
+
+a.contact-card-value:hover { color: #3B2FA3; }
+
+.contact-hours {
+  background: #f0effe;
+  border: 1px solid #ddd9f8;
+  border-radius: 12px;
+  padding: 16px 18px;
+}
+
+.contact-hours-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #3B2FA3;
+  margin: 0 0 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.contact-hours p {
+  font-size: 13px;
+  color: #4a4a6a;
+  margin: 0 0 4px;
+  line-height: 1.5;
+}
+
+/* Form */
+.contact-form-wrap {
+  background: #fff;
+  border: 1px solid #e8e8f0;
+  border-radius: 16px;
+  padding: 28px 28px;
+}
+
+.contact-form-title {
+  font-family: 'Sora', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin: 0 0 22px;
+}
+
+.contact-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.contact-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.contact-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.contact-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #6b6b8a;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.contact-input {
+  height: 44px;
+  padding: 0 14px;
+  font-size: 14px;
+  font-family: 'DM Sans', sans-serif;
+  color: #1a1a2e;
+  background: #f8f9fc;
+  border: 1.5px solid #e8e8f0;
+  border-radius: 10px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.contact-input:focus {
+  border-color: #3B2FA3;
+  box-shadow: 0 0 0 3px rgba(59,47,163,0.1);
+  background: #fff;
+}
+
+.contact-textarea {
+  height: auto;
+  padding: 12px 14px;
+  resize: vertical;
+  min-height: 120px;
+}
+
+.contact-btn-submit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 46px;
+  background: linear-gradient(135deg, #3B2FA3, #1E1860);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: 'DM Sans', sans-serif;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
+  box-shadow: 0 4px 16px rgba(59,47,163,0.3);
+  margin-top: 4px;
+}
+
+.contact-btn-submit:hover {
+  opacity: 0.92;
+  box-shadow: 0 6px 20px rgba(59,47,163,0.4);
+}
+
+.contact-btn-submit:active { transform: scale(0.98); }
+
+/* Success state */
+.contact-success {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 14px;
+  padding: 40px 20px;
+  min-height: 300px;
+}
+
+.contact-success-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: #eae8f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #3B2FA3;
+}
+
+.contact-success h3 {
+  font-family: 'Sora', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin: 0;
+}
+
+.contact-success p {
+  font-size: 14px;
+  color: #6b6b8a;
+  line-height: 1.7;
+  margin: 0;
+  max-width: 320px;
+}
+
+.contact-success p a {
+  color: #3B2FA3;
+  font-weight: 500;
+}
+
+.contact-btn-reset {
+  background: none;
+  border: 1.5px solid #3B2FA3;
+  color: #3B2FA3;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: 'DM Sans', sans-serif;
+  padding: 8px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.contact-btn-reset:hover {
+  background: #eae8f9;
+}
+
+/* Responsive */
+@media (max-width: 700px) {
+  .contact-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .contact-form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .legal-section {
+    padding: 20px 18px;
+  }
+
+  .legal-footer-inner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

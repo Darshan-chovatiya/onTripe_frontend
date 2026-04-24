@@ -1,0 +1,500 @@
+/* ── Agency Login Page ── */
+
+.alogin-loading {
+  display: flex;
+  min-height: 100vh;
+  align-items: center;
+  justify-content: center;
+  background: #0f172a;
+}
+
+.alogin-root {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  font-family: 'Inter', sans-serif;
+}
+
+/* Background */
+.alogin-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.alogin-bg-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 40%;
+}
+
+.alogin-bg-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(5, 20, 10, 0.80) 0%,
+    rgba(10, 30, 15, 0.60) 50%,
+    rgba(5, 20, 10, 0.50) 100%
+  );
+}
+
+/* Back button */
+.alogin-back-btn {
+  position: absolute;
+  top: 24px;
+  left: 28px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.alogin-back-btn:hover { color: #fff; }
+
+/* Layout */
+.alogin-layout {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 64px;
+  width: 100%;
+  max-width: 960px;
+  padding: 40px 24px;
+}
+
+/* ── Left Branding ── */
+.alogin-left {
+  flex: 1;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 36px;
+}
+
+.alogin-logo {
+  height: 34px;
+  width: auto;
+  object-fit: contain;
+  filter: brightness(0) invert(1);
+}
+
+.alogin-tagline-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.alogin-tagline-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.alogin-badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #a3e635;
+  box-shadow: 0 0 8px #a3e635;
+  flex-shrink: 0;
+}
+
+.alogin-tagline {
+  font-size: clamp(44px, 5.5vw, 68px);
+  font-weight: 800;
+  line-height: 1.0;
+  letter-spacing: -0.03em;
+  color: #fff;
+  margin: 0;
+  text-shadow: 0 2px 20px rgba(0,0,0,0.4);
+}
+
+.alogin-tagline-desc {
+  font-size: 15px;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.65);
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* Stats pill */
+.alogin-stats {
+  display: flex;
+  gap: 0;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  overflow: hidden;
+  width: fit-content;
+}
+
+.alogin-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 14px 22px;
+  position: relative;
+}
+
+.alogin-stat + .alogin-stat::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 20%;
+  height: 60%;
+  width: 1px;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.alogin-stat-val {
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1;
+}
+
+.alogin-stat-lbl {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.45);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+/* Trust row */
+.alogin-trust {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.alogin-trust-avatars { display: flex; }
+
+.alogin-trust-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #16a34a, #15803d);
+  border: 2px solid rgba(255,255,255,0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+  margin-left: -8px;
+}
+
+.alogin-trust-avatar:first-child { margin-left: 0; }
+
+.alogin-trust-text {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+  margin: 0;
+}
+
+.alogin-trust-text strong {
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 600;
+}
+
+/* ── Glass Card ── */
+.alogin-card {
+  width: 100%;
+  max-width: 400px;
+  background: rgba(255, 255, 255, 0.11);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 20px;
+  padding: 36px 32px;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+.alogin-card-header { margin-bottom: 24px; }
+
+.alogin-card-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #fff;
+  margin: 0 0 6px;
+}
+
+.alogin-card-sub {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.55);
+  margin: 0;
+}
+
+/* Form */
+.alogin-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.alogin-error {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: #fca5a5;
+}
+
+.alogin-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.alogin-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.alogin-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.65);
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+}
+
+.alogin-forgot {
+  font-size: 12px;
+  color: rgba(163, 230, 53, 0.85);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.alogin-forgot:hover { color: #a3e635; }
+
+.alogin-input-wrap {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1.5px solid transparent;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.alogin-input-wrap:focus-within {
+  border-color: rgba(163, 230, 53, 0.7);
+  box-shadow: 0 0 0 3px rgba(163, 230, 53, 0.15);
+}
+
+.alogin-input-icon {
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  color: #64748b;
+  flex-shrink: 0;
+}
+
+.alogin-input {
+  flex: 1;
+  height: 46px;
+  padding: 0 10px 0 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: #1e293b;
+  background: transparent;
+  border: none;
+  outline: none;
+}
+
+.alogin-input::placeholder {
+  color: #94a3b8;
+  font-weight: 400;
+}
+
+.alogin-eye-btn {
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  height: 46px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #94a3b8;
+  transition: color 0.2s;
+  flex-shrink: 0;
+}
+
+.alogin-eye-btn:hover { color: #475569; }
+
+/* Primary button — lime green like image */
+.alogin-btn-primary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  height: 48px;
+  background: linear-gradient(135deg, #a3e635 0%, #84cc16 100%);
+  color: #1a2e05;
+  font-size: 14px;
+  font-weight: 700;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
+  box-shadow: 0 4px 16px rgba(163, 230, 53, 0.35);
+  letter-spacing: 0.02em;
+  margin-top: 4px;
+}
+
+.alogin-btn-primary:hover:not(:disabled) {
+  opacity: 0.92;
+  box-shadow: 0 6px 20px rgba(163, 230, 53, 0.45);
+}
+
+.alogin-btn-primary:active:not(:disabled) { transform: scale(0.98); }
+
+.alogin-btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.alogin-btn-loading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.alogin-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(26, 46, 5, 0.3);
+  border-top-color: #1a2e05;
+  border-radius: 50%;
+  animation: alogin-spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes alogin-spin { to { transform: rotate(360deg); } }
+
+/* Divider */
+.alogin-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 20px 0 14px;
+  color: rgba(255, 255, 255, 0.35);
+  font-size: 12px;
+}
+
+.alogin-divider::before,
+.alogin-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* Register links */
+.alogin-register-links {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.alogin-register-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 38px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.07);
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+
+.alogin-register-btn:hover {
+  background: rgba(255, 255, 255, 0.13);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
+/* Customer link */
+.alogin-customer-link {
+  text-align: center;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.45);
+  margin: 0;
+}
+
+.alogin-customer-anchor {
+  color: rgba(163, 230, 53, 0.85);
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.alogin-customer-anchor:hover {
+  color: #a3e635;
+  text-decoration: underline;
+}
+
+/* Mobile logo */
+.alogin-mobile-logo {
+  display: none;
+  justify-content: center;
+  margin-bottom: 28px;
+}
+
+.alogin-mobile-logo img {
+  height: 80px;
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .alogin-left { display: none; }
+  .alogin-back-btn { display: none; }
+
+  .alogin-layout {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    min-height: 100vh;
+  }
+
+  .alogin-card {
+    max-width: 100%;
+    width: 100%;
+    padding: 28px 24px;
+  }
+
+  .alogin-mobile-logo { display: flex !important; }
+}
+
+@media (max-width: 480px) {
+  .alogin-card { padding: 24px 20px; }
+}

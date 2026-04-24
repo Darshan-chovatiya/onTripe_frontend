@@ -1,0 +1,163 @@
+/* ── Shared Register Form Styles ── */
+
+.rform-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.rform-field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.rform-field-full {
+  grid-column: 1 / -1;
+}
+
+.rform-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.65);
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+}
+
+.rform-input-wrap {
+  display: flex;
+  align-items: center;
+  background: rgba(255,255,255,0.95);
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1.5px solid rgba(255,255,255,0.3);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.rform-input-wrap:focus-within {
+  border-color: #a3e635;
+  box-shadow: 0 0 0 3px rgba(163,230,53,0.2);
+  background: #fff;
+}
+
+.rform-input-icon {
+  display: flex;
+  align-items: center;
+  padding: 0 11px;
+  color: #64748b;
+  flex-shrink: 0;
+}
+
+.rform-input {
+  flex: 1;
+  height: 44px;
+  padding: 0 12px 0 0;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: #1e293b;
+  background: transparent;
+  border: none;
+  outline: none;
+}
+
+.rform-input::placeholder {
+  color: #94a3b8;
+  font-weight: 400;
+}
+
+.rform-eye-btn {
+  display: flex;
+  align-items: center;
+  padding: 0 11px;
+  height: 44px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #94a3b8;
+  transition: color 0.2s;
+  flex-shrink: 0;
+}
+
+.rform-eye-btn:hover { color: #475569; }
+
+/* Buttons row */
+.rform-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.rform-btn-back {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 46px;
+  padding: 0 20px;
+  border-radius: 10px;
+  border: 1.5px solid rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.75);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.rform-btn-back:hover {
+  background: rgba(255,255,255,0.14);
+  color: #fff;
+}
+
+.rform-btn-primary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex: 1;
+  background: linear-gradient(135deg, #a3e635 0%, #84cc16 100%);
+  color: #1a2e05;
+  font-size: 14px;
+  font-weight: 700;
+  border: none;
+  border-radius: 10px;
+  padding: 10px;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
+  box-shadow: 0 4px 16px rgba(163,230,53,0.35);
+}
+
+.rform-btn-primary:hover:not(:disabled) {
+  opacity: 0.92;
+  box-shadow: 0 6px 20px rgba(163,230,53,0.45);
+}
+
+.rform-btn-primary:active:not(:disabled) { transform: scale(0.98); }
+
+.rform-btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.rform-btn-loading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rform-spinner {
+  width: 15px;
+  height: 15px;
+  border: 2px solid rgba(26,46,5,0.3);
+  border-top-color: #1a2e05;
+  border-radius: 50%;
+  animation: rform-spin 0.7s linear infinite;
+}
+
+@keyframes rform-spin { to { transform: rotate(360deg); } }
+
+@media (max-width: 480px) {
+  .rform-grid { grid-template-columns: 1fr; }
+  .rform-field-full { grid-column: 1; }
+}

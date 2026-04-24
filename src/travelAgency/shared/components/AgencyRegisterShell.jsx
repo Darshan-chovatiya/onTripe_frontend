@@ -1,48 +1,97 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ShieldCheck, Upload, FileText, X, ImageIcon } from 'lucide-react'
+import { ShieldCheck, Upload, FileText, X, ImageIcon, Check, LayoutDashboard, CalendarCheck, MapPin, Users } from 'lucide-react'
+import logo from '@/assets/onTripLogo.png'
+import './AgencyRegisterShell.css'
 
-/**
- * Shared layout for agency registration pages (parent / child / sub-child).
- * Matches AgentAdminLogin / admin sign-in styling.
- */
-export default function AgencyRegisterShell({ title, subtitle, children }) {
+/* ─── Step Indicator ─── */
+export function StepIndicator({ step }) {
+  const steps = ['Your Info', 'KYC Documents']
   return (
-    <div className="flex min-h-screen flex-col items-center bg-gray-50 px-4 py-10">
-      <div className="w-full max-w-xl animate-fade-in">
-        <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-          <header className="bg-primary-700 px-6 py-6 text-center sm:px-8 sm:py-7">
-            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-primary-200">OnTrip</p>
-            <h1 className="mt-3 text-xl font-semibold tracking-tight text-white sm:text-2xl">{title}</h1>
-            {subtitle ? <p className="mt-2 text-sm leading-snug text-primary-100">{subtitle}</p> : null}
-          </header>
-
-          <div className="p-6 sm:p-8">
-            {children}
-
-            <div className="mt-6 text-center text-sm text-gray-600">
-              Already have an account?{' '}
-              <Link
-                to="/login"
-                className="font-medium text-primary-600 underline-offset-2 transition-colors hover:text-primary-700 hover:underline"
-              >
-                Sign in
-              </Link>
+    <div className="areg-steps">
+      {steps.map((label, i) => {
+        const idx = i + 1
+        const done = step > idx
+        const active = step === idx
+        return (
+          <div key={label} className="areg-step-item">
+            <div className={`areg-step-circle ${done ? 'areg-step-done' : active ? 'areg-step-active' : 'areg-step-idle'}`}>
+              {done ? <Check size={13} strokeWidth={3} /> : idx}
             </div>
+            <span className={`areg-step-label ${active ? 'areg-step-label-active' : ''}`}>{label}</span>
+            {i < steps.length - 1 && (
+              <div className={`areg-step-connector ${done ? 'areg-step-connector-done' : ''}`} />
+            )}
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+/* ─── Main Shell ─── */
+export default function AgencyRegisterShell({ title, subtitle, step, children }) {
+  return (
+    <div className="areg-root">
+      {/* Background */}
+      <div className="areg-bg">
+        <img
+          src="https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=1800&q=85"
+          alt=""
+          className="areg-bg-img"
+        />
+        <div className="areg-bg-overlay" />
+      </div>
+
+      <div className="areg-layout">
+        <div className="areg-left">
+          <div className="areg-tagline-wrap">
+            <div className="areg-tagline-badge">
+              <span className="areg-badge-dot" />
+              Agency Portal
+            </div>
+            <h1 className="areg-tagline">Join the<br />Network</h1>
+            <p className="areg-tagline-desc">
+              Register your agency and start managing trips, bookings, and your team today.
+            </p>
+          </div>
+
+          <div className="areg-stats">
+            {[['500+', 'Agencies'], ['2M+', 'Bookings'], ['150+', 'Destinations']].map(([val, lbl]) => (
+              <div key={lbl} className="areg-stat">
+                <span className="areg-stat-val">{val}</span>
+                <span className="areg-stat-lbl">{lbl}</span>
+              </div>
+            ))}
           </div>
         </div>
+        <div className="areg-card">
+          <div className="areg-mobile-logo">
+            <img src={logo} alt="OnTrip" />
+          </div>
 
-        <p className="mt-8 text-center text-xs text-gray-400">
-          © {new Date().getFullYear()} OnTrip. All rights reserved.
-        </p>
+          <div className="areg-card-header">
+            <h2 className="areg-card-title">{title}</h2>
+            {subtitle && <p className="areg-card-sub">{subtitle}</p>}
+          </div>
+
+          {step && <StepIndicator step={step} />}
+
+          <div className="areg-card-body">{children}</div>
+
+          <p className="areg-signin-link">
+            Already have an account?{' '}
+            <Link to="/login" className="areg-signin-anchor">Sign in</Link>
+          </p>
+        </div>
       </div>
     </div>
   )
 }
 
+/* ─── KYC File Slot ─── */
 function isPdf(file) {
-  if (!file) return false
-  return file.type === 'application/pdf' || file.name?.toLowerCase().endsWith('.pdf')
+  return file && (file.type === 'application/pdf' || file.name?.toLowerCase().endsWith('.pdf'))
 }
 
 function isImage(file) {
@@ -53,10 +102,7 @@ function KycFileSlot({ name, label, file, onFileChange, onRemove }) {
   const [previewUrl, setPreviewUrl] = useState(null)
 
   useEffect(() => {
-    if (!file || !isImage(file)) {
-      setPreviewUrl(null)
-      return
-    }
+    if (!file || !isImage(file)) { setPreviewUrl(null); return }
     const url = URL.createObjectURL(file)
     setPreviewUrl(url)
     return () => URL.revokeObjectURL(url)
@@ -65,31 +111,17 @@ function KycFileSlot({ name, label, file, onFileChange, onRemove }) {
   const hasFile = Boolean(file)
 
   return (
-    <div className="flex flex-col rounded-xl border border-gray-200 bg-white p-3 shadow-sm ring-1 ring-black/[0.03] transition-shadow hover:shadow-md">
-      <div className="mb-2 flex items-start justify-between gap-2">
-        <p className="text-xs font-semibold text-gray-800">
-          {label} <span className="text-red-500">*</span>
-        </p>
-        {hasFile && onRemove ? (
-          <button
-            type="button"
-            onClick={(e) => {
-              e.preventDefault()
-              e.stopPropagation()
-              onRemove(name)
-            }}
-            className="shrink-0 rounded-lg p-1 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600"
-            aria-label={`Remove ${label}`}
-          >
-            <X className="h-4 w-4" strokeWidth={2} />
+    <div className="kyc-slot">
+      <div className="kyc-slot-header">
+        <p className="kyc-slot-label">{label} <span className="kyc-slot-req">*</span></p>
+        {hasFile && (
+          <button type="button" onClick={() => onRemove(name)} className="kyc-slot-remove" aria-label={`Remove ${label}`}>
+            <X size={14} strokeWidth={2} />
           </button>
-        ) : null}
+        )}
       </div>
 
-      <label
-        htmlFor={`kyc-input-${name}`}
-        className="group relative block cursor-pointer overflow-hidden rounded-lg bg-gray-50"
-      >
+      <label htmlFor={`kyc-input-${name}`} className="kyc-slot-drop">
         <input
           id={`kyc-input-${name}`}
           key={file ? `${name}-${file.name}-${file.size}` : name}
@@ -101,107 +133,56 @@ function KycFileSlot({ name, label, file, onFileChange, onRemove }) {
           required={!hasFile}
         />
 
-        <div className="relative flex min-h-[148px] flex-col items-center justify-center border border-dashed border-gray-300 transition-colors group-hover:border-primary-400 group-hover:bg-primary-50/40">
-          {!hasFile ? (
-            <div className="flex flex-col items-center gap-2 px-3 py-6 text-center">
-              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-white shadow-sm ring-1 ring-gray-200">
-                <Upload className="h-5 w-5 text-primary-600" strokeWidth={2} />
-              </div>
-              <span className="text-xs font-medium text-gray-600">Click to upload</span>
-              <span className="text-[11px] text-gray-400">JPG, PNG or PDF</span>
-            </div>
-          ) : isImage(file) ? (
-            previewUrl ? (
-              <div className="relative h-[148px] w-full bg-gray-100">
-                <img
-                  src={previewUrl}
-                  alt={`Preview ${label}`}
-                  className="h-full w-full object-contain"
-                />
-                <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/55 to-transparent px-2 py-2 pt-8">
-                  <p className="truncate text-center text-[11px] font-medium text-white drop-shadow-sm">{file.name}</p>
-                </div>
-              </div>
-            ) : (
-              <div className="flex h-[148px] items-center justify-center bg-gray-100">
-                <span className="text-xs text-gray-500">Loading preview…</span>
-              </div>
-            )
-          ) : isPdf(file) ? (
-            <div className="flex w-full flex-col items-center justify-center gap-3 px-3 py-6">
-              <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-red-50 ring-1 ring-red-100">
-                <FileText className="h-7 w-7 text-red-600" strokeWidth={1.5} />
-              </div>
-              <p className="max-w-full truncate px-1 text-center text-xs font-medium text-gray-800">{file.name}</p>
-              <span className="text-[11px] text-gray-500">PDF attached</span>
-            </div>
-          ) : (
-            <div className="flex flex-col items-center gap-2 px-3 py-6">
-              <ImageIcon className="h-8 w-8 text-gray-400" strokeWidth={1.5} />
-              <p className="max-w-full truncate text-center text-xs text-gray-700">{file.name}</p>
-            </div>
-          )}
+        {!hasFile ? (
+          <div className="kyc-slot-empty">
+            <div className="kyc-slot-icon-wrap"><Upload size={18} /></div>
+            <span className="kyc-slot-upload-text">Click to upload</span>
+            <span className="kyc-slot-hint">JPG, PNG or PDF</span>
+          </div>
+        ) : isImage(file) && previewUrl ? (
+          <div className="kyc-slot-preview">
+            <img src={previewUrl} alt={`Preview ${label}`} className="kyc-slot-img" />
+            <div className="kyc-slot-img-overlay"><p className="kyc-slot-filename">{file.name}</p></div>
+          </div>
+        ) : isPdf(file) ? (
+          <div className="kyc-slot-pdf">
+            <div className="kyc-slot-pdf-icon"><FileText size={24} strokeWidth={1.5} /></div>
+            <p className="kyc-slot-filename">{file.name}</p>
+            <span className="kyc-slot-hint">PDF attached</span>
+          </div>
+        ) : (
+          <div className="kyc-slot-empty">
+            <ImageIcon size={22} />
+            <p className="kyc-slot-filename">{file.name}</p>
+          </div>
+        )}
 
-          {hasFile ? (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 transition-all group-hover:bg-black/25 group-hover:opacity-100">
-              <span className="rounded-full bg-white/95 px-3 py-1.5 text-xs font-semibold text-gray-900 shadow-md">
-                Change file
-              </span>
-            </div>
-          ) : null}
-        </div>
+        {hasFile && (
+          <div className="kyc-slot-hover-overlay"><span>Change file</span></div>
+        )}
       </label>
     </div>
   )
 }
 
-/**
- * KYC uploads with image preview and PDF label (shared across agency registration forms).
- */
 export function KycDocumentUploads({ files, onFileChange, onRemoveFile, disclaimer }) {
   return (
-    <div className="overflow-hidden rounded-xl border border-gray-200 bg-gradient-to-b from-gray-50/95 to-white p-5 shadow-sm ring-1 ring-black/[0.04]">
-      <div className="mb-5 border-b border-gray-200/90 pb-4">
-        <h3 className="flex items-center gap-2.5 text-sm font-semibold text-gray-900">
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-600 text-white shadow-sm">
-            <ShieldCheck className="h-4 w-4" strokeWidth={2} />
-          </span>
-          <span>
-            KYC documents
-            <span className="mt-0.5 block text-xs font-normal text-gray-500">
-              Upload clear photos or PDFs. You can preview images before submitting.
-            </span>
-          </span>
-        </h3>
+    <div className="kyc-wrap">
+      <div className="kyc-header">
+        <div className="kyc-header-icon"><ShieldCheck size={16} strokeWidth={2} /></div>
+        <div>
+          <p className="kyc-header-title">KYC Documents</p>
+          <p className="kyc-header-sub">Upload clear photos or PDFs of your documents.</p>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <KycFileSlot
-          name="aadharFront"
-          label="Aadhaar front"
-          file={files.aadharFront}
-          onFileChange={onFileChange}
-          onRemove={onRemoveFile}
-        />
-        <KycFileSlot
-          name="aadharBack"
-          label="Aadhaar back"
-          file={files.aadharBack}
-          onFileChange={onFileChange}
-          onRemove={onRemoveFile}
-        />
-        <KycFileSlot
-          name="panCard"
-          label="PAN card"
-          file={files.panCard}
-          onFileChange={onFileChange}
-          onRemove={onRemoveFile}
-        />
+      <div className="kyc-grid">
+        <KycFileSlot name="aadharFront" label="Aadhaar Front" file={files.aadharFront} onFileChange={onFileChange} onRemove={onRemoveFile} />
+        <KycFileSlot name="aadharBack"  label="Aadhaar Back"  file={files.aadharBack}  onFileChange={onFileChange} onRemove={onRemoveFile} />
+        <KycFileSlot name="panCard"     label="PAN Card"      file={files.panCard}      onFileChange={onFileChange} onRemove={onRemoveFile} />
       </div>
 
-      {disclaimer ? (
-        <p className="mt-5 border-t border-gray-200/80 pt-4 text-[11px] leading-relaxed text-gray-500">{disclaimer}</p>
-      ) : null}
+      {disclaimer && <p className="kyc-disclaimer">{disclaimer}</p>}
     </div>
   )
 }

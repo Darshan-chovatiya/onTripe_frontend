@@ -9,6 +9,9 @@ import AgentAdminLogin from '@/auth/pages/AgentAdminLogin.jsx'
 import CustomerLogin from '@/auth/pages/Login.jsx'
 import ForgotPassword from '@/auth/pages/ForgotPassword.jsx'
 import Landing from '@/pages/Landing.jsx'
+import TermsAndConditions from '@/pages/TermsAndConditions.jsx'
+import PrivacyPolicy from '@/pages/DataPolicy.jsx'
+import ContactUs from '@/pages/ContactUs.jsx'
 
 import ChildAgentRegister from '@/travelAgency/childAgency/auth/Register.jsx'
 
@@ -92,6 +95,9 @@ export default function AppRouter() {
   return (
     <Routes>
       <Route path="/" element={<Landing />} />
+      <Route path="/terms" element={<TermsAndConditions />} />
+      <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+      <Route path="/contact" element={<ContactUs />} />
 
       <Route path="/login" element={<AgentAdminLogin />} />
       <Route path="/customer/login" element={<CustomerLogin />} />

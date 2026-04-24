@@ -11,6 +11,8 @@ import {
   Users,
   ChevronLeft,
   MessageSquare,
+  Bell,
+  BellOff,
 } from 'lucide-react'
 import { io } from 'socket.io-client'
 import axiosInstance from '@/shared/services/axiosInstance.js'
@@ -81,6 +83,8 @@ export default function CommunityChat({
   const [openMenuFor, setOpenMenuFor] = useState(null)
   const [confirmDelete, setConfirmDelete] = useState({ open: false, msg: null })
   const [messagingSaving, setMessagingSaving] = useState(false)
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true)
+  const [notifToggling, setNotifToggling] = useState(false)
   const scrollRef = useRef(null)
   const socketRef = useRef(null)
   const suppressAutoScrollRef = useRef(false)
@@ -128,6 +132,12 @@ export default function CommunityChat({
         setHasMore(true)
         await fetchMessages(data.data.community._id, { page: 1, mode: 'replace' })
         setupSocket(data.data.community._id)
+        // Fetch notification preference for this community
+        axiosInstance.get(`/community/${data.data.community._id}/notification-preference`)
+          .then(({ data: np }) => {
+            if (np?.success) setNotificationsEnabled(np.data?.notificationsEnabled !== false)
+          })
+          .catch(() => {})
       }
     } catch (err) {
       toast.error('Could not join community chat')
@@ -499,6 +509,23 @@ export default function CommunityChat({
     })
   }
 
+  const handleNotificationToggle = async () => {
+    if (!community?._id || notifToggling) return
+    const next = !notificationsEnabled
+    setNotifToggling(true)
+    try {
+      const { data } = await axiosInstance.patch(`/community/${community._id}/notification-preference`, { enabled: next })
+      if (data?.success) {
+        setNotificationsEnabled(next)
+        toast.success(next ? 'Notifications enabled' : 'Notifications muted')
+      }
+    } catch {
+      toast.error('Could not update notification preference')
+    } finally {
+      setNotifToggling(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex min-h-[200px] flex-col items-center justify-center gap-3 py-16">
@@ -604,6 +631,19 @@ export default function CommunityChat({
               </div>
             </div>
             <div className="flex shrink-0 items-center">
+              <button
+                type="button"
+                onClick={handleNotificationToggle}
+                disabled={notifToggling}
+                className="flex h-10 w-10 items-center justify-center rounded-full text-gray-600 hover:bg-black/5 disabled:opacity-50 dark:text-gray-300 dark:hover:bg-white/10"
+                title={notificationsEnabled ? 'Mute notifications' : 'Unmute notifications'}
+                aria-label={notificationsEnabled ? 'Mute notifications' : 'Unmute notifications'}
+              >
+                {notificationsEnabled
+                  ? <Bell className="h-5 w-5" strokeWidth={2} />
+                  : <BellOff className="h-5 w-5 text-gray-400" strokeWidth={2} />
+                }
+              </button>
               <button
                 type="button"
                 onClick={() => setSubScreen('members')}

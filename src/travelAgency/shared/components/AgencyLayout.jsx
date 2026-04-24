@@ -4,6 +4,7 @@ import { Menu, User, ChevronDown, Settings, LogOut } from 'lucide-react'
 import { useAuth } from '@/shared/context/AuthContext.jsx'
 import ConfirmDialog from '@/shared/components/ConfirmDialog.jsx'
 import { useAgencyPermissions } from '@/travelAgency/agency/hooks/useAgencyPermissions.js'
+import { useSocketNotifications } from '@/hooks/useSocketNotifications.js'
 
 // Map path segments to readable page titles
 function usePageTitle() {
@@ -198,6 +199,7 @@ function AgencyHeader({ onMenuClick }) {
 /** Same structure as admin AdminLayout (sidebar + header + main + overlay). */
 export default function AgencyLayout({ sidebar: Sidebar }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  useSocketNotifications()
 
   return (
     <div className="flex h-screen bg-gray-50">

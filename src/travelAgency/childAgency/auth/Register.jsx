@@ -1,49 +1,41 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { User, Mail, Lock, Phone, Key, Eye, EyeOff } from 'lucide-react'
+import { User, Mail, Lock, Phone, Key, Eye, EyeOff, ArrowRight, ChevronLeft } from 'lucide-react'
 import { useAuth } from '@/shared/context/AuthContext.jsx'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
 import AgencyRegisterShell, { KycDocumentUploads } from '@/travelAgency/shared/components/AgencyRegisterShell.jsx'
+import '@/travelAgency/shared/components/RegisterForm.css'
 
-const KYC_NOTE =
-  'By submitting, you agree to our terms. Your account remains pending until KYC is approved.'
+const KYC_NOTE = 'By submitting, you agree to our terms. Your account remains pending until KYC is approved.'
 
 export default function ChildRegister() {
   const navigate = useNavigate()
   const { registerAgent, isLoading } = useAuth()
   const { toast } = useToast()
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    password: '',
-    parentCode: '',
-  })
-  const [files, setFiles] = useState({
-    aadharFront: null,
-    aadharBack: null,
-    panCard: null,
-  })
-  const [showPassword, setShowPassword] = useState(false)
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value })
-  }
+  const [step, setStep] = useState(1)
+  const [showPassword, setShowPassword] = useState(false)
+  const [formData, setFormData] = useState({ name: '', email: '', phone: '', password: '', parentCode: '' })
+  const [files, setFiles] = useState({ aadharFront: null, aadharBack: null, panCard: null })
+
+  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value })
 
   const handleFileChange = (e) => {
     const f = e.target.files?.[0]
-    if (!f) return
-    setFiles((prev) => ({ ...prev, [e.target.name]: f }))
+    if (f) setFiles((prev) => ({ ...prev, [e.target.name]: f }))
   }
 
-  const removeKycFile = (name) => {
-    setFiles((prev) => ({ ...prev, [name]: null }))
+  const removeKycFile = (name) => setFiles((prev) => ({ ...prev, [name]: null }))
+
+  const handleStep1 = (e) => {
+    e.preventDefault()
+    setStep(2)
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     const submitData = new FormData()
-    Object.keys(formData).forEach((key) => submitData.append(key, formData[key]))
+    Object.keys(formData).forEach((k) => submitData.append(k, formData[k]))
     if (files.aadharFront) submitData.append('aadharFront', files.aadharFront)
     if (files.aadharBack) submitData.append('aadharBack', files.aadharBack)
     if (files.panCard) submitData.append('panCard', files.panCard)
@@ -59,128 +51,103 @@ export default function ChildRegister() {
 
   return (
     <AgencyRegisterShell
-      title="Agent registration"
-      subtitle="Use the invitation code from your parent or child agency. KYC is required before your account is active."
+      title="Child Agent Registration"
+      subtitle="Use the invitation code from your parent agency. KYC required before account activation."
+      step={step}
     >
-      <form onSubmit={handleSubmit} className="space-y-5">
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-          <div>
-            <label htmlFor="child-name" className="mb-1.5 flex items-center gap-2 text-sm font-medium text-gray-700">
-              <User className="h-4 w-4 text-primary-600" strokeWidth={2} />
-              Full name <span className="text-red-500">*</span>
-            </label>
-            <input
-              id="child-name"
-              type="text"
-              name="name"
-              className="input-field"
-              value={formData.name}
-              onChange={handleChange}
-              autoComplete="name"
-              required
-            />
-          </div>
-          <div>
-            <label htmlFor="child-email" className="mb-1.5 flex items-center gap-2 text-sm font-medium text-gray-700">
-              <Mail className="h-4 w-4 text-primary-600" strokeWidth={2} />
-              Email <span className="text-red-500">*</span>
-            </label>
-            <input
-              id="child-email"
-              type="email"
-              name="email"
-              className="input-field"
-              value={formData.email}
-              onChange={handleChange}
-              autoComplete="email"
-              required
-            />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-          <div>
-            <label htmlFor="child-phone" className="mb-1.5 flex items-center gap-2 text-sm font-medium text-gray-700">
-              <Phone className="h-4 w-4 text-primary-600" strokeWidth={2} />
-              Phone <span className="text-red-500">*</span>
-            </label>
-            <input
-              id="child-phone"
-              type="tel"
-              name="phone"
-              className="input-field"
-              value={formData.phone}
-              onChange={handleChange}
-              autoComplete="tel"
-              required
-            />
-          </div>
-          <div>
-            <label htmlFor="child-password" className="mb-1.5 flex items-center gap-2 text-sm font-medium text-gray-700">
-              <Lock className="h-4 w-4 text-primary-600" strokeWidth={2} />
-              Password <span className="text-red-500">*</span>
-            </label>
-            <div className="relative">
+      {step === 1 ? (
+        <form onSubmit={handleStep1} className="rform-grid">
+          <div className="rform-field">
+            <label className="rform-label">Full Name</label>
+            <div className="rform-input-wrap">
+              <span className="rform-input-icon"><User size={15} /></span>
               <input
-                id="child-password"
-                type={showPassword ? 'text' : 'password'}
-                name="password"
-                className="input-field pr-11"
-                value={formData.password}
-                onChange={handleChange}
-                minLength={8}
-                autoComplete="new-password"
-                placeholder="At least 8 characters"
-                required
+                type="text" name="name" className="rform-input"
+                value={formData.name} onChange={handleChange}
+                placeholder="Your full name" autoComplete="name" required
               />
-              <button
-                type="button"
-                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
-                onClick={() => setShowPassword((v) => !v)}
-                aria-label={showPassword ? 'Hide password' : 'Show password'}
-              >
-                {showPassword ? <EyeOff className="h-4 w-4" strokeWidth={2} /> : <Eye className="h-4 w-4" strokeWidth={2} />}
+            </div>
+          </div>
+
+          <div className="rform-field">
+            <label className="rform-label">Email</label>
+            <div className="rform-input-wrap">
+              <span className="rform-input-icon"><Mail size={15} /></span>
+              <input
+                type="email" name="email" className="rform-input"
+                value={formData.email} onChange={handleChange}
+                placeholder="name@company.com" autoComplete="email" required
+              />
+            </div>
+          </div>
+
+          <div className="rform-field">
+            <label className="rform-label">Phone</label>
+            <div className="rform-input-wrap">
+              <span className="rform-input-icon"><Phone size={15} /></span>
+              <input
+                type="tel" name="phone" className="rform-input"
+                value={formData.phone} onChange={handleChange}
+                placeholder="10-digit number" autoComplete="tel" required
+              />
+            </div>
+          </div>
+
+          <div className="rform-field">
+            <label className="rform-label">Password</label>
+            <div className="rform-input-wrap">
+              <span className="rform-input-icon"><Lock size={15} /></span>
+              <input
+                type={showPassword ? 'text' : 'password'} name="password" className="rform-input"
+                value={formData.password} onChange={handleChange}
+                placeholder="Min. 8 characters" minLength={8} autoComplete="new-password" required
+              />
+              <button type="button" className="rform-eye-btn" onClick={() => setShowPassword((v) => !v)}>
+                {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
               </button>
             </div>
           </div>
-        </div>
 
-        <div>
-          <label htmlFor="child-parent-code" className="mb-1.5 flex items-center gap-2 text-sm font-medium text-gray-700">
-            <Key className="h-4 w-4 text-primary-600" strokeWidth={2} />
-            Invitation code <span className="text-red-500">*</span>
-          </label>
-          <input
-            id="child-parent-code"
-            type="text"
-            name="parentCode"
-            placeholder="e.g. ONTRIP-XXXXX"
-            className="input-field"
-            value={formData.parentCode}
-            onChange={handleChange}
-            autoComplete="off"
-            required
+          <div className="rform-field rform-field-full">
+            <label className="rform-label">Invitation Code</label>
+            <div className="rform-input-wrap">
+              <span className="rform-input-icon"><Key size={15} /></span>
+              <input
+                type="text" name="parentCode" className="rform-input"
+                value={formData.parentCode} onChange={handleChange}
+                placeholder="e.g. ONTRIP-XXXXX" autoComplete="off" required
+              />
+            </div>
+          </div>
+
+          <div className="rform-field rform-field-full rform-actions">
+            <button type="submit" className="rform-btn-primary">
+              Continue <ArrowRight size={15} />
+            </button>
+          </div>
+        </form>
+      ) : (
+        <form onSubmit={handleSubmit}>
+          <KycDocumentUploads
+            files={files}
+            onFileChange={handleFileChange}
+            onRemoveFile={removeKycFile}
+            disclaimer={KYC_NOTE}
           />
-        </div>
-
-        <KycDocumentUploads
-          files={files}
-          onFileChange={handleFileChange}
-          onRemoveFile={removeKycFile}
-          disclaimer={KYC_NOTE}
-        />
-
-        <button type="submit" disabled={isLoading} className="btn-primary w-full py-3 text-sm font-semibold">
-          {isLoading ? (
-            <span className="inline-flex items-center justify-center gap-2">
-              <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-              Submitting…
-            </span>
-          ) : (
-            'Submit registration'
-          )}
-        </button>
-      </form>
+          <div className="rform-actions" style={{ marginTop: '18px' }}>
+            <button type="button" className="rform-btn-back" onClick={() => setStep(1)}>
+              <ChevronLeft size={15} /> Back
+            </button>
+            <button type="submit" disabled={isLoading} className="rform-btn-primary">
+              {isLoading ? (
+                <span className="rform-btn-loading"><span className="rform-spinner" /> Submitting…</span>
+              ) : (
+                <>Submit Registration <ArrowRight size={15} /></>
+              )}
+            </button>
+          </div>
+        </form>
+      )}
     </AgencyRegisterShell>
   )
 }
