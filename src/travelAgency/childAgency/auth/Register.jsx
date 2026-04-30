@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { User, Mail, Lock, Phone, Key, Eye, EyeOff, ArrowRight, ChevronLeft } from 'lucide-react'
 import { useAuth } from '@/shared/context/AuthContext.jsx'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
@@ -10,6 +10,7 @@ const KYC_NOTE = 'By submitting, you agree to our terms. Your account remains pe
 
 export default function ChildRegister() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const { registerAgent, isLoading } = useAuth()
   const { toast } = useToast()
 
@@ -17,6 +18,13 @@ export default function ChildRegister() {
   const [showPassword, setShowPassword] = useState(false)
   const [formData, setFormData] = useState({ name: '', email: '', phone: '', password: '', parentCode: '' })
   const [files, setFiles] = useState({ aadharFront: null, aadharBack: null, panCard: null })
+
+  useEffect(() => {
+    const code = searchParams.get('parentCode') || searchParams.get('invitationCode')
+    if (code) {
+      setFormData(prev => ({ ...prev, parentCode: code }))
+    }
+  }, [searchParams])
 
   const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value })
 

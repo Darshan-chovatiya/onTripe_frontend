@@ -7,6 +7,7 @@ import {
   updatePackageGallery,
   deactivatePackage,
   activatePackage,
+  softDeletePackage,
 } from '@/travelAgency/parentAgency/services/parentAgencyApi.js'
 import { getApiErrorMessage } from '@/shared/services/apiHelpers.js'
 
@@ -64,5 +65,10 @@ export function usePackages() {
     await fetchPackages()
   }, [fetchPackages])
 
-  return { packages, loading, error, fetchPackages, create, update, updateCover, updateGallery, deactivate, activate }
+  const remove = useCallback(async (id) => {
+    await softDeletePackage(id)
+    await fetchPackages()
+  }, [fetchPackages])
+
+  return { packages, loading, error, fetchPackages, create, update, updateCover, updateGallery, deactivate, activate, remove }
 }
