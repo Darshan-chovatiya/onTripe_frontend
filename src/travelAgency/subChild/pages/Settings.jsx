@@ -38,29 +38,29 @@ export default function Settings() {
 
   useEffect(() => {
     let cancelled = false
-    ;(async () => {
-      setLoadingProfile(true)
-      try {
-        const { data } = await getSubChildProfile()
-        const u = data?.data?.user
-        if (!cancelled && u) {
-          setName(u.name || '')
-          setEmail(u.email || '')
-          setPhone(u.phone || '')
-          setKycStatus(u.kyc?.status || u.kycStatus || null)
-          if (u.kyc) setKyc(u.kyc)
+      ; (async () => {
+        setLoadingProfile(true)
+        try {
+          const { data } = await getSubChildProfile()
+          const u = data?.data?.user
+          if (!cancelled && u) {
+            setName(u.name || '')
+            setEmail(u.email || '')
+            setPhone(u.phone || '')
+            setKycStatus(u.kyc?.status || u.kycStatus || null)
+            if (u.kyc) setKyc(u.kyc)
+          }
+        } catch {
+          if (!cancelled) {
+            setName(user?.name || '')
+            setEmail(user?.email || '')
+            setPhone(user?.phone || '')
+            setKycStatus(user?.kyc?.status || null)
+          }
+        } finally {
+          if (!cancelled) setLoadingProfile(false)
         }
-      } catch {
-        if (!cancelled) {
-          setName(user?.name || '')
-          setEmail(user?.email || '')
-          setPhone(user?.phone || '')
-          setKycStatus(user?.kyc?.status || null)
-        }
-      } finally {
-        if (!cancelled) setLoadingProfile(false)
-      }
-    })()
+      })()
     return () => {
       cancelled = true
     }
@@ -107,9 +107,9 @@ export default function Settings() {
     try {
       const { data } = await updateSubChildKyc(formData)
       if (data?.data?.user) {
-         setKyc(data.data.user.kyc)
-         setKycStatus(data.data.user.kyc?.status || 'pending')
-         setUser(data.data.user)
+        setKyc(data.data.user.kyc)
+        setKycStatus(data.data.user.kyc?.status || 'pending')
+        setUser(data.data.user)
       }
       toast.success('KYC documents submitted for re-verification.')
     } catch (err) {

@@ -141,7 +141,7 @@ export default function Home() {
   const activeDay = itinerary[activeDayIdx] || null
 
   return (
-    <div className="space-y-8 animate-fade-in pb-12 pt-4">
+    <div className="space-y-8 animate-fade-in pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
       {/* Hero Content (Banner) */}
       <div className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-primary-600 via-primary-700 to-indigo-800 p-8 text-white shadow-2xl md:p-12">
         <div className="relative z-10">

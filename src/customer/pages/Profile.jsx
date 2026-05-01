@@ -9,8 +9,14 @@ import {
   Camera,
   ShieldCheck,
   LogOut,
-  Ticket
+  Ticket,
+  ChevronRight,
+  Map,
+  Users,
+  Star,
+  MessageSquare
 } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { useAuth } from '@/shared/context/AuthContext.jsx'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
 import axiosInstance from '@/shared/services/axiosInstance.js'
@@ -25,17 +31,27 @@ export default function Profile() {
   const [isEditing, setIsEditing] = useState(false)
   const [formData, setFormData] = useState({ name: '', email: '' })
   const [isUpdating, setIsUpdating] = useState(false)
+  const [showReviewsPopup, setShowReviewsPopup] = useState(false)
 
-  const fetchProfile = async () => {
+  const [reviews, setReviews] = useState([])
+
+  const fetchProfileAndReviews = async () => {
     setLoading(true)
     try {
-      const { data } = await axiosInstance.get('/customer/profile')
-      if (data?.success) {
-        setProfile(data.data.customer)
+      const [profileRes, reviewsRes] = await Promise.all([
+        axiosInstance.get('/customer/profile'),
+        axiosInstance.get('/customer/reviews').catch(() => ({ data: { data: { reviews: [] } } }))
+      ])
+
+      if (profileRes.data?.success) {
+        setProfile(profileRes.data.data.customer)
         setFormData({
-          name: data.data.customer.name || '',
-          email: data.data.customer.email || ''
+          name: profileRes.data.data.customer.name || '',
+          email: profileRes.data.data.customer.email || ''
         })
+      }
+      if (reviewsRes.data?.success) {
+        setReviews(reviewsRes.data.data.reviews || [])
       }
     } catch (err) {
       toast.error('Failed to load profile')
@@ -45,7 +61,7 @@ export default function Profile() {
   }
 
   useEffect(() => {
-    fetchProfile()
+    fetchProfileAndReviews()
   }, [])
 
   const handleUpdate = async (e) => {
@@ -86,30 +102,54 @@ export default function Profile() {
         )}
       </div>
 
+      {/* Top Horizontal Quick Links */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+        <Link to="/customer/trip-history" className="flex items-center gap-4 p-5 rounded-2xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-white/5 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-gray-700 dark:text-gray-300 hover:text-emerald-700 transition-all shadow-sm group">
+          <div className="p-3 bg-emerald-50 dark:bg-white/5 rounded-xl text-emerald-600 group-hover:scale-110 transition-transform"><Map size={20} /></div>
+          <div>
+            <p className="font-black text-sm">Trip History</p>
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Past Journeys</p>
+          </div>
+        </Link>
+        <Link to="/customer/community" className="flex items-center gap-4 p-5 rounded-2xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-white/5 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 text-gray-700 dark:text-gray-300 hover:text-indigo-700 transition-all shadow-sm group">
+          <div className="p-3 bg-indigo-50 dark:bg-white/5 rounded-xl text-indigo-600 group-hover:scale-110 transition-transform"><Users size={20} /></div>
+          <div>
+            <p className="font-black text-sm">Community Chat</p>
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Connect</p>
+          </div>
+        </Link>
+        <button onClick={() => setShowReviewsPopup(true)} className="flex items-center gap-4 p-5 rounded-2xl bg-white dark:bg-gray-800 border border-gray-100 dark:border-white/5 hover:bg-amber-50 dark:hover:bg-amber-900/20 text-gray-700 dark:text-gray-300 hover:text-amber-700 transition-all shadow-sm group text-left">
+          <div className="p-3 bg-amber-50 dark:bg-white/5 rounded-xl text-amber-600 group-hover:scale-110 transition-transform"><Star size={20} /></div>
+          <div>
+            <p className="font-black text-sm">My Reviews</p>
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{reviews.length} Total Reviews</p>
+          </div>
+        </button>
+      </div>
+
       <div className="grid lg:grid-cols-3 gap-8">
         {/* LEFT COLUMN: Profile Status */}
         <div className="lg:col-span-1 space-y-6">
-          <div className="bg-white dark:bg-gray-800 rounded-[2.5rem] border-2 border-primary-50 dark:border-white/5 p-8 shadow-sm flex flex-col items-center text-center relative overflow-hidden group">
-            {/* Gradient Accent */}
-            <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-primary-500 to-indigo-600" />
+          <div className="bg-white dark:bg-gray-800 rounded-[2.5rem] border border-gray-100 dark:border-white/5 p-8 shadow-sm flex flex-col items-center text-center">
+            <h2 className="text-2xl font-black text-gray-900 dark:text-white truncate w-full px-2 mb-1">
+              {profile?.name || 'Traveler'}
+            </h2>
+            <p className="text-xs font-black uppercase tracking-widest text-primary-600 mb-8">Verified Explorer</p>
 
-            <div className="relative mb-6 mt-4">
-              <div className="w-32 h-32 md:w-40 md:h-40 rounded-[2.5rem] bg-gradient-to-tr from-primary-500 to-indigo-600 p-1 shadow-2xl transition-transform duration-500 group-hover:rotate-3">
-                <div className="w-full h-full rounded-[2.3rem] bg-white dark:bg-gray-900 flex items-center justify-center relative overflow-hidden">
-                  <span className="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-br from-primary-600 to-indigo-700 select-none">
-                    {profile?.name?.charAt(0).toUpperCase() || 'C'}
+            <div className="relative mb-6">
+              <div className="w-40 h-40 md:w-48 md:h-48 rounded-full bg-gradient-to-tr from-primary-500 to-indigo-600 p-[3px] shadow-2xl transition-transform duration-500 hover:scale-105">
+                <div className="w-full h-full rounded-full bg-white dark:bg-gray-900 flex items-center justify-center relative overflow-hidden">
+                  <span className="text-7xl font-black text-transparent bg-clip-text bg-gradient-to-br from-primary-600 to-indigo-700 select-none">
+                    {profile?.name?.charAt(0).toUpperCase() || 'T'}
                   </span>
                 </div>
               </div>
-              <div className="absolute -bottom-2 -right-2 bg-green-500 border-4 border-white dark:border-gray-800 w-10 h-10 rounded-full flex items-center justify-center shadow-lg" title="Account Verified">
+              <div className="absolute bottom-2 right-2 bg-emerald-500 border-4 border-white dark:border-gray-800 w-10 h-10 rounded-full flex items-center justify-center shadow-lg" title="Account Verified">
                 <ShieldCheck size={20} className="text-white" />
               </div>
             </div>
-
-            <h2 className="text-2xl font-black text-gray-900 dark:text-white truncate w-full px-2">
-              {profile?.name || 'Quick Traveler'}
-            </h2>
           </div>
+
         </div>
 
         {/* RIGHT COLUMN: Account Details / Forms */}
@@ -117,11 +157,11 @@ export default function Profile() {
           <div className="bg-white dark:bg-gray-800 rounded-[2.5rem] border border-gray-100 dark:border-white/5 p-8 md:p-10 shadow-sm relative">
             <div className="flex items-center justify-between mb-10">
               <div className="flex items-center gap-3">
-                <div className="p-3 bg-indigo-50 dark:bg-white/5 rounded-2xl text-indigo-600">
-                  <User size={24} />
-                </div>
-                <h3 className="text-xl font-black text-gray-900 dark:text-white uppercase tracking-tight">Identity Details</h3>
+                <h3 className="text-xl md:text-2xl font-black text-gray-900 dark:text-white tracking-tight">Identity & other details</h3>
               </div>
+              {!isEditing && (
+                <div className="w-3 h-3 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]"></div>
+              )}
               {isEditing && (
                 <button
                   onClick={() => { setIsEditing(false); setFormData({ name: profile.name || '', email: profile.email || '' }); }}
@@ -134,7 +174,7 @@ export default function Profile() {
 
             {isEditing ? (
               <form onSubmit={handleUpdate} className="space-y-8 animate-scale-in">
-                <div className="grid md:grid-cols-2 gap-8">
+                <div className="flex flex-col gap-6">
                   <div className="space-y-3">
                     <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-2">Public Full Name</label>
                     <div className="relative group">
@@ -182,35 +222,75 @@ export default function Profile() {
                 </div>
               </form>
             ) : (
-              <div className="grid md:grid-cols-2 gap-8">
-                <div className="p-6 rounded-3xl bg-gray-50/50 dark:bg-white/5 border border-gray-100 dark:border-white/10 group">
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-2">Display Name</p>
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-white dark:bg-gray-800 flex items-center justify-center text-primary-500 shadow-sm"><User size={20} /></div>
-                    <p className="text-xl font-black text-gray-900 dark:text-white truncate">{profile?.name || 'Not set'}</p>
-                  </div>
+              <div className="grid md:grid-cols-2 gap-x-12 gap-y-8">
+                <div className="border-b border-gray-100 dark:border-white/5 pb-5">
+                  <p className="text-xs font-bold text-gray-400 dark:text-gray-500 mb-2">Display Name</p>
+                  <p className="text-lg font-black text-gray-900 dark:text-white truncate">{profile?.name || 'Not set'}</p>
                 </div>
 
-                <div className="p-6 rounded-3xl bg-gray-50/50 dark:bg-white/5 border border-gray-100 dark:border-white/10 group">
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-2">Email</p>
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-white dark:bg-gray-800 flex items-center justify-center text-indigo-500 shadow-sm"><Mail size={20} /></div>
-                    <p className="text-xl font-black text-gray-900 dark:text-white truncate">{profile?.email || 'Not set'}</p>
-                  </div>
+                <div className="border-b border-gray-100 dark:border-white/5 pb-5">
+                  <p className="text-xs font-bold text-gray-400 dark:text-gray-500 mb-2">Primary Email</p>
+                  <p className="text-lg font-black text-gray-900 dark:text-white truncate">{profile?.email || 'Not set'}</p>
                 </div>
 
-                <div className="p-6 rounded-3xl bg-gray-50/50 dark:bg-white/5 border border-gray-100 dark:border-white/10 group">
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-2">Phone</p>
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-white dark:bg-gray-800 flex items-center justify-center text-green-500 shadow-sm"><Phone size={20} /></div>
-                    <p className="text-xl font-black text-gray-900 dark:text-white">+91 {profile?.phone}</p>
-                  </div>
+                <div className="border-b border-gray-100 dark:border-white/5 pb-5">
+                  <p className="text-xs font-bold text-gray-400 dark:text-gray-500 mb-2">Phone Number</p>
+                  <p className="text-lg font-black text-gray-900 dark:text-white">+91 {profile?.phone || 'Not provided'}</p>
                 </div>
+
               </div>
             )}
           </div>
         </div>
       </div>
+
+      {/* Reviews Popup */}
+      {showReviewsPopup && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowReviewsPopup(false)} />
+          <div className="relative z-10 w-full max-w-md bg-white dark:bg-gray-800 rounded-3xl shadow-2xl p-6 sm:p-8 animate-scale-in">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3 text-amber-600">
+                <div className="p-2 rounded-xl bg-amber-50"><Star size={24} /></div>
+                <h3 className="text-lg font-black uppercase tracking-widest">My Reviews</h3>
+              </div>
+              <button onClick={() => setShowReviewsPopup(false)} className="p-2 text-gray-400 hover:bg-gray-100 rounded-xl"><X size={20} /></button>
+            </div>
+            
+            <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2 scrollbar-hide">
+              {reviews.length > 0 ? (
+                reviews.map((review, idx) => (
+                  <div key={review._id || idx} className="bg-gray-50 dark:bg-gray-900/50 p-4 rounded-2xl border border-gray-100 dark:border-gray-700">
+                    <div className="flex justify-between items-start mb-2 gap-4">
+                      <h4 className="font-bold text-gray-900 dark:text-white line-clamp-1">{review.package?.title || 'Trip Package'}</h4>
+                      <div className="flex shrink-0">
+                        {[...Array(5)].map((_, i) => (
+                          <Star 
+                            key={i} 
+                            size={14} 
+                            className={i < review.overallRating ? "text-amber-400 fill-amber-400" : "text-gray-300 dark:text-gray-600"} 
+                          />
+                        ))}
+                      </div>
+                    </div>
+                    {review.comment && (
+                      <p className="text-sm text-gray-500 dark:text-gray-400 italic">"{review.comment}"</p>
+                    )}
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-8">
+                  <div className="w-16 h-16 rounded-full bg-gray-50 dark:bg-gray-800 flex items-center justify-center mx-auto mb-3">
+                    <Star size={24} className="text-gray-300 dark:text-gray-600" />
+                  </div>
+                  <p className="text-gray-500 font-medium">You haven't left any reviews yet.</p>
+                </div>
+              )}
+            </div>
+            <button onClick={() => setShowReviewsPopup(false)} className="mt-8 w-full py-3 bg-gray-900 text-white font-bold rounded-xl hover:opacity-90 transition-opacity">Close</button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

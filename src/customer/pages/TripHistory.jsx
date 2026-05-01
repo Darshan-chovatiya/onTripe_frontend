@@ -92,7 +92,7 @@ export default function TripHistory() {
   }
 
   return (
-    <div className="space-y-8 animate-fade-in">
+    <div className="space-y-8 animate-fade-in pb-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 px-2">
         <div className="space-y-1">
           <h1 className="text-3xl font-black text-gray-900 tracking-tight">Your Journeys</h1>
@@ -116,7 +116,7 @@ export default function TripHistory() {
         </div>
       </div>
 
-      <div className="grid gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 xl:gap-8">
         {bookings.map((booking) => {
           const pkg = booking.package || booking.whitelabelPackage?.originalPackage || {}
           const status = booking.bookingStatus || 'confirmed'
@@ -129,67 +129,46 @@ export default function TripHistory() {
           return (
             <div
               key={booking._id}
-              className="group relative bg-white rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-2xl hover:shadow-gray-200/50 transition-all duration-500 overflow-hidden"
+              className="group flex flex-col bg-white rounded-3xl border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden"
             >
-              <div className="flex flex-col md:flex-row p-4 md:p-6 gap-6 items-center">
-                {/* Package Image */}
-                <div className="w-full md:w-48 h-48 md:h-32 shrink-0 rounded-[1.5rem] overflow-hidden bg-gray-100 relative group-hover:shadow-lg transition-all duration-500">
-                  {pkg.coverImage ? (
-                    <img
-                      src={getFullUrl(pkg.coverImage)}
-                      alt={pkg.title}
-                      className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
-                    />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center bg-primary-50 text-primary-300">
-                      <MapPin size={32} />
-                    </div>
-                  )}
-                  {/* Status Badge Over Image in Mobile */}
-                  <div className="absolute top-3 left-3 md:hidden">
-                    <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.1em] backdrop-blur-md border ${status === 'completed' ? 'bg-green-500/20 text-green-700 border-green-500/30' :
-                        status === 'cancelled' ? 'bg-red-500/20 text-red-700 border-red-500/30' :
-                          'bg-blue-500/20 text-blue-700 border-blue-500/30'
-                      }`}>
-                      {status}
-                    </span>
+              {/* Package Image Header */}
+              <div className="relative h-48 w-full overflow-hidden bg-gray-100 shrink-0">
+                {pkg.coverImage ? (
+                  <img
+                    src={getFullUrl(pkg.coverImage)}
+                    alt={pkg.title}
+                    className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center bg-primary-50 text-primary-300">
+                    <MapPin size={40} />
+                  </div>
+                )}
+              </div>
+
+              {/* Card Content */}
+              <div className="flex flex-col flex-1 p-5">
+                <h3 className="text-xl font-black text-gray-900 group-hover:text-primary-600 transition-colors line-clamp-2 mb-4">
+                  {pkg.title || 'Trip to ' + pkg.destination}
+                </h3>
+
+                <div className="space-y-2 mt-auto">
+                  <div className="flex items-center gap-2 text-gray-500 text-sm font-medium">
+                    <Calendar size={16} className="text-gray-400 shrink-0" />
+                    <span className="truncate">{travelDate}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-gray-500 text-sm font-medium">
+                    <MapPin size={16} className="text-gray-400 shrink-0" />
+                    <span className="truncate">{pkg.destination}</span>
                   </div>
                 </div>
 
-                {/* Content */}
-                <div className="flex-1 min-w-0 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-primary-600 font-bold text-xs uppercase tracking-widest">
-                      <Ticket size={14} />
-                      {booking.bookingId}
-                    </div>
-                  </div>
-
-                  <h3 className="text-xl md:text-2xl font-black text-gray-900 group-hover:text-primary-600 transition-colors truncate">
-                    {pkg.title || 'Trip to ' + pkg.destination}
-                  </h3>
-
-                  <div className="flex flex-wrap gap-x-6 gap-y-2">
-                    <div className="flex items-center gap-2 text-gray-500 text-sm font-medium">
-                      <Calendar size={16} className="text-gray-400" />
-                      {travelDate}
-                    </div>
-                    <div className="flex items-center gap-2 text-gray-500 text-sm font-medium">
-                      <MapPin size={16} className="text-gray-400" />
-                      {pkg.destination}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Action */}
-                <div className="w-full md:w-auto pt-2 md:pt-0">
-                  <button
-                    onClick={() => navigate(`/customer/booking/${booking.bookingId}`)}
-                    className="w-full md:w-auto btn-secondary flex items-center justify-center gap-2 px-8 py-3 rounded-2xl font-bold bg-gray-50 hover:bg-primary-600 hover:text-white hover:border-primary-600 transition-all active:scale-95 border-gray-100"
-                  >
-                    View Trip <ChevronRight size={18} />
-                  </button>
-                </div>
+                <button
+                  onClick={() => navigate(`/customer/booking/${booking.bookingId}`)}
+                  className="mt-6 w-full flex items-center justify-center gap-2 py-3 rounded-xl font-bold bg-primary-50 text-primary-700 hover:bg-primary-600 hover:text-white transition-colors border border-primary-100 hover:border-primary-600"
+                >
+                  View Trip <ChevronRight size={18} />
+                </button>
               </div>
             </div>
           )

@@ -30,7 +30,7 @@ const inputCls = 'w-full rounded-lg border border-gray-200 bg-white px-3 py-2 te
 
 const fullImgUrl = (p) => {
   if (!p) return null
-  if (p.startsWith('http')) return p
+  if (p.startsWith('http') || p.startsWith('blob:')) return p
   return `${BASE_URL}/${String(p).replace(/^\//, '')}`
 }
 
@@ -109,7 +109,7 @@ export default function EditPackage() {
       const serverUrl = res.data?.data?.url || res.data?.data?.imageUrl || ''
       if (serverUrl) {
         URL.revokeObjectURL(localUrl)
-        updateEvent(di, ei, 'image', serverUrl.startsWith('http') ? serverUrl : `${BASE_URL}/${serverUrl.replace(/^\//, '')}`)
+        updateEvent(di, ei, 'image', serverUrl)
       }
     } catch (err) {
       toast.error(getApiErrorMessage(err))

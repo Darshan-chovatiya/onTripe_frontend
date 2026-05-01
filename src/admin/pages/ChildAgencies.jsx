@@ -13,6 +13,8 @@ import {
   Clock,
   XCircle,
   Layers,
+  ShieldCheck,
+  ShieldAlert,
 } from 'lucide-react'
 import adminApi from '@/admin/services/adminApi'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
@@ -58,6 +60,8 @@ export default function ChildAgencies({ agentRole = 'child_agent', pageTitle = '
 
   const [selectedAgent, setSelectedAgent] = useState(null)
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
+  const [rejectionReason, setRejectionReason] = useState('')
+  const [isActionLoading, setIsActionLoading] = useState(false)
 
   useEffect(() => {
     const handler = setTimeout(() => { setDebouncedSearch(searchQuery) }, 400)
@@ -141,6 +145,30 @@ export default function ChildAgencies({ agentRole = 'child_agent', pageTitle = '
         <Icon className="w-3 h-3" />{badge.label}
       </span>
     )
+  }
+  
+  const handleKycAction = async (action) => {
+    if (isActionLoading) return
+    if (action === 'reject' && !rejectionReason.trim()) {
+      toast.error('Rejection reason is required')
+      return
+    }
+    setIsActionLoading(true)
+    try {
+      const res = action === 'approve'
+        ? await adminApi.approveKyc(selectedAgent._id)
+        : await adminApi.rejectKyc(selectedAgent._id, rejectionReason.trim())
+      if (res.data.success) {
+        toast.success(res.data.message)
+        setIsDetailModalOpen(false)
+        setRejectionReason('')
+        fetchAgents()
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Action failed')
+    } finally {
+      setIsActionLoading(false)
+    }
   }
 
   const customersPathForAgent = (id) =>

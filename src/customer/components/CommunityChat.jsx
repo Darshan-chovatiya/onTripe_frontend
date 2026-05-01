@@ -13,6 +13,12 @@ import {
   MessageSquare,
   Bell,
   BellOff,
+  Download,
+  CheckSquare,
+  Square,
+  CheckCircle2,
+  Video,
+  Play,
 } from 'lucide-react'
 import { io } from 'socket.io-client'
 import axiosInstance from '@/shared/services/axiosInstance.js'
@@ -21,6 +27,9 @@ import { useAuth } from '@/shared/context/AuthContext.jsx'
 import ConfirmDialog from '@/shared/components/ConfirmDialog.jsx'
 import { ROLES } from '@/shared/utils/constants.js'
 import { getApiErrorMessage } from '@/shared/services/apiHelpers.js'
+import ScanFaceModal from './ScanFaceModal.jsx'
+import faceRecognitionService from '@/shared/services/faceRecognitionService.js'
+
 
 const SOCKET_URL = import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || 'http://localhost:5001'
 const BASE_IMG_URL = SOCKET_URL
@@ -71,6 +80,7 @@ export default function CommunityChat({
   /** Staged files before send: { id, file, previewUrl } */
   const [pendingImages, setPendingImages] = useState([])
   const pendingImagesRef = useRef([])
+  const inputRef = useRef(null)
   /** null = main chat; members | gallery = full-panel (in-page, not modal) */
   const [subScreen, setSubScreen] = useState(null)
   const [galleryLoading, setGalleryLoading] = useState(false)
@@ -85,6 +95,13 @@ export default function CommunityChat({
   const [messagingSaving, setMessagingSaving] = useState(false)
   const [notificationsEnabled, setNotificationsEnabled] = useState(true)
   const [notifToggling, setNotifToggling] = useState(false)
+  const [isScanModalOpen, setIsScanModalOpen] = useState(false)
+  const [faceSearchResults, setFaceSearchResults] = useState(null)
+  const [isFilteringByFace, setIsFilteringByFace] = useState(false)
+  const [isSearchingFace, setIsSearchingFace] = useState(false)
+  const [selectedImages, setSelectedImages] = useState([])
+  const [isSelectionMode, setIsSelectionMode] = useState(false)
+
   const scrollRef = useRef(null)
   const socketRef = useRef(null)
   const suppressAutoScrollRef = useRef(false)
@@ -120,6 +137,19 @@ export default function CommunityChat({
     if (!cid) return true
     return travelerCanSendInCommunity(community, cid)
   }, [community, user, selfId])
+
+  const canDeleteBulk = useMemo(() => {
+    if (selectedImages.length === 0) return false
+    if (isAdmin) return true
+    // Verify all selected images belong to the current user
+    const allLoaded = [...galleryImages, ...(faceSearchResults || [])]
+    const selectedImgObjects = allLoaded.filter(img => selectedImages.includes(img._id || img.image_path))
+    if (selectedImgObjects.length === 0) return false
+    // If we have selected images that aren't in the current loaded lists, 
+    // or if any of the found ones don't belong to the user, disable delete.
+    if (selectedImgObjects.length < selectedImages.length) return false
+    return selectedImgObjects.every(img => idStr(img.uploader) === idStr(selfId))
+  }, [selectedImages, isAdmin, galleryImages, faceSearchResults, selfId])
 
   const fetchCommunity = async () => {
     setLoading(true)
@@ -312,7 +342,149 @@ export default function CommunityChat({
     setSubScreen(null)
     setMemberSearch('')
     setPreviewSrc(null)
+    setIsFilteringByFace(false)
+    setFaceSearchResults(null)
   }
+
+  const handleFaceScan = async (blob) => {
+    if (!community?._id) return
+    setIsSearchingFace(true)
+    try {
+      // Use community._id as the groupId for face matching (matches disk folder)
+      const data = await faceRecognitionService.findMyPhotos(blob, community._id, 0.45)
+      if (data?.success) {
+        if (data.personalized_photos && data.personalized_photos.length > 0) {
+          setFaceSearchResults(data.personalized_photos)
+          setIsFilteringByFace(true)
+          setIsScanModalOpen(false)
+          toast.success(`Found ${data.personalized_photos.length} photos with your face!`)
+        } else {
+          toast.info("No photos found with your face in this trip.")
+        }
+      } else {
+        toast.error(data?.detail || "Could not match face.")
+      }
+    } catch (err) {
+      toast.error("Face recognition service error.")
+      console.error(err)
+    } finally {
+      setIsSearchingFace(false)
+    }
+  }
+
+  const clearFaceFilter = () => {
+    setIsFilteringByFace(false)
+    setFaceSearchResults(null)
+  }
+
+  const toggleSelection = (imgId) => {
+    setSelectedImages(prev => 
+      prev.includes(imgId) ? prev.filter(id => id !== imgId) : [...prev, imgId]
+    )
+  }
+
+  const selectAll = () => {
+    const allIds = (isFilteringByFace ? faceSearchResults : galleryImages).map(img => img._id || img.image_path)
+    if (selectedImages.length === allIds.length) {
+      setSelectedImages([])
+    } else {
+      setSelectedImages(allIds)
+    }
+  }
+
+  const downloadImage = async (url, filename) => {
+    try {
+      const response = await fetch(url)
+      const blob = await response.blob()
+      const blobUrl = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = blobUrl
+      link.download = filename || 'ontrip-image.jpg'
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(blobUrl)
+    } catch (err) {
+      toast.error('Failed to download image')
+    }
+  }
+
+  const downloadSelected = async () => {
+    if (selectedImages.length === 0) return
+    toast.info(`Starting download of ${selectedImages.length} images...`)
+    
+    const imagesToDownload = (isFilteringByFace ? faceSearchResults : galleryImages).filter(img => 
+      selectedImages.includes(img._id || img.image_path)
+    )
+
+    for (const img of imagesToDownload) {
+      const src = isFilteringByFace 
+      
+        ? `${SOCKET_URL}/${img.image_path}` 
+        : `${BASE_IMG_URL}/${img.mediaType === 'video' ? img.videoUrl : img.imageUrl}`
+      const filename = (img.mediaType === 'video' ? img.videoUrl : (img.imageUrl || img.image_path)).split('/').pop()
+      await downloadImage(src, filename)
+    }
+    toast.success('Downloads completed')
+  }
+
+  const deleteSelected = async () => {
+    if (selectedImages.length === 0 || !community?._id) return
+    
+    // Gather all selected image objects to verify ownership and get IDs
+    const allLoaded = [...galleryImages, ...(faceSearchResults || [])]
+    const selectedImgObjects = allLoaded.filter(img => selectedImages.includes(img._id || img.image_path))
+
+    if (!isAdmin) {
+      const hasUnauthorized = selectedImgObjects.some(img => idStr(img.uploader) !== idStr(selfId))
+      if (hasUnauthorized || selectedImgObjects.length < selectedImages.length) {
+        toast.error('You can only delete your own images')
+        return
+      }
+    }
+
+    const idsToDelete = [...new Set(selectedImgObjects.map(img => img._id).filter(Boolean))]
+
+    if (idsToDelete.length === 0) {
+      toast.error('Cannot delete these images')
+      return
+    }
+
+    try {
+      const { data } = await axiosInstance.delete(`/community/${community._id}/bulk-delete-images`, {
+        data: { imageIds: idsToDelete }
+      })
+      if (data?.success) {
+        toast.success(data.message)
+        setSelectedImages([])
+        setIsSelectionMode(false)
+        fetchGallery(1, false)
+      } else {
+        toast.error(data?.message || 'Failed to delete images')
+      }
+    } catch (err) {
+      toast.error('Failed to delete images')
+    }
+  }
+
+  const deleteSingleImage = async (imgId) => {
+    if (!community?._id || !imgId) return
+    try {
+      const { data } = await axiosInstance.delete(`/community/${community._id}/images/${imgId}`)
+      if (data?.success) {
+        toast.success('Image deleted')
+        setGalleryImages(prev => prev.filter(img => img._id !== imgId))
+        if (isFilteringByFace) {
+          setFaceSearchResults(prev => prev.filter(img => img._id !== imgId))
+        }
+      } else {
+        toast.error(data?.message || 'Failed to delete image')
+      }
+    } catch (err) {
+      toast.error('Failed to delete image')
+    }
+  }
+
 
   const removePendingImage = (id) => {
     setPendingImages((prev) => {
@@ -322,8 +494,8 @@ export default function CommunityChat({
     })
   }
 
-  const handleImagePick = (e) => {
-    const picked = Array.from(e.target.files || []).filter((f) => f.type.startsWith('image/'))
+  const handleMediaPick = (e) => {
+    const picked = Array.from(e.target.files || []).filter((f) => f.type.startsWith('image/') || f.type.startsWith('video/'))
     if (picked.length === 0) {
       e.target.value = ''
       return
@@ -331,10 +503,12 @@ export default function CommunityChat({
     const next = picked.map((file) => ({
       id: `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
       file,
+      type: file.type.startsWith('video/') ? 'video' : 'image',
       previewUrl: URL.createObjectURL(file),
     }))
     setPendingImages((p) => [...p, ...next])
     e.target.value = ''
+    setTimeout(() => inputRef.current?.focus(), 10)
   }
 
   const handleSendMessage = async (e) => {
@@ -374,7 +548,7 @@ export default function CommunityChat({
       let lastOk = -1
       for (let i = 0; i < queue.length; i++) {
         const formData = new FormData()
-        formData.append('image', queue[i].file)
+        formData.append('media', queue[i].file)
         formData.append('caption', captionOnImage)
 
         const { data } = await axiosInstance.post(`/community/${community._id}/messages/image`, formData, {
@@ -391,7 +565,7 @@ export default function CommunityChat({
         queue.forEach((q) => URL.revokeObjectURL(q.previewUrl))
         setPendingImages([])
         if (queue.length === 1) setInputText('')
-        toast.success(queue.length === 1 ? 'Photo sent' : `${queue.length} photos sent`)
+        toast.success(queue.length === 1 ? (queue[0].type === 'video' ? 'Video sent' : 'Photo sent') : `${queue.length} items sent`)
       } else if (lastOk >= 0) {
         for (let j = 0; j <= lastOk; j++) {
           URL.revokeObjectURL(queue[j].previewUrl)
@@ -403,6 +577,7 @@ export default function CommunityChat({
       toast.error(queue.length > 0 ? 'Image upload failed' : 'Network error')
     } finally {
       setIsSending(false)
+      setTimeout(() => inputRef.current?.focus(), 10)
     }
   }
 
@@ -554,8 +729,8 @@ export default function CommunityChat({
       : 'flex h-[90vh] w-full max-w-full flex-col overflow-hidden rounded-2xl border border-gray-200/90 bg-white shadow-[0_8px_30px_rgb(0,0,0,0.06)] dark:border-white/10 dark:bg-gray-950 dark:shadow-none'
 
   const headerClass = isFlush
-    ? 'flex h-[52px] shrink-0 items-center gap-2 border-b border-gray-200 bg-white/95 px-2 backdrop-blur-sm dark:border-white/10 dark:bg-gray-950/95 sm:px-3'
-    : 'flex h-[52px] shrink-0 items-center gap-2 border-b border-gray-100 bg-white/95 px-2 backdrop-blur-sm dark:border-white/10 dark:bg-gray-950/95 sm:px-3'
+    ? 'flex h-[72px] shrink-0 items-center gap-4 border-b border-gray-100 bg-white/80 px-4 backdrop-blur-xl dark:border-white/5 dark:bg-gray-950/80'
+    : 'flex h-[72px] shrink-0 items-center gap-4 border-b border-gray-100 bg-white/80 px-4 backdrop-blur-xl dark:border-white/5 dark:bg-gray-950/80'
 
   const filterMembers = (list) => {
     if (!memberSearch.trim()) return list
@@ -586,15 +761,50 @@ export default function CommunityChat({
               {subScreen === 'members' ? 'Group members' : 'Media'}
             </h2>
             {subScreen === 'gallery' ? (
-              <button
-                type="button"
-                onClick={() => fetchGallery(1, false)}
-                disabled={galleryLoading}
-                className="shrink-0 rounded-lg px-2 py-1.5 text-xs font-medium text-primary-700 hover:bg-black/5 disabled:opacity-50 dark:text-primary-400 dark:hover:bg-white/10"
-              >
-                Refresh
-              </button>
+              <div className="flex items-center gap-1">
+                {isFilteringByFace ? (
+                   <button
+                    type="button"
+                    onClick={clearFaceFilter}
+                    className="shrink-0 rounded-lg bg-amber-50 px-2 py-1.5 text-xs font-semibold text-amber-700 hover:bg-amber-100 dark:bg-amber-900/30 dark:text-amber-400"
+                  >
+                    Clear Filter
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setIsScanModalOpen(true)}
+                    className="flex shrink-0 items-center gap-1.5 rounded-lg bg-primary-50 px-2 py-1.5 text-xs font-semibold text-primary-700 hover:bg-primary-100 dark:bg-primary-900/30 dark:text-primary-400"
+                  >
+                    <Camera size={14} strokeWidth={2.5} />
+                    Find Me
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => fetchGallery(1, false)}
+                  disabled={galleryLoading}
+                  className="shrink-0 rounded-lg px-2 py-1.5 text-xs font-medium text-gray-600 hover:bg-black/5 disabled:opacity-50 dark:text-gray-400 dark:hover:bg-white/10"
+                >
+                  Refresh
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsSelectionMode(!isSelectionMode)
+                    setSelectedImages([])
+                  }}
+                  className={`shrink-0 rounded-lg px-2 py-1.5 text-xs font-semibold transition-colors ${
+                    isSelectionMode 
+                      ? 'bg-primary-600 text-white shadow-sm' 
+                      : 'text-gray-600 hover:bg-black/5 dark:text-gray-400 dark:hover:bg-white/10'
+                  }`}
+                >
+                  {isSelectionMode ? 'Cancel' : 'Select'}
+                </button>
+              </div>
             ) : null}
+
           </>
         ) : (
           <>
@@ -769,34 +979,177 @@ export default function CommunityChat({
         </div>
       ) : subScreen === 'gallery' ? (
         <div className="min-h-0 flex-1 overflow-y-auto bg-zinc-50 dark:bg-gray-950">
-          {galleryLoading ? (
+          {galleryLoading || isSearchingFace ? (
             <div className="flex flex-col items-center justify-center gap-3 py-20">
               <Loader2 className="h-8 w-8 animate-spin text-gray-400" strokeWidth={2} />
-              <p className="text-sm text-gray-500">Loading…</p>
+              <p className="text-sm text-gray-500">{isSearchingFace ? 'Finding your photos...' : 'Loading…'}</p>
             </div>
-          ) : galleryImages.length === 0 ? (
+          ) : (isFilteringByFace ? (faceSearchResults || []) : galleryImages).length === 0 ? (
             <div className="py-16 text-center">
               <Camera className="mx-auto h-10 w-10 text-gray-300" strokeWidth={1.5} />
-              <p className="mt-3 text-sm text-gray-600 dark:text-gray-400">No media yet</p>
+              <p className="mt-3 text-sm text-gray-600 dark:text-gray-400">
+                {isFilteringByFace ? "No photos found with your face" : "No media yet"}
+              </p>
+              {isFilteringByFace && (
+                <button 
+                  onClick={clearFaceFilter}
+                  className="mt-2 text-xs font-medium text-primary-600 hover:underline"
+                >
+                  Show all photos
+                </button>
+              )}
             </div>
           ) : (
             <div className="p-2">
-              <div className="grid grid-cols-3 gap-0.5 sm:grid-cols-6">
-                {galleryImages.map((img) => {
-                  const src = `${BASE_IMG_URL}/${img.imageUrl}`
-                  return (
+              {isFilteringByFace && (
+                <div className="mb-3 flex items-center justify-between rounded-xl bg-primary-50/50 p-3 ring-1 ring-primary-100 dark:bg-primary-900/20 dark:ring-primary-900/30">
+                  <div className="flex items-center gap-2">
+                    <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary-600 text-[10px] font-bold text-white">
+                      {faceSearchResults?.length}
+                    </div>
+                    <span className="text-xs font-semibold text-primary-900 dark:text-primary-100">Photos found with your face</span>
+                  </div>
+                  <button onClick={clearFaceFilter} className="text-[10px] font-bold uppercase tracking-wider text-primary-700 hover:text-primary-900 dark:text-primary-400 dark:hover:text-primary-200">
+                    Show All
+                  </button>
+                </div>
+              )}
+
+              {isSelectionMode && (
+                <div className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-white p-3 shadow-sm dark:bg-gray-900 ring-1 ring-gray-100 dark:ring-white/5">
+                  <div className="flex items-center gap-3">
                     <button
-                      key={img._id}
-                      type="button"
-                      onClick={() => setPreviewSrc(src)}
-                      className="aspect-square overflow-hidden bg-black/5"
+                      onClick={selectAll}
+                      className="flex items-center gap-2 text-xs font-bold text-gray-700 hover:text-primary-600 dark:text-gray-300 dark:hover:text-primary-400 transition-colors"
                     >
-                      <img src={src} alt="" className="h-full w-full object-cover" loading="lazy" />
+                      {selectedImages.length === (isFilteringByFace ? faceSearchResults : galleryImages).length ? (
+                        <CheckSquare size={16} className="text-primary-600" />
+                      ) : (
+                        <Square size={16} />
+                      )}
+                      Select All
                     </button>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-gray-400">
+                      {selectedImages.length} Selected
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={downloadSelected}
+                      disabled={selectedImages.length === 0}
+                      className="flex items-center gap-1.5 rounded-lg bg-primary-50 px-3 py-1.5 text-xs font-bold text-primary-700 hover:bg-primary-100 disabled:opacity-40 transition-all active:scale-95"
+                    >
+                      <Download size={14} />
+                      Download
+                    </button>
+                    <button
+                      onClick={() => setConfirmDelete({ 
+                        open: true, 
+                        msg: { _id: 'bulk', isBulk: true } 
+                      })}
+                      disabled={!canDeleteBulk}
+                      className="flex items-center gap-1.5 rounded-lg bg-red-50 px-3 py-1.5 text-xs font-bold text-red-700 hover:bg-red-100 disabled:opacity-40 transition-all active:scale-95"
+                    >
+                      <Trash2 size={14} />
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <div className="grid grid-cols-3 gap-0.5 sm:grid-cols-6">
+                {(isFilteringByFace ? (faceSearchResults || []) : galleryImages).map((img, idx) => {
+                  const id = img._id || img.image_path
+                  const isSelected = selectedImages.includes(id)
+                  const src = isFilteringByFace 
+                    ? `${SOCKET_URL}/${img.image_path}` 
+                    : `${BASE_IMG_URL}/${img.mediaType === 'video' ? img.videoUrl : img.imageUrl}`
+                  
+                  return (
+                    <div key={isFilteringByFace ? `face-${idx}` : img._id} className="relative aspect-square group">
+                      <button
+                        type="button"
+                        onClick={() => isSelectionMode ? toggleSelection(id) : setPreviewSrc({ src, type: img.mediaType || 'image' })}
+                        className={`h-full w-full overflow-hidden bg-black/5 transition-all ${
+                          isSelected ? 'p-2 bg-primary-100 dark:bg-primary-900/40' : 'active:scale-95'
+                        }`}
+                      >
+                        {img.mediaType === 'video' ? (
+                          <div className="relative h-full w-full">
+                            <video 
+                              src={src} 
+                              muted
+                              playsInline
+                              className={`h-full w-full object-cover transition-all ${
+                                isSelected ? 'rounded-lg shadow-inner ring-2 ring-primary-500' : ''
+                              }`}
+                            />
+                            <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                              <Play size={20} className="text-white fill-current" />
+                            </div>
+                          </div>
+                        ) : (
+                          <img 
+                            src={src} 
+                            alt="" 
+                            className={`h-full w-full object-cover transition-all ${
+                              isSelected ? 'rounded-lg shadow-inner ring-2 ring-primary-500' : ''
+                            }`} 
+                            loading="lazy" 
+                          />
+                        )}
+                      </button>
+                      
+                      {isSelectionMode && (
+                        <div 
+                          className="absolute right-1.5 top-1.5 cursor-pointer"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            toggleSelection(id)
+                          }}
+                        >
+                          {isSelected ? (
+                            <div className="flex h-5 w-5 items-center justify-center rounded-full bg-primary-600 text-white shadow-lg ring-2 ring-white">
+                              <Check size={12} strokeWidth={4} />
+                            </div>
+                          ) : (
+                            <div className="h-5 w-5 rounded-full border-2 border-white bg-black/20 shadow-lg backdrop-blur-sm" />
+                          )}
+                        </div>
+                      )}
+
+                      {!isSelectionMode && (
+                        <div className="absolute bottom-1.5 right-1.5 flex gap-1.5 opacity-0 transition-opacity group-hover:opacity-100">
+                          <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                const filename = (img.mediaType === 'video' ? img.videoUrl : (img.imageUrl || img.image_path)).split('/').pop();
+                                downloadImage(src, filename);
+                            }}
+                            className="flex h-7 w-7 items-center justify-center rounded-full bg-black/40 text-white hover:bg-black/60 backdrop-blur-sm"
+                            title="Download"
+                          >
+                            <Download size={14} />
+                          </button>
+                          {(isAdmin || idStr(img.uploader) === idStr(selfId)) && img._id && (
+                            <button
+                              onClick={(e) => {
+                                  e.stopPropagation();
+                                  setConfirmDelete({ open: true, msg: { _id: img._id, isSingle: true } })
+                              }}
+                              className="flex h-7 w-7 items-center justify-center rounded-full bg-red-500/40 text-white hover:bg-red-500/60 backdrop-blur-sm"
+                              title="Delete"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   )
                 })}
               </div>
-              {galleryHasMore ? (
+              {!isFilteringByFace && galleryHasMore ? (
                 <div className="mt-4 flex justify-center pb-4">
                   <button
                     type="button"
@@ -811,12 +1164,13 @@ export default function CommunityChat({
             </div>
           )}
         </div>
+
       ) : (
         <>
           <div
             ref={scrollRef}
             onScroll={onScroll}
-            className={`min-h-0 flex-1 space-y-3 overflow-y-auto bg-gradient-to-b from-zinc-50 via-white to-zinc-50/80 py-3 dark:from-gray-950 dark:via-gray-950 dark:to-gray-900 ${isFlush ? 'px-0' : 'px-2 sm:px-3'}`}
+            className={`min-h-0 flex-1 space-y-1 overflow-y-auto bg-[#F8F9FA] dark:bg-gray-950 ${isFlush ? 'px-0' : 'px-4 sm:px-6'} py-6 custom-scrollbar`}
           >
             {loadingMore && (
               <div className="sticky top-0 z-10 flex justify-center pb-1">
@@ -830,129 +1184,127 @@ export default function CommunityChat({
             )}
             {messages.length === 0 ? (
               <div className="flex h-full min-h-[160px] flex-col items-center justify-center text-center">
-                <p className="text-sm text-gray-600/80 dark:text-gray-400">No messages yet</p>
-                <p className="mt-0.5 text-xs text-gray-500/90 dark:text-gray-500">Send a message to start</p>
+                <div className="w-16 h-16 rounded-3xl bg-white shadow-sm flex items-center justify-center mb-4">
+                  <MessageSquare size={28} className="text-gray-300" />
+                </div>
+                <p className="text-sm font-bold text-gray-900 dark:text-white">No messages yet</p>
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Be the first to start the conversation!</p>
               </div>
             ) : (
               messages.map((msg, idx) => {
                 const isMe =
                   selfId &&
                   (msg.sender?._id === selfId || (typeof msg.sender === 'string' && msg.sender === selfId))
+                
                 const senderName = msg.sender?.name || 'Member'
                 const senderInfo = msg.senderType === 'User' ? (msg.sender?.role || 'Agent') : 'Traveler'
-                const showAvatar = idx === 0 || messages[idx - 1].sender?._id !== msg.sender?._id
+                
+                // Grouping Logic
+                const prevMsg = messages[idx - 1]
+                const nextMsg = messages[idx + 1]
+                const isFirstInGroup = !prevMsg || prevMsg.sender?._id !== msg.sender?._id
+                const isLastInGroup = !nextMsg || nextMsg.sender?._id !== msg.sender?._id
+                
                 const canDelete = Boolean(isMe || isAdmin)
-
                 const initial = (senderName.charAt(0) || '?').toUpperCase()
 
+                // Date separator logic
+                const msgDate = new Date(msg.createdAt).toDateString()
+                const prevMsgDate = prevMsg ? new Date(prevMsg.createdAt).toDateString() : null
+                const showDateSeparator = msgDate !== prevMsgDate
+
                 return (
-                  <div key={msg._id} className={`group flex items-end gap-1 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
-                    {canDelete ? (
-                      <div className="relative self-center">
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            setOpenMenuFor((prev) => (prev === msg._id ? null : msg._id))
-                          }}
-                          className="rounded-full p-1 text-gray-500 opacity-0 hover:bg-black/5 group-hover:opacity-100 dark:hover:bg-white/10"
-                          aria-label="Message actions"
-                        >
-                          <MoreVertical className="h-4 w-4" strokeWidth={2} />
-                        </button>
-
-                        {openMenuFor === msg._id ? (
-                          <div
-                            className={`absolute z-30 ${isMe ? 'right-0' : 'left-0'} mt-1 w-32 overflow-hidden rounded-lg border border-gray-200 bg-white py-0.5 shadow-lg dark:border-white/10 dark:bg-gray-800`}
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setOpenMenuFor(null)
-                                setConfirmDelete({ open: true, msg })
-                              }}
-                              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40"
-                            >
-                              <Trash2 className="h-3.5 w-3.5" strokeWidth={2} />
-                              Delete
-                            </button>
-                          </div>
-                        ) : null}
+                  <div key={msg._id} className="flex flex-col">
+                    {showDateSeparator && (
+                      <div className="flex justify-center my-6">
+                        <div className="px-4 py-1 rounded-full bg-gray-200/50 backdrop-blur-sm text-[10px] font-black uppercase tracking-widest text-gray-500 dark:bg-white/5 dark:text-gray-400">
+                          {msgDate === new Date().toDateString() ? 'Today' : 
+                           msgDate === new Date(Date.now() - 86400000).toDateString() ? 'Yesterday' : 
+                           msgDate}
+                        </div>
                       </div>
-                    ) : null}
+                    )}
 
-                    <div className={`flex max-w-[min(100%,26rem)] flex-col ${isMe ? 'items-end' : 'items-start'}`}>
-                      {showAvatar && (
-                        <div
-                          className={`mb-0.5 flex w-full min-w-0 max-w-full items-center gap-1.5 px-0.5 ${isMe ? 'justify-end' : 'justify-start'}`}
-                        >
-                          <div
-                            className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[9px] font-bold leading-none ${
-                              isMe
-                                ? 'bg-primary-500 text-white shadow-sm dark:bg-primary-600'
-                                : 'bg-gray-200 text-gray-700 ring-1 ring-gray-300/80 dark:bg-gray-600 dark:text-gray-100 dark:ring-white/10'
-                            }`}
-                            aria-hidden
-                          >
+                    <div className={`group flex items-end gap-2 mb-0.5 ${isMe ? 'flex-row-reverse' : 'flex-row'} ${isLastInGroup ? 'mb-4' : 'mb-0.5'}`}>
+                      {/* Avatar for others - Top aligned */}
+                      {!isMe && (
+                        <div className={`w-8 shrink-0 flex justify-center ${!isFirstInGroup ? 'invisible' : ''}`}>
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-[11px] font-bold shadow-sm">
                             {initial}
                           </div>
-                          <span
-                            className={`max-w-[min(11rem,55vw)] truncate text-[11px] font-medium sm:max-w-[13rem] ${isMe
-                                ? 'text-primary-800 dark:text-primary-200'
-                                : 'text-gray-800 dark:text-gray-200'
-                              }`}
-                            title={senderName}
-                          >
-                            {senderName}
-                          </span>
-                          <span
-                            className={`shrink-0 text-[10px] font-normal tabular-nums ${isMe
-                                ? 'text-primary-600/75 dark:text-primary-400/80'
-                                : 'text-gray-400 dark:text-gray-500'
-                              }`}
-                          >
-                            · {senderInfo}
-                          </span>
                         </div>
                       )}
 
-                      <div
-                        className={`rounded-xl px-2.5 py-1.5 text-sm leading-snug shadow-sm ${isMe
-                            ? 'rounded-br-md bg-primary-600 text-white dark:bg-primary-600 dark:text-white'
-                            : 'rounded-bl-md border border-gray-200/90 bg-white text-gray-900 shadow-gray-200/30 dark:border-white/10 dark:bg-gray-900 dark:text-gray-100'
-                          }`}
-                      >
-                        {msg.type === 'image' ? (
-                          <div className="space-y-1">
-                            <img
-                              src={`${BASE_IMG_URL}/${msg.imageUrl}`}
-                              alt=""
-                              className="max-h-64 cursor-pointer rounded-md object-cover"
-                              onClick={() => setPreviewSrc(`${BASE_IMG_URL}/${msg.imageUrl}`)}
-                            />
-                            {msg.content ? <p className="mt-1">{msg.content}</p> : null}
+                      <div className={`flex flex-col max-w-[80%] sm:max-w-[70%] ${isMe ? 'items-end' : 'items-start'}`}>
+                        
+                        {/* Outside Bubble: Name and Time */}
+                        {isFirstInGroup && (
+                          <div className="flex items-center gap-1 mb-1 px-1">
+                            {!isMe && (
+                              <span className="text-[11px] font-bold text-gray-800 dark:text-gray-200">
+                                {senderName},
+                              </span>
+                            )}
+                            <span className="text-[10px] text-gray-500 font-medium">
+                              {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
                           </div>
-                        ) : (
-                          <p className="whitespace-pre-wrap break-words">{msg.content}</p>
                         )}
-                      </div>
 
-                      <div
-                        className={`mt-0.5 flex items-center gap-1 px-0.5 text-[10px] ${isMe
-                            ? 'text-primary-700/75 dark:text-primary-200/70'
-                            : 'text-gray-500 dark:text-gray-500'
-                          } ${isMe ? 'flex-row-reverse' : ''}`}
-                      >
-                        <span>
-                          {new Date(msg.createdAt).toLocaleTimeString([], {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })}
-                        </span>
-                        {isMe ? (
-                          <Check className="h-3 w-3 opacity-50 text-current" strokeWidth={2} />
-                        ) : null}
+                        <div className="relative group/bubble flex items-start">
+                          <div
+                            className={`px-3 py-2 text-sm leading-relaxed shadow-sm transition-all duration-300 w-full ${
+                              isMe
+                                ? `bg-primary-600 text-white rounded-2xl rounded-tr-sm`
+                                : `bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-100 rounded-2xl rounded-tl-sm border border-gray-100 dark:border-white/5`
+                            }`}
+                          >
+                            {/* Message Content */}
+                            {msg.type === 'image' ? (
+                              <div className="space-y-2 py-1">
+                                <div className="relative overflow-hidden rounded-xl bg-gray-100 dark:bg-gray-800 border border-gray-100/50">
+                                  <img
+                                    src={`${BASE_IMG_URL}/${msg.imageUrl}`}
+                                    alt=""
+                                    className="max-h-[300px] w-full object-cover cursor-zoom-in transition-transform duration-500 hover:scale-105"
+                                    onClick={() => setPreviewSrc({ src: `${BASE_IMG_URL}/${msg.imageUrl}`, type: 'image' })}
+                                  />
+                                </div>
+                                {msg.content ? <p className="font-medium text-[13px]">{msg.content}</p> : null}
+                              </div>
+                            ) : msg.type === 'video' ? (
+                              <div className="space-y-2 py-1">
+                                <div className="relative overflow-hidden rounded-xl bg-black shadow-lg">
+                                  <video
+                                    src={`${BASE_IMG_URL}/${msg.videoUrl}`}
+                                    controls
+                                    className="max-h-[300px] w-full"
+                                  />
+                                </div>
+                                {msg.content ? <p className="font-medium text-[13px]">{msg.content}</p> : null}
+                              </div>
+                            ) : (
+                              <div className="flex items-end gap-2">
+                                <p className="whitespace-pre-wrap break-words font-medium text-[13px]">{msg.content}</p>
+                                {isMe && (
+                                  <Check className="w-3.5 h-3.5 text-primary-200 shrink-0 mb-0.5" strokeWidth={3} />
+                                )}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Action Menu - Floating */}
+                          {canDelete && (
+                            <div className={`absolute top-2 ${isMe ? '-left-10' : '-right-10'} opacity-0 group-hover/bubble:opacity-100 transition-opacity`}>
+                               <button
+                                onClick={() => setConfirmDelete({ open: true, msg })}
+                                className="p-1.5 rounded-full bg-white shadow-md border border-gray-100 text-gray-400 hover:text-red-500 transition-colors"
+                               >
+                                 <Trash2 size={14} />
+                               </button>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -961,96 +1313,106 @@ export default function CommunityChat({
             )}
           </div>
 
-          <div
-            className={`shrink-0 border-t border-gray-100 bg-white py-2 dark:border-white/10 dark:bg-gray-950 ${isFlush ? 'px-0' : 'px-2'}`}
-          >
-            {!canPostInCommunity ? (
-              <div
-                className={`mb-2 rounded-lg border border-amber-200/90 bg-amber-50 px-3 py-2.5 text-center text-xs text-amber-950 dark:border-amber-900/50 dark:bg-amber-950/35 dark:text-amber-100 ${isFlush ? 'mx-0' : 'mx-0 sm:mx-0'}`}
-              >
-                You can read this chat, but an agent has turned off sending messages for travelers here.
-              </div>
-            ) : null}
-            <form onSubmit={handleSendMessage} className="flex flex-col gap-2">
-              {pendingImages.length > 0 ? (
-                <div className="flex gap-2 overflow-x-auto py-1 pl-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                  {pendingImages.map((item) => (
-                    <div
-                      key={item.id}
-                      className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg ring-1 ring-gray-200 dark:ring-white/10"
-                    >
-                      <img src={item.previewUrl} alt="" className="h-full w-full object-cover" />
-                      <button
-                        type="button"
-                        onClick={() => removePendingImage(item.id)}
-                        disabled={isSending}
-                        className="absolute right-0.5 top-0.5 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-black/70 text-white shadow-sm backdrop-blur-[2px] transition-colors hover:bg-black/85 disabled:pointer-events-none disabled:opacity-40"
-                        aria-label="Remove photo"
-                      >
-                        <X className="h-3 w-3" strokeWidth={2.5} />
-                      </button>
-                    </div>
-                  ))}
+            <div className={`p-4 bg-white dark:bg-gray-950 ${isFlush ? 'px-0' : 'px-4'}`}>
+              {!canPostInCommunity ? (
+                <div
+                  className="mb-4 rounded-2xl border border-amber-100 bg-amber-50/50 p-4 text-center text-xs font-medium text-amber-800 dark:border-amber-900/20 dark:bg-amber-950/20 dark:text-amber-200"
+                >
+                  Messaging is currently limited to agents in this group.
                 </div>
               ) : null}
-              <div className="flex items-end gap-2">
-                <input
-                  type="file"
-                  id="chat-images"
-                  multiple
-                  accept="image/*"
-                  onChange={handleImagePick}
-                  disabled={!canPostInCommunity || isSending}
-                  className="hidden"
-                />
-                <label
-                  htmlFor="chat-images"
-                  className={`mb-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-gray-600 transition-colors dark:text-gray-300 ${!canPostInCommunity || isSending ? 'pointer-events-none opacity-40' : 'cursor-pointer hover:bg-black/5 dark:hover:bg-white/10'
-                    }`}
-                  title="Add photo"
-                >
-                  {isSending ? (
-                    <Loader2 className="h-5 w-5 animate-spin" strokeWidth={2} />
-                  ) : (
-                    <Camera className="h-6 w-6" strokeWidth={1.75} />
-                  )}
-                </label>
 
-                <div className="relative mb-0.5 min-w-0 flex-1">
-                  <input
-                    type="text"
-                    value={inputText}
-                    onChange={(e) => setInputText(e.target.value)}
-                    placeholder={
-                      pendingImages.length > 1
-                        ? 'Message (shown as its own line)'
-                        : pendingImages.length === 1
-                          ? 'Caption (optional)'
-                          : 'Message'
-                    }
-                    disabled={isSending || !canPostInCommunity}
-                    className="w-full rounded-full border-0 bg-white py-2.5 pl-4 pr-12 text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-1 focus:ring-primary-500 disabled:opacity-60 dark:bg-[#2a3942] dark:text-white dark:placeholder:text-gray-400"
-                  />
+              <form onSubmit={handleSendMessage} className="space-y-3">
+                {pendingImages.length > 0 && (
+                  <div className="flex gap-3 overflow-x-auto py-2 px-1 custom-scrollbar">
+                    {pendingImages.map((item) => (
+                      <div
+                        key={item.id}
+                        className="relative h-20 w-20 shrink-0 group"
+                      >
+                        <div className="absolute inset-0 rounded-2xl ring-2 ring-primary-500/50 opacity-0 group-hover:opacity-100 transition-opacity" />
+                        {item.type === 'video' ? (
+                          <div className="h-full w-full rounded-2xl bg-gray-100 flex items-center justify-center dark:bg-gray-800 border border-gray-200 dark:border-white/10">
+                            <Video className="h-8 w-8 text-gray-400" />
+                          </div>
+                        ) : (
+                          <img src={item.previewUrl} alt="" className="h-full w-full object-cover rounded-2xl border border-gray-200 dark:border-white/10 shadow-sm" />
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => removePendingImage(item.id)}
+                          className="absolute -top-2 -right-2 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white shadow-lg transform transition-transform hover:scale-110 active:scale-90"
+                        >
+                          <X size={14} strokeWidth={3} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 flex items-center bg-gray-50 dark:bg-white/5 rounded-xl border border-gray-100 dark:border-white/10 px-2 py-1.5 focus-within:ring-2 focus-within:ring-primary-500/20 focus-within:bg-white transition-all">
+                    <input
+                      type="text"
+                      value={inputText}
+                      onChange={(e) => setInputText(e.target.value)}
+                      placeholder={
+                        pendingImages.length > 1
+                          ? 'Add a caption for your items...'
+                          : pendingImages.length === 1
+                            ? 'Add a caption...'
+                            : 'Type your message...'
+                      }
+                      ref={inputRef}
+                      disabled={!canPostInCommunity}
+                      className="flex-1 bg-transparent border-none py-2.5 px-3 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:ring-0 focus:outline-none"
+                    />
+
+                    <div className="flex items-center gap-1 pr-1 border-l border-gray-200 pl-2 ml-1">
+                      <input
+                        type="file"
+                        id="chat-images"
+                        multiple
+                        accept="image/*,video/*"
+                        onChange={handleMediaPick}
+                        disabled={!canPostInCommunity || isSending}
+                        className="hidden"
+                      />
+                      <label
+                        htmlFor="chat-images"
+                        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-all ${
+                          !canPostInCommunity || isSending 
+                            ? 'opacity-40 grayscale pointer-events-none' 
+                            : 'cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-800 text-gray-500'
+                        }`}
+                      >
+                        {isSending ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Camera size={18} strokeWidth={2} />
+                        )}
+                      </label>
+                    </div>
+                  </div>
+
                   <button
                     type="submit"
-                    disabled={!canPostInCommunity || (!inputText.trim() && pendingImages.length === 0) || isSending}
-                    className="absolute right-1 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-primary-600 text-white transition-opacity disabled:opacity-30 dark:bg-primary-600"
-                    aria-label="Send"
+                    disabled={(!inputText.trim() && pendingImages.length === 0) || isSending || !canPostInCommunity}
+                    className={`p-2 shrink-0 items-center justify-center rounded-xl transition-all transform active:scale-95 ${
+                      (!inputText.trim() && pendingImages.length === 0) || isSending || !canPostInCommunity
+                        ? 'bg-gray-800 text-gray-400 cursor-not-allowed opacity-50'
+                        : 'bg-gray-900 text-white shadow-lg hover:bg-black hover:-translate-y-0.5'
+                    }`}
                   >
-                    {isSending ? (
-                      <Loader2 className="h-4 w-4 animate-spin" strokeWidth={2} />
-                    ) : (
-                      <Send className="h-4 w-4" strokeWidth={2} />
-                    )}
+                    <Send size={22} strokeWidth={2} className="" />
                   </button>
                 </div>
-              </div>
-            </form>
-          </div>
-        </>
-      )}
+              </form>
+            </div>
+          </>
+        )}
 
-      {previewSrc ? (
+        {previewSrc ? (
         <div
           className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 p-4"
           onClick={() => setPreviewSrc(null)}
@@ -1065,7 +1427,11 @@ export default function CommunityChat({
             >
               <X className="h-6 w-6" strokeWidth={2} />
             </button>
-            <img src={previewSrc} alt="" className="max-h-[85vh] w-full rounded-lg object-contain" />
+            {previewSrc.type === 'video' ? (
+              <video src={previewSrc.src} controls autoPlay className="max-h-[85vh] w-full rounded-lg" />
+            ) : (
+              <img src={previewSrc.src} alt="" className="max-h-[85vh] w-full rounded-lg object-contain" />
+            )}
           </div>
         </div>
       ) : null}
@@ -1076,14 +1442,31 @@ export default function CommunityChat({
         onConfirm={async () => {
           const msg = confirmDelete.msg
           setConfirmDelete({ open: false, msg: null })
-          if (msg) await handleDeleteMessage(msg)
+          if (msg?.isBulk) {
+            await deleteSelected()
+          } else if (msg?.isSingle) {
+            await deleteSingleImage(msg._id)
+          } else if (msg) {
+            await handleDeleteMessage(msg)
+          }
         }}
-        title="Delete message?"
-        message="This will remove the message for everyone."
+        title={confirmDelete.msg?.isBulk ? `Delete ${selectedImages.length} images?` : confirmDelete.msg?.isSingle ? "Delete image?" : "Delete message?"}
+        message={confirmDelete.msg?.isBulk 
+          ? "This will permanently remove the selected images from the gallery." 
+          : confirmDelete.msg?.isSingle
+          ? "This will permanently remove this image from the gallery."
+          : "This will remove the message for everyone."}
         confirmText="Delete"
         cancelText="Cancel"
         variant="danger"
       />
+
+      <ScanFaceModal
+        isOpen={isScanModalOpen}
+        onClose={() => setIsScanModalOpen(false)}
+        onScan={handleFaceScan}
+      />
     </div>
+
   )
 }
