@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import {
   listAvailablePackages,
+  listAvailableWhitelabels,
   listMyWhitelabels,
   createWhitelabel,
   updateWhitelabel,
@@ -17,8 +18,22 @@ export function useChildPackages() {
     setLoading(true)
     setError(null)
     try {
-      const [pkgRes, wlRes] = await Promise.all([listAvailablePackages(), listMyWhitelabels()])
-      setAvailable(pkgRes.data?.data?.packages ?? [])
+      const [pkgRes, wlAvailRes, wlRes] = await Promise.all([
+        listAvailablePackages(),
+        listAvailableWhitelabels(),
+        listMyWhitelabels()
+      ])
+      
+      const pkgs = pkgRes.data?.data?.packages ?? []
+      const wlAvail = wlAvailRes.data?.data?.whitelabels ?? []
+      
+      // Merge available items. Tag whitelabels so UI knows they are whitelabels.
+      const mergedAvailable = [
+        ...pkgs.map(p => ({ ...p, sourceType: 'original' })),
+        ...wlAvail.map(w => ({ ...w, sourceType: 'whitelabel' }))
+      ]
+
+      setAvailable(mergedAvailable)
       setWhitelabels(wlRes.data?.data?.whitelabels ?? [])
     } catch (err) {
       setError(getApiErrorMessage(err))

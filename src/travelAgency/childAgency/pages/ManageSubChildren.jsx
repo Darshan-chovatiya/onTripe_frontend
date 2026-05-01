@@ -201,9 +201,9 @@ export default function ManageSubChildren() {
     <div className="animate-fade-in space-y-6">
       <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Manage sub-children</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Manage agents</h1>
           <p className="mt-1 text-sm text-gray-500">
-            Sub-child agencies registered with your invitation codes.
+            Agents registered with your invitation codes.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -262,9 +262,9 @@ export default function ManageSubChildren() {
       {!loading && subChildren.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-gray-200 bg-gray-50/80 py-16 text-center">
           <Users className="mb-3 h-12 w-12 text-gray-300" />
-          <p className="text-sm font-medium text-gray-600">No sub-child agencies yet</p>
+          <p className="text-sm font-medium text-gray-600">No agents yet</p>
           <p className="mt-1 max-w-md text-xs text-gray-400">
-            Generate a sub-child invitation code from your agency tools. When agents register with that code, they
+            Generate an invitation code from your agency tools. When agents register with that code, they
             will appear in this list.
           </p>
         </div>
@@ -437,10 +437,10 @@ export default function ManageSubChildren() {
         </div>
       ) : null}
 
-      <Modal isOpen={notifyOpen} onClose={() => !notifyBusy && setNotifyOpen(false)} title="Notify sub-children" size="lg">
+      <Modal isOpen={notifyOpen} onClose={() => !notifyBusy && setNotifyOpen(false)} title="Notify agents" size="lg">
         <div className="space-y-4">
           <div className="rounded-xl border border-gray-100 bg-gray-50 px-4 py-3 text-sm text-gray-700">
-            Sending to <span className="font-semibold">{selectedCount}</span> selected sub-child agent{selectedCount === 1 ? '' : 's'}.
+            Sending to <span className="font-semibold">{selectedCount}</span> selected agent{selectedCount === 1 ? '' : 's'}.
           </div>
 
           <div>
@@ -460,7 +460,7 @@ export default function ManageSubChildren() {
               rows={7}
               value={notifyForm.message}
               onChange={(e) => setNotifyForm((p) => ({ ...p, message: e.target.value }))}
-              placeholder="Write a clear message for your sub-child agents…"
+              placeholder="Write a clear message for your agents…"
               className="w-full resize-none rounded-lg border border-gray-200 px-3 py-2 text-sm leading-relaxed focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/10"
             />
           </div>
@@ -530,7 +530,7 @@ export default function ManageSubChildren() {
         isOpen={confirm.open}
         onClose={() => setConfirm({ open: false, sub: null, nextActive: false })}
         onConfirm={() => confirm.sub && runToggle(confirm.sub, confirm.nextActive)}
-        title="Deactivate sub-child?"
+        title="Deactivate agent?"
         message={`${confirm.sub?.name || 'This agent'} will not be able to sign in until the account is activated again.`}
         confirmText="Deactivate"
         cancelText="Cancel"

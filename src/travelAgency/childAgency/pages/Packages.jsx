@@ -12,8 +12,9 @@ import WhitelabelModal from '@/travelAgency/childAgency/components/WhitelabelMod
 import Loader from '@/shared/components/Loader.jsx'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
 import { getApiErrorMessage } from '@/shared/services/apiHelpers.js'
-import { mapWhitelabelByOriginalPackageId } from '@/travelAgency/childAgency/utils/whitelabelHelpers.js'
+import { mapWhitelabelBySourceId } from '@/travelAgency/childAgency/utils/whitelabelHelpers.js'
 import { listParents } from '@/travelAgency/childAgency/services/childAgencyApi.js'
+import WhitelabelAgentsModal from '@/shared/components/WhitelabelAgentsModal.jsx'
 
 export default function Packages() {
   const [searchParams] = useSearchParams()
@@ -29,6 +30,7 @@ export default function Packages() {
   const [activeTab, setActiveTab] = useState(initialTab)
   const [inactiveParentIds, setInactiveParentIds] = useState(new Set())
   const [modal, setModal] = useState({ open: false, mode: 'create', sourcePackage: null, whitelabel: null })
+  const [agentsModal, setAgentsModal] = useState({ open: false, agents: [], title: '' })
 
   useEffect(() => {
     listParents().then(({ data }) => {
@@ -60,7 +62,7 @@ export default function Packages() {
     return ids
   }, [bookings])
 
-  const whitelabelByPackageId = useMemo(() => mapWhitelabelByOriginalPackageId(whitelabels), [whitelabels])
+  const whitelabelBySourceId = useMemo(() => mapWhitelabelBySourceId(whitelabels), [whitelabels])
 
   const filteredAvailable = useMemo(() => {
     let list = availablePackages
@@ -80,8 +82,8 @@ export default function Packages() {
   }, [whitelabels, search])
 
   const packagesEligibleForNewWhitelabel = useMemo(
-    () => availablePackages.filter((p) => !whitelabelByPackageId.has(String(p._id))),
-    [availablePackages, whitelabelByPackageId]
+    () => availablePackages.filter((p) => !whitelabelBySourceId.has(String(p._id))),
+    [availablePackages, whitelabelBySourceId]
   )
 
   const stats = useMemo(() => ({
@@ -227,7 +229,7 @@ export default function Packages() {
               <AvailablePackageCard
                 key={pkg._id}
                 pkg={pkg}
-                existingWhitelabel={whitelabelByPackageId.get(String(pkg._id)) ?? null}
+                existingWhitelabel={whitelabelBySourceId.get(String(pkg._id)) ?? null}
                 onCreateWhiteLabel={(p) => setModal({ open: true, mode: 'create', sourcePackage: p, whitelabel: null })}
                 onEditWhiteLabel={(wl) => setModal({ open: true, mode: 'edit', sourcePackage: null, whitelabel: wl })}
                 disabled={inactiveParentIds.has(String(pkg.createdBy?._id || pkg.createdBy))}
@@ -262,6 +264,7 @@ export default function Packages() {
                 item={wl}
                 onEdit={(item) => setModal({ open: true, mode: 'edit', sourcePackage: null, whitelabel: item })}
                 onToggleActive={handleToggleActive}
+                onShowAgents={(item) => setAgentsModal({ open: true, agents: item.whitelabelAgents || [], title: `Agents who whitelabeled "${item.customTitle || item.originalPackage?.title}"` })}
                 onChat={() => {
                   const pid = wl.originalPackage?._id || wl.originalPackage
                   if (!pid) return
@@ -289,6 +292,13 @@ export default function Packages() {
         eligiblePackages={packagesEligibleForNewWhitelabel}
         onSubmit={handleModalSubmit}
         loading={submitting}
+      />
+
+      <WhitelabelAgentsModal
+        isOpen={agentsModal.open}
+        onClose={() => setAgentsModal({ open: false, agents: [], title: '' })}
+        agents={agentsModal.agents}
+        title={agentsModal.title}
       />
     </div>
   )

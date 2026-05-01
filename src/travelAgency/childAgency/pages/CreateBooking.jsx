@@ -95,11 +95,33 @@ export default function CreateBooking() {
   }, [activeWhitelabels.length, availablePackages?.length])
 
   useEffect(() => {
-    if (offerType === 'whitelabel' && activeWhitelabels.length && !whitelabelId)
-      setWhitelabelId(String(activeWhitelabels[0]._id))
-    if (offerType === 'package' && availablePackages?.length && !packageId)
-      setPackageId(String(availablePackages[0]._id))
+    if (offerType === 'whitelabel' && activeWhitelabels.length && !whitelabelId) {
+      const first = activeWhitelabels[0]
+      setWhitelabelId(String(first._id))
+      if (first.finalPrice != null) setTotalAmount(String(first.finalPrice))
+    }
+    if (offerType === 'package' && availablePackages?.length && !packageId) {
+      const first = availablePackages[0]
+      setPackageId(String(first._id))
+      if (first.basePrice != null) setTotalAmount(String(first.basePrice))
+    }
   }, [offerType, activeWhitelabels, availablePackages, whitelabelId, packageId])
+
+  // Sync amount when whitelabel selection changes
+  useEffect(() => {
+    if (offerType === 'whitelabel' && whitelabelId) {
+      const wl = activeWhitelabels.find(w => String(w._id) === whitelabelId)
+      if (wl?.finalPrice != null) setTotalAmount(String(wl.finalPrice))
+    }
+  }, [whitelabelId, offerType, activeWhitelabels])
+
+  // Sync amount when package selection changes
+  useEffect(() => {
+    if (offerType === 'package' && packageId) {
+      const pkg = availablePackages.find(p => String(p._id) === packageId)
+      if (pkg?.basePrice != null) setTotalAmount(String(pkg.basePrice))
+    }
+  }, [packageId, offerType, availablePackages])
 
   useEffect(() => {
     let cancelled = false

@@ -19,14 +19,14 @@ import { getApiErrorMessage } from '@/shared/services/apiHelpers.js'
 const STATS_CONFIG = [
   { key: 'totalPackages', label: 'Whitelabel packages', icon: Package, iconClass: 'bg-blue-50 text-blue-700' },
   { key: 'totalBookings', label: 'Bookings', icon: BookOpen, iconClass: 'bg-emerald-50 text-emerald-700' },
-  { key: 'totalSubChildAgencies', label: 'Sub-child agencies', icon: Users, iconClass: 'bg-indigo-50 text-indigo-700' },
+  { key: 'totalSubChildAgencies', label: 'Agents', icon: Users, iconClass: 'bg-indigo-50 text-indigo-700' },
   { key: 'totalCustomers', label: 'Customers', icon: ContactRound, iconClass: 'bg-amber-50 text-amber-800' },
 ]
 
 const QUICK_LINKS = [
   { to: '/agency/packages', label: 'Whitelabels', desc: 'Manage package catalog and pricing' },
   { to: '/agency/bookings', label: 'Bookings', desc: 'Track sales and traveler requests' },
-  { to: '/agency/manage-downstream', label: 'Sub-child network', desc: 'Manage downstream agents' },
+  { to: '/agency/manage-downstream', label: 'Agent network', desc: 'Manage downstream agents' },
   { to: '/agency/customers', label: 'Customers', desc: 'View and update traveler profiles' },
 ]
 
@@ -85,7 +85,7 @@ export default function ChildDashboard() {
           <div>
             <p className="text-xs font-medium uppercase tracking-wider text-primary-700">Child panel</p>
             <h1 className="mt-1 text-2xl font-semibold tracking-tight text-gray-900">Hello, {user?.name || 'Agent'}</h1>
-            <p className="mt-1 text-sm text-gray-500">Monitor your bookings, sub-agent network, and customer growth.</p>
+            <p className="mt-1 text-sm text-gray-500">Monitor your bookings, agent network, and customer growth.</p>
           </div>
           <div className="hidden items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-600 sm:inline-flex">
             <Calendar className="h-3.5 w-3.5" strokeWidth={2} />
@@ -160,7 +160,7 @@ export default function ChildDashboard() {
 
               <div className="mt-4 border-t border-primary-200 pt-4">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-primary-700">Quick Share</p>
-                <p className="mt-1 text-[10px] leading-relaxed text-primary-600/80">Share this registration link. It automatically fills your agent code for new sub-child agencies.</p>
+                <p className="mt-1 text-[10px] leading-relaxed text-primary-600/80">Share this registration link. It automatically fills your agent code for new agencies.</p>
                 <button
                   type="button"
                   onClick={handleCopyLink}
@@ -190,7 +190,7 @@ export default function ChildDashboard() {
             <h2 className="text-sm font-semibold text-gray-900">Network status</h2>
             <div className="mt-3 rounded-lg border border-dashed border-gray-200 bg-gray-50 px-4 py-8 text-center">
               <Activity className="mx-auto h-6 w-6 text-gray-300" strokeWidth={2} />
-              <p className="mt-2 text-sm text-gray-600">Sub-agent activity details will appear here as they start booking.</p>
+              <p className="mt-2 text-sm text-gray-600">Agent activity details will appear here as they start booking.</p>
             </div>
           </article>
         </div>

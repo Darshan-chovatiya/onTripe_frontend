@@ -117,7 +117,7 @@ export default function SubChildDetailModal({ isOpen, onClose, subId, fetchOne, 
 
   return (
     <>
-      <Modal isOpen={isOpen} onClose={onClose} title="Sub-child details" footer={footer} size="xl">
+      <Modal isOpen={isOpen} onClose={onClose} title="Agent details" footer={footer} size="xl">
         <div className="pr-1">
           {/* Loading */}
           {!sub && !loadErr && (
@@ -141,7 +141,7 @@ export default function SubChildDetailModal({ isOpen, onClose, subId, fetchOne, 
                     </div>
                     <div>
                       <p className="text-lg font-bold text-gray-900">{sub.name}</p>
-                      <p className="mt-0.5 text-sm text-gray-500">Sub-child agent</p>
+                      <p className="mt-0.5 text-sm text-gray-500">Agent</p>
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-2">

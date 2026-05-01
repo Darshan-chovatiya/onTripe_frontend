@@ -14,6 +14,7 @@ import Loader from '@/shared/components/Loader.jsx'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
 import { getApiErrorMessage } from '@/shared/services/apiHelpers.js'
 import { AGENCY_PANEL_BASE } from '@/travelAgency/agency/constants.js'
+import WhitelabelAgentsModal from '@/shared/components/WhitelabelAgentsModal.jsx'
 
 const BASE_URL =
   import.meta.env.VITE_API_BASE_URL?.replace('/api', '').replace(/\/$/, '') || 'http://localhost:5001'
@@ -43,7 +44,7 @@ function StatusPill({ isActive, onClick }) {
   )
 }
 
-function PackageGridCard({ pkg, onEdit, onClone, onCover, onGallery, onToggle, onDelete, navigate }) {
+function PackageGridCard({ pkg, onEdit, onClone, onCover, onGallery, onToggle, onDelete, onShowAgents, navigate }) {
   const cover = imgUrl(pkg.coverImage)
   return (
     <article className="group relative flex flex-col overflow-hidden rounded-2xl bg-white ring-1 ring-gray-200 shadow-sm transition-all duration-300 hover:shadow-xl hover:shadow-gray-200/60 hover:-translate-y-0.5">
@@ -121,7 +122,14 @@ function PackageGridCard({ pkg, onEdit, onClone, onCover, onGallery, onToggle, o
           <div className="h-8 w-px bg-gray-200" />
           <div className="flex-1 text-center">
             <p className="text-[10px] font-medium uppercase tracking-wide text-gray-400">Whitelabels</p>
-            <p className="mt-0.5 text-sm font-bold tabular-nums text-gray-800">{Number(pkg.whitelabelCount) || 0}</p>
+            <button
+              type="button"
+              disabled={!pkg.whitelabelCount}
+              onClick={() => onShowAgents?.(pkg)}
+              className={`mt-0.5 inline-block text-sm font-bold tabular-nums transition ${pkg.whitelabelCount ? 'text-violet-600 hover:text-violet-800 hover:underline' : 'text-gray-400'}`}
+            >
+              {Number(pkg.whitelabelCount) || 0}
+            </button>
           </div>
         </div>
 
@@ -208,7 +216,7 @@ function PackageGridCard({ pkg, onEdit, onClone, onCover, onGallery, onToggle, o
   )
 }
 
-function PackageListRow({ pkg, onEdit, onClone, onCover, onGallery, onToggle, onDelete, navigate }) {
+function PackageListRow({ pkg, onEdit, onClone, onCover, onGallery, onToggle, onDelete, onShowAgents, navigate }) {
   const cover = imgUrl(pkg.coverImage)
   return (
     <div className="group flex items-center gap-4 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm transition hover:border-primary-100 hover:shadow-md">
@@ -264,6 +272,17 @@ function PackageListRow({ pkg, onEdit, onClone, onCover, onGallery, onToggle, on
             className="mt-0.5 inline-block text-sm font-bold tabular-nums text-primary-600 hover:text-primary-800 hover:underline"
           >
             {Number(pkg.bookingCount) || 0}
+          </button>
+        </div>
+        <div className="text-center">
+          <p className="text-[10px] font-medium uppercase tracking-wide text-gray-400">Whitelabels</p>
+          <button
+            type="button"
+            disabled={!pkg.whitelabelCount}
+            onClick={() => onShowAgents?.(pkg)}
+            className={`mt-0.5 inline-block text-sm font-bold tabular-nums transition ${pkg.whitelabelCount ? 'text-violet-600 hover:text-violet-800 hover:underline' : 'text-gray-400'}`}
+          >
+            {Number(pkg.whitelabelCount) || 0}
           </button>
         </div>
       </div>
@@ -362,6 +381,7 @@ export default function Packages() {
   const [imageModal, setImageModal] = useState({ open: false, pkg: null, mode: 'cover' })
   const [confirmToggle, setConfirmToggle] = useState({ open: false, pkg: null })
   const [confirmDelete, setConfirmDelete] = useState({ open: false, pkg: null })
+  const [agentsModal, setAgentsModal] = useState({ open: false, agents: [], title: '' })
   const [submitting, setSubmitting] = useState(false)
 
   const filtered = useMemo(() => {
@@ -560,7 +580,7 @@ export default function Packages() {
               onGallery={(p) => setImageModal({ open: true, pkg: p, mode: 'gallery' })}
               onToggle={(p) => setConfirmToggle({ open: true, pkg: p })}
               onDelete={(p) => setConfirmDelete({ open: true, pkg: p })}
-
+              onShowAgents={(p) => setAgentsModal({ open: true, agents: p.whitelabelAgents || [], title: `Agents who whitelabeled "${p.title}"` })}
             />
           ))}
         </div>
@@ -577,6 +597,7 @@ export default function Packages() {
               onGallery={(p) => setImageModal({ open: true, pkg: p, mode: 'gallery' })}
               onToggle={(p) => setConfirmToggle({ open: true, pkg: p })}
               onDelete={(p) => setConfirmDelete({ open: true, pkg: p })}
+              onShowAgents={(p) => setAgentsModal({ open: true, agents: p.whitelabelAgents || [], title: `Agents who whitelabeled "${p.title}"` })}
             />
           ))}
         </div>
@@ -615,6 +636,13 @@ export default function Packages() {
         confirmText="Delete"
         cancelText="Cancel"
         variant="danger"
+      />
+
+      <WhitelabelAgentsModal
+        isOpen={agentsModal.open}
+        onClose={() => setAgentsModal({ open: false, agents: [], title: '' })}
+        agents={agentsModal.agents}
+        title={agentsModal.title}
       />
     </div>
   )

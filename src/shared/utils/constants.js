@@ -6,7 +6,6 @@ export const ROLES = {
   ADMIN: 'admin',
   PARENT_AGENCY: 'parentAgency',
   CHILD_AGENCY: 'childAgency',
-  SUB_CHILD: 'subChild',
   CUSTOMER: 'customer',
   VENDOR: 'vendor',
 }

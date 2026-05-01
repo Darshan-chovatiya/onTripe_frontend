@@ -2,13 +2,26 @@ import { useEffect, useState } from 'react'
 import Modal from '@/shared/components/Modal.jsx'
 import Button from '@/shared/components/Button.jsx'
 
-const emptyCreate = (pkg) => ({
-  packageId: pkg?._id || '',
-  customTitle: pkg ? `${pkg.title} — your offer` : '',
-  customDescription: pkg?.description || '',
-  commissionType: 'flat',
-  commissionValue: '0',
-})
+const emptyCreate = (pkg) => {
+  const isWl = pkg?.sourceType === 'whitelabel'
+  let title = isWl ? (pkg.customTitle || pkg.originalPackage?.title) : (pkg?.title || '')
+  
+  // Strip existing suffix if it's already a whitelabel to avoid "Package - your offer - your offer"
+  if (title) {
+    title = title.replace(/\s*[—|-]\s*your\s*offer$/i, '').trim()
+  }
+
+  const description = isWl ? (pkg.customDescription || pkg.originalPackage?.description) : (pkg?.description || '')
+
+  return {
+    packageId: (!isWl && pkg?._id) || '',
+    parentWhitelabelId: (isWl && pkg?._id) || '',
+    customTitle: title ? `${title} — your offer` : '',
+    customDescription: description || '',
+    commissionType: 'flat',
+    commissionValue: '0',
+  }
+}
 
 const emptyEdit = (item) => ({
   customTitle: item?.customTitle || '',
@@ -46,15 +59,34 @@ export default function WhitelabelModal({
     if (Number.isNaN(commissionValue) || commissionValue < 0) return
 
     if (mode === 'create') {
-      const packageId = sourcePackage?._id || form.packageId
-      if (!packageId) return
-      await onSubmit({
-        packageId,
+      const payload = {
         customTitle: form.customTitle.trim(),
         customDescription: form.customDescription.trim(),
         commissionType: form.commissionType,
         commissionValue,
-      })
+      }
+
+      // If sourcePackage is passed (direct action from card)
+      if (sourcePackage) {
+        if (sourcePackage.sourceType === 'whitelabel') {
+          payload.parentWhitelabelId = sourcePackage._id
+        } else {
+          payload.packageId = sourcePackage._id
+        }
+      } else {
+        // If selecting from dropdown
+        const selected = eligiblePackages.find(p => String(p._id) === String(form.packageId))
+        if (!selected) return
+        
+        if (selected.sourceType === 'whitelabel') {
+          payload.parentWhitelabelId = selected._id
+        } else {
+          payload.packageId = selected._id
+        }
+      }
+
+      if (!payload.packageId && !payload.parentWhitelabelId) return
+      await onSubmit(payload)
     } else if (whitelabel?._id) {
       await onSubmit(whitelabel._id, {
         customTitle: form.customTitle.trim(),
@@ -62,7 +94,7 @@ export default function WhitelabelModal({
         commissionType: form.commissionType,
         commissionValue,
         isActive: form.isActive,
-        visibleToSubChildren: form.visibleToSubChildren,
+        visibleToChildren: form.visibleToSubChildren,
       })
     }
   }
@@ -105,16 +137,39 @@ export default function WhitelabelModal({
                 id="wl-package"
                 className="input-field w-full"
                 value={form.packageId}
-                onChange={(e) => setForm((f) => ({ ...f, packageId: e.target.value }))}
+                onChange={(e) => {
+                  const id = e.target.value
+                  const selected = eligiblePackages.find(p => String(p._id) === String(id))
+                  if (selected) {
+                    const isWl = selected.sourceType === 'whitelabel'
+                    let title = isWl ? (selected.customTitle || selected.originalPackage?.title) : (selected.title || '')
+                    if (title) {
+                      title = title.replace(/\s*[—|-]\s*your\s*offer$/i, '').trim()
+                    }
+                    const desc = isWl ? (selected.customDescription || selected.originalPackage?.description) : (selected.description || '')
+                    setForm(f => ({
+                      ...f,
+                      packageId: id,
+                      customTitle: title ? `${title} — your offer` : '',
+                      customDescription: desc || ''
+                    }))
+                  } else {
+                    setForm(f => ({ ...f, packageId: id }))
+                  }
+                }}
                 required
               >
                 <option value="">Select a package…</option>
-                {eligiblePackages.map((p) => (
-                  <option key={p._id} value={p._id}>
-                    {p.title}
-                    {p.destination ? ` — ${p.destination}` : ''}
-                  </option>
-                ))}
+                {eligiblePackages.map((p) => {
+                  const isWl = p.sourceType === 'whitelabel'
+                  const pTitle = isWl ? (p.customTitle || p.originalPackage?.title) : p.title
+                  return (
+                    <option key={p._id} value={p._id}>
+                      {isWl ? '[WL] ' : ''}{pTitle}
+                      {p.destination ? ` — ${p.destination}` : ''}
+                    </option>
+                  )
+                })}
               </select>
             )}
           </div>
@@ -122,9 +177,9 @@ export default function WhitelabelModal({
 
         {mode === 'create' && sourcePackage && (
           <p className="rounded-lg border border-gray-100 bg-gray-50 px-3 py-2 text-sm text-gray-600">
-            <span className="font-medium text-gray-800">Base package:</span> {sourcePackage.title}
-            {sourcePackage.basePrice != null ? (
-              <span className="text-gray-500"> · Base ₹{Number(sourcePackage.basePrice).toLocaleString('en-IN')}</span>
+            <span className="font-medium text-gray-800">Base package:</span> {sourcePackage.sourceType === 'whitelabel' ? (sourcePackage.customTitle || sourcePackage.originalPackage?.title) : sourcePackage.title}
+            {(sourcePackage.basePrice != null || sourcePackage.finalPrice != null) ? (
+              <span className="text-gray-500"> · Base ₹{Number(sourcePackage.sourceType === 'whitelabel' ? sourcePackage.finalPrice : sourcePackage.basePrice).toLocaleString('en-IN')}</span>
             ) : null}
           </p>
         )}
@@ -220,7 +275,7 @@ export default function WhitelabelModal({
                 checked={form.visibleToSubChildren}
                 onChange={(e) => setForm((f) => ({ ...f, visibleToSubChildren: e.target.checked }))}
               />
-              Visible to sub-child agents
+              Visible to my agents
             </label>
           </div>
         )}

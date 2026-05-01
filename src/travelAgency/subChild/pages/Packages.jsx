@@ -11,7 +11,7 @@ import WhitelabelModal from '@/travelAgency/childAgency/components/WhitelabelMod
 import Loader from '@/shared/components/Loader.jsx'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
 import { getApiErrorMessage } from '@/shared/services/apiHelpers.js'
-import { mapWhitelabelByOriginalPackageId } from '@/travelAgency/childAgency/utils/whitelabelHelpers.js'
+import { mapWhitelabelBySourceId } from '@/travelAgency/childAgency/utils/whitelabelHelpers.js'
 import { listParents } from '@/travelAgency/subChild/services/subChildApi.js'
 
 export default function SubChildPackages() {
@@ -71,7 +71,7 @@ export default function SubChildPackages() {
            (creatorId && inactiveParentIds.has(String(creatorId)))
   }, [inactiveParentIds])
 
-  const whitelabelByPackageId = useMemo(() => mapWhitelabelByOriginalPackageId(whitelabels), [whitelabels])
+  const whitelabelBySourceId = useMemo(() => mapWhitelabelBySourceId(whitelabels), [whitelabels])
 
   // Parent options for filter
   const parentOptions = useMemo(() => {
@@ -261,7 +261,7 @@ export default function SubChildPackages() {
               <AvailablePackageCard
                 key={`${pkg._id}-${pkg.__parentWhitelabelId || 'pkg'}`}
                 pkg={pkg}
-                existingWhitelabel={whitelabelByPackageId.get(String(pkg._id)) ?? null}
+                existingWhitelabel={whitelabelBySourceId.get(String(pkg._id)) ?? null}
                 onCreateWhiteLabel={(p) => setModal({ open: true, mode: 'create', sourcePackage: p, whitelabel: null })}
                 onEditWhiteLabel={(wl) => setModal({ open: true, mode: 'edit', sourcePackage: null, whitelabel: wl })}
                 disabled={isFromInactiveParent(pkg)}

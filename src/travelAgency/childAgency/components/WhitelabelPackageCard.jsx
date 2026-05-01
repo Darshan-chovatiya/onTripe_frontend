@@ -5,7 +5,7 @@ import PackageDetailModal from '@/travelAgency/childAgency/components/PackageDet
 
 const PLACEHOLDER = 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&q=80&w=600'
 
-export default function WhitelabelPackageCard({ item, onEdit, onToggleActive, onChat, onRating, hasBooking, disabled = false }) {
+export default function WhitelabelPackageCard({ item, onEdit, onToggleActive, onChat, onRating, onShowAgents, hasBooking, disabled = false }) {
   const orig = item.originalPackage
   const coverSrc = packageCoverUrl(item.customCoverImage || orig?.coverImage) || PLACEHOLDER
   const title = item.customTitle || orig?.title || 'White-label package'
@@ -99,10 +99,15 @@ export default function WhitelabelPackageCard({ item, onEdit, onToggleActive, on
           </div>
           <div className="h-6 w-px bg-gray-200" />
           <div className="flex-1 text-center">
-            <p className="text-[10px] font-medium uppercase tracking-wide text-gray-400">Sub-agents</p>
-            <p className={`mt-0.5 text-[10px] font-bold ${item.visibleToSubChildren ? 'text-primary-600' : 'text-gray-400'}`}>
-              {item.visibleToSubChildren ? 'Visible' : 'Hidden'}
-            </p>
+            <p className="text-[10px] font-medium uppercase tracking-wide text-gray-400">Whitelabels</p>
+            <button
+              type="button"
+              disabled={!item.whitelabelCount}
+              onClick={() => onShowAgents?.(item)}
+              className={`mt-0.5 inline-block text-[10px] font-bold tabular-nums transition ${item.whitelabelCount ? 'text-violet-600 hover:text-violet-800 hover:underline' : 'text-gray-400'}`}
+            >
+              {Number(item.whitelabelCount) || 0}
+            </button>
           </div>
         </div>
 

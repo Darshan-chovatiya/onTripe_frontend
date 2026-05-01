@@ -4,15 +4,10 @@ import { Mail, Phone, Search, UserCircle, Bell, Send, History, Check, Download, 
 import { ROLES } from '@/shared/utils/constants.js'
 import { useAgencyPermissions } from '@/travelAgency/agency/hooks/useAgencyPermissions.js'
 import ChildCustomers from '@/travelAgency/childAgency/pages/Customers.jsx'
-import SubChildCustomers from '@/travelAgency/subChild/pages/Customers.jsx'
 import {
   listCustomers as listChildCustomers,
   listBookings as listChildBookings,
 } from '@/travelAgency/childAgency/services/childAgencyApi.js'
-import {
-  listCustomers as listSubCustomers,
-  listMyBookings as listSubChildBookings,
-} from '@/travelAgency/subChild/services/subChildApi.js'
 import { getApiErrorMessage } from '@/shared/services/apiHelpers.js'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
 import Modal from '@/shared/components/Modal.jsx'
@@ -25,10 +20,6 @@ import {
   updateAgencyCustomer as updateChildAgencyCustomer,
   toggleAgencyCustomerActive as toggleChildAgencyCustomerActive,
 } from '@/travelAgency/childAgency/services/childAgencyApi.js'
-import {
-  updateAgencyCustomer as updateSubChildAgencyCustomer,
-  toggleAgencyCustomerActive as toggleSubChildAgencyCustomerActive,
-} from '@/travelAgency/subChild/services/subChildApi.js'
 import Pagination from '@/admin/components/Pagination.jsx'
 import { exportToExcel } from '@/admin/utils/exportExcel.js'
 import CustomerDetailModal from '@/travelAgency/shared/components/CustomerDetailModal.jsx'
@@ -42,7 +33,6 @@ export default function AgencyCustomers() {
   const toastRef = useRef(toast)
 
   if (role === ROLES.CHILD_AGENCY) return <ChildCustomers />
-  if (role === ROLES.SUB_CHILD) return <SubChildCustomers />
   const [q, setQ] = useState('')
   const [loading, setLoading] = useState(false)
   const [rows, setRows] = useState([])
@@ -99,7 +89,7 @@ export default function AgencyCustomers() {
   }, [q])
 
   const fetchCustomers = useCallback(async () => {
-    if (role !== ROLES.CHILD_AGENCY && role !== ROLES.SUB_CHILD) {
+    if (role !== ROLES.CHILD_AGENCY) {
       setRows([])
       return
     }
@@ -131,10 +121,7 @@ export default function AgencyCustomers() {
       }
 
       // Fetch all bookings to calculate trip counts
-      const bookingsRes =
-        role === ROLES.CHILD_AGENCY
-          ? await listChildBookings({ page: 1, limit: 10000 })
-          : await listSubChildBookings({ page: 1, limit: 10000 })
+      const bookingsRes = await listChildBookings({ page: 1, limit: 10000 })
       const bookings = bookingsRes.data?.data?.bookings ?? []
       const bookingMapByAgencyCustomer = new Map()
       bookings.forEach((b) => {
@@ -217,10 +204,7 @@ export default function AgencyCustomers() {
         search: q.trim()
       }
       
-      const res =
-        role === ROLES.CHILD_AGENCY
-          ? await listChildCustomers(params)
-          : await listSubCustomers(params)
+      const res = await listChildCustomers(params)
       const customers = res.data?.data?.customers ?? []
       
       await exportToExcel(
@@ -280,8 +264,6 @@ export default function AgencyCustomers() {
 
       if (role === ROLES.CHILD_AGENCY) {
         await updateChildAgencyCustomer(editTarget.agencyCustomerId, payload)
-      } else if (role === ROLES.SUB_CHILD) {
-        await updateSubChildAgencyCustomer(editTarget.agencyCustomerId, payload)
       }
 
       setRows((prev) =>
@@ -323,8 +305,6 @@ export default function AgencyCustomers() {
     try {
       if (role === ROLES.CHILD_AGENCY) {
         await toggleChildAgencyCustomerActive(row.agencyCustomerId)
-      } else if (role === ROLES.SUB_CHILD) {
-        await toggleSubChildAgencyCustomerActive(row.agencyCustomerId)
       }
       setRows((prev) =>
         prev.map((r) =>
