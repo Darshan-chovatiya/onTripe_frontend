@@ -92,7 +92,7 @@ export default function ChildAgencies({ agentRole = 'child_agent', pageTitle = '
         setTotal(data.data.totalCount ?? 0)
       }
     } catch {
-      toast.error(`Failed to fetch ${agentRole === 'sub_child_agent' ? 'sub-child' : 'child'} agencies`)
+      toast.error(`Failed to fetch agencies`)
     } finally {
       setLoading(false)
     }
@@ -113,7 +113,7 @@ export default function ChildAgencies({ agentRole = 'child_agent', pageTitle = '
           setParentOptions(opts)
         }
       } catch {
-        setParentOptions([{ value: 'all', label: agentRole === 'sub_child_agent' ? 'All child agencies' : 'All parents' }])
+        setParentOptions([{ value: 'all', label: 'All parents' }])
       }
     }
     loadParents()
@@ -171,10 +171,7 @@ export default function ChildAgencies({ agentRole = 'child_agent', pageTitle = '
     }
   }
 
-  const customersPathForAgent = (id) =>
-    agentRole === 'sub_child_agent'
-      ? `/admin/sub-child-agencies/${id}/customers`
-      : `/admin/child-agencies/${id}/customers`
+  const customersPathForAgent = (id) => `/admin/child-agencies/${id}/customers`
 
   const AgentDetailModal = () => {
     const parents = selectedAgent
@@ -199,9 +196,7 @@ export default function ChildAgencies({ agentRole = 'child_agent', pageTitle = '
                 </div> */}
                 <div className="min-w-0">
                   <p className="truncate text-base font-semibold text-gray-900">{selectedAgent.name}</p>
-                  <p className="mt-0.5 text-xs text-gray-400">
-                    {agentRole === 'sub_child_agent' ? 'Sub-child agency details' : 'Child agency details'}
-                  </p>
+                  <p className="mt-0.5 text-xs text-gray-400">Agency details</p>
                   <span className={`mt-1.5 inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${selectedAgent.isActive ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-red-200 bg-red-50 text-red-700'}`}>
                     <span className={`h-1.5 w-1.5 rounded-full ${selectedAgent.isActive ? 'bg-emerald-500' : 'bg-red-500'}`} />
                     {selectedAgent.isActive ? 'Active' : 'Inactive'}
@@ -211,15 +206,13 @@ export default function ChildAgencies({ agentRole = 'child_agent', pageTitle = '
 
               {/* Right: network stats column */}
               <div className="shrink-0 space-y-1.5 min-w-[140px]">
-                {agentRole !== 'sub_child_agent' && (
-                  <div className="flex items-center justify-between gap-4 rounded-lg border border-gray-200 bg-gray-50/60 px-3 py-2">
-                    <span className="text-xs font-medium text-gray-500">Sub-children</span>
-                    <span className="text-sm font-bold tabular-nums text-gray-900">{selectedAgent.childCount ?? 0}</span>
-                  </div>
-                )}
+                <div className="flex items-center justify-between gap-4 rounded-lg border border-gray-200 bg-gray-50/60 px-3 py-2">
+                  <span className="text-xs font-medium text-gray-500">Sub-agents</span>
+                  <span className="text-sm font-bold tabular-nums text-gray-900">{selectedAgent.childCount ?? 0}</span>
+                </div>
                 <button
                   type="button"
-                  onClick={() => { setIsDetailModalOpen(false); navigate(agentRole === 'sub_child_agent' ? `/admin/sub-child-agencies/${selectedAgent._id}/whitelabels` : `/admin/child-agencies/${selectedAgent._id}/whitelabels`) }}
+                  onClick={() => { setIsDetailModalOpen(false); navigate(`/admin/child-agencies/${selectedAgent._id}/whitelabels`) }}
                   className="flex w-full items-center justify-between gap-4 rounded-lg border border-gray-200 bg-gray-50/60 px-3 py-2 transition-colors hover:border-primary-200 hover:bg-primary-50/50"
                 >
                   <span className="text-xs font-medium text-gray-500">Whitelabels</span>
@@ -247,7 +240,7 @@ export default function ChildAgencies({ agentRole = 'child_agent', pageTitle = '
                   <p className="mt-0.5 text-sm font-semibold text-primary-700">{selectedAgent.agentCode || '—'}</p>
                 </div>
                 <div>
-                  <p className="text-xs font-medium text-gray-400">{agentRole === 'sub_child_agent' ? 'Child agency' : 'Parent agency'}</p>
+                  <p className="text-xs font-medium text-gray-400">Parent agency</p>
                   {parents.length === 0 ? (
                     <p className="mt-0.5 text-sm text-gray-400">—</p>
                   ) : (

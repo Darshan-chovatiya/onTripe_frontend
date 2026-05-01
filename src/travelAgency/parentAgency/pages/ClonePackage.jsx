@@ -224,7 +224,7 @@ export default function ClonePackage() {
             <div className="sm:col-span-2">
               <label className="mb-1 block text-xs font-medium text-gray-600">Base price incl. GST *</label>
               <div className="flex gap-2">
-                <select className={`${inputCls} w-24`} value={form.currency} onChange={e => set('currency', e.target.value)}>
+                <select className={`${inputCls} !w-24`} value={form.currency} onChange={e => set('currency', e.target.value)}>
                   <option>INR</option><option>USD</option><option>EUR</option>
                 </select>
                 <input required type="number" min="0" className={`${inputCls} flex-1`} value={form.basePrice} onChange={e => set('basePrice', e.target.value)} placeholder="0" />

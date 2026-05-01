@@ -6,8 +6,24 @@ import PackageDetailModal from '@/travelAgency/childAgency/components/PackageDet
 const PLACEHOLDER = 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&q=80&w=600'
 
 export default function AvailablePackageCard({ pkg, existingWhitelabel, onCreateWhiteLabel, onEditWhiteLabel, disabled = false }) {
-  const coverSrc = packageCoverUrl(pkg.coverImage) || PLACEHOLDER
+  const isWhitelabel = pkg.sourceType === 'whitelabel'
+  const displayTitle = isWhitelabel ? (pkg.customTitle || pkg.originalPackage?.title) : pkg.title
+  const displayPrice = isWhitelabel ? pkg.finalPrice : pkg.basePrice
+  const displayCover = isWhitelabel 
+    ? (pkg.customCoverImage || pkg.originalPackage?.coverImage) 
+    : pkg.coverImage
+  const displayDestination = isWhitelabel ? pkg.originalPackage?.destination : pkg.destination
+  const displayDays = isWhitelabel ? pkg.originalPackage?.totalDays : pkg.totalDays
+  const displayPax = isWhitelabel ? pkg.originalPackage?.maxCapacity : pkg.maxCapacity
+  const displayItineraryCount = isWhitelabel ? pkg.originalPackage?.itinerary?.length : pkg.itinerary?.length
+  const displayDescription = isWhitelabel ? (pkg.customDescription || pkg.originalPackage?.description) : pkg.description
+
+  const coverSrc = packageCoverUrl(displayCover) || PLACEHOLDER
   const [detailOpen, setDetailOpen] = useState(false)
+
+  const creatorName = isWhitelabel 
+    ? (pkg.createdBy?.name || 'Sub-agent') 
+    : (pkg.createdBy?.name || 'Parent agent')
 
   return (
     <article className={`group flex flex-col overflow-hidden rounded-2xl bg-white ring-1 shadow-sm transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 ${
@@ -17,22 +33,29 @@ export default function AvailablePackageCard({ pkg, existingWhitelabel, onCreate
       <div className="relative h-44 overflow-hidden bg-gray-100">
         <img
           src={coverSrc}
-          alt={pkg.title}
+          alt={displayTitle}
           className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
           onError={(e) => { e.currentTarget.src = PLACEHOLDER }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
 
-        {disabled && (
-          <div className="absolute right-2 top-2 rounded-full bg-gray-900/70 px-2.5 py-0.5 text-[10px] font-semibold text-white backdrop-blur-sm">
-            Parent inactive
-          </div>
-        )}
+        <div className="absolute right-2 top-2 flex flex-col gap-1.5 items-end">
+          {isWhitelabel && (
+            <div className="rounded-full bg-violet-600/90 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white shadow-sm backdrop-blur-sm">
+              From {creatorName}
+            </div>
+          )}
+          {disabled && (
+            <div className="rounded-full bg-gray-900/70 px-2.5 py-0.5 text-[10px] font-semibold text-white backdrop-blur-sm">
+              Parent inactive
+            </div>
+          )}
+        </div>
 
         {/* Price badge */}
         <div className="absolute bottom-3 left-3 flex items-center gap-0.5 rounded-xl bg-white/95 px-2.5 py-1.5 shadow-sm backdrop-blur-sm">
           <IndianRupee className="h-3.5 w-3.5 text-primary-700" strokeWidth={2.5} />
-          <span className="text-sm font-bold tabular-nums text-primary-900">{Number(pkg.basePrice).toLocaleString('en-IN')}</span>
+          <span className="text-sm font-bold tabular-nums text-primary-900">{Number(displayPrice).toLocaleString('en-IN')}</span>
           <span className="ml-1 text-[10px] text-gray-500">{pkg.currency || 'INR'}</span>
         </div>
       </div>
@@ -40,35 +63,35 @@ export default function AvailablePackageCard({ pkg, existingWhitelabel, onCreate
       {/* Body */}
       <div className="flex flex-1 flex-col gap-3 p-4">
         <div>
-          <h3 className="line-clamp-1 text-sm font-semibold text-gray-900">{pkg.title}</h3>
-          {pkg.destination && (
+          <h3 className="line-clamp-1 text-sm font-semibold text-gray-900">{displayTitle}</h3>
+          {displayDestination && (
             <p className="mt-0.5 flex items-center gap-1 text-xs text-gray-500">
               <MapPin className="h-3 w-3 shrink-0 text-gray-400" strokeWidth={2} />
-              {pkg.destination}
+              {displayDestination}
             </p>
           )}
         </div>
 
         <div className="flex flex-wrap gap-1.5">
-          {pkg.totalDays != null && (
+          {displayDays != null && (
             <span className="inline-flex items-center gap-1 rounded-lg bg-gray-50 px-2 py-1 text-[11px] font-medium text-gray-600 ring-1 ring-gray-100">
-              <Clock className="h-3 w-3 text-primary-500" strokeWidth={2} />{pkg.totalDays}d
+              <Clock className="h-3 w-3 text-primary-500" strokeWidth={2} />{displayDays}d
             </span>
           )}
-          {pkg.maxCapacity != null && (
+          {displayPax != null && (
             <span className="inline-flex items-center gap-1 rounded-lg bg-gray-50 px-2 py-1 text-[11px] font-medium text-gray-600 ring-1 ring-gray-100">
-              <Users className="h-3 w-3 text-primary-500" strokeWidth={2} />{pkg.maxCapacity} pax
+              <Users className="h-3 w-3 text-primary-500" strokeWidth={2} />{displayPax} pax
             </span>
           )}
-          {pkg.itinerary?.length > 0 && (
+          {displayItineraryCount > 0 && (
             <span className="inline-flex items-center gap-1 rounded-lg bg-primary-50 px-2 py-1 text-[11px] font-medium text-primary-700 ring-1 ring-primary-100">
-              <CalendarDays className="h-3 w-3" strokeWidth={2} />{pkg.itinerary.length} days
+              <CalendarDays className="h-3 w-3" strokeWidth={2} />{displayItineraryCount} days
             </span>
           )}
         </div>
 
-        {pkg.description && (
-          <p className="line-clamp-2 text-xs leading-relaxed text-gray-500">{pkg.description}</p>
+        {displayDescription && (
+          <p className="line-clamp-2 text-xs leading-relaxed text-gray-500">{displayDescription}</p>
         )}
 
         {existingWhitelabel && (
@@ -116,7 +139,11 @@ export default function AvailablePackageCard({ pkg, existingWhitelabel, onCreate
         )}
       </div>
 
-      <PackageDetailModal isOpen={detailOpen} onClose={() => setDetailOpen(false)} pkg={pkg} />
+      <PackageDetailModal 
+        isOpen={detailOpen} 
+        onClose={() => setDetailOpen(false)} 
+        pkg={isWhitelabel ? { ...pkg.originalPackage, ...pkg, title: displayTitle, description: displayDescription, basePrice: displayPrice } : pkg} 
+      />
     </article>
   )
 }

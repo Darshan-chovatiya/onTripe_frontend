@@ -25,9 +25,9 @@ function normalizeUser(raw, loginRoleHint) {
     child_agency: ROLES.CHILD_AGENCY,
     child_agent: ROLES.CHILD_AGENCY,
     childagency: ROLES.CHILD_AGENCY,
-    sub_child: ROLES.SUB_CHILD,
-    sub_child_agent: ROLES.SUB_CHILD,
-    subchild: ROLES.SUB_CHILD,
+    sub_child: ROLES.CHILD_AGENCY,
+    sub_child_agent: ROLES.CHILD_AGENCY,
+    subchild: ROLES.CHILD_AGENCY,
     vendor: ROLES.VENDOR,
     organizer: loginRoleHint || ROLES.PARENT_AGENCY,
   }

@@ -4,7 +4,7 @@ import {
   Plus, Search, MapPin, Clock, Users, IndianRupee,
   Edit2, ImageIcon, ImagePlus, MessageSquare, LayoutGrid,
   List, TrendingUp, Package, CheckCircle2, XCircle,
-  Calendar, Star, Eye, Copy
+  Calendar, Star, Eye, Copy, Trash2
 } from 'lucide-react'
 import { usePackages } from '@/travelAgency/parentAgency/hooks/usePackages.js'
 import PackageFormModal from '@/travelAgency/parentAgency/components/PackageFormModal.jsx'
@@ -14,6 +14,7 @@ import Loader from '@/shared/components/Loader.jsx'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
 import { getApiErrorMessage } from '@/shared/services/apiHelpers.js'
 import { AGENCY_PANEL_BASE } from '@/travelAgency/agency/constants.js'
+import WhitelabelAgentsModal from '@/shared/components/WhitelabelAgentsModal.jsx'
 
 const BASE_URL =
   import.meta.env.VITE_API_BASE_URL?.replace('/api', '').replace(/\/$/, '') || 'http://localhost:5001'
@@ -43,7 +44,7 @@ function StatusPill({ isActive, onClick }) {
   )
 }
 
-function PackageGridCard({ pkg, onEdit, onClone, onCover, onGallery, onToggle, navigate }) {
+function PackageGridCard({ pkg, onEdit, onClone, onCover, onGallery, onToggle, onDelete, onShowAgents, navigate }) {
   const cover = imgUrl(pkg.coverImage)
   return (
     <article className="group relative flex flex-col overflow-hidden rounded-2xl bg-white ring-1 ring-gray-200 shadow-sm transition-all duration-300 hover:shadow-xl hover:shadow-gray-200/60 hover:-translate-y-0.5">
@@ -121,7 +122,14 @@ function PackageGridCard({ pkg, onEdit, onClone, onCover, onGallery, onToggle, n
           <div className="h-8 w-px bg-gray-200" />
           <div className="flex-1 text-center">
             <p className="text-[10px] font-medium uppercase tracking-wide text-gray-400">Whitelabels</p>
-            <p className="mt-0.5 text-sm font-bold tabular-nums text-gray-800">{Number(pkg.whitelabelCount) || 0}</p>
+            <button
+              type="button"
+              disabled={!pkg.whitelabelCount}
+              onClick={() => onShowAgents?.(pkg)}
+              className={`mt-0.5 inline-block text-sm font-bold tabular-nums transition ${pkg.whitelabelCount ? 'text-violet-600 hover:text-violet-800 hover:underline' : 'text-gray-400'}`}
+            >
+              {Number(pkg.whitelabelCount) || 0}
+            </button>
           </div>
         </div>
 
@@ -192,6 +200,15 @@ function PackageGridCard({ pkg, onEdit, onClone, onCover, onGallery, onToggle, n
               {pkg.isActive ? <CheckCircle2 className="h-3.5 w-3.5" strokeWidth={2} /> : <XCircle className="h-3.5 w-3.5" strokeWidth={2} />}
               {pkg.isActive ? 'Live' : 'Paused'}
             </button>
+            <button
+              type="button"
+              onClick={() => onDelete(pkg)}
+              className="flex items-center justify-center gap-1.5 rounded-lg border border-red-100 bg-white py-2 text-[11px] font-medium text-red-600 transition hover:border-red-200 hover:bg-red-50 hover:text-red-700"
+              title="Delete package"
+            >
+              <Trash2 className="h-3.5 w-3.5" strokeWidth={2} />
+              Delete
+            </button>
           </div>
         </div>
       </div>
@@ -199,7 +216,7 @@ function PackageGridCard({ pkg, onEdit, onClone, onCover, onGallery, onToggle, n
   )
 }
 
-function PackageListRow({ pkg, onEdit, onClone, onCover, onGallery, onToggle, navigate }) {
+function PackageListRow({ pkg, onEdit, onClone, onCover, onGallery, onToggle, onDelete, onShowAgents, navigate }) {
   const cover = imgUrl(pkg.coverImage)
   return (
     <div className="group flex items-center gap-4 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm transition hover:border-primary-100 hover:shadow-md">
@@ -257,19 +274,37 @@ function PackageListRow({ pkg, onEdit, onClone, onCover, onGallery, onToggle, na
             {Number(pkg.bookingCount) || 0}
           </button>
         </div>
+        <div className="text-center">
+          <p className="text-[10px] font-medium uppercase tracking-wide text-gray-400">Whitelabels</p>
+          <button
+            type="button"
+            disabled={!pkg.whitelabelCount}
+            onClick={() => onShowAgents?.(pkg)}
+            className={`mt-0.5 inline-block text-sm font-bold tabular-nums transition ${pkg.whitelabelCount ? 'text-violet-600 hover:text-violet-800 hover:underline' : 'text-gray-400'}`}
+          >
+            {Number(pkg.whitelabelCount) || 0}
+          </button>
+        </div>
       </div>
 
       {/* Actions */}
       <div className="flex shrink-0 items-center justify-center gap-4">
-        <button
+        {/* <button
           type="button"
           onClick={() => navigate(`${AGENCY_PANEL_BASE}/packages/${pkg._id}`)}
           className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-[11px] font-semibold text-gray-700 transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-800"
         >
           View Details
-        </button>
+        </button> */}
         <div className="flex shrink-0 flex-col gap-1.5">
           <div className="flex justify-end gap-1.5">
+            <button
+          type="button"
+          onClick={() => navigate(`${AGENCY_PANEL_BASE}/packages/${pkg._id}`)}
+          className="flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2 py-1 text-[11px] transition hover:border-sky-200 hover:text-sky-700 text-gray-600"
+        >
+          <Eye className="h-3.5 w-3.5" strokeWidth={2} />View
+        </button>
             <button
               type="button"
               onClick={() => onCover(pkg)}
@@ -319,6 +354,14 @@ function PackageListRow({ pkg, onEdit, onClone, onCover, onGallery, onToggle, na
                {pkg.isActive ? <CheckCircle2 className="h-3.5 w-3.5" strokeWidth={2} /> : <XCircle className="h-3.5 w-3.5" strokeWidth={2} />}
                {pkg.isActive ? 'Live' : 'Paused'}
             </button>
+            <button
+               type="button"
+               onClick={() => onDelete(pkg)}
+               className="flex items-center gap-1 rounded-lg border border-red-100 bg-white px-2.5 py-1 text-[11px] font-semibold text-red-600 transition hover:border-red-200 hover:bg-red-50 hover:text-red-700"
+               title="Delete package"
+            >
+               <Trash2 className="h-3.5 w-3.5" strokeWidth={2} /> Delete
+            </button>
           </div>
         </div>
       </div>
@@ -327,7 +370,7 @@ function PackageListRow({ pkg, onEdit, onClone, onCover, onGallery, onToggle, na
 }
 
 export default function Packages() {
-  const { packages, loading, error, create, update, updateCover, updateGallery, deactivate, activate } = usePackages()
+  const { packages, loading, error, create, update, updateCover, updateGallery, deactivate, activate, remove } = usePackages()
   const { toast } = useToast()
   const navigate = useNavigate()
 
@@ -337,6 +380,8 @@ export default function Packages() {
   const [formModal, setFormModal] = useState({ open: false, data: null, isClone: false })
   const [imageModal, setImageModal] = useState({ open: false, pkg: null, mode: 'cover' })
   const [confirmToggle, setConfirmToggle] = useState({ open: false, pkg: null })
+  const [confirmDelete, setConfirmDelete] = useState({ open: false, pkg: null })
+  const [agentsModal, setAgentsModal] = useState({ open: false, agents: [], title: '' })
   const [submitting, setSubmitting] = useState(false)
 
   const filtered = useMemo(() => {
@@ -386,6 +431,16 @@ export default function Packages() {
       else { await activate(pkg._id); toast.success('Package activated') }
     } catch (err) { toast.error(getApiErrorMessage(err)) }
     finally { setConfirmToggle({ open: false, pkg: null }) }
+  }
+
+  const handleDelete = async () => {
+    const pkg = confirmDelete.pkg
+    if (!pkg) return
+    try {
+      await remove(pkg._id)
+      toast.success('Package deleted')
+    } catch (err) { toast.error(getApiErrorMessage(err)) }
+    finally { setConfirmDelete({ open: false, pkg: null }) }
   }
 
   return (
@@ -524,6 +579,8 @@ export default function Packages() {
               onCover={(p) => setImageModal({ open: true, pkg: p, mode: 'cover' })}
               onGallery={(p) => setImageModal({ open: true, pkg: p, mode: 'gallery' })}
               onToggle={(p) => setConfirmToggle({ open: true, pkg: p })}
+              onDelete={(p) => setConfirmDelete({ open: true, pkg: p })}
+              onShowAgents={(p) => setAgentsModal({ open: true, agents: p.whitelabelAgents || [], title: `Agents who whitelabeled "${p.title}"` })}
             />
           ))}
         </div>
@@ -539,6 +596,8 @@ export default function Packages() {
               onCover={(p) => setImageModal({ open: true, pkg: p, mode: 'cover' })}
               onGallery={(p) => setImageModal({ open: true, pkg: p, mode: 'gallery' })}
               onToggle={(p) => setConfirmToggle({ open: true, pkg: p })}
+              onDelete={(p) => setConfirmDelete({ open: true, pkg: p })}
+              onShowAgents={(p) => setAgentsModal({ open: true, agents: p.whitelabelAgents || [], title: `Agents who whitelabeled "${p.title}"` })}
             />
           ))}
         </div>
@@ -553,7 +612,6 @@ export default function Packages() {
         mode={imageModal.mode}
         loading={submitting}
       />
-
       <ConfirmDialog
         isOpen={confirmToggle.open}
         onClose={() => setConfirmToggle({ open: false, pkg: null })}
@@ -567,6 +625,24 @@ export default function Packages() {
         confirmText={confirmToggle.pkg?.isActive ? 'Pause' : 'Activate'}
         cancelText="Cancel"
         variant={confirmToggle.pkg?.isActive ? 'danger' : 'primary'}
+      />
+
+      <ConfirmDialog
+        isOpen={confirmDelete.open}
+        onClose={() => setConfirmDelete({ open: false, pkg: null })}
+        onConfirm={handleDelete}
+        title="Delete package?"
+        message={`Are you sure you want to delete "${confirmDelete.pkg?.title}"? This will remove it from your list and all linked whitelabels. This action cannot be undone.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="danger"
+      />
+
+      <WhitelabelAgentsModal
+        isOpen={agentsModal.open}
+        onClose={() => setAgentsModal({ open: false, agents: [], title: '' })}
+        agents={agentsModal.agents}
+        title={agentsModal.title}
       />
     </div>
   )

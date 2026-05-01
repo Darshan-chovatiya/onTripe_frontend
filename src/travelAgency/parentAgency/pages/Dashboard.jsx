@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import {
   Users, Package, BookOpen, Store,
   Copy, Check, ArrowRight, TrendingUp,
-  CalendarDays,
+  CalendarDays, Share2,
 } from 'lucide-react'
 import { useAuth } from '@/shared/context/AuthContext.jsx'
 import { getAnalytics } from '@/travelAgency/parentAgency/services/parentAgencyApi.js'
@@ -57,6 +57,7 @@ export default function ParentDashboard() {
   const [loading, setLoading] = useState(true)
   const [err, setErr] = useState('')
   const [copied, setCopied] = useState(false)
+  const [linkCopied, setLinkCopied] = useState(false)
   const [dateRange, setDateRange] = useState(DEFAULT_RANGE)
 
   const handleCopy = async () => {
@@ -65,6 +66,16 @@ export default function ParentDashboard() {
       await navigator.clipboard.writeText(user.agentCode)
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
+    } catch { /* no-op */ }
+  }
+
+  const handleCopyLink = async () => {
+    if (!user?.agentCode) return
+    const link = `${window.location.origin}/#/travelAgency/child/register?parentCode=${user.agentCode}`
+    try {
+      await navigator.clipboard.writeText(link)
+      setLinkCopied(true)
+      setTimeout(() => setLinkCopied(false), 2000)
     } catch { /* no-op */ }
   }
 
@@ -221,13 +232,14 @@ export default function ParentDashboard() {
         <div className="space-y-6">
           {user?.agentCode && (
             <article className="rounded-xl border border-primary-100 bg-primary-50/70 p-5">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-primary-700">Agent code</p>
-              <div className="mt-2 flex items-center justify-between gap-2">
+              <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-primary-700">Agent code</p>
+              <div className="mt-1.5 flex items-center justify-between gap-2">
                 <span className="truncate font-mono text-base font-semibold tracking-wider text-primary-900">{user.agentCode}</span>
                 <button
                   type="button"
                   onClick={handleCopy}
-                  className={`inline-flex items-center gap-1 rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors ${
+                  title="Copy Agent Code"
+                  className={`inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs font-medium transition-colors ${
                     copied
                       ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
                       : 'border-primary-200 bg-white text-primary-700 hover:bg-primary-100'
@@ -237,7 +249,32 @@ export default function ParentDashboard() {
                   {copied ? 'Copied' : 'Copy'}
                 </button>
               </div>
-              <p className="mt-2 text-xs text-primary-700/80">Share this with child agencies to onboard under your account.</p>
+
+              <div className="mt-4 border-t border-primary-200 pt-4">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-primary-700">Quick Share</p>
+                <p className="mt-1 text-[10px] leading-relaxed text-primary-600/80">Share this registration link. It automatically fills your agent code for new child agencies.</p>
+                <button
+                  type="button"
+                  onClick={handleCopyLink}
+                  className={`mt-2.5 flex w-full items-center justify-center gap-2 rounded-lg border py-2 text-xs font-semibold transition-all ${
+                    linkCopied
+                      ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                      : 'border-primary-300 bg-primary-600 text-white hover:bg-primary-700 shadow-sm shadow-primary-200'
+                  }`}
+                >
+                  {linkCopied ? (
+                    <>
+                      <Check className="h-3.5 w-3.5" strokeWidth={2.5} />
+                      Link Copied!
+                    </>
+                  ) : (
+                    <>
+                      <Share2 className="h-3.5 w-3.5" strokeWidth={2.5} />
+                      Copy Registration Link
+                    </>
+                  )}
+                </button>
+              </div>
             </article>
           )}
 

@@ -61,6 +61,10 @@ export function activatePackage(id) {
   return axiosInstance.patch(`/parent-agent/packages/${id}/activate`)
 }
 
+export function softDeletePackage(id) {
+  return axiosInstance.delete(`/parent-agent/packages/${id}/soft-delete`)
+}
+
 export function uploadEventImage(formData) {
   return axiosInstance.post('/parent-agent/packages/event-image', formData)
 }

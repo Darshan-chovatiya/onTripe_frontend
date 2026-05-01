@@ -17,12 +17,8 @@ export const P = {
   BOOKINGS_NETWORK: 'agency:bookings:network',
   /** Child: sales / operational bookings */
   BOOKINGS_SALES: 'agency:bookings:sales',
-  /** Sub-child: own bookings */
-  BOOKINGS_OWN: 'agency:bookings:own',
-  /** Parent: manage child agencies */
+  /** Child: manage sub-agents */
   NETWORK_CHILDREN: 'agency:network:children',
-  /** Child: manage sub-child agencies */
-  NETWORK_SUBCHILDREN: 'agency:network:subchildren',
   /** Child & sub-child: traveler / lead customer directory (agency CRM) */
   CUSTOMERS: 'agency:customers',
   SETTINGS: 'agency:settings',
@@ -45,11 +41,10 @@ const ROLE_TO_PERMISSIONS = {
     P.DASHBOARD,
     P.PACKAGES_CLONE,
     P.BOOKINGS_SALES,
-    P.NETWORK_SUBCHILDREN,
+    P.NETWORK_CHILDREN,
     P.CUSTOMERS,
     P.SETTINGS,
   ],
-  [ROLES.SUB_CHILD]: [P.DASHBOARD, P.PACKAGES_CLONE, P.BOOKINGS_OWN, P.CUSTOMERS, P.SETTINGS],
 }
 
 /**
@@ -74,6 +69,5 @@ export function roleHasPermission(role, permission) {
 /** Human-readable labels for header / sidebar */
 export const AGENCY_ROLE_LABELS = {
   [ROLES.PARENT_AGENCY]: 'Parent agency',
-  [ROLES.CHILD_AGENCY]: 'Child agency',
-  [ROLES.SUB_CHILD]: 'Sub-child agency',
+  [ROLES.CHILD_AGENCY]: 'Agent panel',
 }

@@ -53,9 +53,6 @@ import AgencyMyBookings from '@/travelAgency/agency/pages/AgencyMyBookings.jsx'
 import CreateBooking from '@/travelAgency/childAgency/pages/CreateBooking.jsx'
 import EditBooking from '@/travelAgency/childAgency/pages/EditBooking.jsx'
 import BookingDetail from '@/travelAgency/childAgency/pages/BookingDetail.jsx'
-import SubCreateBooking from '@/travelAgency/subChild/pages/CreateBooking.jsx'
-import SubEditBooking from '@/travelAgency/subChild/pages/EditBooking.jsx'
-import SubBookingDetail from '@/travelAgency/subChild/pages/BookingDetail.jsx'
 import AgencyManageDownstream from '@/travelAgency/agency/pages/AgencyManageDownstream.jsx'
 import ParentNotificationHistory from '@/travelAgency/parentAgency/pages/ParentNotificationHistory.jsx'
 import ChildNotificationHistory from '@/travelAgency/childAgency/pages/ChildNotificationHistory.jsx'
@@ -134,22 +131,8 @@ export default function AppRouter() {
         <Route path="agencies" element={<AdminAgencies />} />
         <Route path="agencies/network/:parentId" element={<AdminAgencyNetwork />} />
         <Route path="child-agencies/:agentId/whitelabels" element={<AdminAgentWhitelabels />} />
-        <Route path="sub-child-agencies/:agentId/whitelabels" element={<AdminAgentWhitelabels />} />
-        <Route path="child-agencies/:agentId/customers" element={<AdminAgentCustomers />} />
-        <Route path="sub-child-agencies/:agentId/customers" element={<AdminAgentCustomers />} />
         <Route path="child-agencies/:agentId/parents" element={<AdminAgentParents />} />
-        <Route path="sub-child-agencies/:agentId/parents" element={<AdminAgentParents />} />
         <Route path="child-agencies" element={<AdminChildAgencies key="admin-child-agencies" />} />
-        <Route
-          path="sub-child-agencies"
-          element={
-            <AdminChildAgencies
-              key="admin-sub-child-agencies"
-              agentRole="sub_child_agent"
-              pageTitle="Sub-child Agencies"
-            />
-          }
-        />
         <Route path="notifications" element={<AdminNotifications />} />
         <Route path="notifications/history" element={<AdminNotificationHistory />} />
         <Route path="otp-logs" element={<AdminOtpLogs />} />
@@ -320,33 +303,17 @@ export default function AppRouter() {
           }
         />
         <Route
-          path="my-bookings/create"
-          element={
-            <AgencyPermissionRoute permission={P.BOOKINGS_OWN}>
-              <SubCreateBooking />
-            </AgencyPermissionRoute>
-          }
-        />
-        <Route
-          path="my-bookings/:id"
-          element={
-            <AgencyPermissionRoute permission={P.BOOKINGS_OWN}>
-              <SubBookingDetail />
-            </AgencyPermissionRoute>
-          }
-        />
-        <Route
           path="my-bookings/edit/:id"
           element={
             <AgencyPermissionRoute permission={P.BOOKINGS_OWN}>
-              <SubEditBooking />
+              <EditBooking />
             </AgencyPermissionRoute>
           }
         />
         <Route
           path="manage-downstream"
           element={
-            <AgencyPermissionRoute anyOf={[P.NETWORK_CHILDREN, P.NETWORK_SUBCHILDREN]}>
+            <AgencyPermissionRoute permission={P.NETWORK_CHILDREN}>
               <AgencyManageDownstream />
             </AgencyPermissionRoute>
           }

@@ -10,6 +10,7 @@ import {
   ArrowRight,
   Calendar,
   Activity,
+  Share2,
 } from 'lucide-react'
 import { useAuth } from '@/shared/context/AuthContext.jsx'
 import { getAnalytics } from '@/travelAgency/childAgency/services/childAgencyApi.js'
@@ -18,14 +19,14 @@ import { getApiErrorMessage } from '@/shared/services/apiHelpers.js'
 const STATS_CONFIG = [
   { key: 'totalPackages', label: 'Whitelabel packages', icon: Package, iconClass: 'bg-blue-50 text-blue-700' },
   { key: 'totalBookings', label: 'Bookings', icon: BookOpen, iconClass: 'bg-emerald-50 text-emerald-700' },
-  { key: 'totalSubChildAgencies', label: 'Sub-child agencies', icon: Users, iconClass: 'bg-indigo-50 text-indigo-700' },
+  { key: 'totalSubChildAgencies', label: 'Agents', icon: Users, iconClass: 'bg-indigo-50 text-indigo-700' },
   { key: 'totalCustomers', label: 'Customers', icon: ContactRound, iconClass: 'bg-amber-50 text-amber-800' },
 ]
 
 const QUICK_LINKS = [
   { to: '/agency/packages', label: 'Whitelabels', desc: 'Manage package catalog and pricing' },
   { to: '/agency/bookings', label: 'Bookings', desc: 'Track sales and traveler requests' },
-  { to: '/agency/manage-downstream', label: 'Sub-child network', desc: 'Manage downstream agents' },
+  { to: '/agency/manage-downstream', label: 'Agent network', desc: 'Manage downstream agents' },
   { to: '/agency/customers', label: 'Customers', desc: 'View and update traveler profiles' },
 ]
 
@@ -35,6 +36,7 @@ export default function ChildDashboard() {
   const [loading, setLoading] = useState(true)
   const [err, setErr] = useState('')
   const [copied, setCopied] = useState(false)
+  const [linkCopied, setLinkCopied] = useState(false)
 
   const handleCopy = async () => {
     if (!user?.agentCode) return
@@ -42,6 +44,18 @@ export default function ChildDashboard() {
       await navigator.clipboard.writeText(user.agentCode)
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
+    } catch {
+      // no-op
+    }
+  }
+
+  const handleCopyLink = async () => {
+    if (!user?.agentCode) return
+    const link = `${window.location.origin}/#/travelAgency/child/register?parentCode=${user.agentCode}`
+    try {
+      await navigator.clipboard.writeText(link)
+      setLinkCopied(true)
+      setTimeout(() => setLinkCopied(false), 2000)
     } catch {
       // no-op
     }
@@ -71,7 +85,7 @@ export default function ChildDashboard() {
           <div>
             <p className="text-xs font-medium uppercase tracking-wider text-primary-700">Child panel</p>
             <h1 className="mt-1 text-2xl font-semibold tracking-tight text-gray-900">Hello, {user?.name || 'Agent'}</h1>
-            <p className="mt-1 text-sm text-gray-500">Monitor your bookings, sub-agent network, and customer growth.</p>
+            <p className="mt-1 text-sm text-gray-500">Monitor your bookings, agent network, and customer growth.</p>
           </div>
           <div className="hidden items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-600 sm:inline-flex">
             <Calendar className="h-3.5 w-3.5" strokeWidth={2} />
@@ -126,13 +140,14 @@ export default function ChildDashboard() {
         <div className="space-y-6">
           {user?.agentCode ? (
             <article className="rounded-xl border border-primary-100 bg-primary-50/70 p-5">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-primary-700">Agent code</p>
-              <div className="mt-2 flex items-center justify-between gap-2">
+              <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-primary-700">Agent code</p>
+              <div className="mt-1.5 flex items-center justify-between gap-2">
                 <span className="truncate font-mono text-base font-semibold tracking-wider text-primary-900">{user.agentCode}</span>
                 <button
                   type="button"
                   onClick={handleCopy}
-                  className={`inline-flex items-center gap-1 rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors ${
+                  title="Copy Agent Code"
+                  className={`inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs font-medium transition-colors ${
                     copied
                       ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
                       : 'border-primary-200 bg-white text-primary-700 hover:bg-primary-100'
@@ -142,7 +157,32 @@ export default function ChildDashboard() {
                   {copied ? 'Copied' : 'Copy'}
                 </button>
               </div>
-              <p className="mt-2 text-xs text-primary-700/80">Share this code with sub-child agencies when onboarding.</p>
+
+              <div className="mt-4 border-t border-primary-200 pt-4">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-primary-700">Quick Share</p>
+                <p className="mt-1 text-[10px] leading-relaxed text-primary-600/80">Share this registration link. It automatically fills your agent code for new agencies.</p>
+                <button
+                  type="button"
+                  onClick={handleCopyLink}
+                  className={`mt-2.5 flex w-full items-center justify-center gap-2 rounded-lg border py-2 text-xs font-semibold transition-all ${
+                    linkCopied
+                      ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                      : 'border-primary-300 bg-primary-600 text-white hover:bg-primary-700 shadow-sm shadow-primary-200'
+                  }`}
+                >
+                  {linkCopied ? (
+                    <>
+                      <Check className="h-3.5 w-3.5" strokeWidth={2.5} />
+                      Link Copied!
+                    </>
+                  ) : (
+                    <>
+                      <Share2 className="h-3.5 w-3.5" strokeWidth={2.5} />
+                      Copy Registration Link
+                    </>
+                  )}
+                </button>
+              </div>
             </article>
           ) : null}
 
@@ -150,7 +190,7 @@ export default function ChildDashboard() {
             <h2 className="text-sm font-semibold text-gray-900">Network status</h2>
             <div className="mt-3 rounded-lg border border-dashed border-gray-200 bg-gray-50 px-4 py-8 text-center">
               <Activity className="mx-auto h-6 w-6 text-gray-300" strokeWidth={2} />
-              <p className="mt-2 text-sm text-gray-600">Sub-agent activity details will appear here as they start booking.</p>
+              <p className="mt-2 text-sm text-gray-600">Agent activity details will appear here as they start booking.</p>
             </div>
           </article>
         </div>

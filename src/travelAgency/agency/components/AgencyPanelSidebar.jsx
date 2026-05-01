@@ -30,7 +30,7 @@ export default function AgencyPanelSidebar({ isOpen, onClose }) {
   const { can, roleLabel, loginPathForLogout, isKycPending } = useAgencyPermissions()
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
   const [logoError, setLogoError] = useState(true)
-  const panelName = `${(roleLabel || 'Agency').replace(/agency/gi, '').trim() || 'Agency'} panel`
+  const panelName = `${(roleLabel || 'Agency').replace(/agency/gi, '').trim() || 'Agency'}`
 
   const navItems = useMemo(() => {
     const base = AGENCY_PANEL_BASE
@@ -49,13 +49,8 @@ export default function AgencyPanelSidebar({ isOpen, onClose }) {
     if (can(P.BOOKINGS_NETWORK) || can(P.BOOKINGS_SALES)) {
       items.push({ path: `${base}/bookings`, icon: BookOpen, label: 'Bookings' })
     }
-    if (can(P.BOOKINGS_OWN)) {
-      items.push({ path: `${base}/my-bookings`, icon: Ticket, label: 'My bookings' })
-    }
     if (can(P.NETWORK_CHILDREN)) {
-      items.push({ path: `${base}/manage-downstream`, icon: Users, label: 'Manage children' })
-    } else if (can(P.NETWORK_SUBCHILDREN)) {
-      items.push({ path: `${base}/manage-downstream`, icon: Users, label: 'Manage sub-children' })
+      items.push({ path: `${base}/manage-downstream`, icon: Users, label: 'Manage agents' })
     }
     if (can(P.CUSTOMERS)) {
       items.push({ path: `${base}/customers`, icon: ContactRound, label: 'Customers' })

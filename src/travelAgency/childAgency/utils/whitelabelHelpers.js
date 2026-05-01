@@ -1,17 +1,12 @@
-/** @param {{ originalPackage?: unknown }} wl */
-export function getWhitelabelOriginalPackageId(wl) {
-  const op = wl?.originalPackage
-  if (op == null) return null
-  if (typeof op === 'object' && op !== null && '_id' in op) return String(op._id)
-  return String(op)
-}
-
-/** @param {Array<{ originalPackage?: unknown }>} whitelabels */
-export function mapWhitelabelByOriginalPackageId(whitelabels) {
+/** @param {Array<{ originalPackage?: any, parentWhitelabel?: any }>} whitelabels */
+export function mapWhitelabelBySourceId(whitelabels) {
   const m = new Map()
   for (const wl of whitelabels) {
-    const pid = getWhitelabelOriginalPackageId(wl)
-    if (pid) m.set(pid, wl)
+    const pkgId = wl.originalPackage?._id || wl.originalPackage
+    const parentWlId = wl.parentWhitelabel?._id || wl.parentWhitelabel
+    
+    if (pkgId) m.set(String(pkgId), wl)
+    if (parentWlId) m.set(String(parentWlId), wl)
   }
   return m
 }

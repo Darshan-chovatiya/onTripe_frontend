@@ -25,6 +25,10 @@ export function listAvailablePackages() {
   return axiosInstance.get('/child-agent/packages/available')
 }
 
+export function listAvailableWhitelabels() {
+  return axiosInstance.get('/child-agent/whitelabels/available')
+}
+
 export function listMyWhitelabels() {
   return axiosInstance.get('/child-agent/whitelabels')
 }
