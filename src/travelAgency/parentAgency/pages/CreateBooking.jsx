@@ -83,6 +83,8 @@ export default function CreateBooking() {
   const [lookupLoading, setLookupLoading] = useState(false)
   const [lookupMeta, setLookupMeta] = useState(null)
   const skipNextLookupRef = useRef(false)
+  
+  const [basePackagePrice, setBasePackagePrice] = useState(0)
 
   const activePackages = (availablePackages ?? []).filter((p) => p.isActive !== false)
 
@@ -90,14 +92,19 @@ export default function CreateBooking() {
     if (activePackages.length && !packageId) {
       const first = activePackages[0]
       setPackageId(String(first._id))
-      if (first.basePrice != null) setTotalAmount(String(first.basePrice))
+      setBasePackagePrice(first.basePrice || 0)
     }
   }, [activePackages, packageId])
+
+  useEffect(() => {
+    const total = basePackagePrice * (travelers.length + 1)
+    setTotalAmount(String(total))
+  }, [basePackagePrice, travelers.length])
 
   const handlePackageChange = (id) => {
     setPackageId(id)
     const pkg = activePackages.find(p => String(p._id) === id)
-    if (pkg?.basePrice != null) setTotalAmount(String(pkg.basePrice))
+    setBasePackagePrice(pkg?.basePrice || 0)
   }
 
   useEffect(() => {

@@ -85,6 +85,7 @@ export default function CreateBooking() {
   const [lookupLoading, setLookupLoading] = useState(false)
   const [lookupMeta, setLookupMeta] = useState(null)
   const skipNextLookupRef = useRef(false)
+  const [basePackagePrice, setBasePackagePrice] = useState(0)
 
   const activeWhitelabels = (whitelabels ?? []).filter((w) => w.isActive !== false)
 
@@ -98,27 +99,32 @@ export default function CreateBooking() {
     if (offerType === 'whitelabel' && activeWhitelabels.length && !whitelabelId) {
       const first = activeWhitelabels[0]
       setWhitelabelId(String(first._id))
-      if (first.finalPrice != null) setTotalAmount(String(first.finalPrice))
+      setBasePackagePrice(first.finalPrice || 0)
     }
     if (offerType === 'package' && availablePackages?.length && !packageId) {
       const first = availablePackages[0]
       setPackageId(String(first._id))
-      if (first.basePrice != null) setTotalAmount(String(first.basePrice))
+      setBasePackagePrice(first.basePrice || 0)
     }
   }, [offerType, activeWhitelabels, availablePackages, whitelabelId, packageId])
+
+  useEffect(() => {
+    const total = basePackagePrice * (travelers.length + 1)
+    setTotalAmount(String(total))
+  }, [basePackagePrice, travelers.length])
 
   const handleWhitelabelChange = (id) => {
     setWhitelabelId(id)
     setOfferType('whitelabel')
     const wl = activeWhitelabels.find(w => String(w._id) === id)
-    if (wl?.finalPrice != null) setTotalAmount(String(wl.finalPrice))
+    setBasePackagePrice(wl?.finalPrice || 0)
   }
 
   const handlePackageChange = (id) => {
     setPackageId(id)
     setOfferType('package')
     const pkg = availablePackages.find(p => String(p._id) === id)
-    if (pkg?.basePrice != null) setTotalAmount(String(pkg.basePrice))
+    setBasePackagePrice(pkg?.basePrice || 0)
   }
 
   useEffect(() => {

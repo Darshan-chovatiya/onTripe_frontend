@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
   PackageOpen, Layers, Tags, Search, Package, Tag, TrendingUp,
-  CheckCircle2, Plus, Filter,
+  CheckCircle2, Plus, Filter, Ticket
 } from 'lucide-react'
 import { useChildPackages } from '@/travelAgency/childAgency/hooks/useChildPackages.js'
 import { useChildBookings } from '@/travelAgency/childAgency/hooks/useChildBookings.js'
@@ -40,7 +40,7 @@ export default function Packages() {
           .map(p => String(p._id))
       )
       setInactiveParentIds(ids)
-    }).catch(() => {})
+    }).catch(() => { })
   }, [])
 
   const parentOptions = useMemo(() => {
@@ -90,6 +90,7 @@ export default function Packages() {
     available: availablePackages.length,
     whitelabels: whitelabels.length,
     active: whitelabels.filter(w => w.isActive).length,
+    totalPeople: whitelabels.reduce((acc, w) => acc + (Number(w.bookingCount) || 0) + (Number(w.totalAdditionalTravelers) || 0), 0)
   }), [availablePackages, whitelabels])
 
   const handleModalSubmit = async (...args) => {
@@ -130,11 +131,12 @@ export default function Packages() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {[
           { label: 'Available packages', value: stats.available, icon: Package, color: 'text-primary-700', bg: 'bg-primary-50' },
           { label: 'My white-labels', value: stats.whitelabels, icon: Tag, color: 'text-violet-700', bg: 'bg-violet-50' },
           { label: 'Active offers', value: stats.active, icon: CheckCircle2, color: 'text-emerald-700', bg: 'bg-emerald-50' },
+          { label: 'Total Bookings', value: stats.totalPeople, icon: Ticket, color: 'text-blue-700', bg: 'bg-blue-50' },
         ].map(({ label, value, icon: Icon, color, bg }) => (
           <div key={label} className="flex items-center gap-3 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
             <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${bg}`}>
@@ -157,9 +159,8 @@ export default function Packages() {
           <button
             type="button"
             onClick={() => setActiveTab('available')}
-            className={`flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-semibold transition ${
-              activeTab === 'available' ? 'bg-primary-600 text-white shadow-sm' : 'text-gray-600 hover:text-gray-900'
-            }`}
+            className={`flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-semibold transition ${activeTab === 'available' ? 'bg-primary-600 text-white shadow-sm' : 'text-gray-600 hover:text-gray-900'
+              }`}
           >
             <Layers className="h-3.5 w-3.5" strokeWidth={2} />
             From parents
@@ -170,9 +171,8 @@ export default function Packages() {
           <button
             type="button"
             onClick={() => setActiveTab('whitelabels')}
-            className={`flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-semibold transition ${
-              activeTab === 'whitelabels' ? 'bg-primary-600 text-white shadow-sm' : 'text-gray-600 hover:text-gray-900'
-            }`}
+            className={`flex items-center gap-1.5 rounded-lg px-4 py-2 text-xs font-semibold transition ${activeTab === 'whitelabels' ? 'bg-primary-600 text-white shadow-sm' : 'text-gray-600 hover:text-gray-900'
+              }`}
           >
             <Tags className="h-3.5 w-3.5" strokeWidth={2} />
             My white-labels

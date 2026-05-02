@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { MapPin, Clock, IndianRupee, Pencil, Power, MessageSquare, Eye, Star, Users, TrendingUp, CheckCircle2, XCircle, Ticket } from 'lucide-react'
 import { packageCoverUrl } from '@/travelAgency/childAgency/components/packageMedia.js'
 import PackageDetailModal from '@/travelAgency/childAgency/components/PackageDetailModal.jsx'
@@ -6,6 +7,7 @@ import PackageDetailModal from '@/travelAgency/childAgency/components/PackageDet
 const PLACEHOLDER = 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&q=80&w=600'
 
 export default function WhitelabelPackageCard({ item, onEdit, onToggleActive, onChat, onRating, onShowAgents, hasBooking, disabled = false }) {
+  const navigate = useNavigate()
   const orig = item.originalPackage
   const coverSrc = packageCoverUrl(item.customCoverImage || orig?.coverImage) || PLACEHOLDER
   const title = item.customTitle || orig?.title || 'White-label package'
@@ -81,10 +83,17 @@ export default function WhitelabelPackageCard({ item, onEdit, onToggleActive, on
               <Users className="h-3 w-3 text-primary-500" strokeWidth={2} />{orig.maxCapacity} pax
             </span>
           )}
-          <span className="inline-flex items-center gap-1 rounded-lg bg-primary-50 px-2 py-1 text-[11px] font-semibold text-primary-700 ring-1 ring-primary-100 shadow-sm">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation()
+              navigate(`/agency/bookings?whitelabelId=${item._id}`)
+            }}
+            className="inline-flex items-center gap-1 rounded-lg bg-primary-50 px-2 py-1 text-[11px] font-semibold text-primary-700 ring-1 ring-primary-100 shadow-sm transition hover:bg-primary-100"
+          >
             <Ticket className="h-3 w-3 text-primary-600" strokeWidth={2.5} />
-            {item.bookingCount || 0} Bookings
-          </span>
+            {(Number(item.bookingCount) || 0) + (Number(item.totalAdditionalTravelers) || 0)} Bookings
+          </button>
         </div>
 
         {/* Financial Breakdown */}

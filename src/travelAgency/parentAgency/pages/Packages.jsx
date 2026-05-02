@@ -128,7 +128,7 @@ function PackageGridCard({ pkg, onEdit, onClone, onCover, onGallery, onToggle, o
                 onClick={() => navigate(`${AGENCY_PANEL_BASE}/bookings?packageId=${pkg._id}`)}
                 className="mt-0.5 inline-block text-xs font-bold tabular-nums text-primary-600 hover:text-primary-800 hover:underline"
               >
-                {Number(pkg.bookingCount) || 0}
+                {(Number(pkg.bookingCount) || 0) + (Number(pkg.totalAdditionalTravelers) || 0)}
               </button>
             </div>
             <div className="text-center border-l border-gray-200">
@@ -286,7 +286,7 @@ function PackageListRow({ pkg, onEdit, onClone, onCover, onGallery, onToggle, on
             onClick={() => navigate(`${AGENCY_PANEL_BASE}/bookings?packageId=${pkg._id}`)}
             className="mt-0.5 inline-block text-xs font-bold tabular-nums text-primary-600 hover:text-primary-800 hover:underline"
           >
-            {Number(pkg.bookingCount) || 0}
+            {(Number(pkg.bookingCount) || 0) + (Number(pkg.totalAdditionalTravelers) || 0)}
           </button>
         </div>
         <div className="text-center">
@@ -415,7 +415,7 @@ export default function Packages() {
     total: packages.length,
     live: packages.filter((p) => p.isActive).length,
     revenue: packages.reduce((s, p) => s + (Number(p.totalRevenue) || 0), 0),
-    bookings: packages.reduce((s, p) => s + (Number(p.bookingCount) || 0), 0),
+    bookings: packages.reduce((s, p) => s + (Number(p.bookingCount) || 0) + (Number(p.totalAdditionalTravelers) || 0), 0),
   }), [packages])
 
   const handleFormSubmit = async (formData) => {

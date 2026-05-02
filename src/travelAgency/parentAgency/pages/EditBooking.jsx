@@ -63,6 +63,7 @@ export default function EditBooking() {
     aadharFront: null, aadharBack: null, panCard: null,
     passport: null, visaDoc: null, otherDocs: [],
   })
+  const [basePackagePrice, setBasePackagePrice] = useState(0)
 
   useEffect(() => {
     if (!id) return
@@ -80,6 +81,7 @@ export default function EditBooking() {
           setTotalAmount(data.totalAmount != null ? String(data.totalAmount) : '')
           setPaymentStatus(data.paymentStatus || 'pending')
           setBookingStatus(data.bookingStatus || 'confirmed')
+          setBasePackagePrice(data.package?.basePrice || 0)
           setTravelers(
             (data.travelers || []).map((t) => {
               travelerIdRef.current += 1
@@ -116,6 +118,17 @@ export default function EditBooking() {
   const removeTraveler = (i) => setTravelers((t) => t.filter((_, idx) => idx !== i))
   const setT = (i, field, value) =>
     setTravelers((rows) => rows.map((row, idx) => idx === i ? { ...row, [field]: value } : row))
+
+  const isFirstRender = useRef(true)
+  useEffect(() => {
+    if (loading || !booking) return
+    if (isFirstRender.current) {
+      isFirstRender.current = false
+      return
+    }
+    const total = basePackagePrice * (travelers.length + 1)
+    setTotalAmount(String(total))
+  }, [travelers.length, basePackagePrice, loading, booking])
 
   const handleSave = async (e) => {
     e.preventDefault()

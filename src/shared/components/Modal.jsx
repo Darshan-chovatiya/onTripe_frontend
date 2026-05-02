@@ -6,7 +6,7 @@ const sizeClasses = {
   sm: 'max-w-md',
   md: 'max-w-lg',
   // lg: 'max-w-4xl',
-  lg:'max-w-5xl',
+  lg: 'max-w-5xl',
   xl: 'max-w-6xl',
 }
 

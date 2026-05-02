@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { CalendarDays, Eye, IndianRupee, Plus, Ticket, MessageSquare, Pencil, Search, Download, RefreshCw } from 'lucide-react'
 import { useChildBookings } from '@/travelAgency/childAgency/hooks/useChildBookings.js'
 import { listBookings } from '@/travelAgency/childAgency/services/childAgencyApi.js'
@@ -37,9 +37,14 @@ function statusClass(status) {
 
 export default function Bookings() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const initialSearch = searchParams.get('search') || ''
+  const packageId = searchParams.get('packageId')
+  const whitelabelId = searchParams.get('whitelabelId')
+
   const { bookings, loading, error, currentUserId, fetchBookings, pagination } = useChildBookings()
   const { toast } = useToast()
-  const [search, setSearch] = useState('')
+  const [search, setSearch] = useState(initialSearch)
   const [statusFilter, setStatusFilter] = useState('all')
   const [page, setPage] = useState(1)
   const [exportLoading, setExportLoading] = useState(false)
@@ -55,9 +60,11 @@ export default function Bookings() {
       page,
       limit: PAGE_SIZE,
       search: search.trim(),
-      status: statusFilter === 'all' ? undefined : statusFilter
+      status: statusFilter === 'all' ? undefined : statusFilter,
+      packageId,
+      whitelabelId
     })
-  }, [fetchBookings, page, search, statusFilter])
+  }, [fetchBookings, page, search, statusFilter, packageId, whitelabelId])
 
   const handleExport = async () => {
     setExportLoading(true)
@@ -185,8 +192,8 @@ export default function Bookings() {
             <table className="w-full min-w-[860px] text-sm">
               <thead className="border-b border-gray-200 bg-gray-50">
                 <tr>
-                  <th className="px-4 py-2.5 text-left align-middle text-xs font-medium text-gray-600">Booking ID</th>
-                  <th className="px-4 py-2.5 text-left align-middle text-xs font-medium text-gray-600">Package / offer</th>
+                  {/* <th className="px-4 py-2.5 text-left align-middle text-xs font-medium text-gray-600">Booking ID</th> */}
+                  {/* <th className="px-4 py-2.5 text-left align-middle text-xs font-medium text-gray-600">Package / offer</th> */}
                   <th className="px-4 py-2.5 text-left align-middle text-xs font-medium text-gray-600">Customer</th>
                   <th className="px-4 py-2.5 text-left align-middle text-xs font-medium text-gray-600">Travel date</th>
                   <th className="px-4 py-2.5 text-left align-middle text-xs font-medium text-gray-600">Amount</th>
@@ -202,8 +209,8 @@ export default function Bookings() {
                   const isSelf = currentUserId && bookedBy && String(bookedBy._id || bookedBy) === String(currentUserId)
                   return (
                     <tr key={b._id} className="transition-colors hover:bg-gray-50/80">
-                      <td className="px-4 py-2.5 align-middle font-mono text-xs font-semibold text-gray-900">{b.bookingId}</td>
-                      <td className="max-w-[12rem] px-4 py-2.5 align-middle">
+                      {/* <td className="px-4 py-2.5 align-middle font-mono text-xs font-semibold text-gray-900">{b.bookingId}</td> */}
+                      {/* <td className="max-w-[12rem] px-4 py-2.5 align-middle">
                         <button
                           type="button"
                           onClick={() => {
@@ -215,10 +222,19 @@ export default function Bookings() {
                         >
                           {bookingOfferLabel(b)}
                         </button>
-                      </td>
-                      <td className="px-4 py-2.5 align-middle text-gray-600">
-                        <div className="font-medium text-gray-900">{b.customer?.name || '—'}</div>
-                        <div className="text-xs">{b.customer?.phone || ''}</div>
+                      </td> */}
+                      <td className="px-4 py-2.5 align-middle">
+                        <div className="flex flex-col">
+                          <div className="flex items-center gap-1.5 font-medium text-gray-900">
+                            {b.customer?.name || '—'}
+                            {b.travelers?.length > 0 && (
+                              <span className="inline-flex items-center gap-0.5 rounded-full bg-primary-50 px-1.5 py-0.5 text-[10px] font-bold text-primary-700 ring-1 ring-inset ring-primary-100">
+                                +{b.travelers.length} travelers
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-xs text-gray-500">{b.customer?.phone || ''}</div>
+                        </div>
                       </td>
                       <td className="whitespace-nowrap px-4 py-2.5 align-middle text-gray-600">
                         <span className="inline-flex items-center gap-1">
@@ -241,7 +257,7 @@ export default function Bookings() {
                         {typeof bookedBy === 'object' && bookedBy?.name ? (
                           <>
                             {bookedBy.name}
-                            {isSelf ? <span className="text-xs text-gray-400"> (you)</span> : null}
+                            {/* {isSelf ? <span className="text-xs text-gray-400"> (you)</span> : null} */}
                           </>
                         ) : (
                           '—'

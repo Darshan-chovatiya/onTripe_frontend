@@ -118,12 +118,12 @@ export default function ChildAgentDetailModal({ isOpen, onClose, childId }) {
                   </p>
                   <p className="mt-1 text-sm font-semibold text-gray-900">{data.bookingCount ?? 0}</p>
                 </div>
-                <div className="rounded-xl border border-white/80 bg-white/90 p-3 shadow-sm col-span-2">
+                {/* <div className="rounded-xl border border-white/80 bg-white/90 p-3 shadow-sm col-span-2">
                   <p className="flex items-center gap-1.5 text-[11px] font-medium text-gray-500">
                     <Hash className="h-3.5 w-3.5" /> Agent ID
                   </p>
                   <p className="mt-1 font-mono text-sm font-semibold text-gray-900">{child._id?.slice(-8).toUpperCase()}</p>
-                </div>
+                </div> */}
               </div>
             </div>
 

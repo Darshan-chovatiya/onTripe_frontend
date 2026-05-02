@@ -63,6 +63,8 @@ export default function EditBooking() {
     aadharFront: null, aadharBack: null, panCard: null,
     passport: null, visaDoc: null, otherDocs: [],
   })
+  const [basePackagePrice, setBasePackagePrice] = useState(0)
+  const isFirstRender = useRef(true)
 
   useEffect(() => {
     if (!id) return
@@ -78,6 +80,7 @@ export default function EditBooking() {
           setCustomerEmail(data.customer?.email || '')
           setTravelDate(toDatetimeLocal(data.travelDate))
           setTotalAmount(data.totalAmount != null ? String(data.totalAmount) : '')
+          setBasePackagePrice(data.whitelabelPriceAtBooking || data.parentPriceAtBooking || 0)
           setPaymentStatus(data.paymentStatus || 'pending')
           setBookingStatus(data.bookingStatus || 'confirmed')
           setTravelers(
@@ -105,6 +108,15 @@ export default function EditBooking() {
       })
     return () => { cancelled = true }
   }, [id, fetchBooking])
+
+  useEffect(() => {
+    if (isFirstRender.current) {
+      if (basePackagePrice > 0) isFirstRender.current = false
+      return
+    }
+    const total = basePackagePrice * (travelers.length + 1)
+    setTotalAmount(String(total))
+  }, [basePackagePrice, travelers.length])
 
   const addTraveler = () => {
     travelerIdRef.current += 1
