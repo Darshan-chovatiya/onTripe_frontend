@@ -50,8 +50,8 @@ import ClonePackage from '@/travelAgency/parentAgency/pages/ClonePackage.jsx'
 import AgencyVendors from '@/travelAgency/agency/pages/AgencyVendors.jsx'
 import AgencyBookings from '@/travelAgency/agency/pages/AgencyBookings.jsx'
 import AgencyMyBookings from '@/travelAgency/agency/pages/AgencyMyBookings.jsx'
-import CreateBooking from '@/travelAgency/childAgency/pages/CreateBooking.jsx'
-import EditBooking from '@/travelAgency/childAgency/pages/EditBooking.jsx'
+import AgencyCreateBooking from '@/travelAgency/agency/pages/AgencyCreateBooking.jsx'
+import AgencyEditBooking from '@/travelAgency/agency/pages/AgencyEditBooking.jsx'
 import BookingDetail from '@/travelAgency/childAgency/pages/BookingDetail.jsx'
 import AgencyManageDownstream from '@/travelAgency/agency/pages/AgencyManageDownstream.jsx'
 import ParentNotificationHistory from '@/travelAgency/parentAgency/pages/ParentNotificationHistory.jsx'
@@ -258,7 +258,7 @@ export default function AppRouter() {
           path="bookings/create"
           element={
             <AgencyPermissionRoute anyOf={[P.BOOKINGS_NETWORK, P.BOOKINGS_SALES]}>
-              <CreateBooking />
+              <AgencyCreateBooking />
             </AgencyPermissionRoute>
           }
         />
@@ -274,23 +274,7 @@ export default function AppRouter() {
           path="bookings/:id/edit"
           element={
             <AgencyPermissionRoute anyOf={[P.BOOKINGS_NETWORK, P.BOOKINGS_SALES]}>
-              <EditBooking />
-            </AgencyPermissionRoute>
-          }
-        />
-        <Route
-          path="bookings/create"
-          element={
-            <AgencyPermissionRoute anyOf={[P.BOOKINGS_NETWORK, P.BOOKINGS_SALES]}>
-              <CreateBooking />
-            </AgencyPermissionRoute>
-          }
-        />
-        <Route
-          path="bookings/edit/:id"
-          element={
-            <AgencyPermissionRoute anyOf={[P.BOOKINGS_NETWORK, P.BOOKINGS_SALES]}>
-              <EditBooking />
+              <AgencyEditBooking />
             </AgencyPermissionRoute>
           }
         />
@@ -306,7 +290,7 @@ export default function AppRouter() {
           path="my-bookings/edit/:id"
           element={
             <AgencyPermissionRoute permission={P.BOOKINGS_OWN}>
-              <EditBooking />
+              <AgencyEditBooking />
             </AgencyPermissionRoute>
           }
         />

@@ -5,7 +5,8 @@ import { X } from 'lucide-react'
 const sizeClasses = {
   sm: 'max-w-md',
   md: 'max-w-lg',
-  lg: 'max-w-4xl',
+  // lg: 'max-w-4xl',
+  lg: 'max-w-5xl',
   xl: 'max-w-6xl',
   /** True edge-to-edge map / canvas */
   full: 'max-w-none w-full h-full min-h-0 max-h-[100dvh] rounded-none border-0 shadow-2xl',

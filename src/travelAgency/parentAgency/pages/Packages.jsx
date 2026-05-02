@@ -15,6 +15,7 @@ import { useToast } from '@/shared/components/ToastContainer.jsx'
 import { getApiErrorMessage } from '@/shared/services/apiHelpers.js'
 import { AGENCY_PANEL_BASE } from '@/travelAgency/agency/constants.js'
 import WhitelabelAgentsModal from '@/shared/components/WhitelabelAgentsModal.jsx'
+import AgentCommissionsModal from '@/shared/components/AgentCommissionsModal.jsx'
 
 const BASE_URL =
   import.meta.env.VITE_API_BASE_URL?.replace('/api', '').replace(/\/$/, '') || 'http://localhost:5001'
@@ -32,11 +33,10 @@ function StatusPill({ isActive, onClick }) {
     <button
       type="button"
       onClick={onClick}
-      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide transition active:scale-95 ${
-        isActive
+      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide transition active:scale-95 ${isActive
           ? 'bg-emerald-500/10 text-emerald-700 ring-1 ring-emerald-400/40 hover:bg-emerald-500/20'
           : 'bg-gray-100 text-gray-500 ring-1 ring-gray-200 hover:bg-gray-200'
-      }`}
+        }`}
     >
       <span className={`h-1.5 w-1.5 rounded-full ${isActive ? 'bg-emerald-500 animate-pulse' : 'bg-gray-400'}`} />
       {isActive ? 'Live' : 'Paused'}
@@ -44,7 +44,7 @@ function StatusPill({ isActive, onClick }) {
   )
 }
 
-function PackageGridCard({ pkg, onEdit, onClone, onCover, onGallery, onToggle, onDelete, onShowAgents, navigate }) {
+function PackageGridCard({ pkg, onEdit, onClone, onCover, onGallery, onToggle, onDelete, onShowAgents, onShowCommissions, navigate }) {
   const cover = imgUrl(pkg.coverImage)
   return (
     <article className="group relative flex flex-col overflow-hidden rounded-2xl bg-white ring-1 ring-gray-200 shadow-sm transition-all duration-300 hover:shadow-xl hover:shadow-gray-200/60 hover:-translate-y-0.5">
@@ -101,35 +101,47 @@ function PackageGridCard({ pkg, onEdit, onClone, onCover, onGallery, onToggle, o
         </div>
 
         {/* Revenue + bookings */}
-        <div className="flex items-center gap-2 rounded-xl bg-gray-50/80 px-3 py-2 ring-1 ring-gray-100">
-          <div className="flex-1 text-center">
-            <p className="text-[10px] font-medium uppercase tracking-wide text-gray-400">Revenue</p>
-            <p className="mt-0.5 text-sm font-bold tabular-nums text-emerald-700">
-              ₹{(Number(pkg.totalRevenue) || 0).toLocaleString('en-IN')}
-            </p>
+        <div className="flex flex-col gap-2 rounded-xl bg-gray-50/80 p-3 ring-1 ring-gray-100">
+          <div className="grid grid-cols-2 gap-2 border-b border-gray-200 pb-2">
+            <div className="text-center">
+              <p className="text-[9px] font-medium uppercase tracking-wide text-gray-400">My Earnings</p>
+              <p className="mt-0.5 text-xs font-bold tabular-nums text-primary-700">
+                ₹{(Number(pkg.totalParentEarnings) || 0).toLocaleString('en-IN')}
+              </p>
+            </div>
+            <div className="text-center border-l border-gray-200">
+              <p className="text-[9px] font-medium uppercase tracking-wide text-gray-400">Child Comm.</p>
+              <button
+                type="button"
+                onClick={() => onShowCommissions?.(pkg)}
+                className="mt-0.5 inline-block text-xs font-bold tabular-nums text-emerald-700 hover:text-emerald-800 hover:underline"
+              >
+                ₹{(Number(pkg.totalChildEarnings) || 0).toLocaleString('en-IN')}
+              </button>
+            </div>
           </div>
-          <div className="h-8 w-px bg-gray-200" />
-          <div className="flex-1 text-center">
-            <p className="text-[10px] font-medium uppercase tracking-wide text-gray-400">Bookings</p>
-            <button
-              type="button"
-              onClick={() => navigate(`${AGENCY_PANEL_BASE}/bookings?packageId=${pkg._id}`)}
-              className="mt-0.5 inline-block text-sm font-bold tabular-nums text-primary-600 hover:text-primary-800 hover:underline"
-            >
-              {Number(pkg.bookingCount) || 0}
-            </button>
-          </div>
-          <div className="h-8 w-px bg-gray-200" />
-          <div className="flex-1 text-center">
-            <p className="text-[10px] font-medium uppercase tracking-wide text-gray-400">Whitelabels</p>
-            <button
-              type="button"
-              disabled={!pkg.whitelabelCount}
-              onClick={() => onShowAgents?.(pkg)}
-              className={`mt-0.5 inline-block text-sm font-bold tabular-nums transition ${pkg.whitelabelCount ? 'text-violet-600 hover:text-violet-800 hover:underline' : 'text-gray-400'}`}
-            >
-              {Number(pkg.whitelabelCount) || 0}
-            </button>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="text-center">
+              <p className="text-[9px] font-medium uppercase tracking-wide text-gray-400">Bookings</p>
+              <button
+                type="button"
+                onClick={() => navigate(`${AGENCY_PANEL_BASE}/bookings?packageId=${pkg._id}`)}
+                className="mt-0.5 inline-block text-xs font-bold tabular-nums text-primary-600 hover:text-primary-800 hover:underline"
+              >
+                {(Number(pkg.bookingCount) || 0) + (Number(pkg.totalAdditionalTravelers) || 0)}
+              </button>
+            </div>
+            <div className="text-center border-l border-gray-200">
+              <p className="text-[9px] font-medium uppercase tracking-wide text-gray-400">Whitelabels</p>
+              <button
+                type="button"
+                disabled={!pkg.whitelabelCount}
+                onClick={() => onShowAgents?.(pkg)}
+                className={`mt-0.5 inline-block text-xs font-bold tabular-nums transition ${pkg.whitelabelCount ? 'text-violet-600 hover:text-violet-800 hover:underline' : 'text-gray-400'}`}
+              >
+                {Number(pkg.whitelabelCount) || 0}
+              </button>
+            </div>
           </div>
         </div>
 
@@ -142,7 +154,7 @@ function PackageGridCard({ pkg, onEdit, onClone, onCover, onGallery, onToggle, o
           >
             View details
           </button>
-          
+
           {/* First row: Cover, Gallery, Chat */}
           <div className="grid grid-cols-3 gap-1.5">
             <button
@@ -191,11 +203,10 @@ function PackageGridCard({ pkg, onEdit, onClone, onCover, onGallery, onToggle, o
             <button
               type="button"
               onClick={() => onToggle(pkg)}
-              className={`flex items-center justify-center gap-1.5 rounded-lg border py-2 text-[11px] font-medium transition ${
-                pkg.isActive 
-                ? 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100' 
-                : 'border-red-200 bg-red-50 text-red-700 hover:bg-red-100'
-              }`}
+              className={`flex items-center justify-center gap-1.5 rounded-lg border py-2 text-[11px] font-medium transition ${pkg.isActive
+                  ? 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                  : 'border-red-200 bg-red-50 text-red-700 hover:bg-red-100'
+                }`}
             >
               {pkg.isActive ? <CheckCircle2 className="h-3.5 w-3.5" strokeWidth={2} /> : <XCircle className="h-3.5 w-3.5" strokeWidth={2} />}
               {pkg.isActive ? 'Live' : 'Paused'}
@@ -216,7 +227,7 @@ function PackageGridCard({ pkg, onEdit, onClone, onCover, onGallery, onToggle, o
   )
 }
 
-function PackageListRow({ pkg, onEdit, onClone, onCover, onGallery, onToggle, onDelete, onShowAgents, navigate }) {
+function PackageListRow({ pkg, onEdit, onClone, onCover, onGallery, onToggle, onDelete, onShowAgents, onShowCommissions, navigate }) {
   const cover = imgUrl(pkg.coverImage)
   return (
     <div className="group flex items-center gap-4 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm transition hover:border-primary-100 hover:shadow-md">
@@ -251,36 +262,40 @@ function PackageListRow({ pkg, onEdit, onClone, onCover, onGallery, onToggle, on
       </div>
 
       {/* Stats */}
-      <div className="hidden items-center gap-6 sm:flex">
+      <div className="hidden items-center gap-4 sm:flex">
         <div className="text-center">
-          <p className="text-[10px] font-medium uppercase tracking-wide text-gray-400">Price</p>
-          <p className="mt-0.5 text-sm font-bold tabular-nums text-gray-900">
-            ₹{(Number(pkg.basePrice) || 0).toLocaleString('en-IN')}
+          <p className="text-[9px] font-medium uppercase tracking-wide text-gray-400">My Earnings</p>
+          <p className="mt-0.5 text-xs font-bold tabular-nums text-primary-700">
+            ₹{(Number(pkg.totalParentEarnings) || 0).toLocaleString('en-IN')}
           </p>
         </div>
         <div className="text-center">
-          <p className="text-[10px] font-medium uppercase tracking-wide text-gray-400">Revenue</p>
-          <p className="mt-0.5 text-sm font-bold tabular-nums text-emerald-700">
-            ₹{(Number(pkg.totalRevenue) || 0).toLocaleString('en-IN')}
-          </p>
-        </div>
-        <div className="text-center">
-          <p className="text-[10px] font-medium uppercase tracking-wide text-gray-400">Bookings</p>
+          <p className="text-[9px] font-medium uppercase tracking-wide text-gray-400">Child Comm.</p>
           <button
             type="button"
-            onClick={() => navigate(`${AGENCY_PANEL_BASE}/bookings?packageId=${pkg._id}`)}
-            className="mt-0.5 inline-block text-sm font-bold tabular-nums text-primary-600 hover:text-primary-800 hover:underline"
+            onClick={() => onShowCommissions?.(pkg)}
+            className="mt-0.5 inline-block text-xs font-bold tabular-nums text-emerald-700 hover:text-emerald-800 hover:underline"
           >
-            {Number(pkg.bookingCount) || 0}
+            ₹{(Number(pkg.totalChildEarnings) || 0).toLocaleString('en-IN')}
           </button>
         </div>
         <div className="text-center">
-          <p className="text-[10px] font-medium uppercase tracking-wide text-gray-400">Whitelabels</p>
+          <p className="text-[9px] font-medium uppercase tracking-wide text-gray-400">Bookings</p>
+          <button
+            type="button"
+            onClick={() => navigate(`${AGENCY_PANEL_BASE}/bookings?packageId=${pkg._id}`)}
+            className="mt-0.5 inline-block text-xs font-bold tabular-nums text-primary-600 hover:text-primary-800 hover:underline"
+          >
+            {(Number(pkg.bookingCount) || 0) + (Number(pkg.totalAdditionalTravelers) || 0)}
+          </button>
+        </div>
+        <div className="text-center">
+          <p className="text-[9px] font-medium uppercase tracking-wide text-gray-400">Whitelabels</p>
           <button
             type="button"
             disabled={!pkg.whitelabelCount}
             onClick={() => onShowAgents?.(pkg)}
-            className={`mt-0.5 inline-block text-sm font-bold tabular-nums transition ${pkg.whitelabelCount ? 'text-violet-600 hover:text-violet-800 hover:underline' : 'text-gray-400'}`}
+            className={`mt-0.5 inline-block text-xs font-bold tabular-nums transition ${pkg.whitelabelCount ? 'text-violet-600 hover:text-violet-800 hover:underline' : 'text-gray-400'}`}
           >
             {Number(pkg.whitelabelCount) || 0}
           </button>
@@ -299,12 +314,12 @@ function PackageListRow({ pkg, onEdit, onClone, onCover, onGallery, onToggle, on
         <div className="flex shrink-0 flex-col gap-1.5">
           <div className="flex justify-end gap-1.5">
             <button
-          type="button"
-          onClick={() => navigate(`${AGENCY_PANEL_BASE}/packages/${pkg._id}`)}
-          className="flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2 py-1 text-[11px] transition hover:border-sky-200 hover:text-sky-700 text-gray-600"
-        >
-          <Eye className="h-3.5 w-3.5" strokeWidth={2} />View
-        </button>
+              type="button"
+              onClick={() => navigate(`${AGENCY_PANEL_BASE}/packages/${pkg._id}`)}
+              className="flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2 py-1 text-[11px] transition hover:border-sky-200 hover:text-sky-700 text-gray-600"
+            >
+              <Eye className="h-3.5 w-3.5" strokeWidth={2} />View
+            </button>
             <button
               type="button"
               onClick={() => onCover(pkg)}
@@ -313,54 +328,53 @@ function PackageListRow({ pkg, onEdit, onClone, onCover, onGallery, onToggle, on
               <ImageIcon className="h-3.5 w-3.5" strokeWidth={2} /> Cover
             </button>
             <button
-               type="button"
-               onClick={() => onGallery(pkg)}
-               className="flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2 py-1 text-[11px] transition hover:border-violet-200 hover:text-violet-700 text-gray-600"
+              type="button"
+              onClick={() => onGallery(pkg)}
+              className="flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2 py-1 text-[11px] transition hover:border-violet-200 hover:text-violet-700 text-gray-600"
             >
-               <ImagePlus className="h-3.5 w-3.5" strokeWidth={2} /> Gallery
+              <ImagePlus className="h-3.5 w-3.5" strokeWidth={2} /> Gallery
             </button>
             <button
-               type="button"
-               onClick={() => navigate(`${AGENCY_PANEL_BASE}/packages/${pkg._id}/community?title=${encodeURIComponent(pkg.title || '')}`)}
-               className="flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2 py-1 text-[11px] transition hover:border-emerald-200 hover:text-emerald-700 text-gray-600"
+              type="button"
+              onClick={() => navigate(`${AGENCY_PANEL_BASE}/packages/${pkg._id}/community?title=${encodeURIComponent(pkg.title || '')}`)}
+              className="flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2 py-1 text-[11px] transition hover:border-emerald-200 hover:text-emerald-700 text-gray-600"
             >
-               <MessageSquare className="h-3.5 w-3.5" strokeWidth={2} /> Chat
+              <MessageSquare className="h-3.5 w-3.5" strokeWidth={2} /> Chat
             </button>
           </div>
           <div className="flex justify-end gap-1.5">
             <button
-               type="button"
-               onClick={() => onEdit(pkg)}
-               className="flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-gray-700 transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-800"
+              type="button"
+              onClick={() => onEdit(pkg)}
+              className="flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-gray-700 transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-800"
             >
-               <Edit2 className="h-3.5 w-3.5" strokeWidth={2} /> Edit
+              <Edit2 className="h-3.5 w-3.5" strokeWidth={2} /> Edit
             </button>
             <button
-               type="button"
-               onClick={() => onClone(pkg)}
-               className="flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-gray-700 transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-800"
+              type="button"
+              onClick={() => onClone(pkg)}
+              className="flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-gray-700 transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-800"
             >
-               <Copy className="h-3.5 w-3.5" strokeWidth={2} /> Clone
+              <Copy className="h-3.5 w-3.5" strokeWidth={2} /> Clone
             </button>
             <button
               type="button"
               onClick={() => onToggle(pkg)}
-              className={`flex items-center gap-1 rounded-lg border px-2.5 py-1 text-[11px] font-semibold transition ${
-                pkg.isActive 
-                ? 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100' 
-                : 'border-red-200 bg-red-50 text-red-700 hover:bg-red-100'
-              }`}
+              className={`flex items-center gap-1 rounded-lg border px-2.5 py-1 text-[11px] font-semibold transition ${pkg.isActive
+                  ? 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                  : 'border-red-200 bg-red-50 text-red-700 hover:bg-red-100'
+                }`}
             >
-               {pkg.isActive ? <CheckCircle2 className="h-3.5 w-3.5" strokeWidth={2} /> : <XCircle className="h-3.5 w-3.5" strokeWidth={2} />}
-               {pkg.isActive ? 'Live' : 'Paused'}
+              {pkg.isActive ? <CheckCircle2 className="h-3.5 w-3.5" strokeWidth={2} /> : <XCircle className="h-3.5 w-3.5" strokeWidth={2} />}
+              {pkg.isActive ? 'Live' : 'Paused'}
             </button>
             <button
-               type="button"
-               onClick={() => onDelete(pkg)}
-               className="flex items-center gap-1 rounded-lg border border-red-100 bg-white px-2.5 py-1 text-[11px] font-semibold text-red-600 transition hover:border-red-200 hover:bg-red-50 hover:text-red-700"
-               title="Delete package"
+              type="button"
+              onClick={() => onDelete(pkg)}
+              className="flex items-center gap-1 rounded-lg border border-red-100 bg-white px-2.5 py-1 text-[11px] font-semibold text-red-600 transition hover:border-red-200 hover:bg-red-50 hover:text-red-700"
+              title="Delete package"
             >
-               <Trash2 className="h-3.5 w-3.5" strokeWidth={2} /> Delete
+              <Trash2 className="h-3.5 w-3.5" strokeWidth={2} /> Delete
             </button>
           </div>
         </div>
@@ -382,6 +396,7 @@ export default function Packages() {
   const [confirmToggle, setConfirmToggle] = useState({ open: false, pkg: null })
   const [confirmDelete, setConfirmDelete] = useState({ open: false, pkg: null })
   const [agentsModal, setAgentsModal] = useState({ open: false, agents: [], title: '' })
+  const [commissionsModal, setCommissionsModal] = useState({ open: false, data: [], individualBookings: [], whitelabelAgents: [], title: '', basePrice: 0 })
   const [submitting, setSubmitting] = useState(false)
 
   const filtered = useMemo(() => {
@@ -400,7 +415,7 @@ export default function Packages() {
     total: packages.length,
     live: packages.filter((p) => p.isActive).length,
     revenue: packages.reduce((s, p) => s + (Number(p.totalRevenue) || 0), 0),
-    bookings: packages.reduce((s, p) => s + (Number(p.bookingCount) || 0), 0),
+    bookings: packages.reduce((s, p) => s + (Number(p.bookingCount) || 0) + (Number(p.totalAdditionalTravelers) || 0), 0),
   }), [packages])
 
   const handleFormSubmit = async (formData) => {
@@ -507,9 +522,8 @@ export default function Packages() {
                 key={v}
                 type="button"
                 onClick={() => setStatusFilter(v)}
-                className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
-                  statusFilter === v ? 'bg-primary-600 text-white shadow-sm' : 'text-gray-600 hover:text-gray-900'
-                }`}
+                className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${statusFilter === v ? 'bg-primary-600 text-white shadow-sm' : 'text-gray-600 hover:text-gray-900'
+                  }`}
               >
                 {l}
               </button>
@@ -581,6 +595,7 @@ export default function Packages() {
               onToggle={(p) => setConfirmToggle({ open: true, pkg: p })}
               onDelete={(p) => setConfirmDelete({ open: true, pkg: p })}
               onShowAgents={(p) => setAgentsModal({ open: true, agents: p.whitelabelAgents || [], title: `Agents who whitelabeled "${p.title}"` })}
+              onShowCommissions={(p) => setCommissionsModal({ open: true, data: p.agentEarningsBreakdown || [], individualBookings: p.individualBookings || [], whitelabelAgents: p.whitelabelAgents || [], title: `Financial Breakdown: ${p.title}`, basePrice: p.basePrice })}
             />
           ))}
         </div>
@@ -598,6 +613,7 @@ export default function Packages() {
               onToggle={(p) => setConfirmToggle({ open: true, pkg: p })}
               onDelete={(p) => setConfirmDelete({ open: true, pkg: p })}
               onShowAgents={(p) => setAgentsModal({ open: true, agents: p.whitelabelAgents || [], title: `Agents who whitelabeled "${p.title}"` })}
+              onShowCommissions={(p) => setCommissionsModal({ open: true, data: p.agentEarningsBreakdown || [], individualBookings: p.individualBookings || [], whitelabelAgents: p.whitelabelAgents || [], title: `Financial Breakdown: ${p.title}`, basePrice: p.basePrice })}
             />
           ))}
         </div>
@@ -643,6 +659,16 @@ export default function Packages() {
         onClose={() => setAgentsModal({ open: false, agents: [], title: '' })}
         agents={agentsModal.agents}
         title={agentsModal.title}
+      />
+
+      <AgentCommissionsModal
+        isOpen={commissionsModal.open}
+        onClose={() => setCommissionsModal({ open: false, data: [], individualBookings: [], title: '' })}
+        data={commissionsModal.data}
+        individualBookings={commissionsModal.individualBookings}
+        whitelabelAgents={commissionsModal.whitelabelAgents}
+        basePrice={commissionsModal.basePrice}
+        title={commissionsModal.title}
       />
     </div>
   )

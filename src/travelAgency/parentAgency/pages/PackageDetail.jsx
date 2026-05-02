@@ -154,18 +154,18 @@ export default function PackageDetail() {
     return (
       <div className="animate-fade-in space-y-5 pb-10">
         <div className="h-8 w-40 animate-pulse rounded-lg bg-gray-200" />
-        <div className="aspect-[3/1] max-h-72 animate-pulse rounded-2xl bg-gray-200" />
+        <div className="aspect-[3/1] max-h-72 animate-pulse rounded-xl bg-gray-200" />
         <div className="grid gap-4 sm:grid-cols-4">
           {[1,2,3,4].map(i => <div key={i} className="h-20 animate-pulse rounded-xl bg-gray-100" />)}
         </div>
-        <div className="h-32 animate-pulse rounded-2xl bg-gray-100" />
+        <div className="h-32 animate-pulse rounded-xl bg-gray-100" />
       </div>
     )
   }
 
   if (error) {
     return (
-      <div className="mx-auto max-w-md rounded-2xl border border-red-100 bg-red-50 px-6 py-12 text-center">
+      <div className="mx-auto max-w-md rounded-xl border border-red-100 bg-red-50 px-6 py-12 text-center">
         <p className="font-medium text-red-800">{error}</p>
         <button type="button" onClick={() => navigate(`${AGENCY_PANEL_BASE}/packages`)} className="mt-4 text-sm font-semibold text-primary-700 hover:underline">
           Back to packages
@@ -195,7 +195,7 @@ export default function PackageDetail() {
       </nav>
 
       {/* Cover image */}
-      <div className="overflow-hidden rounded-2xl border border-gray-200 bg-gray-900 shadow-sm">
+      <div className="overflow-hidden rounded-xl border border-gray-200 bg-gray-900 shadow-sm">
         <div className="relative aspect-[3/1] max-h-[min(320px,40vh)] min-h-[160px]">
           {cover ? (
             <img src={cover} alt="" className="h-full w-full object-cover" />
@@ -288,7 +288,7 @@ export default function PackageDetail() {
 
       {/* Description */}
       {pkg.description?.trim() && (
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
           <SectionTitle icon={FileText}>Description</SectionTitle>
           <p className="whitespace-pre-wrap text-sm leading-relaxed text-gray-700">{pkg.description.trim()}</p>
         </div>
@@ -296,7 +296,7 @@ export default function PackageDetail() {
 
       {/* Important notes */}
       {pkg.importantNotes?.length > 0 && (
-        <div className="rounded-2xl border border-amber-200/80 bg-gradient-to-br from-amber-50 to-orange-50/40 p-5 shadow-sm">
+        <div className="rounded-xl border border-amber-200/80 bg-gradient-to-br from-amber-50 to-orange-50/40 p-5 shadow-sm">
           <SectionTitle icon={AlertTriangle}>Important notes</SectionTitle>
           <ul className="space-y-2">
             {pkg.importantNotes.map((n, i) => (
@@ -312,7 +312,7 @@ export default function PackageDetail() {
       {(pkg.inclusions?.length > 0 || pkg.exclusions?.length > 0) && (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {pkg.inclusions?.length > 0 && (
-            <div className="rounded-2xl border border-emerald-100 bg-gradient-to-b from-emerald-50/80 to-white p-5 shadow-sm">
+            <div className="rounded-xl border border-emerald-100 bg-gradient-to-b from-emerald-50/80 to-white p-5 shadow-sm">
               <SectionTitle icon={CheckCircle2}>Inclusions</SectionTitle>
               <ul className="space-y-2">
                 {pkg.inclusions.map((inc, i) => (
@@ -324,7 +324,7 @@ export default function PackageDetail() {
             </div>
           )}
           {pkg.exclusions?.length > 0 && (
-            <div className="rounded-2xl border border-rose-100 bg-gradient-to-b from-rose-50/80 to-white p-5 shadow-sm">
+            <div className="rounded-xl border border-rose-100 bg-gradient-to-b from-rose-50/80 to-white p-5 shadow-sm">
               <SectionTitle icon={XCircle}>Exclusions</SectionTitle>
               <ul className="space-y-2">
                 {pkg.exclusions.map((exc, i) => (
@@ -340,7 +340,7 @@ export default function PackageDetail() {
 
       {/* Gallery */}
       {pkg.images?.length > 0 && (
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
           <SectionTitle icon={ImagePlus}>Gallery</SectionTitle>
           <div className="flex gap-3 overflow-x-auto pb-1">
             {pkg.images.map((img, i) => (
@@ -359,7 +359,7 @@ export default function PackageDetail() {
 
       {/* Itinerary */}
       {itinerary.length > 0 && (
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+        <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
           <SectionTitle icon={CalendarDays}>Day-by-day itinerary</SectionTitle>
 
           {/* Day tabs */}
@@ -518,7 +518,7 @@ export default function PackageDetail() {
           <img
             src={imgUrl(pkg.images[galleryOpen])}
             alt=""
-            className="max-h-[90vh] max-w-full rounded-2xl object-contain shadow-2xl"
+            className="max-h-[90vh] max-w-full rounded-xl object-contain shadow-2xl"
             onClick={e => e.stopPropagation()}
           />
         </div>

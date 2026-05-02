@@ -398,7 +398,7 @@ export default function ManageChildren() {
                             <p className="truncate text-sm font-semibold text-gray-900">
                               {child.name}
                             </p>
-                            <p className="mt-0.5 truncate text-xs text-gray-500">Agent ID: {child._id.slice(-6).toUpperCase()}</p>
+                            {/* <p className="mt-0.5 truncate text-xs text-gray-500">Agent ID: {child._id.slice(-6).toUpperCase()}</p> */}
                           </div>
                         </div>
                       </td>

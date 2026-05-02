@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { BookOpen, Calendar, User, IndianRupee, Hash, Eye, Ticket, Download, RefreshCw, Search } from 'lucide-react'
+import { BookOpen, Calendar, User, IndianRupee, Hash, Eye, Ticket, Download, RefreshCw, Search, Plus, Pencil } from 'lucide-react'
 import { listBookings, listMyPackages } from '@/travelAgency/parentAgency/services/parentAgencyApi.js'
 import { getApiErrorMessage } from '@/shared/services/apiHelpers.js'
 import BookingDetailModal from '@/travelAgency/parentAgency/components/BookingDetailModal.jsx'
@@ -11,15 +11,15 @@ import { exportToExcel } from '@/admin/utils/exportExcel.js'
 
 const STATUS_STYLES = {
   confirmed: 'bg-blue-50 text-blue-700',
-  ongoing:   'bg-yellow-50 text-yellow-700',
+  ongoing: 'bg-yellow-50 text-yellow-700',
   completed: 'bg-green-50 text-green-700',
   cancelled: 'bg-red-50 text-red-700',
 }
 
 const PAYMENT_STYLES = {
-  pending:  'bg-gray-100 text-gray-600',
-  partial:  'bg-orange-50 text-orange-700',
-  paid:     'bg-green-50 text-green-700',
+  pending: 'bg-gray-100 text-gray-600',
+  partial: 'bg-orange-50 text-orange-700',
+  paid: 'bg-green-50 text-green-700',
   refunded: 'bg-purple-50 text-purple-700',
 }
 
@@ -114,6 +114,13 @@ export default function Bookings() {
           <p className="mt-1 text-sm text-gray-500">All bookings across your network.</p>
         </div>
         <div className="flex gap-2">
+          <Link
+            to="/agency/bookings/create"
+            className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-primary-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-700"
+          >
+            <Plus size={16} />
+            Create Booking
+          </Link>
           <button
             type="button"
             onClick={handleExport}
@@ -123,7 +130,6 @@ export default function Bookings() {
             {exportLoading ? <RefreshCw size={15} className="animate-spin" /> : <Download size={15} />}
             Export Excel
           </button>
-
         </div>
       </div>
 
@@ -202,8 +208,8 @@ export default function Bookings() {
             <table className="w-full min-w-[860px] text-sm">
               <thead className="border-b border-gray-200 bg-gray-50">
                 <tr>
-                  <th className="px-4 py-2.5 text-left align-middle text-xs font-medium text-gray-600">Booking ID</th>
-                  <th className="px-4 py-2.5 text-left align-middle text-xs font-medium text-gray-600">Package</th>
+                  {/* <th className="px-4 py-2.5 text-left align-middle text-xs font-medium text-gray-600">Booking ID</th> */}
+                  {/* <th className="px-4 py-2.5 text-left align-middle text-xs font-medium text-gray-600">Package</th> */}
                   <th className="px-4 py-2.5 text-left align-middle text-xs font-medium text-gray-600">Customer</th>
                   <th className="px-4 py-2.5 text-left align-middle text-xs font-medium text-gray-600">Travel Date</th>
                   <th className="px-4 py-2.5 text-left align-middle text-xs font-medium text-gray-600">Amount</th>
@@ -216,12 +222,12 @@ export default function Bookings() {
               <tbody className="divide-y divide-gray-100">
                 {bookings.map((b) => (
                   <tr key={b._id} className="transition-colors hover:bg-gray-50/80">
-                    <td className="px-4 py-2.5 align-middle">
+                    {/* <td className="px-4 py-2.5 align-middle">
                       <span className="flex items-center gap-1 font-mono text-xs font-semibold text-gray-900">
                         <Hash size={11} />{b.bookingId}
                       </span>
-                    </td>
-                    <td className="px-4 py-2.5 align-middle">
+                    </td> */}
+                    {/* <td className="px-4 py-2.5 align-middle">
                       <div className="min-w-0">
                         {b.package ? (
                           <Link to={`/agency/packages/${b.package._id}`} className="truncate text-sm font-semibold text-primary-600 hover:underline">
@@ -236,10 +242,18 @@ export default function Bookings() {
                           <p className="mt-0.5 truncate text-xs text-gray-500">{b.package.destination}</p>
                         )}
                       </div>
-                    </td>
+                    </td> */}
                     <td className="px-4 py-2.5 align-middle">
                       <div className="min-w-0">
-                        <p className="flex items-center gap-1 text-sm font-medium text-gray-900"><User size={12} />{b.customer?.name || '—'}</p>
+                        <p className="flex items-center gap-1 text-sm font-medium text-gray-900">
+                          <User size={12} />
+                          {b.customer?.name || '—'}
+                          {b.travelers?.length > 0 && (
+                            <span className="ml-1.5 inline-flex items-center gap-0.5 rounded-full bg-primary-50 px-1.5 py-0.5 text-[10px] font-bold text-primary-700 ring-1 ring-inset ring-primary-100">
+                              +{b.travelers.length} travelers
+                            </span>
+                          )}
+                        </p>
                         {b.customer?.phone && <p className="mt-0.5 text-xs text-gray-500">{b.customer.phone}</p>}
                       </div>
                     </td>
@@ -282,22 +296,31 @@ export default function Bookings() {
                           return (
                             <div className="flex flex-col gap-0.5">
                               <span>{bookedBy.parentRef.name}</span>
-                              <span className="inline-flex w-fit rounded-full bg-purple-50 px-1.5 py-0.5 text-[10px] font-semibold text-purple-700 ring-1 ring-inset ring-purple-100">via Sub-child</span>
+                              {/* <span className="inline-flex w-fit rounded-full bg-purple-50 px-1.5 py-0.5 text-[10px] font-semibold text-purple-700 ring-1 ring-inset ring-purple-100">via Sub-child</span> */}
                             </div>
                           )
                         }
                         return (
                           <div className="flex flex-col gap-0.5">
                             <span>{bookedBy.name || bookedBy.email || '—'}</span>
-                            {bookedBy.role === 'child_agent' && (
+                            {/* {bookedBy.role === 'child_agent' && (
                               <span className="inline-flex w-fit rounded-full bg-blue-50 px-1.5 py-0.5 text-[10px] font-semibold text-blue-700 ring-1 ring-inset ring-blue-100">Child</span>
-                            )}
+                            )} */}
                           </div>
                         )
                       })()}
                     </td>
                     <td className="px-4 py-2.5 align-middle text-right">
                       <div className="inline-flex items-center gap-1.5">
+                        {b.bookedBy?._id === user.id && (
+                          <Link
+                            to={`/agency/bookings/${b._id}/edit`}
+                            className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border border-gray-200 bg-white text-gray-600 transition-colors hover:bg-gray-50 hover:text-gray-900"
+                            title="Edit"
+                          >
+                            <Pencil size={12} />
+                          </Link>
+                        )}
                         <button
                           onClick={() => setViewId(b._id)}
                           className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border border-gray-200 bg-white text-gray-600 transition-colors hover:bg-gray-50 hover:text-gray-900"
