@@ -114,6 +114,22 @@ export function createBooking(data) {
   return axiosInstance.post('/parent-agent/bookings', data)
 }
 
+export function listCustomers(params = {}) {
+  return axiosInstance.get('/parent-agent/customers', { params })
+}
+
+export function getCustomerByPhone(phone) {
+  return axiosInstance.get('/parent-agent/customers/by-phone', { params: { phone } })
+}
+
+export function updateAgencyCustomer(id, data) {
+  return axiosInstance.patch(`/parent-agent/customers/${id}`, data)
+}
+
+export function toggleAgencyCustomerActive(id) {
+  return axiosInstance.patch(`/parent-agent/customers/${id}/toggle-status`)
+}
+
 export function updateBooking(id, data) {
   return axiosInstance.patch(`/parent-agent/bookings/${id}`, data)
 }

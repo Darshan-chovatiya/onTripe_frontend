@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, Plus, Trash2, FileUp } from 'lucide-react'
-import { useChildBookings } from '@/travelAgency/childAgency/hooks/useChildBookings.js'
+import { useParentBookings } from '@/travelAgency/parentAgency/hooks/useParentBookings.js'
 import Button from '@/shared/components/Button.jsx'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
 import { getApiErrorMessage } from '@/shared/services/apiHelpers.js'
@@ -42,7 +42,7 @@ function FileField({ label, name, value, onChange, multiple = false }) {
 export default function EditBooking() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { fetchBooking, updateBooking } = useChildBookings()
+  const { getDetail, update } = useParentBookings()
   const { toast } = useToast()
 
   const [booking, setBooking] = useState(null)
@@ -69,7 +69,7 @@ export default function EditBooking() {
     let cancelled = false
     setLoading(true)
     setError(null)
-    fetchBooking(id)
+    getDetail(id)
       .then((data) => {
         if (!cancelled && data) {
           setBooking(data)
@@ -100,11 +100,14 @@ export default function EditBooking() {
           setLoading(false)
         }
       })
-      .catch(() => {
-        if (!cancelled) { setError('Could not load booking.'); setLoading(false) }
+      .catch((err) => {
+        if (!cancelled) {
+          setError(getApiErrorMessage(err))
+          setLoading(false)
+        }
       })
     return () => { cancelled = true }
-  }, [id, fetchBooking])
+  }, [id, getDetail])
 
   const addTraveler = () => {
     travelerIdRef.current += 1
@@ -159,7 +162,7 @@ export default function EditBooking() {
 
     setSaving(true)
     try {
-      await updateBooking(booking._id, fd)
+      await update(id, fd)
       toast.success('Booking updated')
       navigate('/agency/bookings')
     } catch (err) {
@@ -198,8 +201,6 @@ export default function EditBooking() {
 
       {booking && !loading && (
         <form onSubmit={handleSave} className="space-y-5">
-          <p className="font-mono text-xs text-gray-500">Ref: {booking.bookingId}</p>
-
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="sm:col-span-2">
               <label className="mb-1 block text-sm font-medium text-gray-700">Customer name <span className="text-red-500">*</span></label>
@@ -316,13 +317,11 @@ export default function EditBooking() {
               Cancel
             </Button>
             <Button type="submit" disabled={
-              saving || 
-              !customerName.trim() || 
-              !customerPhone.trim() || 
-              !travelDate || 
-              !totalAmount || 
-              Number(totalAmount) <= 0 ||
-              !travelers.every(t => t.name.trim() && t.age !== '' && !Number.isNaN(Number(t.age)))
+              saving ||
+              !customerName.trim() ||
+              !travelDate ||
+              !totalAmount ||
+              Number(totalAmount) <= 0
             }>
               {saving ? 'Saving…' : 'Save changes'}
             </Button>

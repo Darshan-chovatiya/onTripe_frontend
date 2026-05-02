@@ -7,6 +7,10 @@ import {
   listCustomers as listChildCustomers,
   listBookings as listChildBookings,
 } from '@/travelAgency/childAgency/services/childAgencyApi.js'
+import {
+  listCustomers as listParentCustomers,
+  listBookings as listParentBookings,
+} from '@/travelAgency/parentAgency/services/parentAgencyApi.js'
 import { getApiErrorMessage } from '@/shared/services/apiHelpers.js'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
 import Modal from '@/shared/components/Modal.jsx'
@@ -31,8 +35,12 @@ export default function AgencyCustomerTrips() {
       setLoading(true)
       try {
         const [customersRes, bookingsRes] = await Promise.all([
-          listChildCustomers(),
-          listChildBookings(),
+          role === ROLES.CHILD_AGENCY
+            ? listChildCustomers({ limit: 10000 })
+            : listParentCustomers({ limit: 10000 }),
+          role === ROLES.CHILD_AGENCY
+            ? listChildBookings({ limit: 10000 })
+            : listParentBookings({ limit: 10000 }),
         ])
         if (cancelled) return
         const customers = customersRes.data?.data?.customers ?? []

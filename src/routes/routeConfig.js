@@ -21,7 +21,7 @@ export const routeConfig = [
   { path: '/agency/bookings', allowedRoles: [ROLES.PARENT_AGENCY, ROLES.CHILD_AGENCY] },
   { path: '/agency/my-bookings', allowedRoles: [ROLES.SUB_CHILD] },
   { path: '/agency/manage-downstream', allowedRoles: [ROLES.PARENT_AGENCY, ROLES.CHILD_AGENCY] },
-  { path: '/agency/customers', allowedRoles: [ROLES.CHILD_AGENCY, ROLES.SUB_CHILD] },
+  { path: '/agency/customers', allowedRoles: [ROLES.PARENT_AGENCY, ROLES.CHILD_AGENCY, ROLES.SUB_CHILD] },
   { path: '/agency/settings', allowedRoles: AGENCY_ROLES },
 
   { path: '/customer/home', allowedRoles: [ROLES.CUSTOMER] },

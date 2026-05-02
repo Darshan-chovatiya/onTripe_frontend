@@ -5,7 +5,8 @@ import { X } from 'lucide-react'
 const sizeClasses = {
   sm: 'max-w-md',
   md: 'max-w-lg',
-  lg: 'max-w-4xl',
+  // lg: 'max-w-4xl',
+  lg:'max-w-5xl',
   xl: 'max-w-6xl',
 }
 
@@ -26,7 +27,7 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md', f
       onClick={onClose}
     >
       <div
-        className={`bg-white rounded-xl shadow-sm w-full ${sizeClasses[size] || sizeClasses.md} max-h-[90vh] flex flex-col border border-gray-200 animate-scale-in`}
+        className={`bg-white rounded-xl shadow-sm w-full !${sizeClasses[size] || sizeClasses.xl} max-h-[90vh] flex flex-col border border-gray-200 animate-scale-in`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex-shrink-0 flex items-center justify-between p-6 border-b border-gray-200 bg-white rounded-t-xl">

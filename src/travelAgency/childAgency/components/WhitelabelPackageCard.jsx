@@ -13,14 +13,16 @@ export default function WhitelabelPackageCard({ item, onEdit, onToggleActive, on
   const basePrice = Number(orig?.basePrice ?? 0)
   const [detailOpen, setDetailOpen] = useState(false)
 
+  const sourcePrice = item.parentWhitelabel ? Number(item.parentWhitelabel.finalPrice || 0) : basePrice
+  const myCommission = finalPrice - sourcePrice
+
   const markupLabel = item.commissionType === 'percentage'
     ? `+${item.commissionValue}%`
     : `+₹${Number(item.commissionValue).toLocaleString('en-IN')}`
 
   return (
-    <article className={`group flex flex-col overflow-hidden rounded-2xl bg-white ring-1 shadow-sm transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 ${
-      disabled ? 'opacity-60 ring-gray-200' : item.isActive ? 'ring-gray-200 hover:ring-primary-200' : 'ring-gray-200 opacity-75'
-    }`}>
+    <article className={`group flex flex-col overflow-hidden rounded-2xl bg-white ring-1 shadow-sm transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 ${disabled ? 'opacity-60 ring-gray-200' : item.isActive ? 'ring-gray-200 hover:ring-primary-200' : 'ring-gray-200 opacity-75'
+      }`}>
       {/* Cover */}
       <div className="relative h-44 overflow-hidden bg-gray-100">
         <img
@@ -38,9 +40,8 @@ export default function WhitelabelPackageCard({ item, onEdit, onToggleActive, on
               Parent inactive
             </span>
           ) : (
-            <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
-              item.isActive ? 'bg-emerald-500/90 text-white' : 'bg-white/90 text-gray-600'
-            }`}>
+            <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${item.isActive ? 'bg-emerald-500/90 text-white' : 'bg-white/90 text-gray-600'
+              }`}>
               {item.isActive ? <><CheckCircle2 className="h-2.5 w-2.5" />Live</> : <><XCircle className="h-2.5 w-2.5" />Off</>}
             </span>
           )}
@@ -86,28 +87,35 @@ export default function WhitelabelPackageCard({ item, onEdit, onToggleActive, on
           </span>
         </div>
 
-        {/* Markup + visibility */}
-        <div className="flex items-center gap-2 rounded-xl bg-gray-50/80 px-3 py-2 ring-1 ring-gray-100">
-          <div className="flex-1 text-center">
-            <p className="text-[10px] font-medium uppercase tracking-wide text-gray-400">Markup</p>
-            <p className="mt-0.5 text-xs font-bold text-emerald-700">{markupLabel}</p>
+        {/* Financial Breakdown */}
+        <div className="flex flex-col gap-2 rounded-xl bg-gray-50/80 p-3 ring-1 ring-gray-100">
+          <div className="grid grid-cols-2 gap-2 border-b border-gray-200 pb-2">
+            <div className="text-center">
+              <p className="text-[9px] font-medium uppercase tracking-wide text-gray-400">My Earnings</p>
+              <p className="mt-0.5 text-xs font-bold tabular-nums text-primary-700">
+                ₹{(Number(item.childEarnings) || 0).toLocaleString('en-IN')}
+              </p>
+            </div>
+            <div className="text-center border-l border-gray-200">
+              <p className="text-[9px] font-medium uppercase tracking-wide text-gray-400">Extra Income</p>
+              <p className="mt-0.5 text-xs font-bold tabular-nums text-emerald-700">
+                ₹{(Number(item.extraIncome) || 0).toLocaleString('en-IN')}
+              </p>
+            </div>
           </div>
-          <div className="h-6 w-px bg-gray-200" />
-          <div className="flex-1 text-center">
-            <p className="text-[10px] font-medium uppercase tracking-wide text-gray-400">Base</p>
-            <p className="mt-0.5 text-xs font-bold tabular-nums text-gray-700">₹{basePrice.toLocaleString('en-IN')}</p>
-          </div>
-          <div className="h-6 w-px bg-gray-200" />
-          <div className="flex-1 text-center">
-            <p className="text-[10px] font-medium uppercase tracking-wide text-gray-400">Whitelabels</p>
-            <button
-              type="button"
-              disabled={!item.whitelabelCount}
-              onClick={() => onShowAgents?.(item)}
-              className={`mt-0.5 inline-block text-[10px] font-bold tabular-nums transition ${item.whitelabelCount ? 'text-violet-600 hover:text-violet-800 hover:underline' : 'text-gray-400'}`}
-            >
-              {Number(item.whitelabelCount) || 0}
-            </button>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="text-center">
+              <p className="text-[9px] font-medium uppercase tracking-wide text-gray-400">To Parent</p>
+              <p className="mt-0.5 text-xs font-bold tabular-nums text-gray-600">
+                ₹{(Number(item.amountToGiveParent) || 0).toLocaleString('en-IN')}
+              </p>
+            </div>
+            <div className="text-center border-l border-gray-200">
+              <p className="text-[9px] font-medium uppercase tracking-wide text-gray-400">Commission</p>
+              <p className="mt-0.5 text-xs font-bold text-violet-700">
+                {markupLabel} (₹{myCommission.toLocaleString('en-IN')})
+              </p>
+            </div>
           </div>
         </div>
 
@@ -142,11 +150,10 @@ export default function WhitelabelPackageCard({ item, onEdit, onToggleActive, on
             <button
               type="button"
               onClick={() => onToggleActive(item)}
-              className={`flex items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-medium transition ${
-                item.isActive
+              className={`flex items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-medium transition ${item.isActive
                   ? 'border border-red-100 bg-white text-red-600 hover:bg-red-50'
                   : 'border border-emerald-200 bg-white text-emerald-700 hover:bg-emerald-50'
-              }`}
+                }`}
             >
               <Power className="h-3.5 w-3.5" strokeWidth={2} />
               {item.isActive ? 'Pause' : 'Activate'}

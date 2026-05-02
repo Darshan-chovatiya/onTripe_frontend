@@ -75,6 +75,7 @@ export default function CommunityChat({
   const [subScreen, setSubScreen] = useState(null)
   const [galleryLoading, setGalleryLoading] = useState(false)
   const [galleryImages, setGalleryImages] = useState([])
+  const [galleryInitialized, setGalleryInitialized] = useState(false)
   const [galleryPage, setGalleryPage] = useState(1)
   const [galleryHasMore, setGalleryHasMore] = useState(true)
   const [galleryLoadingMore, setGalleryLoadingMore] = useState(false)
@@ -278,6 +279,7 @@ export default function CommunityChat({
         params: { page: pageNum, limit: 12 },
       })
       if (data?.success) {
+        if (!append) setGalleryInitialized(true)
         const newImages = data.data.images || []
         if (append) {
           setGalleryImages((prev) => [...prev, ...newImages])
@@ -298,10 +300,10 @@ export default function CommunityChat({
   }, [community?._id, toast])
 
   useEffect(() => {
-    if (subScreen === 'gallery' && community?._id) {
-      if (galleryImages.length === 0) fetchGallery(1, false)
+    if (subScreen === 'gallery' && community?._id && !galleryInitialized && !galleryLoading) {
+      fetchGallery(1, false)
     }
-  }, [subScreen, community?._id, galleryImages.length, fetchGallery])
+  }, [subScreen, community?._id, galleryInitialized, galleryLoading, fetchGallery])
 
   const openGalleryScreen = () => {
     setSubScreen('gallery')
@@ -312,6 +314,7 @@ export default function CommunityChat({
     setSubScreen(null)
     setMemberSearch('')
     setPreviewSrc(null)
+    setGalleryInitialized(false)
   }
 
   const removePendingImage = (id) => {

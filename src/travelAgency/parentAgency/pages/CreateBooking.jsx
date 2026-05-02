@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, Plus, Trash2, Users, UserPlus, Loader2, Search, X, FileUp } from 'lucide-react'
-import { useChildBookings } from '@/travelAgency/childAgency/hooks/useChildBookings.js'
-import { useChildPackages } from '@/travelAgency/childAgency/hooks/useChildPackages.js'
-import { listCustomers, getCustomerByPhone } from '@/travelAgency/childAgency/services/childAgencyApi.js'
+import { useParentBookings } from '@/travelAgency/parentAgency/hooks/useParentBookings.js'
+import { usePackages } from '@/travelAgency/parentAgency/hooks/usePackages.js'
+import { listCustomers, getCustomerByPhone } from '@/travelAgency/parentAgency/services/parentAgencyApi.js'
 import Button from '@/shared/components/Button.jsx'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
 import { getApiErrorMessage } from '@/shared/services/apiHelpers.js'
@@ -57,14 +57,12 @@ function FileField({ label, name, value, onChange, multiple = false }) {
 
 export default function CreateBooking() {
   const navigate = useNavigate()
-  const { create } = useChildBookings()
-  const { availablePackages, whitelabels } = useChildPackages()
+  const { create } = useParentBookings()
+  const { packages: availablePackages } = usePackages()
   const { toast } = useToast()
 
   const [submitting, setSubmitting] = useState(false)
-  const [offerType, setOfferType] = useState('whitelabel')
   const [packageId, setPackageId] = useState('')
-  const [whitelabelId, setWhitelabelId] = useState('')
   const [customerMode, setCustomerMode] = useState('new')
   const [agencyCustomers, setAgencyCustomers] = useState([])
   const [selectedExistingId, setSelectedExistingId] = useState('')
@@ -86,38 +84,19 @@ export default function CreateBooking() {
   const [lookupMeta, setLookupMeta] = useState(null)
   const skipNextLookupRef = useRef(false)
 
-  const activeWhitelabels = (whitelabels ?? []).filter((w) => w.isActive !== false)
+  const activePackages = (availablePackages ?? []).filter((p) => p.isActive !== false)
 
   useEffect(() => {
-    const hasWl = activeWhitelabels.length > 0
-    const hasPkg = (availablePackages ?? []).length > 0
-    setOfferType(hasWl ? 'whitelabel' : hasPkg ? 'package' : 'whitelabel')
-  }, [activeWhitelabels.length, availablePackages?.length])
-
-  useEffect(() => {
-    if (offerType === 'whitelabel' && activeWhitelabels.length && !whitelabelId) {
-      const first = activeWhitelabels[0]
-      setWhitelabelId(String(first._id))
-      if (first.finalPrice != null) setTotalAmount(String(first.finalPrice))
-    }
-    if (offerType === 'package' && availablePackages?.length && !packageId) {
-      const first = availablePackages[0]
+    if (activePackages.length && !packageId) {
+      const first = activePackages[0]
       setPackageId(String(first._id))
       if (first.basePrice != null) setTotalAmount(String(first.basePrice))
     }
-  }, [offerType, activeWhitelabels, availablePackages, whitelabelId, packageId])
-
-  const handleWhitelabelChange = (id) => {
-    setWhitelabelId(id)
-    setOfferType('whitelabel')
-    const wl = activeWhitelabels.find(w => String(w._id) === id)
-    if (wl?.finalPrice != null) setTotalAmount(String(wl.finalPrice))
-  }
+  }, [activePackages, packageId])
 
   const handlePackageChange = (id) => {
     setPackageId(id)
-    setOfferType('package')
-    const pkg = availablePackages.find(p => String(p._id) === id)
+    const pkg = activePackages.find(p => String(p._id) === id)
     if (pkg?.basePrice != null) setTotalAmount(String(pkg.basePrice))
   }
 
@@ -200,9 +179,7 @@ export default function CreateBooking() {
     if (customerEmail.trim()) fd.append('customerEmail', customerEmail.trim())
     fd.append('travelDate', new Date(travelDate).toISOString())
     fd.append('totalAmount', String(amount))
-
-    if (offerType === 'package') { if (!packageId) return; fd.append('packageId', packageId) }
-    else { if (!whitelabelId) return; fd.append('whitelabelPackageId', whitelabelId) }
+    fd.append('packageId', packageId)
 
     const validTravelers = travelers
       .filter((r) => r.name.trim() && r.age !== '' && !Number.isNaN(Number(r.age)))
@@ -238,11 +215,11 @@ export default function CreateBooking() {
   }
 
   const canSubmit = Boolean(
-    customerName.trim() && 
-    normalizePhone(customerPhone) && 
-    travelDate && 
-    totalAmount && 
-    (whitelabelId || packageId) &&
+    customerName.trim() &&
+    normalizePhone(customerPhone) &&
+    travelDate &&
+    totalAmount &&
+    packageId &&
     travelers.every(t => t.name.trim() && t.age !== '' && !Number.isNaN(Number(t.age)))
   )
 
@@ -277,29 +254,26 @@ export default function CreateBooking() {
         >
           <ArrowLeft size={16} />
         </button>
-        <h1 className="text-xl font-bold text-gray-900">New booking</h1>
+        <h1 className="text-xl font-bold text-gray-900">Create new booking</h1>
       </header>
 
       <form onSubmit={handleSubmit} className="space-y-5">
-        {/* Package / Whitelabel */}
-        {activeWhitelabels.length > 0 && (
-          <div>
-            <label htmlFor="bk-wl" className="mb-1 block text-sm font-medium text-gray-700">White-label offer <span className="text-red-500">*</span></label>
-            <select id="bk-wl" className={inputCls} value={whitelabelId}
-              onChange={(e) => handleWhitelabelChange(e.target.value)}>
-              {activeWhitelabels.map((w) => (
-                <option key={w._id} value={w._id}>
-                  {w.customTitle || w.originalPackage?.title || 'Offer'}
-                  {w.finalPrice != null ? ` · ₹${Number(w.finalPrice).toLocaleString('en-IN')}` : ''}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-
-        {!activeWhitelabels.length && !availablePackages?.length && (
-          <p className="text-xs text-amber-700">No packages available. Create a white-label under Packages first.</p>
-        )}
+        {/* Package Selection */}
+        <div>
+          <label htmlFor="bk-pkg" className="mb-1 block text-sm font-medium text-gray-700">Select Package <span className="text-red-500">*</span></label>
+          <select id="bk-pkg" className={inputCls} value={packageId}
+            onChange={(e) => handlePackageChange(e.target.value)}>
+            <option value="" disabled>Select a package</option>
+            {activePackages.map((p) => (
+              <option key={p._id} value={p._id}>
+                {p.title} {p.basePrice != null ? ` · ₹${Number(p.basePrice).toLocaleString('en-IN')}` : ''}
+              </option>
+            ))}
+          </select>
+          {!activePackages.length && (
+            <p className="mt-1 text-xs text-amber-700">No active packages found. Please create or activate a package first.</p>
+          )}
+        </div>
 
         {/* Customer section */}
         <div className="rounded-xl border border-gray-200 bg-gray-50/80 p-4 space-y-4">

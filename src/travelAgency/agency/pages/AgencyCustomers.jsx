@@ -8,14 +8,25 @@ import {
   listCustomers as listChildCustomers,
   listBookings as listChildBookings,
 } from '@/travelAgency/childAgency/services/childAgencyApi.js'
+import {
+  listCustomers as listParentCustomers,
+  listBookings as listParentBookings,
+  updateAgencyCustomer as updateParentAgencyCustomer,
+  toggleAgencyCustomerActive as toggleParentAgencyCustomerActive,
+} from '@/travelAgency/parentAgency/services/parentAgencyApi.js'
 import { getApiErrorMessage } from '@/shared/services/apiHelpers.js'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
 import Modal from '@/shared/components/Modal.jsx'
 import {
-  sendNotification,
-  getSentNotifications,
-  getNotificationPreview,
+  sendNotification as sendChildNotification,
+  getSentNotifications as getChildSentNotifications,
+  getNotificationPreview as getChildNotificationPreview,
 } from '@/travelAgency/childAgency/services/childAgencyApi.js'
+import {
+  sendNotification as sendParentNotification,
+  getSentNotifications as getParentSentNotifications,
+  // getNotificationPreview as getParentNotificationPreview, // If implemented
+} from '@/travelAgency/parentAgency/services/parentAgencyApi.js'
 import {
   updateAgencyCustomer as updateChildAgencyCustomer,
   toggleAgencyCustomerActive as toggleChildAgencyCustomerActive,
@@ -89,10 +100,6 @@ export default function AgencyCustomers() {
   }, [q])
 
   const fetchCustomers = useCallback(async () => {
-    if (role !== ROLES.CHILD_AGENCY) {
-      setRows([])
-      return
-    }
     setLoading(true)
     try {
       const params = {
@@ -104,7 +111,7 @@ export default function AgencyCustomers() {
       const res =
         role === ROLES.CHILD_AGENCY
           ? await listChildCustomers(params)
-          : await listSubCustomers(params)
+          : await listParentCustomers(params)
       const customers = res.data?.data?.customers ?? []
       const paginationData = res.data?.data?.pagination
       
@@ -121,7 +128,10 @@ export default function AgencyCustomers() {
       }
 
       // Fetch all bookings to calculate trip counts
-      const bookingsRes = await listChildBookings({ page: 1, limit: 10000 })
+      const bookingsRes =
+        role === ROLES.CHILD_AGENCY
+          ? await listChildBookings({ page: 1, limit: 10000 })
+          : await listParentBookings({ page: 1, limit: 10000 })
       const bookings = bookingsRes.data?.data?.bookings ?? []
       const bookingMapByAgencyCustomer = new Map()
       bookings.forEach((b) => {
@@ -204,7 +214,10 @@ export default function AgencyCustomers() {
         search: q.trim()
       }
       
-      const res = await listChildCustomers(params)
+      const res =
+        role === ROLES.CHILD_AGENCY
+          ? await listChildCustomers(params)
+          : await listParentCustomers(params)
       const customers = res.data?.data?.customers ?? []
       
       await exportToExcel(
@@ -264,6 +277,8 @@ export default function AgencyCustomers() {
 
       if (role === ROLES.CHILD_AGENCY) {
         await updateChildAgencyCustomer(editTarget.agencyCustomerId, payload)
+      } else if (role === ROLES.PARENT_AGENCY) {
+        await updateParentAgencyCustomer(editTarget.agencyCustomerId, payload)
       }
 
       setRows((prev) =>
@@ -305,6 +320,8 @@ export default function AgencyCustomers() {
     try {
       if (role === ROLES.CHILD_AGENCY) {
         await toggleChildAgencyCustomerActive(row.agencyCustomerId)
+      } else if (role === ROLES.PARENT_AGENCY) {
+        await toggleParentAgencyCustomerActive(row.agencyCustomerId)
       }
       setRows((prev) =>
         prev.map((r) =>
@@ -360,7 +377,12 @@ export default function AgencyCustomers() {
       form.append('message', notifyForm.message)
       notifyForm.attachments.forEach((file) => form.append('attachments', file))
 
-      const { data } = await sendNotification(form)
+      const res =
+        role === ROLES.CHILD_AGENCY
+          ? await sendChildNotification(form)
+          : await sendParentNotification(form)
+      
+      const { data } = res
       if (data.success) {
         toast.success(`Notification sent to ${selectedCount} customer${selectedCount === 1 ? '' : 's'}`)
         setNotifyOpen(false)
@@ -378,7 +400,11 @@ export default function AgencyCustomers() {
     setHistoryOpen(true)
     setHistoryLoading(true)
     try {
-      const { data } = await getSentNotifications()
+      const res =
+        role === ROLES.CHILD_AGENCY
+          ? await getChildSentNotifications()
+          : await getParentSentNotifications()
+      const { data } = res
       if (data.success) {
         const notifications = data.data.notifications || []
         // Only show notifications sent to customers
@@ -401,7 +427,9 @@ export default function AgencyCustomers() {
     setPreviewHtml('')
     setPreviewMeta(null)
     try {
-      const { data } = await getNotificationPreview(notificationId)
+      // Both APIs use the same global preview endpoint internally, so either works
+      // but let's use the child one as a default previewer for now if parent doesn't have it
+      const { data } = await getChildNotificationPreview(notificationId)
       if (data.success) {
         setPreviewHtml(data.data.html || '')
         setPreviewMeta(data.data.notification || null)

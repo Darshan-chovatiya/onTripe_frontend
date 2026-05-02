@@ -4,8 +4,9 @@ export const AUTH_STORAGE_KEY = 'ontrip-auth'
 
 export const ROLES = {
   ADMIN: 'admin',
-  PARENT_AGENCY: 'parentAgency',
-  CHILD_AGENCY: 'childAgency',
+  PARENT_AGENCY: 'parent_agent',
+  CHILD_AGENCY: 'child_agent',
+  SUB_CHILD: 'sub_child_agent',
   CUSTOMER: 'customer',
   VENDOR: 'vendor',
 }
