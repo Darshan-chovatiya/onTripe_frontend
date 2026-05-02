@@ -18,7 +18,7 @@ import { getApiErrorMessage } from '@/shared/services/apiHelpers.js'
 
 const STATS_CONFIG = [
   { key: 'totalPackages', label: 'Whitelabel packages', icon: Package, iconClass: 'bg-blue-50 text-blue-700' },
-  { key: 'totalBookings', label: 'Bookings', icon: BookOpen, iconClass: 'bg-emerald-50 text-emerald-700' },
+  { key: 'ownBookings', label: 'My Bookings', icon: BookOpen, iconClass: 'bg-emerald-50 text-emerald-700' },
   { key: 'totalSubChildAgencies', label: 'Agents', icon: Users, iconClass: 'bg-indigo-50 text-indigo-700' },
   { key: 'totalCustomers', label: 'Customers', icon: ContactRound, iconClass: 'bg-amber-50 text-amber-800' },
 ]

@@ -4,7 +4,7 @@ import { X } from 'lucide-react'
 
 const sizeClasses = {
   sm: 'max-w-md',
-  md: 'max-w-lg',
+  md: 'max-w-7xl',
   // lg: 'max-w-4xl',
   lg: 'max-w-5xl',
   xl: 'max-w-6xl',
