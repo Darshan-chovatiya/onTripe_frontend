@@ -210,7 +210,7 @@ export default function EditBooking() {
 
       {booking && !loading && (
         <form onSubmit={handleSave} className="space-y-5">
-          <p className="font-mono text-xs text-gray-500">Ref: {booking.bookingId}</p>
+          {/* <p className="font-mono text-xs text-gray-500">Ref: {booking.bookingId}</p> */}
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="sm:col-span-2">

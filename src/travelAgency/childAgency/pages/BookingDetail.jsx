@@ -113,7 +113,7 @@ export default function BookingDetail() {
           </button>
           <div>
             <h1 className="text-xl font-semibold tracking-tight text-gray-900">Booking details</h1>
-            <p className="font-mono text-xs text-gray-400">{b.bookingId}</p>
+            {/* <p className="font-mono text-xs text-gray-400">{b.bookingId}</p> */}
           </div>
         </div>
         {/* <button type="button" onClick={() => navigate(`/agency/bookings/edit/${b._id}`)}
