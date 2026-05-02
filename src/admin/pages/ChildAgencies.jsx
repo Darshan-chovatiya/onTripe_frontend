@@ -15,6 +15,7 @@ import {
   Layers,
   ShieldCheck,
   ShieldAlert,
+  GitBranch,
 } from 'lucide-react'
 import adminApi from '@/admin/services/adminApi'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
@@ -22,6 +23,7 @@ import Loader from '@/shared/components/Loader.jsx'
 import CustomDropdown from '@/shared/components/CustomDropdown.jsx'
 import Modal from '@/shared/components/Modal.jsx'
 import Pagination from '@/admin/components/Pagination.jsx'
+import HierarchyFlowchart from '@/admin/components/HierarchyFlowchart.jsx'
 import { exportToExcel } from '@/admin/utils/exportExcel.js'
 
 function ParentApprovalBadge({ status }) {
@@ -57,6 +59,7 @@ export default function ChildAgencies({ agentRole = 'child_agent', pageTitle = '
   const [parentOptions, setParentOptions] = useState([{ value: 'all', label: 'All parents' }])
   const [togglingId, setTogglingId] = useState(null)
   const [exportLoading, setExportLoading] = useState(false)
+  const [hierarchyModal, setHierarchyModal] = useState({ open: false, agentId: null, title: '' })
 
   const [selectedAgent, setSelectedAgent] = useState(null)
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
@@ -519,14 +522,33 @@ export default function ChildAgencies({ agentRole = 'child_agent', pageTitle = '
                         </button>
                       </td>
                       <td className="px-4 py-2.5">
-                        <ParentApprovalBadge status={agent.parentApprovalStatus} />
+                        <ParentApprovalBadge status={agent?.kyc?.status} />
                       </td>
                       <td className="whitespace-nowrap px-4 py-2.5 pr-5 text-right">
-                        <button type="button"
-                          onClick={() => { setSelectedAgent(agent); setIsDetailModalOpen(true) }}
-                          className="inline-flex rounded-lg border border-gray-200 bg-white p-2 text-gray-500 transition-colors hover:border-primary-200 hover:text-primary-700 active:scale-95">
-                          <Eye className="h-4 w-4" strokeWidth={2} />
-                        </button>
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button type="button"
+                            onClick={() => { setSelectedAgent(agent); setIsDetailModalOpen(true) }}
+                            className="inline-flex rounded-lg border border-gray-200 bg-white p-2 text-gray-500 transition-colors hover:border-primary-200 hover:text-primary-700 active:scale-95"
+                            title="View agency"
+                            aria-label={`View ${agent.name}`}>
+                            <Eye className="h-4 w-4" strokeWidth={2} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setHierarchyModal({
+                                open: true,
+                                agentId: agent._id,
+                                title: agent.name,
+                              })
+                            }
+                            className="inline-flex rounded-lg border border-violet-200 bg-violet-50 p-2 text-violet-700 transition-colors hover:border-violet-300 hover:bg-violet-100 active:scale-95"
+                            title="Network map — this agency and downstream tree"
+                            aria-label={`Hierarchy map for ${agent.name}`}
+                          >
+                            <GitBranch className="h-4 w-4" strokeWidth={2} />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -539,6 +561,19 @@ export default function ChildAgencies({ agentRole = 'child_agent', pageTitle = '
       </div>
 
       <AgentDetailModal />
+
+      <Modal
+        isOpen={hierarchyModal.open}
+        onClose={() => setHierarchyModal((s) => ({ ...s, open: false }))}
+        title={`Agency map · ${hierarchyModal.title || 'Agency'}`}
+        size="full"
+      >
+        <div className="flex h-[calc(100dvh-7rem)] min-h-[min(560px,85dvh)] w-full flex-col">
+          {hierarchyModal.agentId ? (
+            <HierarchyFlowchart type="agent" id={hierarchyModal.agentId} />
+          ) : null}
+        </div>
+      </Modal>
     </div>
   )
 }

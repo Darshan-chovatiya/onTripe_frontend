@@ -14,6 +14,7 @@ import {
   ExternalLink,
   FileCheck,
   FileText,
+  GitBranch,
   Mail,
   MapPin,
   Package,
@@ -35,6 +36,7 @@ import Loader from '@/shared/components/Loader.jsx'
 import Modal from '@/shared/components/Modal.jsx'
 import CustomDropdown from '@/shared/components/CustomDropdown.jsx'
 import Pagination from '@/admin/components/Pagination.jsx'
+import HierarchyFlowchart from '@/admin/components/HierarchyFlowchart.jsx'
 import { exportToExcel } from '@/admin/utils/exportExcel.js'
 
 const getFileUrl = (path) => {
@@ -403,7 +405,8 @@ const AddAgencyModal = ({ isOpen, onClose, onRefresh }) => {
   const [files, setFiles] = useState({
     aadharFront: null,
     aadharBack: null,
-    panCard: null
+    panCard: null,
+    agencyLogo: null,
   })
   const [errors, setErrors] = useState({})
   const [showPassword, setShowPassword] = useState(false)
@@ -479,7 +482,7 @@ const AddAgencyModal = ({ isOpen, onClose, onRefresh }) => {
           kycStatus: 'approved',
           kycRejectionReason: '',
         })
-        setFiles({ aadharFront: null, aadharBack: null, panCard: null })
+        setFiles({ aadharFront: null, aadharBack: null, panCard: null, agencyLogo: null })
         setErrors({})
       }
     } catch (error) {
@@ -492,7 +495,7 @@ const AddAgencyModal = ({ isOpen, onClose, onRefresh }) => {
     }
   }
 
-  const FileSlot = ({ label, id, currentFile }) => {
+  const FileSlot = ({ label, id, currentFile, accept }) => {
     const [previewUrl, setPreviewUrl] = useState(null)
 
     useEffect(() => {
@@ -556,7 +559,7 @@ const AddAgencyModal = ({ isOpen, onClose, onRefresh }) => {
             type="file"
             id={id}
             className="sr-only"
-            accept="image/*,.pdf,application/pdf"
+            accept={accept || 'image/*,.pdf,application/pdf'}
             onChange={(e) => handleFileChange(e, id)}
           />
         </label>
@@ -697,6 +700,14 @@ const AddAgencyModal = ({ isOpen, onClose, onRefresh }) => {
             <FileSlot label="Aadhar back" id="aadharBack" currentFile={files.aadharBack} />
             <FileSlot label="PAN card" id="panCard" currentFile={files.panCard} />
           </div>
+          <div className="mt-4 max-w-md">
+            <FileSlot
+              label="Agency logo (optional)"
+              id="agencyLogo"
+              currentFile={files.agencyLogo}
+              accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
+            />
+          </div>
           <div className="mt-4 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-600">
             Default is Approved when you add documents from admin. Choose Pending or Rejected if you need a different initial state.
           </div>
@@ -707,7 +718,7 @@ const AddAgencyModal = ({ isOpen, onClose, onRefresh }) => {
 }
 
 /** Single KYC file row in edit modal — previews new or existing file with cleanup for blob URLs */
-const EditKycDocRow = ({ doc, existingUrl, newFile, onFileChange }) => {
+const EditKycDocRow = ({ doc, existingUrl, newFile, onFileChange, accept }) => {
   const [blobUrl, setBlobUrl] = useState(null)
   const [pdfBlobUrl, setPdfBlobUrl] = useState(null)
 
@@ -752,7 +763,7 @@ const EditKycDocRow = ({ doc, existingUrl, newFile, onFileChange }) => {
           type="file"
           onChange={onFileChange}
           className="absolute inset-0 z-10 cursor-pointer opacity-0"
-          accept="image/*,.pdf,application/pdf"
+          accept={accept || 'image/*,.pdf,application/pdf'}
         />
         <div className="p-3">
           <div className="flex items-center gap-3">
@@ -825,7 +836,8 @@ const EditAgencyModal = ({ isOpen, onClose, agent, onRefresh }) => {
   const [files, setFiles] = useState({
     aadharFront: null,
     aadharBack: null,
-    panCard: null
+    panCard: null,
+    agencyLogo: null,
   })
   const [errors, setErrors] = useState({})
 
@@ -841,7 +853,7 @@ const EditAgencyModal = ({ isOpen, onClose, agent, onRefresh }) => {
         kycStatus: agent.kyc?.status || 'pending',
         kycRejectionReason: agent.kyc?.rejectionReason || '',
       })
-      setFiles({ aadharFront: null, aadharBack: null, panCard: null })
+      setFiles({ aadharFront: null, aadharBack: null, panCard: null, agencyLogo: null })
       setErrors({})
     }
   }, [agent])
@@ -1030,6 +1042,16 @@ const EditAgencyModal = ({ isOpen, onClose, agent, onRefresh }) => {
             </div>
           )}
 
+          <div className="mb-4 max-w-md">
+            <EditKycDocRow
+              doc={{ label: 'Agency logo (optional)' }}
+              existingUrl={agent?.agencyLogo}
+              newFile={files.agencyLogo}
+              onFileChange={(e) => handleFileChange(e, 'agencyLogo')}
+              accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
+            />
+          </div>
+
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             {[
               { id: 'aadharFront', label: 'Aadhar front' },
@@ -1077,6 +1099,7 @@ export default function Agencies() {
   const [rejectionReason, setRejectionReason] = useState('')
   const [isActionLoading, setIsActionLoading] = useState(false)
   const [exportLoading, setExportLoading] = useState(false)
+  const [hierarchyModal, setHierarchyModal] = useState({ open: false, agentId: null, title: '' })
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -1451,6 +1474,21 @@ export default function Agencies() {
                         >
                           <Pencil className="h-4 w-4" strokeWidth={2} />
                         </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setHierarchyModal({
+                              open: true,
+                              agentId: agent._id,
+                              title: agent.name,
+                            })
+                          }
+                          className="inline-flex cursor-pointer rounded-lg border border-violet-200 bg-violet-50 p-2 text-violet-700 transition-colors hover:border-violet-300 hover:bg-violet-100 active:scale-95"
+                          title="Network map — this agency and downstream tree"
+                          aria-label={`Hierarchy map for ${agent.name}`}
+                        >
+                          <GitBranch className="h-4 w-4" strokeWidth={2} />
+                        </button>
                         {/* <button
                           type="button"
                           onClick={() => handleDeleteAgent(agent)}
@@ -1679,6 +1717,19 @@ export default function Agencies() {
 
           </div>
         )}
+      </Modal>
+
+      <Modal
+        isOpen={hierarchyModal.open}
+        onClose={() => setHierarchyModal((s) => ({ ...s, open: false }))}
+        title={`Agency map · ${hierarchyModal.title || 'Agency'}`}
+        size="full"
+      >
+        <div className="flex h-[calc(100dvh-7rem)] min-h-[min(560px,85dvh)] w-full flex-col">
+          {hierarchyModal.agentId ? (
+            <HierarchyFlowchart type="agent" id={hierarchyModal.agentId} />
+          ) : null}
+        </div>
       </Modal>
     </div>
   )

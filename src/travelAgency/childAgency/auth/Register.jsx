@@ -17,7 +17,12 @@ export default function ChildRegister() {
   const [step, setStep] = useState(1)
   const [showPassword, setShowPassword] = useState(false)
   const [formData, setFormData] = useState({ name: '', email: '', phone: '', password: '', parentCode: '' })
-  const [files, setFiles] = useState({ aadharFront: null, aadharBack: null, panCard: null })
+  const [files, setFiles] = useState({
+    aadharFront: null,
+    aadharBack: null,
+    panCard: null,
+    agencyLogo: null,
+  })
 
   useEffect(() => {
     const code = searchParams.get('parentCode') || searchParams.get('invitationCode')
@@ -26,7 +31,14 @@ export default function ChildRegister() {
     }
   }, [searchParams])
 
-  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value })
+  const handleChange = (e) => {
+    const { name, value } = e.target
+    if (name === 'phone') {
+      setFormData({ ...formData, [name]: value.replace(/\D/g, '').slice(0, 10) })
+    } else {
+      setFormData({ ...formData, [name]: value })
+    }
+  }
 
   const handleFileChange = (e) => {
     const f = e.target.files?.[0]
@@ -35,8 +47,30 @@ export default function ChildRegister() {
 
   const removeKycFile = (name) => setFiles((prev) => ({ ...prev, [name]: null }))
 
+  const validateStep1 = () => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(formData.email)) {
+      toast.error('Please enter a valid email address')
+      return false
+    }
+    if (formData.phone.length !== 10) {
+      toast.error('Phone number must be exactly 10 digits')
+      return false
+    }
+    if (formData.password.length < 8) {
+      toast.error('Password must be at least 8 characters')
+      return false
+    }
+    if (!files.agencyLogo) {
+      toast.error('Please upload your agency logo')
+      return false
+    }
+    return true
+  }
+
   const handleStep1 = (e) => {
     e.preventDefault()
+    if (!validateStep1()) return
     setStep(2)
   }
 
@@ -47,6 +81,7 @@ export default function ChildRegister() {
     if (files.aadharFront) submitData.append('aadharFront', files.aadharFront)
     if (files.aadharBack) submitData.append('aadharBack', files.aadharBack)
     if (files.panCard) submitData.append('panCard', files.panCard)
+    if (files.agencyLogo) submitData.append('agencyLogo', files.agencyLogo)
 
     const res = await registerAgent(submitData)
     if (res.success) {
@@ -94,9 +129,10 @@ export default function ChildRegister() {
             <div className="rform-input-wrap">
               <span className="rform-input-icon"><Phone size={15} /></span>
               <input
-                type="tel" name="phone" className="rform-input"
+                type="tel" name="phone" className="rform-input" maxLength={10}
                 value={formData.phone} onChange={handleChange}
-                placeholder="10-digit number" autoComplete="tel" required
+                placeholder="10-digit number" autoComplete="tel"
+                inputMode="numeric" required
               />
             </div>
           </div>
@@ -108,7 +144,7 @@ export default function ChildRegister() {
               <input
                 type={showPassword ? 'text' : 'password'} name="password" className="rform-input"
                 value={formData.password} onChange={handleChange}
-                placeholder="Min. 8 characters" minLength={8} autoComplete="new-password" required
+                placeholder="Min. 8 chars" minLength={8} autoComplete="new-password" required
               />
               <button type="button" className="rform-eye-btn" onClick={() => setShowPassword((v) => !v)}>
                 {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
@@ -116,7 +152,7 @@ export default function ChildRegister() {
             </div>
           </div>
 
-          <div className="rform-field rform-field-full">
+          <div className="rform-field">
             <label className="rform-label">Invitation Code</label>
             <div className="rform-input-wrap">
               <span className="rform-input-icon"><Key size={15} /></span>
@@ -126,6 +162,34 @@ export default function ChildRegister() {
                 placeholder="e.g. ONTRIP-XXXXX" autoComplete="off" required
               />
             </div>
+          </div>
+
+          <div className="rform-field">
+            <label className="rform-label">Agency Logo <span style={{ color: '#ef4444' }}>*</span></label>
+            <label htmlFor="agency-logo-inline" className="rform-input-wrap" style={{ cursor: 'pointer', height: '46px', justifyContent: 'center', gap: '8px', background: files.agencyLogo ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.92)' }}>
+              <input
+                id="agency-logo-inline"
+                type="file"
+                name="agencyLogo"
+                className="sr-only"
+                onChange={handleFileChange}
+                accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
+              />
+              {files.agencyLogo ? (
+                <>
+                  <img
+                    src={URL.createObjectURL(files.agencyLogo)}
+                    alt="logo"
+                    style={{ height: '28px', width: '28px', objectFit: 'cover', borderRadius: '4px' }}
+                  />
+                  <span style={{ fontSize: '12px', color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100px' }}>
+                    {files.agencyLogo.name}
+                  </span>
+                </>
+              ) : (
+                <span style={{ fontSize: '13px', color: '#94a3b8' }}>Upload logo</span>
+              )}
+            </label>
           </div>
 
           <div className="rform-field rform-field-full rform-actions">

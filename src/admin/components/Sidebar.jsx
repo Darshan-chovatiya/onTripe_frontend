@@ -30,7 +30,6 @@ export default function Sidebar({ isOpen, onClose }) {
   const agencyItems = [
     { path: '/admin/agencies', label: 'Parent' },
     { path: '/admin/child-agencies', label: 'Child' },
-    { path: '/admin/sub-child-agencies', label: 'Sub-child' },
   ]
   const agencySectionActive = agencyItems.some(
     (item) => pathname === item.path || pathname.startsWith(item.path + '/')

@@ -161,3 +161,21 @@
   .rform-grid { grid-template-columns: 1fr; }
   .rform-field-full { grid-column: 1; }
 }
+
+.rform-hint {
+  font-size: 11px;
+  color: #f59e0b;
+  margin-top: 4px;
+  display: block;
+}
+
+.rform-inline-row {
+  display: flex !important;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.rform-inline-row > .kyc-slot-logo {
+  flex-shrink: 0;
+  width: 120px;
+}

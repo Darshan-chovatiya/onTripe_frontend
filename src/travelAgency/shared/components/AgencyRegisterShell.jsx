@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ShieldCheck, Upload, FileText, X, ImageIcon, Check, LayoutDashboard, CalendarCheck, MapPin, Users } from 'lucide-react'
+import { ShieldCheck, Upload, FileText, X, ImageIcon, Check, LayoutDashboard, CalendarCheck, MapPin, Users, Sparkles } from 'lucide-react'
 import logo from '@/assets/onTripLogo.png'
 import './AgencyRegisterShell.css'
 
@@ -160,6 +160,69 @@ function KycFileSlot({ name, label, file, onFileChange, onRemove }) {
         {hasFile && (
           <div className="kyc-slot-hover-overlay"><span>Change file</span></div>
         )}
+      </label>
+    </div>
+  )
+}
+
+/** Optional square logo — JPG / PNG / WebP */
+export function AgencyLogoSlot({ file, onFileChange, onRemove, style }) {
+  const [previewUrl, setPreviewUrl] = useState(null)
+
+  useEffect(() => {
+    if (!file || !isImage(file)) {
+      setPreviewUrl(null)
+      return
+    }
+    const url = URL.createObjectURL(file)
+    setPreviewUrl(url)
+    return () => URL.revokeObjectURL(url)
+  }, [file])
+
+  const hasFile = Boolean(file)
+
+  return (
+    <div className="kyc-slot kyc-slot-logo" style={style}>
+      <div className="kyc-slot-header">
+        <p className="kyc-slot-label">
+          <Sparkles size={12} className="inline-block align-middle opacity-70" strokeWidth={2} /> Agency Logo{' '}
+          <span className="kyc-slot-req">*</span>
+        </p>
+        {hasFile && (
+          <button type="button" onClick={() => onRemove('agencyLogo')} className="kyc-slot-remove" aria-label="Remove logo">
+            <X size={14} strokeWidth={2} />
+          </button>
+        )}
+      </div>
+      <label htmlFor="agency-logo-input" className="kyc-slot-drop kyc-slot-drop-logo">
+        <input
+          id="agency-logo-input"
+          key={file ? `agencyLogo-${file.name}-${file.size}` : 'agencyLogo'}
+          type="file"
+          name="agencyLogo"
+          className="sr-only"
+          onChange={onFileChange}
+          accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
+          required={!hasFile}
+        />
+        {!hasFile ? (
+          <div className="kyc-slot-empty">
+            <div className="kyc-slot-icon-wrap"><ImageIcon size={18} /></div>
+            <span className="kyc-slot-upload-text">Upload brand logo</span>
+            <span className="kyc-slot-hint">JPG, PNG or WebP · square works best</span>
+          </div>
+        ) : previewUrl ? (
+          <div className="kyc-slot-preview kyc-slot-preview-logo">
+            <img src={previewUrl} alt="Logo preview" className="kyc-slot-img kyc-slot-img-logo" />
+            <div className="kyc-slot-img-overlay"><p className="kyc-slot-filename">{file.name}</p></div>
+          </div>
+        ) : (
+          <div className="kyc-slot-empty">
+            <ImageIcon size={22} />
+            <p className="kyc-slot-filename">{file.name}</p>
+          </div>
+        )}
+        {hasFile && <div className="kyc-slot-hover-overlay"><span>Change logo</span></div>}
       </label>
     </div>
   )

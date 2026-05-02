@@ -4,6 +4,8 @@ import { ChevronRight, Download, Layers, Loader2, MapPin, Calendar, Package, Ind
 import adminApi from '@/admin/services/adminApi'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
 import { getFileUrl, WhitelabelAgencyChain, NewOfferDetails } from '@/admin/components/WhitelabelOfferBlocks.jsx'
+import Modal from '@/shared/components/Modal.jsx'
+import HierarchyFlowchart from '@/admin/components/HierarchyFlowchart.jsx'
 
 export default function PackageWhitelabels() {
   const { packageId } = useParams()
@@ -16,6 +18,7 @@ export default function PackageWhitelabels() {
   const [pkg, setPkg] = useState(null)
   const [rows, setRows] = useState([])
   const [exportLoading, setExportLoading] = useState(false)
+  const [isHierarchyModalOpen, setIsHierarchyModalOpen] = useState(false)
 
   const load = useCallback(async () => {
     if (!packageId) return
@@ -123,11 +126,20 @@ export default function PackageWhitelabels() {
         <span className="font-semibold text-gray-900">Whitelabels</span>
       </nav>
 
-      <div>
-        <h1 className="text-xl font-semibold tracking-tight text-gray-900 sm:text-2xl">Package whitelabels</h1>
-        <p className="mt-1 text-sm text-gray-500">
-          Source inventory below; each card is a downstream offer with agency chain and offer details.
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-semibold tracking-tight text-gray-900 sm:text-2xl">Package whitelabels</h1>
+          <p className="mt-1 text-sm text-gray-500">
+            Source inventory below; each card is a downstream offer with agency chain and offer details.
+          </p>
+        </div>
+        <button 
+           type="button"
+           onClick={() => setIsHierarchyModalOpen(true)}
+           className="inline-flex items-center gap-2 bg-violet-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-violet-700 transition-all shadow-sm"
+        >
+           <Layers className="h-4 w-4" /> Package distribution map
+        </button>
       </div>
 
       <section className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm">
@@ -237,6 +249,17 @@ export default function PackageWhitelabels() {
           </ul>
         )}
       </section>
+
+      <Modal
+         isOpen={isHierarchyModalOpen}
+         onClose={() => setIsHierarchyModalOpen(false)}
+         title={`Package map · ${pkg?.title || 'Package'}`}
+         size="full"
+      >
+         <div className="flex h-[calc(100dvh-7rem)] min-h-[min(560px,85dvh)] w-full flex-col">
+            <HierarchyFlowchart type="package" id={packageId} />
+         </div>
+      </Modal>
     </div>
   )
 }
