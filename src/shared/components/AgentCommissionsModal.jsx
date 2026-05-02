@@ -120,8 +120,19 @@ export default function AgentCommissionsModal({ isOpen, onClose, data = [], indi
     return (
       <tr className="bg-gray-50/30">
         <td className="px-4 py-2" style={{ paddingLeft: `${depth * 24 + 16}px` }}>
-          <div className="flex items-center gap-2">
-            {depth > 0 && <div className="h-1 w-3 border-l-2 border-b-2 border-gray-300 rounded-bl" />}
+          <div className="flex items-center gap-2 relative">
+            {depth > 0 && (
+              <div 
+                className="absolute -left-6 top-[-20px] bottom-[12px] w-[1px] bg-gray-300"
+                style={{ left: '-18px' }}
+              />
+            )}
+            {depth > 0 && (
+              <div 
+                className="absolute -left-6 top-[12px] w-4 h-[1px] bg-gray-300"
+                style={{ left: '-18px' }}
+              />
+            )}
             <User className="h-3 w-3 text-gray-400" />
             <div className="min-w-0">
               <div className="flex items-center gap-1.5">
@@ -171,7 +182,19 @@ export default function AgentCommissionsModal({ isOpen, onClose, data = [], indi
       <>
         <tr className="group transition hover:bg-gray-50/50">
           <td className="px-4 py-3" style={{ paddingLeft: `${paddingLeft + 16}px` }}>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 relative">
+              {depth > 0 && (
+                <div 
+                  className="absolute -left-6 top-[-20px] bottom-[14px] w-[1px] bg-gray-300"
+                  style={{ left: '-18px' }}
+                />
+              )}
+              {depth > 0 && (
+                <div 
+                  className="absolute -left-6 top-[14px] w-4 h-[1px] bg-gray-300"
+                  style={{ left: '-18px' }}
+                />
+              )}
               {hasChildren && (
                 <button 
                   onClick={() => setIsExpanded(!isExpanded)}
