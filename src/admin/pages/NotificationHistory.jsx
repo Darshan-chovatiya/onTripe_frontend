@@ -96,6 +96,7 @@ function NotificationCard({ item }) {
 
   const recipients = item.recipients || []
   const attachments = item.attachments || []
+  const channels = item.channels || []
   const sentCount = recipients.filter((r) => r.status === 'sent').length
   const failedCount = recipients.filter((r) => r.status === 'failed').length
 
@@ -131,6 +132,11 @@ function NotificationCard({ item }) {
                 {attachments.length}
               </span>
             )}
+            {channels.map(c => (
+              <span key={c} className="inline-flex items-center rounded-lg border border-primary-200 bg-primary-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary-800">
+                {c === 'fcm' ? 'Push' : c}
+              </span>
+            ))}
           </div>
         </div>
 

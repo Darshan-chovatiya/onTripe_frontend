@@ -12,6 +12,8 @@ const BASE_IMG_URL =
 const getFullUrl = (path) =>
   path ? `${BASE_IMG_URL}/${path.replace(/\\/g, '/')}` : null
 
+import { Search, MoreHorizontal, Info } from 'lucide-react'
+
 
 export default function Community() {
   const { toast } = useToast()
@@ -25,6 +27,7 @@ export default function Community() {
   const [loading, setLoading] = useState(true)
   const [selected, setSelected] = useState(null)
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
 
   const pickTrip = useCallback((b, replace = false) => {
     const pkgId = b.package._id
@@ -103,7 +106,7 @@ export default function Community() {
   )
 
   return (
-    <div className="flex h-[calc(100vh-5.5rem)] rounded-[2rem] overflow-hidden shadow-2xl shadow-gray-200/50 bg-white animate-fade-in">
+    <div className="flex h-[calc(100vh-7rem)] rounded-[2rem] overflow-hidden shadow-2xl shadow-gray-200/50 bg-white animate-fade-in">
 
       {/* Mobile overlay */}
       {sidebarOpen && (
@@ -113,58 +116,102 @@ export default function Community() {
         />
       )}
 
-      {/* ── LEFT PANEL ── */}
+      {/* ── LEFT PANEL (Community List) ── */}
       <aside className={`
         fixed lg:static inset-y-0 left-0 z-50 lg:z-auto
-        w-[280px] lg:w-[30%] lg:min-w-[260px] lg:max-w-[310px]
-        flex flex-col bg-gray-50 border-r border-gray-100
-        transition-transform duration-300
-        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+        w-[320px] lg:w-[350px]
+        flex flex-col bg-white border-r border-gray-100/50
+        transition-all duration-300 ease-in-out
+        ${sidebarOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full lg:translate-x-0'}
       `}>
 
-        {/* Header */}
-        <div className="px-4 py-4 border-b border-gray-100">
-          <h2 className="text-base font-semibold text-gray-800">Communities</h2>
-          <p className="text-xs text-gray-400 mt-0.5">{bookings.length} {bookings.length === 1 ? 'trip' : 'trips'}</p>
+        {/* Header with Search */}
+        <div className="p-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <h1 className="text-2xl font-black text-gray-900 tracking-tight">Messages</h1>
+            <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-400">
+               <Users size={16} />
+            </div>
+          </div>
+          
+          <div className="relative group">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary-500 transition-colors" size={18} />
+            <input 
+              type="text" 
+              placeholder="Search your trips..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-gray-50 border-none rounded-2xl py-3 pl-11 pr-4 text-sm focus:ring-2 focus:ring-primary-500/20 transition-all placeholder:text-gray-400"
+            />
+          </div>
         </div>
 
         {/* Trip list */}
-        <div className="flex-1 overflow-y-auto px-3 pb-4 space-y-1">
-          {bookings.map((b) => {
-            const pkg = b.package
+        <div className="flex-1 overflow-y-auto pb-6 custom-scrollbar">
+          {bookings
+            .filter(b => b.package.title.toLowerCase().includes(searchQuery.toLowerCase()) || b.package.destination.toLowerCase().includes(searchQuery.toLowerCase()))
+            .map((b) => {
+              const pkg = b.package
+              const isActive = urlPackageId === pkg._id
 
-            return (
-              <button
-                key={pkg._id}
-                onClick={() => pickTrip(b)}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors text-left ${urlPackageId === pkg._id ? 'bg-primary-50 border border-primary-200' : 'hover:bg-gray-100 border border-transparent'
+              return (
+                <button
+                  key={pkg._id}
+                  onClick={() => pickTrip(b)}
+                  className={`w-full flex items-center gap-3 px-4 py-3.5 relative transition-colors border-b border-gray-100 last:border-none ${
+                    isActive 
+                      ? 'bg-primary-50/40 hover:bg-primary-50/60' 
+                      : 'bg-white hover:bg-gray-50'
                   }`}
-              >
-                {/* Square image */}
-                <div className="w-11 h-11 rounded-xl overflow-hidden shrink-0 bg-primary-50 flex items-center justify-center border border-primary-100">
-                  {pkg.coverImage
-                    ? <img src={getFullUrl(pkg.coverImage)} alt={pkg.title} className="w-full h-full object-cover" />
-                    : <MessageSquare size={18} className="text-primary-400" />
-                  }
-                </div>
+                >
+                  {/* Active Indicator Left Border */}
+                  <div className={`absolute left-0 top-0 bottom-0 w-1 transition-colors ${isActive ? 'bg-primary-500' : 'bg-transparent'}`} />
 
-                {/* Text */}
-                <div className="flex-1 min-w-0">
-                  <p className={`text-sm font-semibold truncate ${urlPackageId === pkg._id ? 'text-primary-700' : 'text-gray-800'}`}>
-                    {pkg.title}
-                  </p>
-                  {pkg.destination && (
-                    <p className="text-xs text-gray-400 truncate">{pkg.destination}</p>
-                  )}
-                </div>
-              </button>
-            )
-          })}
-        </div>
+                  {/* Circular image */}
+                  <div className="relative">
+                    <div className="w-12 h-12 rounded-full overflow-hidden shrink-0 bg-gray-100">
+                      {pkg.coverImage
+                        ? <img src={getFullUrl(pkg.coverImage)} alt={pkg.title} className="w-full h-full object-cover" />
+                        : <div className="w-full h-full bg-gradient-to-br from-primary-400 to-indigo-500 flex items-center justify-center">
+                            <MessageSquare size={18} className="text-white/90" />
+                          </div>
+                      }
+                    </div>
+                    {/* Mock online/active status indicator on avatar */}
+                    {isActive && (
+                      <div className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-primary-500 border-2 border-white" />
+                    )}
+                  </div>
 
-        {/* Footer */}
-        <div className="px-4 py-3 border-t border-gray-100">
-          <p className="text-xs text-gray-400">{bookings.length} {bookings.length === 1 ? 'group' : 'groups'} joined</p>
+                  {/* Text Content */}
+                  <div className="flex-1 min-w-0 flex flex-col justify-center">
+                    <div className="flex justify-between items-center mb-0.5">
+                      <p className={`text-sm font-bold truncate transition-colors ${isActive ? 'text-gray-900' : 'text-gray-800'}`}>
+                        {pkg.title}
+                      </p>
+                      <span className="text-[11px] text-gray-400 font-medium tabular-nums ml-2 shrink-0">
+                        {b.lastMessage 
+                          ? new Date(b.lastMessage.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) 
+                          : new Date(b.travelDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                        }
+                      </span>
+                    </div>
+                    
+                    <div className="flex justify-between items-center gap-2">
+                      <p className={`text-[13px] truncate ${isActive ? 'text-gray-600' : 'text-gray-400'}`}>
+                        {b.lastMessage 
+                          ? (b.lastMessage.type === 'image' 
+                              ? '📷 Photo' 
+                              : b.lastMessage.type === 'video' 
+                                ? '📹 Video' 
+                                : b.lastMessage.content) 
+                          : 'Tap to chat with fellow travelers...'}
+                      </p>
+                    </div>
+                  </div>
+                </button>
+              )
+            })}
         </div>
       </aside>
 
@@ -181,11 +228,27 @@ export default function Community() {
             />
           </div>
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center gap-4 bg-gray-50/50">
-            <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center">
-              <MessageSquare size={28} className="text-gray-300" strokeWidth={1.5} />
+          <div className="flex-1 flex flex-col items-center justify-center gap-8 bg-gray-50/30 p-12 text-center">
+            <div className="relative">
+              <div className="w-32 h-32 rounded-[2.5rem] bg-white shadow-2xl flex items-center justify-center text-primary-500 transform -rotate-6 animate-float">
+                <MessageSquare size={56} strokeWidth={1.5} />
+              </div>
+              <div className="absolute -bottom-2 -right-2 w-12 h-12 rounded-2xl bg-primary-600 shadow-xl flex items-center justify-center text-white transform rotate-12">
+                <Users size={20} />
+              </div>
             </div>
-            <p className="text-xs font-black text-gray-400 uppercase tracking-widest">Select a trip to chat</p>
+            
+            <div className="max-w-xs space-y-3">
+              <h3 className="text-2xl font-black text-gray-900 tracking-tight">Your Travel Circles</h3>
+              <p className="text-sm text-gray-500 leading-relaxed font-medium">
+                Connect with fellow explorers on your upcoming trips. Share tips, photos, and memories in real-time.
+              </p>
+              <div className="pt-4">
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white shadow-sm border border-gray-100 text-[11px] font-black uppercase tracking-widest text-gray-400">
+                   Select a trip to begin
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </div>

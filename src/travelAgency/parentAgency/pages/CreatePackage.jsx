@@ -13,7 +13,14 @@ import { useToast } from '@/shared/components/ToastContainer.jsx'
 import { getApiErrorMessage } from '@/shared/services/apiHelpers.js'
 import Loader from '@/shared/components/Loader.jsx'
 
+const BASE_URL = import.meta.env.VITE_API_BASE_URL?.replace('/api', '').replace(/\/$/, '') || 'http://localhost:5001'
 const EVENT_TYPES = ['Activity', 'Hotel CheckIn', 'Hotel CheckOut', 'Transfer', 'Other']
+
+const fullImgUrl = (p) => {
+  if (!p) return null
+  if (p.startsWith('http') || p.startsWith('blob:')) return p
+  return `${BASE_URL}/${String(p).replace(/^\//, '')}`
+}
 
 const emptyEvent = () => ({
   title: '', description: '', startTime: '', endTime: '',
@@ -102,9 +109,7 @@ export default function CreatePackage() {
       const serverUrl = res.data?.data?.url || res.data?.data?.imageUrl || ''
       if (serverUrl) {
         URL.revokeObjectURL(localUrl)
-        const base = import.meta.env.VITE_API_BASE_URL?.replace('/api', '').replace(/\/$/, '') || 'http://localhost:5001'
-        const fullUrl = serverUrl.startsWith('http') ? serverUrl : `${base}/${serverUrl.replace(/^\//, '')}`
-        updateEvent(di, ei, 'image', fullUrl)
+        updateEvent(di, ei, 'image', serverUrl)
       }
     } catch (err) {
       toast.error(getApiErrorMessage(err))
@@ -406,7 +411,7 @@ export default function CreatePackage() {
                             {uploadingEvent === `${di}-${ei}` && <p className="mt-1 text-xs text-gray-400">Uploading…</p>}
                             {ev.image && (
                               <div className="relative mt-2 overflow-hidden rounded-lg border border-gray-200">
-                                <img src={ev.image} alt="Event" className="h-28 _w-full object-contain" />
+                                <img src={fullImgUrl(ev.image)} alt="Event" className="h-28 _w-full object-contain" />
                                 <button
                                   type="button"
                                   onClick={() => updateEvent(di, ei, 'image', '')}

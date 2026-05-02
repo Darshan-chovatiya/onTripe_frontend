@@ -3,7 +3,6 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
   Package,
   MapPin,
-  User,
   Search,
   Eye,
   Download,
@@ -12,12 +11,15 @@ import {
   Ticket,
   Star,
   IndianRupee,
+  GitBranch,
 } from 'lucide-react'
 import adminApi from '@/admin/services/adminApi'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
 import Loader from '@/shared/components/Loader.jsx'
 import CustomDropdown from '@/shared/components/CustomDropdown.jsx'
 import Pagination from '@/admin/components/Pagination.jsx'
+import Modal from '@/shared/components/Modal.jsx'
+import HierarchyFlowchart from '@/admin/components/HierarchyFlowchart.jsx'
 
 /** Neutral count pill — matches other admin tables (gray border / soft bg) */
 const countPillClass =
@@ -69,6 +71,7 @@ export default function Packages() {
   const [parentOptions, setParentOptions] = useState([{ value: 'all', label: 'All parent agencies' }])
   const [exportLoading, setExportLoading] = useState(false)
   const packagesFetchIdRef = useRef(0)
+  const [pkgMapModal, setPkgMapModal] = useState({ open: false, id: null, title: '' })
 
   const statusOptions = useMemo(
     () => [
@@ -520,6 +523,21 @@ export default function Packages() {
                           </button>
                           <button
                             type="button"
+                            onClick={() =>
+                              setPkgMapModal({
+                                open: true,
+                                id: String(pkg._id),
+                                title: pkg.title || 'Package',
+                              })
+                            }
+                            className="inline-flex cursor-pointer rounded-lg border border-violet-200 bg-violet-50 p-2 text-violet-700 transition-colors hover:border-violet-300 hover:bg-violet-100 active:scale-95"
+                            title="Distribution map — package and whitelabel branches"
+                            aria-label={`Distribution map for ${pkg.title}`}
+                          >
+                            <GitBranch className="h-4 w-4" strokeWidth={2} />
+                          </button>
+                          <button
+                            type="button"
                             onClick={() => navigate(`/admin/packages/${String(pkg._id)}/reviews?readOnly=true`)}
                             className="inline-flex cursor-pointer rounded-lg border border-gray-200 bg-white p-2 text-gray-500 transition-colors hover:border-amber-200 hover:text-amber-600 active:scale-95"
                             title="View reviews"
@@ -545,6 +563,17 @@ export default function Packages() {
           </>
         )}
       </div>
+
+      <Modal
+        isOpen={pkgMapModal.open}
+        onClose={() => setPkgMapModal((s) => ({ ...s, open: false }))}
+        title={`Package map · ${pkgMapModal.title}`}
+        size="full"
+      >
+        <div className="flex h-[calc(100dvh-7rem)] min-h-[min(560px,85dvh)] w-full flex-col">
+          {pkgMapModal.id ? <HierarchyFlowchart type="package" id={pkgMapModal.id} /> : null}
+        </div>
+      </Modal>
     </div>
   )
 }

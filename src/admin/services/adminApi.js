@@ -112,6 +112,8 @@ const adminApi = {
   getAgent,
   getAgencyCustomers: (id) => axiosInstance.get(`/admin/agents/${id}/customers`),
   getCustomerBookings: (id) => axiosInstance.get(`/admin/customers/${id}/bookings`),
+  getAgentHierarchy: (id) => axiosInstance.get(`/admin/agents/${id}/hierarchy`),
+  getPackageHierarchy: (id) => axiosInstance.get(`/admin/packages/${id}/hierarchy`),
   approvePackage: (id) => axiosInstance.patch(`/admin/packages/approve/${id}`),
   rejectPackage: (id, rejectionReason) => axiosInstance.patch(`/admin/packages/reject/${id}`, { rejectionReason }),
   getNotificationRecipients,
@@ -120,5 +122,8 @@ const adminApi = {
   getNotificationPreview,
   syncBookingStatus: () => axiosInstance.post('/admin/bookings/sync-status'),
 }
+
+export const getAgentHierarchy = (id) => axiosInstance.get(`/admin/agents/${id}/hierarchy`);
+export const getPackageHierarchy = (id) => axiosInstance.get(`/admin/packages/${id}/hierarchy`);
 
 export default adminApi

@@ -10,7 +10,9 @@
     "lint": "eslint . --ext js,jsx --max-warnings 0"
   },
   "dependencies": {
+    "@xyflow/react": "^12.10.2",
     "axios": "^1.13.2",
+    "dagre": "^0.8.5",
     "exceljs": "^4.4.0",
     "file-saver": "^2.0.5",
     "lucide-react": "^0.562.0",

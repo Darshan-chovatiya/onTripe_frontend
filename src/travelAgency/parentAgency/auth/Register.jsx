@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { User, Mail, Lock, Phone, Eye, EyeOff, ArrowRight, ChevronLeft } from 'lucide-react'
 import { useAuth } from '@/shared/context/AuthContext.jsx'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
-import AgencyRegisterShell, { KycDocumentUploads } from '@/travelAgency/shared/components/AgencyRegisterShell.jsx'
+import AgencyRegisterShell, { KycDocumentUploads, AgencyLogoSlot } from '@/travelAgency/shared/components/AgencyRegisterShell.jsx'
 import '@/travelAgency/shared/components/RegisterForm.css'
 
 const KYC_NOTE = 'By submitting, you agree to our terms. Your account remains pending until KYC is approved by our team.'
@@ -16,9 +16,21 @@ export default function ParentRegister() {
   const [step, setStep] = useState(1)
   const [showPassword, setShowPassword] = useState(false)
   const [formData, setFormData] = useState({ name: '', email: '', phone: '', password: '' })
-  const [files, setFiles] = useState({ aadharFront: null, aadharBack: null, panCard: null })
+  const [files, setFiles] = useState({
+    aadharFront: null,
+    aadharBack: null,
+    panCard: null,
+    agencyLogo: null,
+  })
 
-  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value })
+  const handleChange = (e) => {
+    const { name, value } = e.target
+    if (name === 'phone') {
+      setFormData({ ...formData, [name]: value.replace(/\D/g, '').slice(0, 10) })
+    } else {
+      setFormData({ ...formData, [name]: value })
+    }
+  }
 
   const handleFileChange = (e) => {
     const f = e.target.files?.[0]
@@ -27,8 +39,30 @@ export default function ParentRegister() {
 
   const removeKycFile = (name) => setFiles((prev) => ({ ...prev, [name]: null }))
 
+  const validateStep1 = () => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(formData.email)) {
+      toast.error('Please enter a valid email address')
+      return false
+    }
+    if (formData.phone.length !== 10) {
+      toast.error('Phone number must be exactly 10 digits')
+      return false
+    }
+    if (formData.password.length < 8) {
+      toast.error('Password must be at least 8 characters')
+      return false
+    }
+    if (!files.agencyLogo) {
+      toast.error('Please upload your agency logo')
+      return false
+    }
+    return true
+  }
+
   const handleStep1 = (e) => {
     e.preventDefault()
+    if (!validateStep1()) return
     setStep(2)
   }
 
@@ -39,6 +73,7 @@ export default function ParentRegister() {
     if (files.aadharFront) submitData.append('aadharFront', files.aadharFront)
     if (files.aadharBack) submitData.append('aadharBack', files.aadharBack)
     if (files.panCard) submitData.append('panCard', files.panCard)
+    if (files.agencyLogo) submitData.append('agencyLogo', files.agencyLogo)
 
     const res = await registerParent(submitData)
     if (res.success) {
@@ -87,7 +122,8 @@ export default function ParentRegister() {
               <input
                 type="tel" name="phone" className="rform-input"
                 value={formData.phone} onChange={handleChange}
-                placeholder="10-digit number" autoComplete="tel" required
+                placeholder="10-digit number" autoComplete="tel"
+                maxLength={10} inputMode="numeric" required
               />
             </div>
           </div>
@@ -99,12 +135,20 @@ export default function ParentRegister() {
               <input
                 type={showPassword ? 'text' : 'password'} name="password" className="rform-input"
                 value={formData.password} onChange={handleChange}
-                placeholder="Min. 8 characters" minLength={8} autoComplete="new-password" required
+                placeholder="Min. 8 chars, 1 uppercase, 1 number" minLength={8} autoComplete="new-password" required
               />
               <button type="button" className="rform-eye-btn" onClick={() => setShowPassword((v) => !v)}>
                 {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
               </button>
             </div>
+          </div>
+
+          <div className="rform-field rform-field-full">
+            <AgencyLogoSlot
+              file={files.agencyLogo}
+              onFileChange={handleFileChange}
+              onRemove={removeKycFile}
+            />
           </div>
 
           <div className="rform-field rform-field-full rform-actions">

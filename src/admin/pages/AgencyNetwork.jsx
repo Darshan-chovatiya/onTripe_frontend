@@ -12,6 +12,7 @@ import {
   ArrowRight,
   UserCheck,
   LayoutGrid,
+  GitBranch,
   CheckCircle,
   XCircle,
   FileText
@@ -22,6 +23,7 @@ import Loader from '@/shared/components/Loader.jsx'
 import Modal from '@/shared/components/Modal.jsx'
 import CustomDropdown from '@/shared/components/CustomDropdown.jsx'
 import Pagination from '@/admin/components/Pagination.jsx'
+import HierarchyFlowchart from '@/admin/components/HierarchyFlowchart.jsx'
 
 // Internal component for Sub-Child Agency Listing inside nested Modal
 const SubChildAgenciesModal = ({ isOpen, onClose, parentAgency, onToggleStatus, getStatusBadge }) => {
@@ -298,6 +300,11 @@ const AgencyNetwork = () => {
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [total, setTotal] = useState(0)
+  const [hierarchyModal, setHierarchyModal] = useState({
+    open: false,
+    agentId: null,
+    title: '',
+  })
 
   const fetchParentAndChildren = async () => {
     setLoading(true)
@@ -403,6 +410,19 @@ const AgencyNetwork = () => {
             >
                <ChevronLeft size={16} /> Back
             </button>
+            <button 
+               type="button"
+               onClick={() =>
+                 setHierarchyModal({
+                   open: true,
+                   agentId: parentId,
+                   title: parentAgency?.name || 'Parent agency',
+                 })
+               }
+               className="flex items-center gap-2 bg-primary-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-primary-700 transition-all shadow-sm"
+            >
+               <LayoutGrid size={16} /> Full network map
+            </button>
          </div>
       </div>
 
@@ -443,6 +463,7 @@ const AgencyNetwork = () => {
                     <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest">KYC Status</th>
                     <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest text-center">Sub-Hierarchy</th>
                     <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest text-center">Traveler Matrix</th>
+                    <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest text-center">Flow map</th>
                     <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest">Joined On</th>
                     <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest text-right pr-10">Account Status</th>
                  </tr>
@@ -451,12 +472,12 @@ const AgencyNetwork = () => {
                  {loading ? (
                     Array(5).fill(0).map((_, i) => (
                        <tr key={i} className="animate-pulse">
-                          <td colSpan={7} className="px-6 py-4"><div className="h-10 bg-slate-50 rounded-xl" /></td>
+                          <td colSpan={8} className="px-6 py-4"><div className="h-10 bg-slate-50 rounded-xl" /></td>
                        </tr>
                     ))
                  ) : children.length === 0 ? (
                     <tr>
-                       <td colSpan={7} className="py-20 text-center">
+                       <td colSpan={8} className="py-20 text-center">
                           <Users size={40} className="mx-auto text-slate-200 mb-3" />
                           <h4 className="text-sm font-black text-slate-900 uppercase">Hierarchy Empty</h4>
                           <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest">No matching child nodes identified</p>
@@ -501,6 +522,7 @@ const AgencyNetwork = () => {
                         <td className="px-6 py-4">
                             <div className="flex justify-center">
                                <button 
+                                 type="button"
                                  onClick={() => {
                                     setSelectedChildForCustomers(child)
                                     setIsCustomerModalOpen(true)
@@ -509,6 +531,25 @@ const AgencyNetwork = () => {
                                >
                                   <Users size={14} />
                                   <span className="text-[10px] font-black uppercase tracking-widest">Audit</span>
+                               </button>
+                            </div>
+                        </td>
+                        <td className="px-6 py-4">
+                            <div className="flex justify-center">
+                               <button
+                                 type="button"
+                                 title="Full-screen map: this agency and everyone under it"
+                                 onClick={() =>
+                                   setHierarchyModal({
+                                     open: true,
+                                     agentId: child._id,
+                                     title: child.name,
+                                   })
+                                 }
+                                 className="flex h-9 items-center justify-center gap-2 rounded-xl border border-violet-200 bg-violet-50 px-3 text-violet-800 shadow-sm transition-all hover:border-violet-300 hover:bg-violet-100 active:scale-95"
+                               >
+                                  <GitBranch size={14} strokeWidth={2.5} />
+                                  <span className="text-[10px] font-black uppercase tracking-widest">Map</span>
                                </button>
                             </div>
                         </td>
@@ -558,6 +599,19 @@ const AgencyNetwork = () => {
         onClose={() => setIsCustomerModalOpen(false)}
         agency={selectedChildForCustomers}
       />
+
+      <Modal
+         isOpen={hierarchyModal.open}
+         onClose={() => setHierarchyModal((s) => ({ ...s, open: false }))}
+         title={`Agency map · ${hierarchyModal.title || 'Network'}`}
+         size="full"
+      >
+         <div className="flex h-[calc(100dvh-7rem)] min-h-[min(560px,85dvh)] w-full flex-col">
+            {hierarchyModal.agentId ? (
+              <HierarchyFlowchart type="agent" id={hierarchyModal.agentId} />
+            ) : null}
+         </div>
+      </Modal>
     </div>
   )
 }

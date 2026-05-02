@@ -37,6 +37,15 @@ export default function AgentAdminLogin() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email.trim())) {
+      setError('Please enter a valid email address')
+      return
+    }
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters')
+      return
+    }
     const res = await login({ email: email.trim(), password })
     if (!res.success) {
       setError(res.message || 'Login failed')

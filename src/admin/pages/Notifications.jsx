@@ -16,6 +16,7 @@ import {
   X,
   FileText,
   ImageIcon,
+  Bell,
 } from 'lucide-react'
 import adminApi from '@/admin/services/adminApi'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
@@ -56,6 +57,7 @@ export default function Notifications() {
   const [selectedIds, setSelectedIds] = useState(() => new Set())
 
   const [formData, setFormData] = useState({ subject: '', message: '' })
+  const [channels, setChannels] = useState(['email'])
   const [files, setFiles] = useState([])
   const fileInputRef = useRef(null)
 
@@ -136,6 +138,7 @@ export default function Notifications() {
       fd.append('message', formData.message.trim())
       fd.append('users', JSON.stringify(users))
       fd.append('customers', JSON.stringify(customers))
+      fd.append('channels', JSON.stringify(channels))
       files.forEach((f) => fd.append('attachments', f))
 
       const { data } = await adminApi.sendNotification(fd)
@@ -348,7 +351,32 @@ export default function Notifications() {
           <div className="lg:sticky lg:top-4">
             <div className="rounded-2xl border border-gray-200/80 bg-white p-6">
               <h2 className="text-sm font-medium text-gray-900">Message</h2>
-              <p className="mt-0.5 text-xs text-gray-400">Delivered by email</p>
+              <div className="mt-2 flex gap-4">
+                <label className="flex cursor-pointer items-center gap-2">
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900"
+                    checked={channels.includes('email')}
+                    onChange={(e) => {
+                      if (e.target.checked) setChannels([...channels, 'email'])
+                      else setChannels(channels.filter(c => c !== 'email'))
+                    }}
+                  />
+                  <span className="text-xs text-gray-600">Email</span>
+                </label>
+                <label className="flex cursor-pointer items-center gap-2">
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900"
+                    checked={channels.includes('fcm')}
+                    onChange={(e) => {
+                      if (e.target.checked) setChannels([...channels, 'fcm'])
+                      else setChannels(channels.filter(c => c !== 'fcm'))
+                    }}
+                  />
+                  <span className="text-xs text-gray-600">FCM (Push) <span className="opacity-50">— Customers only</span></span>
+                </label>
+              </div>
 
               <div className="mt-6 space-y-5">
                 <div>
