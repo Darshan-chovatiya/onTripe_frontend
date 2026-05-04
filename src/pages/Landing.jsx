@@ -266,7 +266,7 @@ export default function Landing() {
             <p className="ont-section-sub">Travelers get a beautiful app-like experience with real-time updates.</p>
             {[
               { icon: Calendar, title: 'Day-Wise Itinerary', desc: 'Structured plans with pickup times, activities, and driver details.' },
-              { icon: CheckCircle, title: 'Download Vouchers', desc: 'All tickets in one place â€” offline access included.' },
+              { icon: CheckCircle, title: 'Download Vouchers', desc: 'All tickets in one place offline access included.' },
               { icon: MessageSquare, title: 'Trip Group Chat', desc: 'Stay connected with your group and agent throughout the journey.' },
               { icon: MapPin, title: 'Live Trip Tracking', desc: 'Real-time status updates so travelers always know what\'s next.' },
             ].map((f) => (

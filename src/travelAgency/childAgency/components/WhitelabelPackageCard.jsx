@@ -138,55 +138,59 @@ export default function WhitelabelPackageCard({ item, onEdit, onToggleActive, on
         <button
           type="button"
           onClick={() => setDetailOpen(true)}
-          className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-gray-200 bg-white py-2 text-xs font-medium text-gray-700 transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-800"
+          className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-gray-200 bg-white py-2.5 text-xs font-semibold text-gray-700 transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-800"
         >
-          <Eye className="h-3.5 w-3.5" strokeWidth={2} />
+          <Eye className="h-4 w-4" strokeWidth={2} />
           View details
         </button>
 
         {disabled ? (
           <p className="text-center text-[11px] text-gray-400">Actions disabled — parent is inactive.</p>
         ) : (
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => onEdit(item)}
-              className="flex items-center justify-center gap-1.5 rounded-xl border border-gray-200 bg-white py-2 text-xs font-medium text-gray-700 transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-800"
-            >
-              <Pencil className="h-3.5 w-3.5" strokeWidth={2} />
-              Edit
-            </button>
-            <button
-              type="button"
-              onClick={() => onToggleActive(item)}
-              className={`flex items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-medium transition ${item.isActive
-                  ? 'border border-red-100 bg-white text-red-600 hover:bg-red-50'
-                  : 'border border-emerald-200 bg-white text-emerald-700 hover:bg-emerald-50'
-                }`}
-            >
-              <Power className="h-3.5 w-3.5" strokeWidth={2} />
-              {item.isActive ? 'Pause' : 'Activate'}
-            </button>
-            <button
-              type="button"
-              onClick={() => onRating(item)}
-              className="flex items-center justify-center gap-1.5 rounded-xl border border-amber-100 bg-amber-50 py-2 text-xs font-medium text-amber-700 transition hover:bg-amber-100"
-              title="Reviews"
-            >
-              <Star className="h-3.5 w-3.5 fill-current" strokeWidth={2} />
-              Reviews
-            </button>
-            {hasBooking && (
+          <div className="flex flex-col gap-2">
+            <div className="flex gap-2">
               <button
                 type="button"
-                onClick={onChat}
-                className="flex items-center justify-center gap-1.5 rounded-xl border border-primary-100 bg-primary-50 py-2 text-xs font-medium text-primary-700 transition hover:bg-primary-100"
-                title="Community"
+                onClick={() => onEdit(item)}
+                className="flex-1 flex items-center justify-center gap-1.5 rounded-lg border border-gray-200 bg-white py-2 text-xs font-medium text-gray-700 transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-800"
               >
-                <MessageSquare className="h-3.5 w-3.5" strokeWidth={2} />
-                Chat
+                <Pencil className="h-4 w-4" strokeWidth={2} />
+                Edit
               </button>
-            )}
+              <button
+                type="button"
+                onClick={() => onToggleActive(item)}
+                className={`flex-1 flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-medium transition ${item.isActive
+                    ? 'border border-red-100 bg-white text-red-600 hover:bg-red-50'
+                    : 'border border-emerald-200 bg-white text-emerald-700 hover:bg-emerald-50'
+                  }`}
+              >
+                <Power className="h-4 w-4" strokeWidth={2} />
+                {item.isActive ? 'Pause' : 'Activate'}
+              </button>
+            </div>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => onRating(item)}
+                className="flex-1 flex items-center justify-center gap-1.5 rounded-lg border border-amber-100 bg-amber-50 py-2 text-xs font-medium text-amber-700 transition hover:bg-amber-100"
+                title="Reviews"
+              >
+                <Star className="h-4 w-4 fill-current" strokeWidth={2} />
+                Reviews
+              </button>
+              {hasBooking && (
+                <button
+                  type="button"
+                  onClick={onChat}
+                  className="flex-1 flex items-center justify-center gap-1.5 rounded-lg border border-primary-100 bg-primary-50 py-2 text-xs font-medium text-primary-700 transition hover:bg-primary-100"
+                  title="Community"
+                >
+                  <MessageSquare className="h-4 w-4" strokeWidth={2} />
+                  Chat
+                </button>
+              )}
+            </div>
           </div>
         )}
       </div>

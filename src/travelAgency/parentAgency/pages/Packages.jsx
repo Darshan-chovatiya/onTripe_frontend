@@ -153,33 +153,35 @@ function PackageGridCard({ pkg, onEdit, onClone, onCover, onGallery, onToggle, o
             View details
           </button>
 
-          {/* Secondary actions — single row of icon buttons */}
-          <div className="flex items-center gap-1.5">
+          {/* Secondary actions — icon buttons only */}
+          <div className="flex items-center gap-2">
             <button type="button" onClick={() => onEdit(pkg)} title="Edit"
-              className="flex flex-1 items-center justify-center gap-1 rounded-lg border border-gray-200 bg-white py-1.5 text-[11px] font-medium text-gray-600 transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-700">
-              <Edit2 className="h-3.5 w-3.5" strokeWidth={2} /> Edit
+              className="flex-1 flex items-center justify-center gap-1.5 rounded-lg border border-gray-200 bg-white py-2 text-xs font-medium text-gray-600 transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-700">
+              <Edit2 className="h-4 w-4" strokeWidth={2} />
+              Edit
             </button>
             <button type="button" onClick={() => onClone(pkg)} title="Clone"
-              className="flex flex-1 items-center justify-center gap-1 rounded-lg border border-gray-200 bg-white py-1.5 text-[11px] font-medium text-gray-600 transition hover:border-gray-300 hover:bg-gray-50">
-              <Copy className="h-3.5 w-3.5" strokeWidth={2} /> Clone
+              className="flex-1 flex items-center justify-center gap-1.5 rounded-lg border border-gray-200 bg-white py-2 text-xs font-medium text-gray-600 transition hover:border-gray-300 hover:bg-gray-50 hover:text-gray-700">
+              <Copy className="h-4 w-4" strokeWidth={2} />
+              Clone
             </button>
-            <button type="button" onClick={() => onCover(pkg)} title="Cover image"
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 transition hover:border-sky-200 hover:bg-sky-50 hover:text-sky-700">
-              <ImageIcon className="h-3.5 w-3.5" strokeWidth={2} />
+            <button type="button" onClick={() => onCover(pkg)} title="Cover"
+              className="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 transition hover:border-sky-200 hover:bg-sky-50 hover:text-sky-700">
+              <ImageIcon className="h-4 w-4" strokeWidth={2} />
             </button>
             <button type="button" onClick={() => onGallery(pkg)} title="Gallery"
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 transition hover:border-violet-200 hover:bg-violet-50 hover:text-violet-700">
-              <ImagePlus className="h-3.5 w-3.5" strokeWidth={2} />
+              className="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 transition hover:border-violet-200 hover:bg-violet-50 hover:text-violet-700">
+              <ImagePlus className="h-4 w-4" strokeWidth={2} />
             </button>
             <button type="button"
               onClick={() => navigate(`${AGENCY_PANEL_BASE}/packages/${pkg._id}/community?title=${encodeURIComponent(pkg.title || '')}`)}
-              title="Community chat"
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700">
-              <MessageSquare className="h-3.5 w-3.5" strokeWidth={2} />
+              title="Chat"
+              className="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700">
+              <MessageSquare className="h-4 w-4" strokeWidth={2} />
             </button>
             <button type="button" onClick={() => onDelete(pkg)} title="Delete"
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-red-100 bg-white text-red-400 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600">
-              <Trash2 className="h-3.5 w-3.5" strokeWidth={2} />
+              className="flex h-10 w-10 items-center justify-center rounded-lg border border-red-100 bg-white text-red-400 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600">
+              <Trash2 className="h-4 w-4" strokeWidth={2} />
             </button>
           </div>
         </div>
@@ -223,7 +225,7 @@ function PackageListRow({ pkg, onEdit, onClone, onCover, onGallery, onToggle, on
       </div>
 
       {/* Stats */}
-      <div className="hidden items-center gap-4 sm:flex">
+      <div className="hidden items-center gap-4 lg:flex">
         <div className="text-center">
           <p className="text-[9px] font-medium uppercase tracking-wide text-gray-400">My Earnings</p>
           <p className="mt-0.5 text-xs font-bold tabular-nums text-primary-700">
@@ -263,82 +265,53 @@ function PackageListRow({ pkg, onEdit, onClone, onCover, onGallery, onToggle, on
         </div>
       </div>
 
-      {/* Actions */}
-      <div className="flex shrink-0 items-center justify-center gap-4">
-        {/* <button
-          type="button"
+      {/* Actions — single row */}
+      <div className="flex shrink-0 items-center gap-1" style={{ minWidth: '280px', justifyContent: 'flex-end' }}>
+        <button type="button" title="View details"
           onClick={() => navigate(`${AGENCY_PANEL_BASE}/packages/${pkg._id}`)}
-          className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-[11px] font-semibold text-gray-700 transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-800"
-        >
-          View Details
-        </button> */}
-        <div className="flex shrink-0 flex-col gap-1.5">
-          <div className="flex justify-end gap-1.5">
-            <button
-              type="button"
-              onClick={() => navigate(`${AGENCY_PANEL_BASE}/packages/${pkg._id}`)}
-              className="flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2 py-1 text-[11px] transition hover:border-sky-200 hover:text-sky-700 text-gray-600"
-            >
-              <Eye className="h-3.5 w-3.5" strokeWidth={2} />View
-            </button>
-            <button
-              type="button"
-              onClick={() => onCover(pkg)}
-              className="flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2 py-1 text-[11px] transition hover:border-sky-200 hover:text-sky-700 text-gray-600"
-            >
-              <ImageIcon className="h-3.5 w-3.5" strokeWidth={2} /> Cover
-            </button>
-            <button
-              type="button"
-              onClick={() => onGallery(pkg)}
-              className="flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2 py-1 text-[11px] transition hover:border-violet-200 hover:text-violet-700 text-gray-600"
-            >
-              <ImagePlus className="h-3.5 w-3.5" strokeWidth={2} /> Gallery
-            </button>
-            <button
-              type="button"
-              onClick={() => navigate(`${AGENCY_PANEL_BASE}/packages/${pkg._id}/community?title=${encodeURIComponent(pkg.title || '')}`)}
-              className="flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2 py-1 text-[11px] transition hover:border-emerald-200 hover:text-emerald-700 text-gray-600"
-            >
-              <MessageSquare className="h-3.5 w-3.5" strokeWidth={2} /> Chat
-            </button>
-          </div>
-          <div className="flex justify-end gap-1.5">
-            <button
-              type="button"
-              onClick={() => onEdit(pkg)}
-              className="flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-gray-700 transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-800"
-            >
-              <Edit2 className="h-3.5 w-3.5" strokeWidth={2} /> Edit
-            </button>
-            <button
-              type="button"
-              onClick={() => onClone(pkg)}
-              className="flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-gray-700 transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-800"
-            >
-              <Copy className="h-3.5 w-3.5" strokeWidth={2} /> Clone
-            </button>
-            <button
-              type="button"
-              onClick={() => onToggle(pkg)}
-              className={`flex items-center gap-1 rounded-lg border px-2.5 py-1 text-[11px] font-semibold transition ${pkg.isActive
-                  ? 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
-                  : 'border-red-200 bg-red-50 text-red-700 hover:bg-red-100'
-                }`}
-            >
-              {pkg.isActive ? <CheckCircle2 className="h-3.5 w-3.5" strokeWidth={2} /> : <XCircle className="h-3.5 w-3.5" strokeWidth={2} />}
-              {pkg.isActive ? 'Live' : 'Paused'}
-            </button>
-            <button
-              type="button"
-              onClick={() => onDelete(pkg)}
-              className="flex items-center gap-1 rounded-lg border border-red-100 bg-white px-2.5 py-1 text-[11px] font-semibold text-red-600 transition hover:border-red-200 hover:bg-red-50 hover:text-red-700"
-              title="Delete package"
-            >
-              <Trash2 className="h-3.5 w-3.5" strokeWidth={2} /> Delete
-            </button>
-          </div>
-        </div>
+          className="flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-700">
+          <Eye className="h-3.5 w-3.5" strokeWidth={2} />
+        </button>
+        <button type="button" title="Edit"
+          onClick={() => onEdit(pkg)}
+          className="flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-700">
+          <Edit2 className="h-3.5 w-3.5" strokeWidth={2} />
+        </button>
+        <button type="button" title="Clone"
+          onClick={() => onClone(pkg)}
+          className="flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 transition hover:border-gray-300 hover:bg-gray-50 hover:text-gray-700">
+          <Copy className="h-3.5 w-3.5" strokeWidth={2} />
+        </button>
+        <button type="button" title="Update cover"
+          onClick={() => onCover(pkg)}
+          className="flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 transition hover:border-sky-200 hover:bg-sky-50 hover:text-sky-700">
+          <ImageIcon className="h-3.5 w-3.5" strokeWidth={2} />
+        </button>
+        <button type="button" title="Update gallery"
+          onClick={() => onGallery(pkg)}
+          className="flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 transition hover:border-violet-200 hover:bg-violet-50 hover:text-violet-700">
+          <ImagePlus className="h-3.5 w-3.5" strokeWidth={2} />
+        </button>
+        <button type="button" title="Community chat"
+          onClick={() => navigate(`${AGENCY_PANEL_BASE}/packages/${pkg._id}/community?title=${encodeURIComponent(pkg.title || '')}`)}
+          className="flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700">
+          <MessageSquare className="h-3.5 w-3.5" strokeWidth={2} />
+        </button>
+        <button type="button" onClick={() => onToggle(pkg)}
+          title={pkg.isActive ? 'Pause package' : 'Activate package'}
+          className={`flex h-7 items-center gap-1 rounded-lg border px-2 text-[10px] font-bold transition ${
+            pkg.isActive
+              ? 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+              : 'border-red-200 bg-red-50 text-red-700 hover:bg-red-100'
+          }`}>
+          <span className={`h-1.5 w-1.5 rounded-full ${pkg.isActive ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}`} />
+          {pkg.isActive ? 'Live' : 'Paused'}
+        </button>
+        <button type="button" title="Delete"
+          onClick={() => onDelete(pkg)}
+          className="flex h-7 w-7 items-center justify-center rounded-lg border border-red-100 bg-white text-red-400 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600">
+          <Trash2 className="h-3.5 w-3.5" strokeWidth={2} />
+        </button>
       </div>
     </div>
   )
@@ -585,6 +558,7 @@ export default function Packages() {
       <PackageImageModal
         isOpen={imageModal.open}
         onClose={() => setImageModal({ open: false, pkg: null, mode: 'cover' })}
+        pkg={imageModal.pkg}
         onSubmit={handleImageSubmit}
         mode={imageModal.mode}
         loading={submitting}

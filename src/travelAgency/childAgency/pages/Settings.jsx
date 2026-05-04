@@ -316,7 +316,7 @@ export default function Settings() {
         </div>
       </div>
 
-      <ParentManagement listParents={listParents} addParent={addParent} toggleParentActive={toggleParentActive} label="Parent agencies" />
+      {/* <ParentManagement listParents={listParents} addParent={addParent} toggleParentActive={toggleParentActive} label="Parent agencies" /> */}
     </div>
   )
 }

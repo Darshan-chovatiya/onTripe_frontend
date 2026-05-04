@@ -260,23 +260,30 @@ export default function WhitelabelModal({
         </div>
 
         {mode === 'edit' && (
-          <div className="flex flex-col gap-3 border-t border-gray-100 pt-4">
-            <label className="flex cursor-pointer items-center gap-2 text-sm text-gray-700">
-              <input
-                type="checkbox"
-                checked={form.isActive}
-                onChange={(e) => setForm((f) => ({ ...f, isActive: e.target.checked }))}
-              />
-              Active (offer is bookable)
-            </label>
-            <label className="flex cursor-pointer items-center gap-2 text-sm text-gray-700">
-              <input
-                type="checkbox"
-                checked={form.visibleToSubChildren}
-                onChange={(e) => setForm((f) => ({ ...f, visibleToSubChildren: e.target.checked }))}
-              />
-              Visible to my agents
-            </label>
+          <div className="border-t border-gray-100 pt-4">
+            <div className="flex items-center justify-between rounded-xl bg-gradient-to-r from-primary-50 to-primary-50/50 border border-primary-100 p-4">
+              <div>
+                <p className="text-sm font-semibold text-gray-900">Offer Status</p>
+                <p className="mt-0.5 text-xs text-gray-600">
+                  {form.isActive ? 'This offer is active and bookable' : 'This offer is paused'}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setForm((f) => ({ ...f, isActive: !f.isActive }))}
+                className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors ${
+                  form.isActive
+                    ? 'bg-emerald-500 hover:bg-emerald-600'
+                    : 'bg-gray-300 hover:bg-gray-400'
+                }`}
+              >
+                <span
+                  className={`inline-block h-6 w-6 transform rounded-full bg-white shadow-md transition-transform ${
+                    form.isActive ? 'translate-x-7' : 'translate-x-1'
+                  }`}
+                />
+              </button>
+            </div>
           </div>
         )}
       </form>

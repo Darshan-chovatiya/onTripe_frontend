@@ -86,7 +86,7 @@ const EditKycDocRow = ({ doc, existingUrl, newFile, onFileChange, accept }) => {
               : existingUrl ? <FileCheck size={16} className="shrink-0 text-gray-600" strokeWidth={2} />
               : <FileText size={16} className="shrink-0 text-gray-300" strokeWidth={2} />}
             <span className="min-w-0 flex-1 truncate text-xs font-medium text-gray-800">
-              {newFile ? newFile.name : existingUrl ? 'Document on file â€” click to replace' : 'Click to upload'}
+              {newFile ? newFile.name : existingUrl ? 'Document on file click to replace' : 'Click to upload'}
             </span>
             {existingUrl && (
               <a href={getFileUrl(existingUrl)} target="_blank" rel="noreferrer"
@@ -337,7 +337,7 @@ function AgentFormModal({ mode, agent, agentRole, onClose, onSaved }) {
     <Modal
       isOpen
       onClose={onClose}
-      title={isEdit ? `Edit â€” ${agent.name}` : `Add ${agencyLabel} agency`}
+      title={isEdit ? `Edit ${agent.name}` : `Add ${agencyLabel} agency`}
       size="lg"
       footer={
         <div className="flex items-center justify-end gap-3 border-t border-gray-100 bg-gray-50/80 px-6 py-4">
@@ -431,7 +431,7 @@ function AgentFormModal({ mode, agent, agentRole, onClose, onSaved }) {
                   {selectedParent.code && <span className="shrink-0 rounded bg-gray-100 px-1.5 py-0.5 font-mono text-[10px] text-gray-600">{selectedParent.code}</span>}
                 </span>
               ) : (
-                <span className="flex-1 text-left text-gray-400">{parentsLoading ? 'Loadingâ€¦' : `Select ${parentLabel}`}</span>
+                <span className="flex-1 text-left text-gray-400">{parentsLoading ? 'Loading' : `Select ${parentLabel}`}</span>
               )}
               <div className="flex shrink-0 items-center gap-1">
                 {selectedParent && (
@@ -452,7 +452,7 @@ function AgentFormModal({ mode, agent, agentRole, onClose, onSaved }) {
                   <div className="relative">
                     <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" strokeWidth={2} />
                     <input autoFocus type="text" value={parentSearch} onChange={e => setParentSearch(e.target.value)}
-                      placeholder="Search by name or codeâ€¦"
+                      placeholder="Search by name or code"
                       className="w-full rounded-lg border border-gray-200 bg-gray-50 py-1.5 pl-8 pr-3 text-xs text-gray-900 placeholder:text-gray-400 focus:border-gray-300 focus:outline-none" />
                   </div>
                 </div>
@@ -462,7 +462,7 @@ function AgentFormModal({ mode, agent, agentRole, onClose, onSaved }) {
                     <span className="italic">No parent assigned</span>
                   </button>
                   {parentsLoading ? (
-                    <div className="flex items-center justify-center py-6 text-xs text-gray-400">Loadingâ€¦</div>
+                    <div className="flex items-center justify-center py-6 text-xs text-gray-400">Loading..</div>
                   ) : filteredParents.length === 0 ? (
                     <div className="py-6 text-center text-xs text-gray-400">No results found</div>
                   ) : filteredParents.map(opt => (
@@ -771,12 +771,12 @@ export default function ChildAgencies({ agentRole = 'child_agent', pageTitle = '
               <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
                 <div>
                   <p className="text-xs font-medium text-gray-400">Agent code</p>
-                  <p className="mt-0.5 text-sm font-semibold text-primary-700">{selectedAgent.agentCode || 'â€”'}</p>
+                  <p className="mt-0.5 text-sm font-semibold text-primary-700">{selectedAgent.agentCode || '—'}</p>
                 </div>
                 <div>
                   <p className="text-xs font-medium text-gray-400">Parent agency</p>
                   {parents.length === 0 ? (
-                    <p className="mt-0.5 text-sm text-gray-400">â€”</p>
+                    <p className="mt-0.5 text-sm text-gray-400">—</p>
                   ) : (
                     <div className="mt-0.5 space-y-0.5">
                       {parents.map((p, i) => (
@@ -798,11 +798,11 @@ export default function ChildAgencies({ agentRole = 'child_agent', pageTitle = '
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
                   <p className="text-xs font-medium text-gray-400">Email</p>
-                  <p className="mt-0.5 break-all text-sm text-gray-900">{selectedAgent.email || 'â€”'}</p>
+                  <p className="mt-0.5 break-all text-sm text-gray-900">{selectedAgent.email || '—'}</p>
                 </div>
                 <div>
                   <p className="text-xs font-medium text-gray-400">Phone</p>
-                  <p className="mt-0.5 text-sm text-gray-900">{selectedAgent.phone || 'â€”'}</p>
+                  <p className="mt-0.5 text-sm text-gray-900">{selectedAgent.phone || '—'}</p>
                 </div>
               </div>
 
@@ -826,7 +826,7 @@ export default function ChildAgencies({ agentRole = 'child_agent', pageTitle = '
                     id="kyc-reject-reason-child"
                     rows={3}
                     className="w-full resize-none rounded-xl border border-gray-200 bg-gray-50/50 px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-200"
-                    placeholder="Explain what is missing or incorrectâ€¦"
+                    placeholder="Explain what is missing or incorrect…"
                     value={rejectionReason}
                     onChange={(e) => setRejectionReason(e.target.value)}
                   />
@@ -920,7 +920,7 @@ export default function ChildAgencies({ agentRole = 'child_agent', pageTitle = '
         <div className="flex flex-col gap-3 border-b border-gray-200 px-4 py-3 sm:flex-row sm:flex-wrap sm:items-center">
           <div className="relative w-full min-w-0 flex-1">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" strokeWidth={2} />
-            <input type="search" placeholder="Search name, email, or phoneâ€¦" autoComplete="off"
+            <input type="search" placeholder="Search name, email, or phone…" autoComplete="off"
               className="w-full rounded-md border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-gray-300 focus:outline-none focus:ring-1 focus:ring-gray-300"
               value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
           </div>
@@ -944,7 +944,7 @@ export default function ChildAgencies({ agentRole = 'child_agent', pageTitle = '
         {loading ? (
           <div className="flex flex-col items-center justify-center py-16">
             <Loader size="lg" />
-            <p className="mt-4 text-xs text-gray-500">Loading agenciesâ€¦</p>
+            <p className="mt-4 text-xs text-gray-500">Loading agencies…</p>
           </div>
         ) : agents.length === 0 ? (
           <div className="px-4 py-14 text-center">
@@ -989,7 +989,7 @@ export default function ChildAgencies({ agentRole = 'child_agent', pageTitle = '
                               <Mail className="h-3 w-3 shrink-0 text-gray-400" strokeWidth={2} />
                               <span className="truncate">{agent.email}</span>
                             </div>
-                            <div className="mt-1 text-[11px] font-medium text-primary-700">{agent.agentCode || 'â€”'}</div>
+                            <div className="mt-1 text-[11px] font-medium text-primary-700">{agent.agentCode || '-'}</div>
                           </div>
                         </div>
                       </td>
@@ -998,11 +998,11 @@ export default function ChildAgencies({ agentRole = 'child_agent', pageTitle = '
                           const parents = Array.isArray(agent.allParents) && agent.allParents.length > 0
                             ? agent.allParents
                             : agent.parentName ? [{ name: agent.parentName, agentCode: agent.parentCode }] : []
-                          if (parents.length === 0) return <span className="text-xs text-gray-400">â€”</span>
+                          if (parents.length === 0) return <span className="text-xs text-gray-400">-</span>
                           if (parents.length === 1) return (
                             <div>
                               <p className="text-xs font-medium text-gray-900 leading-tight">{parents[0].name}</p>
-                              <p className="text-[10px] text-gray-400">Code: {parents[0].agentCode || 'â€”'}</p>
+                              <p className="text-[10px] text-gray-400">Code: {parents[0].agentCode || '-'}</p>
                             </div>
                           )
                           const parentsPath = agentRole === 'sub_child_agent'
@@ -1088,7 +1088,7 @@ export default function ChildAgencies({ agentRole = 'child_agent', pageTitle = '
                               })
                             }
                             className="inline-flex rounded-lg border border-violet-200 bg-violet-50 p-2 text-violet-700 transition-colors hover:border-violet-300 hover:bg-violet-100 active:scale-95"
-                            title="Network map â€” this agency and downstream tree"
+                            title="Network map this agency and downstream tree"
                             aria-label={`Hierarchy map for ${agent.name}`}
                           >
                             <GitBranch className="h-4 w-4" strokeWidth={2} />
