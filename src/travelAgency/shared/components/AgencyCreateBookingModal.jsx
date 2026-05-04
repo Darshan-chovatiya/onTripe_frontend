@@ -89,6 +89,23 @@ export default function AgencyCreateBookingModal({
 
   const activeWhitelabels = (whitelabels ?? []).filter((w) => w.isActive !== false)
 
+  // Helper: get startDate from currently selected offer
+  const getOfferStartDate = (type, wlId, pkgId) => {
+    if (type === 'whitelabel') {
+      const wl = (whitelabels ?? []).find(w => String(w._id) === wlId)
+      return wl?.originalPackage?.startDate ?? null
+    }
+    const pkg = (availablePackages ?? []).find(p => String(p._id) === pkgId)
+    return pkg?.startDate ?? null
+  }
+
+  const toDatetimeLocal = (dateVal) => {
+    if (!dateVal) return ''
+    const d = new Date(dateVal)
+    const pad = (n) => String(n).padStart(2, '0')
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+  }
+
   useEffect(() => {
     if (!isOpen) return
     const hasWl = activeWhitelabels.length > 0
@@ -125,10 +142,16 @@ export default function AgencyCreateBookingModal({
 
   useEffect(() => {
     if (!isOpen) return
-    if (offerType === 'whitelabel' && activeWhitelabels.length && !whitelabelId)
-      setWhitelabelId(String(activeWhitelabels[0]._id))
-    if (offerType === 'package' && availablePackages?.length && !packageId)
-      setPackageId(String(availablePackages[0]._id))
+    if (offerType === 'whitelabel' && activeWhitelabels.length && !whitelabelId) {
+      const first = activeWhitelabels[0]
+      setWhitelabelId(String(first._id))
+      setTravelDate(toDatetimeLocal(first.originalPackage?.startDate))
+    }
+    if (offerType === 'package' && availablePackages?.length && !packageId) {
+      const first = availablePackages[0]
+      setPackageId(String(first._id))
+      setTravelDate(toDatetimeLocal(first.startDate))
+    }
   }, [isOpen, offerType, activeWhitelabels, availablePackages, whitelabelId, packageId])
 
   const runPhoneLookup = useCallback(async () => {
@@ -225,6 +248,8 @@ export default function AgencyCreateBookingModal({
     customerName.trim() && normalizePhone(customerPhone) && travelDate && totalAmount && (whitelabelId || packageId)
   )
 
+  const offerHasDate = Boolean(getOfferStartDate(offerType, whitelabelId, packageId))
+
   const footer = (
     <div className="flex justify-end gap-3 p-4">
       <Button type="button" variant="secondary" onClick={onClose} disabled={loading}>Cancel</Button>
@@ -263,7 +288,13 @@ export default function AgencyCreateBookingModal({
           <div>
             <label htmlFor="bk-wl" className="mb-1 block text-sm font-medium text-gray-700">White-label offer</label>
             <select id="bk-wl" className="input-field w-full" value={whitelabelId}
-              onChange={(e) => { setWhitelabelId(e.target.value); setOfferType('whitelabel') }}>
+              onChange={(e) => {
+                const id = e.target.value
+                setWhitelabelId(id)
+                setOfferType('whitelabel')
+                const wl = (whitelabels ?? []).find(w => String(w._id) === id)
+                setTravelDate(toDatetimeLocal(wl?.originalPackage?.startDate))
+              }}>
               {activeWhitelabels.map((w) => (
                 <option key={w._id} value={w._id}>
                   {w.customTitle || w.originalPackage?.title || 'Offer'}
@@ -463,8 +494,13 @@ export default function AgencyCreateBookingModal({
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <label htmlFor="bk-date" className="mb-1 block text-sm font-medium text-gray-700">Travel date</label>
-            <input id="bk-date" type="datetime-local" className="input-field w-full" value={travelDate}
-              onChange={(e) => setTravelDate(e.target.value)} required />
+            <input id="bk-date" type="datetime-local" className={`input-field w-full ${offerHasDate ? 'bg-gray-50 text-gray-600 cursor-default' : ''}`} value={travelDate}
+              onChange={(e) => !offerHasDate && setTravelDate(e.target.value)}
+              readOnly={offerHasDate}
+              required />
+            {offerHasDate && (
+              <p className="mt-1 text-xs text-primary-600">Date is fixed by the package schedule.</p>
+            )}
           </div>
           <div>
             <label htmlFor="bk-amount" className="mb-1 block text-sm font-medium text-gray-700">Total amount (₹)</label>

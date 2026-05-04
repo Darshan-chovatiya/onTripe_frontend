@@ -396,9 +396,6 @@ const AddAgencyModal = ({ isOpen, onClose, onRefresh }) => {
     phone: '',
     password: '',
     role: 'parent_agent',
-    gstNumber: '',
-    address: '',
-    contactPersonName: '',
     kycStatus: 'approved',
     kycRejectionReason: '',
   })
@@ -449,6 +446,20 @@ const AddAgencyModal = ({ isOpen, onClose, onRefresh }) => {
       newErrors.password = 'Password must be at least 8 characters'
     }
 
+    // Agency logo validation
+    if (!files.agencyLogo) {
+      newErrors.agencyLogo = 'Agency logo is required'
+    }
+    if (!files.aadharFront) {
+      newErrors.aadharFront = 'Aadhar front is required'
+    }
+    if (!files.aadharBack) {
+      newErrors.aadharBack = 'Aadhar back is required'
+    }
+    if (!files.panCard) {
+      newErrors.panCard = 'PAN card is required'
+    }
+
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
@@ -476,9 +487,6 @@ const AddAgencyModal = ({ isOpen, onClose, onRefresh }) => {
           phone: '',
           password: '',
           role: 'parent_agent',
-          gstNumber: '',
-          address: '',
-          contactPersonName: '',
           kycStatus: 'approved',
           kycRejectionReason: '',
         })
@@ -495,7 +503,7 @@ const AddAgencyModal = ({ isOpen, onClose, onRefresh }) => {
     }
   }
 
-  const FileSlot = ({ label, id, currentFile, accept }) => {
+  const FileSlot = ({ label, id, currentFile, accept, hasError }) => {
     const [previewUrl, setPreviewUrl] = useState(null)
 
     useEffect(() => {
@@ -519,11 +527,11 @@ const AddAgencyModal = ({ isOpen, onClose, onRefresh }) => {
 
     return (
       <div className="min-w-0 space-y-2">
-        <label className="ml-1 block text-[10px] font-semibold uppercase tracking-wide text-gray-500">{label}</label>
+        <label className={`ml-1 block text-[10px] font-semibold uppercase tracking-wide ${hasError ? 'text-red-500' : 'text-gray-500'}`}>{label}</label>
         <label
           htmlFor={id}
           className={`group relative flex cursor-pointer flex-col gap-2 rounded-xl border p-3 transition-colors ${
-            currentFile ? 'border-gray-300 bg-gray-50' : 'border-dashed border-gray-200 bg-gray-50 hover:border-gray-300 hover:bg-white'
+            currentFile ? 'border-gray-300 bg-gray-50' : hasError ? 'border-dashed border-red-300 bg-red-50 hover:border-red-400 hover:bg-white' : 'border-dashed border-gray-200 bg-gray-50 hover:border-gray-300 hover:bg-white'
           }`}
         >
           <div className="flex items-center gap-2">
@@ -597,7 +605,7 @@ const AddAgencyModal = ({ isOpen, onClose, onRefresh }) => {
             </div>
             <div>
               <h3 className="text-sm font-semibold text-gray-900">Agency details</h3>
-              <p className="text-xs text-gray-500">Legal name, contacts, GST, login password, and address</p>
+              <p className="text-xs text-gray-500">Name, email, phone and login password</p>
             </div>
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -605,16 +613,6 @@ const AddAgencyModal = ({ isOpen, onClose, onRefresh }) => {
               <label className={`mb-1.5 ml-1 block text-xs font-medium ${errors.name ? 'text-red-500' : 'text-gray-600'}`}>Full name <span className="text-red-500">*</span></label>
               <input required type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className={`h-11 w-full rounded-xl border px-4 text-sm outline-none transition ${errors.name ? 'border-red-500' : 'border-gray-200 bg-gray-50/50 focus:border-gray-400 focus:bg-white'}`} placeholder="Company or individual name" />
               {errors.name && <div className="mt-1 ml-1 flex items-center gap-1 text-[11px] font-medium text-red-500"><AlertCircle size={11} /> {errors.name}</div>}
-            </div>
-            <div>
-              <label className="mb-1.5 ml-1 block text-xs font-medium text-gray-600">Contact person name</label>
-              <input
-                type="text"
-                value={formData.contactPersonName}
-                onChange={(e) => setFormData({ ...formData, contactPersonName: e.target.value })}
-                className="h-11 w-full rounded-xl border border-gray-200 bg-gray-50/50 px-4 text-sm outline-none transition focus:border-gray-400 focus:bg-white"
-                placeholder="Primary contact"
-              />
             </div>
             <div>
               <label className={`mb-1.5 ml-1 block text-xs font-medium ${errors.email ? 'text-red-500' : 'text-gray-600'}`}>Email <span className="text-red-500">*</span></label>
@@ -627,16 +625,6 @@ const AddAgencyModal = ({ isOpen, onClose, onRefresh }) => {
               {errors.phone && <div className="mt-1 ml-1 flex items-center gap-1 text-[11px] font-medium text-red-500"><AlertCircle size={11} /> {errors.phone}</div>}
             </div>
             <div>
-              <label className="mb-1.5 ml-1 block text-xs font-medium text-gray-600">GST number</label>
-              <input
-                type="text"
-                value={formData.gstNumber}
-                onChange={(e) => setFormData({ ...formData, gstNumber: e.target.value })}
-                className="h-11 w-full rounded-xl border border-gray-200 bg-gray-50/50 px-4 text-sm outline-none transition focus:border-gray-400 focus:bg-white"
-                placeholder="e.g. 22AAAAA0000A1Z5"
-              />
-            </div>
-            <div>
               <label className={`mb-1.5 ml-1 block text-xs font-medium ${errors.password ? 'text-red-500' : 'text-gray-600'}`}>Password <span className="text-red-500">*</span></label>
               <div className="relative">
                 <input required type={showPassword ? 'text' : 'password'} value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} className={`h-11 w-full rounded-xl border px-4 pr-11 text-sm outline-none transition ${errors.password ? 'border-red-500' : 'border-gray-200 bg-gray-50/50 focus:border-gray-400 focus:bg-white'}`} placeholder="Minimum 8 characters" />
@@ -645,16 +633,6 @@ const AddAgencyModal = ({ isOpen, onClose, onRefresh }) => {
                 </button>
               </div>
               {errors.password && <div className="mt-1 ml-1 flex items-center gap-1 text-[11px] font-medium text-red-500"><AlertCircle size={11} /> {errors.password}</div>}
-            </div>
-            <div className="sm:col-span-2">
-              <label className="mb-1.5 ml-1 block text-xs font-medium text-gray-600">Address</label>
-              <textarea
-                value={formData.address}
-                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                rows={3}
-                className="w-full resize-y rounded-xl border border-gray-200 bg-gray-50/50 px-4 py-2.5 text-sm outline-none transition focus:border-gray-400 focus:bg-white"
-                placeholder="Registered / business address"
-              />
             </div>
           </div>
         </section>
@@ -696,17 +674,24 @@ const AddAgencyModal = ({ isOpen, onClose, onRefresh }) => {
             )}
           </div>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-            <FileSlot label="Aadhar front" id="aadharFront" currentFile={files.aadharFront} />
-            <FileSlot label="Aadhar back" id="aadharBack" currentFile={files.aadharBack} />
-            <FileSlot label="PAN card" id="panCard" currentFile={files.panCard} />
+            <FileSlot label="Aadhar front *" id="aadharFront" currentFile={files.aadharFront} hasError={!!errors.aadharFront} />
+            <FileSlot label="Aadhar back *" id="aadharBack" currentFile={files.aadharBack} hasError={!!errors.aadharBack} />
+            <FileSlot label="PAN card *" id="panCard" currentFile={files.panCard} hasError={!!errors.panCard} />
           </div>
+          {(errors.aadharFront || errors.aadharBack || errors.panCard) && (
+            <div className="mt-2 flex items-center gap-1 text-[11px] font-medium text-red-500 ml-1">
+              <AlertCircle size={11} /> Aadhar front, Aadhar back and PAN card are required
+            </div>
+          )}
           <div className="mt-4 max-w-md">
             <FileSlot
-              label="Agency logo (optional)"
+              label="Agency logo *"
               id="agencyLogo"
               currentFile={files.agencyLogo}
               accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
+              hasError={!!errors.agencyLogo}
             />
+            {errors.agencyLogo && <div className="mt-1 ml-1 flex items-center gap-1 text-[11px] font-medium text-red-500"><AlertCircle size={11} /> {errors.agencyLogo}</div>}
           </div>
           <div className="mt-4 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-600">
             Default is Approved when you add documents from admin. Choose Pending or Rejected if you need a different initial state.

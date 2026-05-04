@@ -50,6 +50,7 @@ import ClonePackage from '@/travelAgency/parentAgency/pages/ClonePackage.jsx'
 import AgencyVendors from '@/travelAgency/agency/pages/AgencyVendors.jsx'
 import AgencyBookings from '@/travelAgency/agency/pages/AgencyBookings.jsx'
 import AgencyMyBookings from '@/travelAgency/agency/pages/AgencyMyBookings.jsx'
+import AgencyEarnings from '@/travelAgency/agency/pages/AgencyEarnings.jsx'
 import AgencyCreateBooking from '@/travelAgency/agency/pages/AgencyCreateBooking.jsx'
 import AgencyEditBooking from '@/travelAgency/agency/pages/AgencyEditBooking.jsx'
 import BookingDetail from '@/travelAgency/childAgency/pages/BookingDetail.jsx'
@@ -291,6 +292,14 @@ export default function AppRouter() {
           element={
             <AgencyPermissionRoute permission={P.BOOKINGS_OWN}>
               <AgencyEditBooking />
+            </AgencyPermissionRoute>
+          }
+        />
+        <Route
+          path="earnings"
+          element={
+            <AgencyPermissionRoute permission={P.EARNINGS}>
+              <AgencyEarnings />
             </AgencyPermissionRoute>
           }
         />

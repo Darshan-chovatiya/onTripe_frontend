@@ -86,6 +86,7 @@ export default function CreateBooking() {
   const [lookupMeta, setLookupMeta] = useState(null)
   const skipNextLookupRef = useRef(false)
   const [basePackagePrice, setBasePackagePrice] = useState(0)
+  const [maxCapacity, setMaxCapacity] = useState(null)
 
   const activeWhitelabels = (whitelabels ?? []).filter((w) => w.isActive !== false)
 
@@ -100,11 +101,13 @@ export default function CreateBooking() {
       const first = activeWhitelabels[0]
       setWhitelabelId(String(first._id))
       setBasePackagePrice(first.finalPrice || 0)
+      setMaxCapacity(first.originalPackage?.maxCapacity ?? first.maxCapacity ?? null)
     }
     if (offerType === 'package' && availablePackages?.length && !packageId) {
       const first = availablePackages[0]
       setPackageId(String(first._id))
       setBasePackagePrice(first.basePrice || 0)
+      setMaxCapacity(first.maxCapacity ?? null)
     }
   }, [offerType, activeWhitelabels, availablePackages, whitelabelId, packageId])
 
@@ -118,6 +121,9 @@ export default function CreateBooking() {
     setOfferType('whitelabel')
     const wl = activeWhitelabels.find(w => String(w._id) === id)
     setBasePackagePrice(wl?.finalPrice || 0)
+    const cap = wl?.originalPackage?.maxCapacity ?? wl?.maxCapacity ?? null
+    setMaxCapacity(cap)
+    if (cap) setTravelers(t => t.slice(0, Math.max(0, cap - 1)))
   }
 
   const handlePackageChange = (id) => {
@@ -125,6 +131,9 @@ export default function CreateBooking() {
     setOfferType('package')
     const pkg = availablePackages.find(p => String(p._id) === id)
     setBasePackagePrice(pkg?.basePrice || 0)
+    const cap = pkg?.maxCapacity ?? null
+    setMaxCapacity(cap)
+    if (cap) setTravelers(t => t.slice(0, Math.max(0, cap - 1)))
   }
 
   useEffect(() => {
@@ -176,7 +185,14 @@ export default function CreateBooking() {
     return () => clearTimeout(t)
   }, [customerPhone, customerMode, runPhoneLookup])
 
-  const addTraveler = () => setTravelers((t) => [...t, emptyTraveler()])
+  const addTraveler = () => {
+    const maxAdditional = maxCapacity != null ? maxCapacity - 1 : Infinity
+    if (travelers.length >= maxAdditional) {
+      toast.error(`Max capacity is ${maxCapacity}. Primary customer + ${maxCapacity - 1} additional traveler(s) allowed.`)
+      return
+    }
+    setTravelers((t) => [...t, emptyTraveler()])
+  }
   const removeTraveler = (i) => setTravelers((t) => t.filter((_, idx) => idx !== i))
   const setTravelerField = (i, field, value) =>
     setTravelers((t) => t.map((row, idx) => idx === i ? { ...row, [field]: value } : row))
@@ -199,6 +215,11 @@ export default function CreateBooking() {
     e.preventDefault()
     const amount = Number(totalAmount)
     if (Number.isNaN(amount) || amount <= 0) return
+
+    if (maxCapacity != null && travelers.length + 1 > maxCapacity) {
+      toast.error(`Max capacity is ${maxCapacity}. Remove some travelers.`)
+      return
+    }
 
     const fd = new FormData()
     fd.append('customerName', customerName.trim())
@@ -417,8 +438,25 @@ export default function CreateBooking() {
         {/* Additional travelers */}
         <div>
           <div className="mb-2 flex items-center justify-between">
-            <span className="text-sm font-medium text-gray-700">Additional travelers</span>
-            <Button type="button" variant="secondary" className="py-1.5 text-xs" onClick={addTraveler}>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-gray-700">Additional travelers</span>
+              {maxCapacity != null && (
+                <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                  travelers.length + 1 >= maxCapacity
+                    ? 'bg-red-100 text-red-700'
+                    : travelers.length + 1 >= maxCapacity - 1
+                    ? 'bg-amber-100 text-amber-700'
+                    : 'bg-slate-100 text-slate-600'
+                }`}>
+                  {travelers.length + 1}/{maxCapacity} seats used
+                </span>
+              )}
+            </div>
+            <Button
+              type="button" variant="secondary" className="py-1.5 text-xs"
+              onClick={addTraveler}
+              disabled={maxCapacity != null && travelers.length >= maxCapacity - 1}
+            >
               <Plus className="mr-1 inline h-3.5 w-3.5" /> Add traveler
             </Button>
           </div>

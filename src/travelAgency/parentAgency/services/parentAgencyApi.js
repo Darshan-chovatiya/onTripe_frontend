@@ -140,7 +140,8 @@ export function getProfile() {
 }
 
 export function updateProfile(data) {
-  return axiosInstance.patch('/parent-agent/profile', data)
+  const isFormData = data instanceof FormData
+  return axiosInstance.patch('/parent-agent/profile', data, isFormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : {})
 }
 
 export function changePassword(data) {
@@ -172,4 +173,8 @@ export function deleteBookingTicket(id, ticketId) {
 
 export function updateKyc(formData) {
   return axiosInstance.patch('/parent-agent/kyc', formData)
+}
+
+export function getEarnings(params = {}) {
+  return axiosInstance.get('/parent-agent/earnings', { params })
 }

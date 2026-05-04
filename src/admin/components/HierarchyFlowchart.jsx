@@ -27,6 +27,13 @@ import {
   ChevronDown,
   ChevronUp,
   LayoutGrid,
+  TrendingUp,
+  IndianRupee,
+  Tag,
+  ShieldCheck,
+  ShieldX,
+  ShieldAlert,
+  PowerOff,
 } from 'lucide-react';
 
 const dagreGraph = new dagre.graphlib.Graph();
@@ -112,8 +119,22 @@ const CustomNode = ({ data }) => {
   const metrics = data.metrics || [];
   const tone =
     data.type === 'agent'
-      ? { ring: 'border-primary-500', iconBg: 'bg-primary-500', Icon: Building2 }
-      : { ring: 'border-amber-500', iconBg: 'bg-amber-500', Icon: Package };
+      ? {
+          ring: data.kycStatus === 'approved'
+            ? 'border-primary-500'
+            : data.kycStatus === 'rejected'
+            ? 'border-red-400'
+            : 'border-amber-400',
+          iconBg: data.kycStatus === 'approved'
+            ? 'bg-primary-500'
+            : data.kycStatus === 'rejected'
+            ? 'bg-red-400'
+            : 'bg-amber-400',
+          Icon: Building2,
+        }
+      : data.isRoot
+      ? { ring: 'border-amber-500', iconBg: 'bg-amber-500', Icon: Package }
+      : { ring: 'border-violet-500', iconBg: 'bg-violet-500', Icon: Layers };
 
   const bookings = data.type === 'package' && Array.isArray(data.bookings) ? data.bookings : [];
   const showBookings = bookings.length > 0;
@@ -141,7 +162,42 @@ const CustomNode = ({ data }) => {
           <tone.Icon size={22} strokeWidth={2} />
         </div>
         <div className="min-w-0 flex-1">
-          <div className="text-sm font-black leading-tight text-slate-900">{data.title}</div>
+          <div className="flex items-start justify-between gap-1">
+            <div className="text-sm font-black leading-tight text-slate-900">{data.title}</div>
+            {data.type === 'agent' && (
+              <div className="flex shrink-0 flex-col items-end gap-1">
+                {/* KYC badge */}
+                {data.kycStatus === 'approved' ? (
+                  <span className="flex items-center gap-0.5 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wide text-emerald-700">
+                    <ShieldCheck className="h-2.5 w-2.5" strokeWidth={2.5} />
+                    Verified
+                  </span>
+                ) : data.kycStatus === 'rejected' ? (
+                  <span className="flex items-center gap-0.5 rounded-full bg-red-100 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wide text-red-700">
+                    <ShieldX className="h-2.5 w-2.5" strokeWidth={2.5} />
+                    Rejected
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-0.5 rounded-full bg-amber-100 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wide text-amber-700">
+                    <ShieldAlert className="h-2.5 w-2.5" strokeWidth={2.5} />
+                    Pending
+                  </span>
+                )}
+                {/* Active/Inactive badge */}
+                {data.isActive ? (
+                  <span className="flex items-center gap-0.5 rounded-full bg-green-100 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wide text-green-700">
+                    <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
+                    Active
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-0.5 rounded-full bg-slate-200 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wide text-slate-600">
+                    <PowerOff className="h-2.5 w-2.5" strokeWidth={2.5} />
+                    Inactive
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
           <div className="mt-0.5 text-[9px] font-bold uppercase leading-snug tracking-wide text-slate-400">
             {data.subtitle}
           </div>
@@ -187,6 +243,55 @@ const CustomNode = ({ data }) => {
               <div className="text-lg font-black tabular-nums leading-none text-slate-900">{m.value}</div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Pricing chain — only on package nodes */}
+      {data.type === 'package' && (
+        <div className="mt-3 rounded-xl border border-amber-200/80 bg-gradient-to-br from-amber-50 to-orange-50/40 px-2.5 py-2 shadow-sm">
+          <div className="mb-2 flex items-center gap-1 text-[9px] font-black uppercase tracking-widest text-amber-900">
+            <IndianRupee className="h-3 w-3" strokeWidth={2.5} />
+            Pricing chain
+          </div>
+          {data.isRoot ? (
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-semibold text-slate-600">Base price (original)</span>
+              <span className="text-sm font-black tabular-nums text-amber-900">
+                ₹{Number(data.basePrice || 0).toLocaleString('en-IN')}
+              </span>
+            </div>
+          ) : (
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-semibold text-slate-500">Original base price</span>
+                <span className="text-[11px] font-bold tabular-nums text-slate-700">
+                  ₹{Number(data.basePrice || 0).toLocaleString('en-IN')}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="flex items-center gap-1 text-[10px] font-semibold text-violet-700">
+                  <TrendingUp className="h-3 w-3" strokeWidth={2} />
+                  Commission added
+                </span>
+                <span className="text-[11px] font-bold tabular-nums text-violet-800">
+                  {data.commissionType === 'percentage'
+                    ? `${data.commissionValue}%`
+                    : data.commissionType === 'flat'
+                    ? `+₹${Number(data.commissionValue || 0).toLocaleString('en-IN')}`
+                    : '—'}
+                </span>
+              </div>
+              <div className="mt-1 flex items-center justify-between border-t border-amber-200 pt-1.5">
+                <span className="flex items-center gap-1 text-[10px] font-black text-amber-900">
+                  <Tag className="h-3 w-3" strokeWidth={2} />
+                  Selling price
+                </span>
+                <span className="text-sm font-black tabular-nums text-amber-900">
+                  ₹{Number(data.finalPrice || 0).toLocaleString('en-IN')}
+                </span>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -491,7 +596,7 @@ function PackageBookingsSheet({ rows }) {
         </span>
       </div>
       <div className="max-h-[min(320px,42vh)] overflow-auto px-2 pb-3 pt-2">
-        <table className="w-full min-w-[640px] border-collapse text-left text-xs">
+        <table className="w-full min-w-[860px] border-collapse text-left text-xs">
           <thead className="sticky top-0 z-[1] bg-amber-50 shadow-sm">
             <tr className="border-b border-amber-200 text-[10px] font-bold uppercase tracking-wide text-amber-950/80">
               <th className="px-3 py-2">Layer</th>
@@ -499,7 +604,10 @@ function PackageBookingsSheet({ rows }) {
               <th className="px-3 py-2">Booking ID</th>
               <th className="px-3 py-2">Guest</th>
               <th className="px-3 py-2">Travel date</th>
-              <th className="px-3 py-2 text-right">Amount</th>
+              <th className="px-3 py-2 text-right">Base price</th>
+              <th className="px-3 py-2 text-right">Commission</th>
+              <th className="px-3 py-2 text-right">Selling price</th>
+              <th className="px-3 py-2 text-right">Paid</th>
               <th className="px-3 py-2 text-right">Status</th>
             </tr>
           </thead>
@@ -507,12 +615,21 @@ function PackageBookingsSheet({ rows }) {
             {rows.map((r) => (
               <tr key={r.rowKey} className="hover:bg-amber-50/50">
                 <td className="whitespace-nowrap px-3 py-1.5 text-[10px] font-bold uppercase text-amber-800">{r.layer}</td>
-                <td className="max-w-[200px] truncate px-3 py-1.5 font-medium text-slate-900" title={r.offerTitle}>
+                <td className="max-w-[180px] truncate px-3 py-1.5 font-medium text-slate-900" title={r.offerTitle}>
                   {r.offerTitle}
                 </td>
                 <td className="px-3 py-1.5 font-mono text-[11px] font-semibold text-slate-800">{r.bookingId || '—'}</td>
-                <td className="max-w-[160px] truncate px-3 py-1.5 text-slate-700">{r.guest}</td>
+                <td className="max-w-[140px] truncate px-3 py-1.5 text-slate-700">{r.guest}</td>
                 <td className="whitespace-nowrap px-3 py-1.5 text-slate-600">{r.travel}</td>
+                <td className="whitespace-nowrap px-3 py-1.5 text-right tabular-nums text-slate-600">
+                  {r.basePrice != null ? `₹${Number(r.basePrice).toLocaleString('en-IN')}` : '—'}
+                </td>
+                <td className="whitespace-nowrap px-3 py-1.5 text-right font-semibold tabular-nums text-violet-700">
+                  {r.commission}
+                </td>
+                <td className="whitespace-nowrap px-3 py-1.5 text-right font-bold tabular-nums text-amber-800">
+                  {r.sellingPrice != null ? `₹${Number(r.sellingPrice).toLocaleString('en-IN')}` : '—'}
+                </td>
                 <td className="whitespace-nowrap px-3 py-1.5 text-right font-semibold tabular-nums text-slate-900">
                   {r.amount != null ? `₹${Number(r.amount).toLocaleString('en-IN')}` : '—'}
                 </td>
@@ -579,11 +696,25 @@ const HierarchyFlowchart = ({ type = 'agent', id }) => {
       const isRoot = String(n.id).startsWith('pkg-');
       const layer = isRoot ? 'Original' : 'Whitelabel';
       const offerTitle = n.data?.title ?? '—';
+      const basePrice = n.data?.basePrice;
+      const commissionType = n.data?.commissionType;
+      const commissionValue = n.data?.commissionValue;
+      const finalPrice = n.data?.finalPrice;
+      const commissionStr = isRoot
+        ? '—'
+        : commissionType === 'percentage'
+        ? `${commissionValue}%`
+        : commissionType === 'flat'
+        ? `+₹${Number(commissionValue || 0).toLocaleString('en-IN')}`
+        : '—';
       bookings.forEach((b, i) => {
         out.push({
           rowKey: `${n.id}-${String(b._id)}-${i}`,
           layer,
           offerTitle,
+          basePrice,
+          commission: commissionStr,
+          sellingPrice: isRoot ? basePrice : finalPrice,
           bookingId: b.bookingId ?? b._id ?? '',
           guest: b.customer?.name ?? '—',
           travel: formatBookingDate(b.travelDate),
@@ -644,6 +775,8 @@ const HierarchyFlowchart = ({ type = 'agent', id }) => {
                   agentRole: node.role || '—',
                   agentEmail: node.email || '',
                   agentPhone: node.phone || '',
+                  kycStatus: node.kyc?.status || 'pending',
+                  isActive: node.isActive !== false,
                   parentName: parentName || null,
                   subtitle: parentName
                     ? `${node.role || 'Agency'} · under “${parentName}”`
@@ -690,8 +823,10 @@ const HierarchyFlowchart = ({ type = 'agent', id }) => {
               layoutHeight: computePackageLayoutHeight(baseBookings),
               data: {
                 type: 'package',
+                isRoot: true,
                 title: hierarchy.title,
                 subtitle: hierarchy.createdBy?.name ? `Owner · ${hierarchy.createdBy.name}` : 'Base package',
+                basePrice: hierarchy.basePrice,
                 metrics: [
                   { label: 'Bookings (direct)', value: directBookings },
                   { label: 'WL branches', value: wlList.length },
@@ -704,6 +839,11 @@ const HierarchyFlowchart = ({ type = 'agent', id }) => {
               const wlId = `wl-${wl._id}`;
               const wlBookingsArr = Array.isArray(wl.bookings) ? wl.bookings : [];
               const wlBookingsCount = wlBookingsArr.length;
+              const commissionLabel = wl.commissionType === 'percentage'
+                ? `${wl.commissionValue}% markup`
+                : wl.commissionType === 'flat'
+                ? `+₹${Number(wl.commissionValue || 0).toLocaleString('en-IN')} flat`
+                : 'No commission';
               newNodes.push({
                 id: wlId,
                 type: 'custom',
@@ -711,9 +851,17 @@ const HierarchyFlowchart = ({ type = 'agent', id }) => {
                 layoutHeight: computePackageLayoutHeight(wlBookingsArr),
                 data: {
                   type: 'package',
+                  isRoot: false,
                   title: wl.customTitle || hierarchy.title,
                   subtitle: wl.createdBy?.name ? `Whitelabel · ${wl.createdBy.name}` : 'Whitelabel offer',
-                  metrics: [{ label: 'Bookings on this offer', value: wlBookingsCount }],
+                  basePrice: hierarchy.basePrice,
+                  commissionType: wl.commissionType,
+                  commissionValue: wl.commissionValue,
+                  finalPrice: wl.finalPrice,
+                  metrics: [
+                    { label: 'Bookings on this offer', value: wlBookingsCount },
+                    { label: 'Commission', value: commissionLabel },
+                  ],
                   bookings: wlBookingsArr,
                 },
               });
@@ -723,8 +871,8 @@ const HierarchyFlowchart = ({ type = 'agent', id }) => {
                 target: wlId,
                 type: 'smoothstep',
                 animated: true,
-                markerEnd: { type: MarkerType.ArrowClosed, color: '#64748b' },
-                style: { stroke: '#94a3b8', strokeWidth: 2 },
+                markerEnd: { type: MarkerType.ArrowClosed, color: '#7c3aed' },
+                style: { stroke: '#8b5cf6', strokeWidth: 2, strokeDasharray: '6 3' },
               });
             });
           }

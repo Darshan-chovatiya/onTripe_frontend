@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import {
-  Users, Package, IndianRupee, Ticket,
+  Users, Package, Ticket,
   ShieldCheck, Clock, ChevronRight, RefreshCw, CalendarDays,
+  TrendingUp, ArrowUpRight,
 } from 'lucide-react'
 import adminApi from '@/admin/services/adminApi.js'
 import { getApiErrorMessage } from '@/shared/services/apiHelpers.js'
@@ -15,9 +16,6 @@ function countInAgg(arr, id) {
 function sumAgg(arr) {
   if (!Array.isArray(arr)) return 0
   return arr.reduce((s, x) => s + (x.count || 0), 0)
-}
-function formatInr(n) {
-  return `₹${(Number(n) || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`
 }
 function roleLabel(role) {
   return role ? String(role).replace(/_/g, ' ') : '—'
@@ -42,8 +40,8 @@ function lastMonthRange() {
 
 const PRESETS = [
   { label: 'Today',        getRange: () => { const t = todayStr(); return { start: t, end: t } } },
-  { label: 'Last 7 days',  getRange: () => ({ start: daysAgoStr(6), end: todayStr() }) },
-  { label: 'Last 30 days', getRange: () => ({ start: daysAgoStr(29), end: todayStr() }) },
+  { label: '7 days',       getRange: () => ({ start: daysAgoStr(6), end: todayStr() }) },
+  { label: '30 days',      getRange: () => ({ start: daysAgoStr(29), end: todayStr() }) },
   { label: 'This month',   getRange: () => ({ start: startOfMonthStr(), end: todayStr() }) },
   { label: 'Last month',   getRange: () => lastMonthRange() },
   { label: 'This year',    getRange: () => ({ start: startOfYearStr(), end: todayStr() }) },
@@ -51,7 +49,6 @@ const PRESETS = [
 
 const DEFAULT_RANGE = { start: startOfMonthStr(), end: todayStr() }
 
-// Normalize API response (handles both flat and nested {summary,details} shapes)
 function normalizeData(raw) {
   if (!raw) return null
   if (raw.summary) {
@@ -68,7 +65,6 @@ function normalizeData(raw) {
       pendingKycAgents:  raw.details?.kycPendingAgents  || [],
     }
   }
-  // flat structure — derive KYC counts from kycStatusCounts array
   return {
     ...raw,
     totalKycApproved: countInAgg(raw.kycStatusCounts, 'approved'),
@@ -76,7 +72,20 @@ function normalizeData(raw) {
   }
 }
 
+// Mini sparkline bar chart (decorative)
+function SparkBars({ color = 'bg-primary-400' }) {
+  const heights = [30, 55, 40, 70, 50, 80, 60]
+  return (
+    <div className="flex items-end gap-0.5 h-8">
+      {heights.map((h, i) => (
+        <div key={i} className={`w-1.5 rounded-sm opacity-60 ${color}`} style={{ height: `${h}%` }} />
+      ))}
+    </div>
+  )
+}
+
 export default function Dashboard() {
+  const navigate = useNavigate()
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -108,7 +117,6 @@ export default function Dashboard() {
 
   useEffect(() => { load(DEFAULT_RANGE) }, [])
 
-  // All values read from normalized flat data
   const totalAgents    = sumAgg(data?.agentsByRole)
   const parentAgents   = countInAgg(data?.agentsByRole, 'parent_agent')
   const childAgents    = countInAgg(data?.agentsByRole, 'child_agent')
@@ -135,81 +143,74 @@ export default function Dashboard() {
   }
 
   const stats = [
-    { label: 'Bookings',     value: data?.totalBookings  ?? '—', icon: Ticket,     iconClass: 'bg-sky-50 text-sky-700' },
-    { label: 'Revenue',      value: data ? formatInr(data.totalRevenue) : '—', icon: IndianRupee, iconClass: 'bg-emerald-50 text-emerald-700' },
-    { label: 'Travelers',    value: data?.totalCustomers ?? '—', icon: Users,      iconClass: 'bg-blue-50 text-blue-700' },
-    { label: 'Packages',     value: data?.totalPackages  ?? '—', icon: Package,    iconClass: 'bg-primary-50 text-primary-700' },
-    { label: 'KYC approved', value: data?.totalKycApproved ?? '—', icon: ShieldCheck, iconClass: 'bg-emerald-50 text-emerald-700' },
-    { label: 'KYC pending',  value: data?.totalKycPending  ?? '—', icon: Clock,      iconClass: 'bg-amber-50 text-amber-800' },
+    {
+      label: 'Total Bookings',
+      value: data?.totalBookings ?? '—',
+      icon: Ticket,
+      accent: 'from-sky-500 to-sky-600',
+      text: 'text-sky-700',
+      bar: 'bg-sky-400',
+      link: '/admin/packages',
+    },
+    {
+      label: 'Travelers',
+      value: data?.totalCustomers ?? '—',
+      icon: Users,
+      accent: 'from-violet-500 to-violet-600',
+      text: 'text-violet-700',
+      bar: 'bg-violet-400',
+      link: '/admin/customers',
+    },
+    {
+      label: 'Packages',
+      value: data?.totalPackages ?? '—',
+      icon: Package,
+      accent: 'from-primary-500 to-primary-700',
+      text: 'text-primary-700',
+      bar: 'bg-primary-400',
+      link: '/admin/packages',
+    },
+    {
+      label: 'KYC Approved',
+      value: data?.totalKycApproved ?? '—',
+      icon: ShieldCheck,
+      accent: 'from-teal-500 to-teal-600',
+      text: 'text-teal-700',
+      bar: 'bg-teal-400',
+      link: '/admin/agencies',
+    },
+    {
+      label: 'KYC Pending',
+      value: data?.totalKycPending ?? '—',
+      icon: Clock,
+      accent: 'from-amber-500 to-orange-500',
+      text: 'text-amber-700',
+      bar: 'bg-amber-400',
+      link: '/admin/agencies',
+    },
   ]
 
   if (loading && !data) {
     return (
-      <div className="flex min-h-[320px] flex-col items-center justify-center gap-4 rounded-xl border border-gray-200 bg-white">
-        <div className="h-9 w-9 animate-spin rounded-full border-2 border-primary-200 border-t-primary-600" />
-        <p className="text-sm text-gray-500">Loading dashboard…</p>
+      <div className="flex min-h-[400px] flex-col items-center justify-center gap-4">
+        <div className="h-10 w-10 animate-spin rounded-full border-[3px] border-primary-100 border-t-primary-600" />
+        <p className="text-sm font-medium text-gray-400">Loading dashboard…</p>
       </div>
     )
   }
 
   return (
-    <div className="animate-fade-in space-y-6">
+    <div className="animate-fade-in space-y-6 pb-8">
 
-      {/* ── Header + Date filter ── */}
-      <div className="rounded-xl border border-gray-200 bg-white p-5">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <h1 className="text-xl font-semibold tracking-tight text-gray-900 sm:text-2xl">Welcome back</h1>
-            <p className="mt-1 text-sm text-gray-500">Overview of bookings, revenue, agents, and compliance.</p>
-          </div>
-          <span className="inline-flex items-center gap-1.5 self-start rounded-lg bg-primary-50 px-3 py-1.5 text-xs font-medium text-primary-700">
-            <CalendarDays className="h-3.5 w-3.5" strokeWidth={2} />
-            {rangeLabel}
-          </span>
+      {/* ── Top bar: greeting + date filter ── */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-gray-900">Dashboard</h1>
+          <p className="mt-0.5 text-sm text-gray-500">Platform overview and key metrics</p>
         </div>
 
-        {/* From / To inputs */}
-        <div className="mt-4 flex flex-wrap items-end gap-3">
-          <div className="min-w-[140px] flex-1">
-            <label className="mb-1 block text-xs font-medium text-gray-500">From</label>
-            <input
-              type="date"
-              value={dateRange.start}
-              max={dateRange.end || todayStr()}
-              onChange={e => {
-                const r = { ...dateRange, start: e.target.value }
-                setDateRange(r)
-                if (r.start && r.end) load(r)
-              }}
-              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 focus:border-primary-400 focus:outline-none focus:ring-1 focus:ring-primary-200"
-            />
-          </div>
-          <div className="min-w-[140px] flex-1">
-            <label className="mb-1 block text-xs font-medium text-gray-500">To</label>
-            <input
-              type="date"
-              value={dateRange.end}
-              min={dateRange.start}
-              max={todayStr()}
-              onChange={e => {
-                const r = { ...dateRange, end: e.target.value }
-                setDateRange(r)
-                if (r.start && r.end) load(r)
-              }}
-              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 focus:border-primary-400 focus:outline-none focus:ring-1 focus:ring-primary-200"
-            />
-          </div>
-          <button
-            type="button"
-            onClick={() => { setDateRange(DEFAULT_RANGE); load(DEFAULT_RANGE) }}
-            className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-500 transition hover:bg-gray-50"
-          >
-            Reset
-          </button>
-        </div>
-
-        {/* Quick presets */}
-        <div className="mt-3 flex flex-wrap gap-1.5">
+        {/* Date range pill */}
+        <div className="flex flex-wrap items-center gap-2">
           {PRESETS.map(p => {
             const r = p.getRange()
             const active = dateRange.start === r.start && dateRange.end === r.end
@@ -218,39 +219,58 @@ export default function Dashboard() {
                 key={p.label}
                 type="button"
                 onClick={() => { setDateRange(r); load(r) }}
-                className={`rounded-md border px-2.5 py-1 text-xs font-medium transition ${
+                className={`rounded-full border px-3 py-1 text-xs font-semibold transition-all ${
                   active
-                    ? 'border-primary-400 bg-primary-50 text-primary-700'
-                    : 'border-gray-200 text-gray-600 hover:border-primary-300 hover:bg-primary-50 hover:text-primary-700'
+                    ? 'border-primary-500 bg-primary-500 text-white shadow-sm shadow-primary-200'
+                    : 'border-gray-200 bg-white text-gray-500 hover:border-primary-300 hover:text-primary-600'
                 }`}
               >
                 {p.label}
               </button>
             )
           })}
+          <div className="flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-3 py-1">
+            <CalendarDays className="h-3.5 w-3.5 text-gray-400" strokeWidth={2} />
+            <input
+              type="date"
+              value={dateRange.start}
+              max={dateRange.end || todayStr()}
+              onChange={e => { const r = { ...dateRange, start: e.target.value }; setDateRange(r); if (r.start && r.end) load(r) }}
+              className="w-[110px] bg-transparent text-xs font-medium text-gray-600 focus:outline-none"
+            />
+            <span className="text-gray-300">–</span>
+            <input
+              type="date"
+              value={dateRange.end}
+              min={dateRange.start}
+              max={todayStr()}
+              onChange={e => { const r = { ...dateRange, end: e.target.value }; setDateRange(r); if (r.start && r.end) load(r) }}
+              className="w-[110px] bg-transparent text-xs font-medium text-gray-600 focus:outline-none"
+            />
+          </div>
         </div>
       </div>
 
       {error && (
-        <div className="rounded-xl border border-red-100 bg-red-50/80 px-4 py-3 text-sm text-red-800">{error}</div>
+        <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">{error}</div>
       )}
 
       {/* ── Stat cards ── */}
       <section aria-label="Key metrics">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-5">
           {stats.map((s) => {
             const Icon = s.icon
             return (
-              <div key={s.label} className="rounded-xl border border-gray-200 bg-white p-5">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-xs font-medium text-gray-500">{s.label}</p>
-                    <p className="mt-2 text-2xl font-semibold tabular-nums text-gray-900">{s.value}</p>
-                    <p className="mt-1 text-xs text-gray-400">{rangeLabel}</p>
-                  </div>
-                  <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${s.iconClass}`}>
-                    <Icon className="h-5 w-5" strokeWidth={2} />
-                  </div>
+              <div key={s.label} onClick={() => navigate(s.link)}
+                className="group relative overflow-hidden rounded-2xl bg-white p-4 shadow-sm ring-1 ring-gray-100 transition-all hover:-translate-y-0.5 hover:shadow-md cursor-pointer">
+                <div className={`mb-3 inline-flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br ${s.accent} shadow-sm`}>
+                  <Icon className="h-4 w-4 text-white" strokeWidth={2.5} />
+                </div>
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">{s.label}</p>
+                <p className="mt-1 text-2xl font-black tabular-nums text-gray-900">{s.value}</p>
+                <div className="mt-3 flex items-end justify-between">
+                  <SparkBars color={s.bar} />
+                  <ArrowUpRight className={`h-4 w-4 opacity-0 transition-opacity group-hover:opacity-100 ${s.text}`} strokeWidth={2.5} />
                 </div>
               </div>
             )
@@ -258,134 +278,187 @@ export default function Dashboard() {
         </div>
       </section>
 
+      {/* ── Main grid ── */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
 
-        {/* Recent agents */}
-        <section className="lg:col-span-2 rounded-xl border border-gray-200 bg-white">
-          <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+        {/* Recent agents table */}
+        <section className="lg:col-span-2 overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-gray-100">
+          <div className="flex items-center justify-between border-b border-gray-50 px-6 py-4">
             <div>
-              <h2 className="text-sm font-semibold text-gray-900">Recent agents</h2>
-              <p className="text-xs text-gray-500">Latest registrations on the platform</p>
+              <h2 className="text-sm font-bold text-gray-900">Recent Agents</h2>
+              <p className="text-xs text-gray-400">Latest registrations on the platform</p>
             </div>
-            <Link to="/admin/agencies" className="inline-flex items-center gap-1 text-sm font-medium text-primary-700 hover:text-primary-800">
-              View all <ChevronRight className="h-4 w-4" strokeWidth={2} />
+            <Link to="/admin/agencies"
+              className="inline-flex items-center gap-1 rounded-full bg-primary-50 px-3 py-1.5 text-xs font-semibold text-primary-700 transition hover:bg-primary-100">
+              View all <ChevronRight className="h-3.5 w-3.5" strokeWidth={2.5} />
             </Link>
           </div>
           <div className="overflow-x-auto">
             {data?.recentAgents?.length ? (
-              <table className="w-full min-w-[520px] text-left text-sm">
+              <table className="w-full min-w-[480px] text-left text-sm">
                 <thead>
-                  <tr className="border-b border-gray-100 bg-gray-50/80 text-xs font-medium uppercase tracking-wide text-gray-500">
-                    <th className="px-5 py-3">Name</th>
-                    <th className="px-5 py-3">Role</th>
-                    <th className="px-5 py-3 text-right">Joined</th>
+                  <tr className="border-b border-gray-50 bg-gray-50/60">
+                    <th className="px-6 py-3 text-[10px] font-bold uppercase tracking-widest text-gray-400">Agent</th>
+                    <th className="px-6 py-3 text-[10px] font-bold uppercase tracking-widest text-gray-400">Role</th>
+                    <th className="px-6 py-3 text-right text-[10px] font-bold uppercase tracking-widest text-gray-400">Joined</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {data.recentAgents.map((agent) => (
-                    <tr key={agent._id} className="hover:bg-gray-50/80">
-                      <td className="px-5 py-3">
-                        <p className="font-medium text-gray-900">{agent.name || '—'}</p>
-                        <p className="text-xs text-gray-500">{agent.email || '—'}</p>
-                      </td>
-                      <td className="px-5 py-3">
-                        <span className="inline-flex rounded-md bg-gray-100 px-2 py-0.5 text-xs font-medium capitalize text-gray-800">
-                          {roleLabel(agent.role)}
-                        </span>
-                      </td>
-                      <td className="px-5 py-3 text-right text-gray-600">
-                        {agent.createdAt ? new Date(agent.createdAt).toLocaleDateString() : '—'}
-                      </td>
-                    </tr>
-                  ))}
+                <tbody className="divide-y divide-gray-50">
+                  {data.recentAgents.map((agent) => {
+                    const initials = (agent.name || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
+                    const agentPath = agent.role === 'parent_agent'
+                      ? `/admin/agencies`
+                      : `/admin/child-agencies`
+                    return (
+                      <tr key={agent._id} onClick={() => navigate(agentPath)}
+                        className="cursor-pointer transition hover:bg-gray-50/80">
+                        <td className="px-6 py-3.5">
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary-400 to-primary-600 text-[10px] font-bold text-white">
+                              {initials}
+                            </div>
+                            <div>
+                              <p className="text-sm font-semibold text-gray-900">{agent.name || '—'}</p>
+                              <p className="text-[11px] text-gray-400">{agent.email || '—'}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-3.5">
+                          <span className="inline-flex rounded-full bg-primary-50 px-2.5 py-0.5 text-[11px] font-semibold capitalize text-primary-700">
+                            {roleLabel(agent.role)}
+                          </span>
+                        </td>
+                        <td className="px-6 py-3.5 text-right text-[12px] text-gray-400">
+                          {agent.createdAt ? new Date(agent.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
+                        </td>
+                      </tr>
+                    )
+                  })}
                 </tbody>
               </table>
             ) : (
-              <p className="px-5 py-10 text-center text-sm text-gray-500">No recent agent activity.</p>
+              <p className="px-6 py-12 text-center text-sm text-gray-400">No recent agent activity.</p>
             )}
           </div>
         </section>
 
+        {/* Right column */}
         <div className="space-y-6">
 
           {/* Agent mix */}
-          <section className="rounded-xl border border-gray-200 bg-white p-5">
-            <h2 className="text-sm font-semibold text-gray-900">Agent mix</h2>
-            <p className="mt-0.5 text-xs text-gray-500">By role</p>
-            <ul className="mt-4 space-y-3 text-sm">
-              <li className="flex justify-between"><span className="text-gray-600">Total agents</span><span className="font-semibold tabular-nums text-gray-900">{totalAgents}</span></li>
-              <li className="flex justify-between"><span className="text-gray-600">Parent agents</span><span className="font-medium tabular-nums text-gray-900">{parentAgents}</span></li>
-              <li className="flex justify-between"><span className="text-gray-600">Child agents</span><span className="font-medium tabular-nums text-gray-900">{childAgents}</span></li>
-              <li className="flex justify-between"><span className="text-gray-600">Sub-child agents</span><span className="font-medium tabular-nums text-gray-900">{subChildAgents}</span></li>
-            </ul>
+          <section className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-100">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-sm font-bold text-gray-900">Agent Mix</h2>
+                <p className="text-xs text-gray-400">Breakdown by role</p>
+              </div>
+              <button type="button" onClick={() => navigate('/admin/agencies')}
+                className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary-50 transition hover:bg-primary-100">
+                <TrendingUp className="h-4 w-4 text-primary-600" strokeWidth={2} />
+              </button>
+            </div>
+            <div className="mt-4 space-y-2">
+              {[
+                { label: 'Total', value: totalAgents, pct: 100, color: 'bg-primary-500', link: '/admin/agencies' },
+                { label: 'Parent', value: parentAgents, pct: totalAgents ? Math.round((parentAgents / totalAgents) * 100) : 0, color: 'bg-sky-400', link: '/admin/agencies' },
+                { label: 'Child', value: childAgents, pct: totalAgents ? Math.round((childAgents / totalAgents) * 100) : 0, color: 'bg-violet-400', link: '/admin/child-agencies' },
+              ].map(({ label, value, pct, color, link }) => (
+                <div key={label} onClick={() => navigate(link)} className="cursor-pointer rounded-lg p-1 transition hover:bg-gray-50">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-medium text-gray-500">{label}</span>
+                    <span className="text-xs font-bold text-gray-800">{value}</span>
+                  </div>
+                  <div className="h-1.5 w-full rounded-full bg-gray-100">
+                    <div className={`h-1.5 rounded-full ${color} transition-all`} style={{ width: `${pct}%` }} />
+                  </div>
+                </div>
+              ))}
+            </div>
           </section>
 
           {/* Booking status */}
-          <section className="rounded-xl border border-gray-200 bg-white p-5">
+          <section className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-100">
             <div className="flex items-center justify-between gap-2">
               <div>
-                <h2 className="text-sm font-semibold text-gray-900">Booking status</h2>
-                <p className="mt-0.5 text-xs text-gray-400">{rangeLabel}</p>
+                <h2 className="text-sm font-bold text-gray-900">Booking Status</h2>
+                <p className="text-[11px] text-gray-400">{rangeLabel}</p>
               </div>
               <button type="button" onClick={handleSyncStatus} disabled={syncing}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-700 transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-800 disabled:opacity-50">
-                <RefreshCw className={`h-3.5 w-3.5 ${syncing ? 'animate-spin' : ''}`} strokeWidth={2} />
-                {syncing ? 'Syncing…' : 'Sync now'}
+                className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-600 transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-700 disabled:opacity-50">
+                <RefreshCw className={`h-3 w-3 ${syncing ? 'animate-spin' : ''}`} strokeWidth={2.5} />
+                {syncing ? 'Syncing…' : 'Sync'}
               </button>
             </div>
             {syncMsg && (
-              <p className={`mt-2 rounded-lg px-3 py-2 text-xs font-medium ${syncMsg.type === 'ok' ? 'bg-emerald-50 text-emerald-800' : 'bg-red-50 text-red-800'}`}>
+              <p className={`mt-2 rounded-lg px-3 py-2 text-xs font-semibold ${syncMsg.type === 'ok' ? 'bg-emerald-50 text-emerald-800' : 'bg-red-50 text-red-800'}`}>
                 {syncMsg.text}
               </p>
             )}
-            <div className="mt-4 grid grid-cols-2 gap-2 text-center">
-              <div className="rounded-lg bg-sky-50 py-3"><p className="text-lg font-semibold text-sky-800">{bookingConfirmed}</p><p className="text-[10px] font-medium uppercase tracking-wide text-sky-700/80">Confirmed</p></div>
-              <div className="rounded-lg bg-amber-50 py-3"><p className="text-lg font-semibold text-amber-900">{bookingOngoing}</p><p className="text-[10px] font-medium uppercase tracking-wide text-amber-800/90">Ongoing</p></div>
-              <div className="rounded-lg bg-emerald-50 py-3"><p className="text-lg font-semibold text-emerald-800">{bookingCompleted}</p><p className="text-[10px] font-medium uppercase tracking-wide text-emerald-700/80">Completed</p></div>
-              <div className="rounded-lg bg-red-50 py-3"><p className="text-lg font-semibold text-red-800">{bookingCancelled}</p><p className="text-[10px] font-medium uppercase tracking-wide text-red-700/80">Cancelled</p></div>
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              {[
+                { label: 'Confirmed', value: bookingConfirmed, bg: 'bg-sky-50', text: 'text-sky-700', dot: 'bg-sky-400' },
+                { label: 'Ongoing',   value: bookingOngoing,   bg: 'bg-amber-50', text: 'text-amber-700', dot: 'bg-amber-400' },
+                { label: 'Completed', value: bookingCompleted, bg: 'bg-emerald-50', text: 'text-emerald-700', dot: 'bg-emerald-400' },
+                { label: 'Cancelled', value: bookingCancelled, bg: 'bg-red-50', text: 'text-red-600', dot: 'bg-red-400' },
+              ].map(({ label, value, bg, text, dot }) => (
+                <div key={label} onClick={() => navigate('/admin/packages')}
+                  className={`cursor-pointer rounded-xl p-3 transition hover:opacity-80 ${bg}`}>
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <span className={`h-1.5 w-1.5 rounded-full ${dot}`} />
+                    <span className={`text-[10px] font-bold uppercase tracking-wide ${text} opacity-70`}>{label}</span>
+                  </div>
+                  <p className={`text-2xl font-black tabular-nums ${text}`}>{value}</p>
+                </div>
+              ))}
             </div>
           </section>
 
           {/* KYC pending */}
-          <section className="rounded-xl border border-gray-200 bg-white p-5">
+          <section className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-100">
             <div className="flex items-center justify-between gap-2">
               <div>
-                <h2 className="text-sm font-semibold text-gray-900">
-                  KYC pending
+                <h2 className="flex items-center gap-2 text-sm font-bold text-gray-900">
+                  KYC Pending
                   {pendingKycAgents.length > 0 && (
-                    <span className="ml-2 inline-flex items-center justify-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">
+                    <span className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-amber-500 px-1.5 text-[10px] font-black text-white">
                       {pendingKycAgents.length}
                     </span>
                   )}
                 </h2>
-                <p className="mt-0.5 text-xs text-gray-500">Agents awaiting review</p>
+                <p className="text-xs text-gray-400">Agents awaiting review</p>
               </div>
-              <Link to="/admin/agencies" className="inline-flex items-center gap-1 text-xs font-medium text-primary-700 hover:text-primary-800">
-                View all <ChevronRight className="h-3.5 w-3.5" strokeWidth={2} />
+              <Link to="/admin/agencies"
+                className="inline-flex items-center gap-1 rounded-full bg-primary-50 px-2.5 py-1.5 text-xs font-semibold text-primary-700 hover:bg-primary-100">
+                View all <ChevronRight className="h-3.5 w-3.5" strokeWidth={2.5} />
               </Link>
             </div>
             {pendingKycAgents.length > 0 ? (
-              <ul className="mt-3 divide-y divide-gray-100">
-                {pendingKycAgents.map((agent) => (
-                  <li key={agent._id}>
-                    <Link to="/admin/agencies" className="flex items-center gap-3 py-2.5 transition-colors hover:opacity-80">
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-100 text-xs font-semibold text-amber-800">
-                        {(agent.name || '?').charAt(0).toUpperCase()}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium text-gray-900">{agent.name || '—'}</p>
-                        <p className="truncate text-xs text-gray-500">{agent.email || '—'}</p>
-                      </div>
-                      <span className="shrink-0 rounded-md bg-amber-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-700">Pending</span>
-                    </Link>
-                  </li>
-                ))}
+              <ul className="mt-3 space-y-1">
+                {pendingKycAgents.map((agent) => {
+                  const initials = (agent.name || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
+                  return (
+                    <li key={agent._id}>
+                      <Link to="/admin/agencies" className="flex items-center gap-3 rounded-xl p-2.5 transition hover:bg-amber-50">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-100 text-xs font-bold text-amber-700">
+                          {initials}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-semibold text-gray-900">{agent.name || '—'}</p>
+                          <p className="truncate text-[11px] text-gray-400">{agent.email || '—'}</p>
+                        </div>
+                        <span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700">Pending</span>
+                      </Link>
+                    </li>
+                  )
+                })}
               </ul>
             ) : (
-              <div className="mt-4 rounded-lg bg-emerald-50 px-4 py-5 text-center">
-                <ShieldCheck className="mx-auto h-5 w-5 text-emerald-600" strokeWidth={2} />
-                <p className="mt-1.5 text-sm font-medium text-emerald-800">All KYC up to date</p>
-                <p className="mt-0.5 text-xs text-emerald-700">No pending reviews</p>
+              <div className="mt-4 flex flex-col items-center rounded-xl bg-emerald-50 py-5">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100">
+                  <ShieldCheck className="h-5 w-5 text-emerald-600" strokeWidth={2} />
+                </div>
+                <p className="mt-2 text-sm font-bold text-emerald-800">All clear</p>
+                <p className="text-xs text-emerald-600">No pending KYC reviews</p>
               </div>
             )}
           </section>

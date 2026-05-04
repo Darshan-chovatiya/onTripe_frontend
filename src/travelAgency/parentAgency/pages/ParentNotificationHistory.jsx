@@ -74,12 +74,15 @@ function RecipientRow({ r }) {
   const name = r.receiver?.name || r.receiver?.email || String(r.receiver || '—')
   const email = r.receiver?.email
   const sent = r.status === 'sent'
+  const imgPath = r.receiver?.profileImage || r.receiver?.agencyLogo || null
+  const imgUrl = imgPath ? resolveUrl(imgPath) : null
+  const initial = (name || '?').charAt(0).toUpperCase()
+  const isCustomer = r.receiverType === 'Customer'
   return (
     <div className="flex items-center gap-3 rounded-lg border border-gray-100 bg-gray-50/60 px-3 py-2">
-      {sent
-        ? <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500" strokeWidth={2} />
-        : <XCircle className="h-4 w-4 shrink-0 text-red-400" strokeWidth={2} />
-      }
+      <div className={`flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full text-[11px] font-bold text-white ${isCustomer ? 'bg-gradient-to-br from-emerald-400 to-emerald-600' : 'bg-gradient-to-br from-primary-400 to-primary-600'}`}>
+        {imgUrl ? <img src={imgUrl} alt={name} className="h-full w-full object-cover" /> : initial}
+      </div>
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium text-gray-900">{name}</p>
         {email && email !== name ? <p className="truncate text-xs text-gray-500">{email}</p> : null}

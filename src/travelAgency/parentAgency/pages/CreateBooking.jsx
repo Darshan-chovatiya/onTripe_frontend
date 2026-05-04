@@ -17,7 +17,7 @@ const emptyTraveler = () => ({
 })
 
 function normalizePhone(p) {
-  return String(p || '').replace(/\s/g, '').trim()
+  return String(p || '').replace(/\D/g, '').trim()
 }
 
 function agencyCustomerDisplayName(c) {
@@ -85,6 +85,7 @@ export default function CreateBooking() {
   const skipNextLookupRef = useRef(false)
   
   const [basePackagePrice, setBasePackagePrice] = useState(0)
+  const [maxCapacity, setMaxCapacity] = useState(null)
 
   const activePackages = (availablePackages ?? []).filter((p) => p.isActive !== false)
 
@@ -93,6 +94,12 @@ export default function CreateBooking() {
       const first = activePackages[0]
       setPackageId(String(first._id))
       setBasePackagePrice(first.basePrice || 0)
+      setMaxCapacity(first.maxCapacity ?? null)
+      if (first.startDate) {
+        const d = new Date(first.startDate)
+        const pad = (n) => String(n).padStart(2, '0')
+        setTravelDate(`${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`)
+      }
     }
   }, [activePackages, packageId])
 
@@ -105,6 +112,22 @@ export default function CreateBooking() {
     setPackageId(id)
     const pkg = activePackages.find(p => String(p._id) === id)
     setBasePackagePrice(pkg?.basePrice || 0)
+    setMaxCapacity(pkg?.maxCapacity ?? null)
+    // auto-fill travel date from package startDate
+    if (pkg?.startDate) {
+      const d = new Date(pkg.startDate)
+      // format to datetime-local value: YYYY-MM-DDTHH:mm
+      const pad = (n) => String(n).padStart(2, '0')
+      const local = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+      setTravelDate(local)
+    } else {
+      setTravelDate('')
+    }
+    // trim travelers if new package has lower capacity
+    if (pkg?.maxCapacity) {
+      const maxAdditional = pkg.maxCapacity - 1
+      setTravelers(t => t.slice(0, Math.max(0, maxAdditional)))
+    }
   }
 
   useEffect(() => {
@@ -156,7 +179,14 @@ export default function CreateBooking() {
     return () => clearTimeout(t)
   }, [customerPhone, customerMode, runPhoneLookup])
 
-  const addTraveler = () => setTravelers((t) => [...t, emptyTraveler()])
+  const addTraveler = () => {
+    const maxAdditional = maxCapacity != null ? maxCapacity - 1 : Infinity
+    if (travelers.length >= maxAdditional) {
+      toast.error(`Max capacity is ${maxCapacity}. Primary customer + ${maxCapacity - 1} additional traveler(s) allowed.`)
+      return
+    }
+    setTravelers((t) => [...t, emptyTraveler()])
+  }
   const removeTraveler = (i) => setTravelers((t) => t.filter((_, idx) => idx !== i))
   const setTravelerField = (i, field, value) =>
     setTravelers((t) => t.map((row, idx) => idx === i ? { ...row, [field]: value } : row))
@@ -179,6 +209,21 @@ export default function CreateBooking() {
     e.preventDefault()
     const amount = Number(totalAmount)
     if (Number.isNaN(amount) || amount <= 0) return
+
+    const phone = normalizePhone(customerPhone)
+    if (phone.length !== 10) {
+      toast.error('Enter a valid 10-digit mobile number')
+      return
+    }
+    if (!/^[6-9]/.test(phone)) {
+      toast.error('Enter a valid Indian mobile number (starts with 6-9)')
+      return
+    }
+
+    if (maxCapacity != null && travelers.length + 1 > maxCapacity) {
+      toast.error(`Max capacity is ${maxCapacity}. Remove some travelers.`)
+      return
+    }
 
     const fd = new FormData()
     fd.append('customerName', customerName.trim())
@@ -221,9 +266,13 @@ export default function CreateBooking() {
     }
   }
 
+  const selectedPackage = activePackages.find(p => String(p._id) === packageId) ?? null
+  const packageHasDate = Boolean(selectedPackage?.startDate)
+
   const canSubmit = Boolean(
     customerName.trim() &&
-    normalizePhone(customerPhone) &&
+    normalizePhone(customerPhone).length === 10 &&
+    /^[6-9]/.test(normalizePhone(customerPhone)) &&
     travelDate &&
     totalAmount &&
     packageId &&
@@ -354,8 +403,10 @@ export default function CreateBooking() {
               <label htmlFor="bk-phone" className="mb-1 block text-sm font-medium text-gray-700">Customer phone <span className="text-red-500">*</span></label>
               <div className="relative">
                 <input id="bk-phone" className={`${inputCls} pr-9`} value={customerPhone}
-                  onChange={(e) => setCustomerPhone(e.target.value)}
-                  onBlur={() => customerMode === 'new' && runPhoneLookup()} required autoComplete="tel" />
+                  onChange={(e) => setCustomerPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                  onBlur={() => customerMode === 'new' && runPhoneLookup()}
+                  required autoComplete="tel" inputMode="numeric" maxLength={10}
+                  placeholder="10-digit mobile number" />
                 {lookupLoading && customerMode === 'new' && (
                   <Loader2 className="absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-primary-500" />
                 )}
@@ -392,8 +443,25 @@ export default function CreateBooking() {
         {/* Additional travelers */}
         <div>
           <div className="mb-2 flex items-center justify-between">
-            <span className="text-sm font-medium text-gray-700">Additional travelers</span>
-            <Button type="button" variant="secondary" className="py-1.5 text-xs" onClick={addTraveler}>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-gray-700">Additional travelers</span>
+              {maxCapacity != null && (
+                <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                  travelers.length + 1 >= maxCapacity
+                    ? 'bg-red-100 text-red-700'
+                    : travelers.length + 1 >= maxCapacity - 1
+                    ? 'bg-amber-100 text-amber-700'
+                    : 'bg-slate-100 text-slate-600'
+                }`}>
+                  {travelers.length + 1}/{maxCapacity} seats used
+                </span>
+              )}
+            </div>
+            <Button
+              type="button" variant="secondary" className="py-1.5 text-xs"
+              onClick={addTraveler}
+              disabled={maxCapacity != null && travelers.length >= maxCapacity - 1}
+            >
               <Plus className="mr-1 inline h-3.5 w-3.5" /> Add traveler
             </Button>
           </div>
@@ -446,8 +514,13 @@ export default function CreateBooking() {
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <label htmlFor="bk-date" className="mb-1 block text-sm font-medium text-gray-700">Travel date <span className="text-red-500">*</span></label>
-            <input id="bk-date" type="datetime-local" className={inputCls} value={travelDate}
-              onChange={(e) => setTravelDate(e.target.value)} required />
+            <input id="bk-date" type="datetime-local" className={`${inputCls} ${packageHasDate ? 'bg-gray-50 text-gray-600 cursor-default' : ''}`} value={travelDate}
+              onChange={(e) => !packageHasDate && setTravelDate(e.target.value)}
+              readOnly={packageHasDate}
+              required />
+            {packageHasDate && (
+              <p className="mt-1 text-xs text-primary-600">Date is fixed by the package schedule.</p>
+            )}
           </div>
           <div>
             <label htmlFor="bk-amount" className="mb-1 block text-sm font-medium text-gray-700">Total amount (₹) <span className="text-red-500">*</span></label>

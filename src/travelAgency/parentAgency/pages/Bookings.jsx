@@ -205,143 +205,95 @@ export default function Bookings() {
         {/* Table */}
         {bookings.length > 0 ? (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[860px] text-sm">
-              <thead className="border-b border-gray-200 bg-gray-50">
-                <tr>
-                  {/* <th className="px-4 py-2.5 text-left align-middle text-xs font-medium text-gray-600">Booking ID</th> */}
-                  {/* <th className="px-4 py-2.5 text-left align-middle text-xs font-medium text-gray-600">Package</th> */}
-                  <th className="px-4 py-2.5 text-left align-middle text-xs font-medium text-gray-600">Customer</th>
-                  <th className="px-4 py-2.5 text-left align-middle text-xs font-medium text-gray-600">Travel Date</th>
-                  <th className="px-4 py-2.5 text-left align-middle text-xs font-medium text-gray-600">Amount</th>
-                  <th className="px-4 py-2.5 text-left align-middle text-xs font-medium text-gray-600">Payment</th>
-                  <th className="px-4 py-2.5 text-left align-middle text-xs font-medium text-gray-600">Status</th>
-                  <th className="px-4 py-2.5 text-left align-middle text-xs font-medium text-gray-600">Booked By</th>
-                  <th className="px-4 py-2.5 text-right align-middle text-xs font-medium text-gray-600">Actions</th>
+            <table className="w-full min-w-[900px] text-sm">
+              <thead>
+                <tr className="border-b border-gray-100 bg-gray-50/80">
+                  <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wide text-gray-400">Booking</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wide text-gray-400">Customer</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wide text-gray-400">Package</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wide text-gray-400">Travel Date</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wide text-gray-400">Amount</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wide text-gray-400">Status</th>
+                  <th className="px-4 py-3 text-right text-[11px] font-bold uppercase tracking-wide text-gray-400">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
-                {bookings.map((b) => (
-                  <tr key={b._id} className="transition-colors hover:bg-gray-50/80">
-                    {/* <td className="px-4 py-2.5 align-middle">
-                      <span className="flex items-center gap-1 font-mono text-xs font-semibold text-gray-900">
-                        <Hash size={11} />{b.bookingId}
-                      </span>
-                    </td> */}
-                    {/* <td className="px-4 py-2.5 align-middle">
-                      <div className="min-w-0">
-                        {b.package ? (
-                          <Link to={`/agency/packages/${b.package._id}`} className="truncate text-sm font-semibold text-primary-600 hover:underline">
-                            {b.package.title || '—'}
-                          </Link>
-                        ) : (
-                          <p className="truncate text-sm font-semibold text-gray-900">
-                            {b.whitelabelPackage?.customTitle || '—'}
-                          </p>
-                        )}
-                        {b.package?.destination && (
-                          <p className="mt-0.5 truncate text-xs text-gray-500">{b.package.destination}</p>
-                        )}
-                      </div>
-                    </td> */}
-                    <td className="px-4 py-2.5 align-middle">
-                      <div className="min-w-0">
-                        <p className="flex items-center gap-1 text-sm font-medium text-gray-900">
-                          <User size={12} />
-                          {b.customer?.name || '—'}
+              <tbody className="divide-y divide-gray-50">
+                {bookings.map((b) => {
+                  const customerName = b.customer?.name || '—'
+                  const initials = customerName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
+                  const pkgTitle = b.whitelabelPackage?.customTitle || b.package?.title || '—'
+                  const isWl = !!b.whitelabelPackage
+                  return (
+                    <tr key={b._id} className="group transition-colors hover:bg-primary-50/30">
+                      <td className="px-4 py-3.5 align-middle">
+                        <span className="font-mono text-[11px] font-semibold text-gray-400">#{b.bookingId?.slice(-8) || '—'}</span>
+                      </td>
+                      <td className="px-4 py-3.5 align-middle">
+                        <div className="flex items-center gap-2.5">
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary-400 to-primary-600 text-[11px] font-bold text-white shadow-sm">
+                            {initials}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-semibold text-gray-900">{customerName}</p>
+                            {b.customer?.phone && <p className="text-[11px] text-gray-400">{b.customer.phone}</p>}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3.5 align-middle">
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium text-gray-800">{pkgTitle}</p>
+                          {isWl && <span className="text-[10px] font-semibold text-violet-500">Whitelabel</span>}
                           {b.travelers?.length > 0 && (
-                            <span className="ml-1.5 inline-flex items-center gap-0.5 rounded-full bg-primary-50 px-1.5 py-0.5 text-[10px] font-bold text-primary-700 ring-1 ring-inset ring-primary-100">
-                              +{b.travelers.length} travelers
+                            <span className="ml-1 inline-flex items-center rounded-full bg-primary-50 px-1.5 py-0.5 text-[10px] font-bold text-primary-600">
+                              +{b.travelers.length}
                             </span>
                           )}
-                        </p>
-                        {b.customer?.phone && <p className="mt-0.5 text-xs text-gray-500">{b.customer.phone}</p>}
-                      </div>
-                    </td>
-                    <td className="px-4 py-2.5 align-middle text-xs text-gray-600">
-                      <span className="flex items-center gap-1">
-                        <Calendar size={12} />
-                        {b.travelDate ? (() => {
-                          const start = new Date(b.travelDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
-                          const days = b.package?.totalDays || b.whitelabelPackage?.originalPackage?.totalDays || b.whitelabelPackage?.totalDays
-                          if (days) {
-                            const d = new Date(b.travelDate)
-                            d.setDate(d.getDate() + (days - 1))
-                            const end = d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
-                            return `${start} — ${end}`
-                          }
-                          return start
-                        })() : '—'}
-                      </span>
-                    </td>
-                    <td className="px-4 py-2.5 align-middle">
-                      <span className="flex items-center gap-0.5 text-sm font-semibold text-gray-900">
-                        <IndianRupee size={12} />{Number(b.totalAmount || 0).toLocaleString('en-IN')}
-                      </span>
-                    </td>
-                    <td className="px-4 py-2.5 align-middle">
-                      <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${PAYMENT_STYLES[b.paymentStatus] || PAYMENT_STYLES.pending}`}>
-                        {b.paymentStatus}
-                      </span>
-                    </td>
-                    <td className="px-4 py-2.5 align-middle">
-                      <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${STATUS_STYLES[b.bookingStatus] || STATUS_STYLES.confirmed}`}>
-                        {b.bookingStatus}
-                      </span>
-                    </td>
-                    <td className="px-4 py-2.5 align-middle text-xs text-gray-600">
-                      {(() => {
-                        const bookedBy = b.bookedBy
-                        if (!bookedBy || typeof bookedBy === 'string') return '—'
-                        if (bookedBy.role === 'sub_child_agent' && bookedBy.parentRef?.name) {
-                          return (
-                            <div className="flex flex-col gap-0.5">
-                              <span>{bookedBy.parentRef.name}</span>
-                              {/* <span className="inline-flex w-fit rounded-full bg-purple-50 px-1.5 py-0.5 text-[10px] font-semibold text-purple-700 ring-1 ring-inset ring-purple-100">via Sub-child</span> */}
-                            </div>
-                          )
-                        }
-                        return (
-                          <div className="flex flex-col gap-0.5">
-                            <span>{bookedBy.name || bookedBy.email || '—'}</span>
-                            {/* {bookedBy.role === 'child_agent' && (
-                              <span className="inline-flex w-fit rounded-full bg-blue-50 px-1.5 py-0.5 text-[10px] font-semibold text-blue-700 ring-1 ring-inset ring-blue-100">Child</span>
-                            )} */}
-                          </div>
-                        )
-                      })()}
-                    </td>
-                    <td className="px-4 py-2.5 align-middle text-right">
-                      <div className="inline-flex items-center gap-1.5">
-                        {b.bookedBy?._id === user.id && (
-                          <Link
-                            to={`/agency/bookings/${b._id}/edit`}
-                            className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border border-gray-200 bg-white text-gray-600 transition-colors hover:bg-gray-50 hover:text-gray-900"
-                            title="Edit"
-                          >
-                            <Pencil size={12} />
-                          </Link>
-                        )}
-                        <button
-                          onClick={() => setViewId(b._id)}
-                          className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border border-gray-200 bg-white text-gray-600 transition-colors hover:bg-gray-50 hover:text-gray-900"
-                          title="View"
-                        >
-                          <Eye size={12} />
-                        </button>
-                        <button
-                          onClick={() => setTicketsBooking(b)}
-                          className="inline-flex h-8 cursor-pointer items-center justify-center gap-1 rounded-md border border-gray-200 bg-white px-2 text-gray-600 transition-colors hover:bg-gray-50 hover:text-gray-900"
-                          title="Manage Tickets"
-                        >
-                          <Ticket size={13} />
-                          {b.tickets?.length > 0 && (
-                            <span className="text-xs font-semibold text-primary-700">{b.tickets.length}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3.5 align-middle">
+                        <span className="text-sm text-gray-600">
+                          {b.travelDate ? new Date(b.travelDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3.5 align-middle">
+                        <div>
+                          <p className="text-sm font-bold text-gray-900">₹{Number(b.totalAmount || 0).toLocaleString('en-IN')}</p>
+                          <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold capitalize ${PAYMENT_STYLES[b.paymentStatus] || PAYMENT_STYLES.pending}`}>
+                            {b.paymentStatus || 'pending'}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3.5 align-middle">
+                        <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold capitalize ${STATUS_STYLES[b.bookingStatus] || STATUS_STYLES.confirmed}`}>
+                          <span className="h-1.5 w-1.5 rounded-full bg-current opacity-70" />
+                          {b.bookingStatus}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3.5 align-middle text-right">
+                        <div className="inline-flex items-center gap-1">
+                          {b.bookedBy?._id === user.id && (
+                            <Link to={`/agency/bookings/${b._id}/edit`}
+                              className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 shadow-sm transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-600"
+                              title="Edit">
+                              <Pencil size={13} />
+                            </Link>
                           )}
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                          <button onClick={() => setViewId(b._id)}
+                            className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 shadow-sm transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-600"
+                            title="View">
+                            <Eye size={13} />
+                          </button>
+                          <button onClick={() => setTicketsBooking(b)}
+                            className="flex h-8 items-center justify-center gap-1 rounded-lg border border-gray-200 bg-white px-2 text-gray-500 shadow-sm transition hover:border-amber-200 hover:bg-amber-50 hover:text-amber-600"
+                            title="Tickets">
+                            <Ticket size={13} />
+                            {b.tickets?.length > 0 && <span className="text-[10px] font-bold text-amber-600">{b.tickets.length}</span>}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>

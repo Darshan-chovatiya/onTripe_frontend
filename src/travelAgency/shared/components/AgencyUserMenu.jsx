@@ -49,6 +49,10 @@ export default function AgencyUserMenu() {
 
   if (!user) return null
 
+  const API_BASE = import.meta.env.VITE_API_BASE_URL?.replace('/api', '').replace(/\/$/, '') || 'http://localhost:5001'
+  const logoUrl = user?.agencyLogo ? `${API_BASE}/${String(user.agencyLogo).replace(/^\//, '')}` : null
+  const profileUrl = user?.profileImage ? `${API_BASE}/${String(user.profileImage).replace(/^\//, '')}` : null
+  const avatarUrl = logoUrl || profileUrl
   const settingsHref = agencySettingsPath()
 
   const openLogoutConfirm = () => {
@@ -73,8 +77,8 @@ export default function AgencyUserMenu() {
         aria-haspopup="menu"
         aria-label="Account menu"
       >
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary-600 text-xs font-bold text-white">
-          {initials(user.name)}
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-primary-600 text-xs font-bold text-white">
+          {avatarUrl ? <img src={avatarUrl} alt={user.name} className="h-full w-full object-cover" /> : initials(user.name)}
         </span>
         <span className="min-w-0 flex-1">
           <span className="block truncate text-sm font-semibold text-gray-900">{user.name || 'Account'}</span>

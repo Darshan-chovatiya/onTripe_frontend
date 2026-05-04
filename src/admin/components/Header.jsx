@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Menu, User, ChevronDown, Settings, LogOut } from 'lucide-react'
+import { Menu, ChevronDown, Settings, LogOut, Bell } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/shared/context/AuthContext.jsx'
 import ConfirmDialog from '@/shared/components/ConfirmDialog.jsx'
@@ -8,29 +8,24 @@ const PAGE_TITLES = [
   { match: '/admin/dashboard', title: 'Dashboard' },
   { match: '/admin/customers', title: 'Customers' },
   { match: '/admin/packages', title: 'Packages' },
-  { match: '/admin/agencies/network', title: 'Agency network' },
+  { match: '/admin/agencies/network', title: 'Agency Network' },
   { match: '/admin/agencies', title: 'Agencies' },
-  { match: '/admin/child-agencies', title: 'Child agencies' },
-  { match: '/admin/sub-child-agencies', title: 'Sub-child agencies' },
+  { match: '/admin/child-agencies', title: 'Child Agencies' },
   { match: '/admin/notifications', title: 'Notifications' },
   { match: '/admin/settings', title: 'Settings' },
+  { match: '/admin/otp-logs', title: 'OTP Logs' },
 ]
 
 function titleForPath(pathname) {
-  if (/^\/admin\/packages\/[^/]+\/whitelabels$/.test(pathname)) return 'Package whitelabels'
-  if (/^\/admin\/packages\/[^/]+\/bookings$/.test(pathname)) return 'Package bookings'
-  if (/^\/admin\/packages\/[^/]+\/community$/.test(pathname)) return 'Package chat'
-  if (/^\/admin\/packages\/[^/]+\/reviews$/.test(pathname)) return 'Package reviews'
-  if (/^\/admin\/child-agencies\/[^/]+\/whitelabels$/.test(pathname)) return 'Agent whitelabels'
-  if (/^\/admin\/sub-child-agencies\/[^/]+\/whitelabels$/.test(pathname)) return 'Agent whitelabels'
-  if (/^\/admin\/child-agencies\/[^/]+\/customers$/.test(pathname)) return 'Agency customers'
-  if (/^\/admin\/sub-child-agencies\/[^/]+\/customers$/.test(pathname)) return 'Agency customers'
-  if (/^\/admin\/child-agencies\/[^/]+\/parents$/.test(pathname)) return 'Parent agencies'
-  if (/^\/admin\/sub-child-agencies\/[^/]+\/parents$/.test(pathname)) return 'Child agencies'
-  const hit = PAGE_TITLES.find((e) => pathname === e.match || pathname.startsWith(e.match + '/'))
-  if (hit) return hit.title
-  if (pathname.startsWith('/admin')) return 'Admin'
-  return 'Admin'
+  if (/^\/admin\/packages\/[^/]+\/whitelabels$/.test(pathname)) return 'Package Whitelabels'
+  if (/^\/admin\/packages\/[^/]+\/bookings$/.test(pathname)) return 'Package Bookings'
+  if (/^\/admin\/packages\/[^/]+\/community$/.test(pathname)) return 'Package Chat'
+  if (/^\/admin\/packages\/[^/]+\/reviews$/.test(pathname)) return 'Package Reviews'
+  if (/^\/admin\/child-agencies\/[^/]+\/whitelabels$/.test(pathname)) return 'Agent Whitelabels'
+  if (/^\/admin\/child-agencies\/[^/]+\/customers$/.test(pathname)) return 'Agency Customers'
+  if (/^\/admin\/child-agencies\/[^/]+\/parents$/.test(pathname)) return 'Parent Agencies'
+  const hit = PAGE_TITLES.find(e => pathname === e.match || pathname.startsWith(e.match + '/'))
+  return hit?.title || 'Admin'
 }
 
 export default function Header({ onMenuClick }) {
@@ -39,7 +34,9 @@ export default function Header({ onMenuClick }) {
   const { pathname } = useLocation()
   const pageTitle = titleForPath(pathname)
   const displayName = user?.name?.trim() || 'Administrator'
-  const displayContact = user?.email || user?.phone || ''
+  const initials = displayName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
+  const API_BASE = import.meta.env.VITE_API_BASE_URL?.replace('/api', '').replace(/\/$/, '') || 'http://localhost:5001'
+  const profileImageUrl = user?.profileImage ? `${API_BASE}/${user.profileImage}` : null
 
   const [menuOpen, setMenuOpen] = useState(false)
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
@@ -47,104 +44,77 @@ export default function Header({ onMenuClick }) {
 
   useEffect(() => {
     if (!menuOpen) return
-    const onDocDown = (e) => {
-      if (menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false)
-    }
-    const onKey = (e) => { if (e.key === 'Escape') setMenuOpen(false) }
-    document.addEventListener('mousedown', onDocDown)
-    document.addEventListener('keydown', onKey)
-    return () => {
-      document.removeEventListener('mousedown', onDocDown)
-      document.removeEventListener('keydown', onKey)
-    }
+    const handler = (e) => { if (menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false) }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
   }, [menuOpen])
 
   useEffect(() => { setMenuOpen(false) }, [pathname])
 
-  const goSettings = () => { setMenuOpen(false); navigate('/admin/settings') }
-  const requestLogout = () => { setMenuOpen(false); setShowLogoutConfirm(true) }
-  const handleLogout = () => { setShowLogoutConfirm(false); logout(); navigate('/login', { replace: true }) }
-
   return (
     <>
-      <header className="sticky top-0 z-30 border-b border-gray-200 bg-white">
-        <div className="flex h-14 items-center justify-between gap-3 px-4 sm:px-6">
-          <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
-            <button
-              type="button"
-              onClick={onMenuClick}
-              className="-ml-1 rounded-lg p-2 text-gray-700 transition-colors hover:bg-gray-100 lg:hidden"
-              aria-label="Open menu"
-            >
-              <Menu className="h-5 w-5" strokeWidth={2} />
+      <header className="sticky top-0 z-30 border-b border-gray-100/80 bg-white/90 backdrop-blur-md">
+        <div className="flex h-16 items-center justify-between gap-4 px-5 sm:px-6">
+
+          {/* Left: hamburger + title */}
+          <div className="flex min-w-0 flex-1 items-center gap-3">
+            <button type="button" onClick={onMenuClick}
+              className="flex h-8 w-8 items-center justify-center rounded-xl border border-gray-200 text-gray-500 transition hover:bg-gray-50 lg:hidden">
+              <Menu className="h-4 w-4" strokeWidth={2} />
             </button>
-            <div className="min-w-0 border-l border-gray-200 pl-3 leading-tight lg:ml-0 lg:border-l-0 lg:pl-0">
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">OnTrip · Admin</p>
-              <h1 className="truncate text-base font-semibold text-gray-900">{pageTitle}</h1>
+            <div className="min-w-0">
+              <h1 className="truncate text-base font-bold text-gray-900">{pageTitle}</h1>
             </div>
           </div>
 
-          <div className="relative shrink-0" ref={menuRef}>
-            <button
-              type="button"
-              onClick={() => setMenuOpen((o) => !o)}
-              className="flex items-center gap-2 rounded-lg border border-transparent py-1 pl-1 pr-2 transition-colors hover:border-gray-200 hover:bg-gray-50 sm:gap-2.5 sm:pl-2 sm:pr-2"
-              aria-expanded={menuOpen}
-              aria-haspopup="menu"
-              aria-label="Account menu"
-            >
-              <div className="hidden max-w-[200px] text-right leading-tight sm:block">
-                <p className="truncate text-sm font-semibold text-gray-900">{displayName}</p>
-                {displayContact ? (
-                  <p className="truncate text-[11px] text-gray-600">{displayContact}</p>
-                ) : (
-                  <p className="text-[11px] text-gray-400">Signed in</p>
-                )}
-              </div>
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary-600 text-white shadow-sm">
-                <User className="h-[18px] w-[18px]" strokeWidth={2} aria-hidden />
-              </div>
-              <ChevronDown
-                className={`h-4 w-4 shrink-0 text-gray-500 transition-transform ${menuOpen ? 'rotate-180' : ''}`}
-                strokeWidth={2}
-                aria-hidden
-              />
+          {/* Right: notification bell + user menu */}
+          <div className="flex shrink-0 items-center gap-2">
+            <button type="button" onClick={() => navigate('/admin/notifications')}
+              className="flex h-9 w-9 items-center justify-center rounded-xl border border-gray-200 text-gray-500 transition hover:bg-gray-50 hover:text-gray-700">
+              <Bell className="h-4 w-4" strokeWidth={2} />
             </button>
 
-            {menuOpen ? (
-              <div
-                className="absolute right-0 top-full z-50 mt-1 w-[min(100vw-2rem,14rem)] overflow-hidden rounded-lg border border-gray-200 bg-white py-1 shadow-lg ring-1 ring-black/5 sm:w-56"
-                role="menu"
-                aria-orientation="vertical"
-              >
-                <div className="border-b border-gray-100 px-3 py-2.5 sm:hidden">
-                  <p className="truncate text-sm font-semibold text-gray-900">{displayName}</p>
-                  {displayContact ? (
-                    <p className="truncate text-xs text-gray-600">{displayContact}</p>
-                  ) : (
-                    <p className="text-xs text-gray-400">Signed in</p>
-                  )}
+            <div className="relative" ref={menuRef}>
+              <button type="button" onClick={() => setMenuOpen(o => !o)}
+                className="flex items-center gap-2.5 rounded-xl border border-gray-200 bg-white px-2.5 py-1.5 transition hover:border-gray-300 hover:shadow-sm">
+                <div className="flex h-7 w-7 items-center justify-center overflow-hidden rounded-lg bg-gradient-to-br from-primary-500 to-primary-700 text-[11px] font-bold text-white">
+                  {profileImageUrl ? <img src={profileImageUrl} alt={displayName} className="h-full w-full object-cover" /> : initials}
                 </div>
-                <button
-                  type="button"
-                  role="menuitem"
-                  onClick={goSettings}
-                  className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
-                >
-                  <Settings className="h-4 w-4 shrink-0 text-gray-500" strokeWidth={2} aria-hidden />
-                  Settings
-                </button>
-                <button
-                  type="button"
-                  role="menuitem"
-                  onClick={requestLogout}
-                  className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-sm font-medium text-red-700 transition-colors hover:bg-red-50"
-                >
-                  <LogOut className="h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
-                  Log out
-                </button>
-              </div>
-            ) : null}
+                <span className="hidden max-w-[120px] truncate text-sm font-semibold text-gray-800 sm:block">{displayName}</span>
+                <ChevronDown className={`h-3.5 w-3.5 text-gray-400 transition-transform duration-200 ${menuOpen ? 'rotate-180' : ''}`} strokeWidth={2.5} />
+              </button>
+
+              {menuOpen && (
+                <div className="absolute right-0 top-full z-50 mt-2 w-52 overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-xl shadow-gray-200/60 ring-1 ring-black/5 animate-scale-in">
+                  {/* Profile header */}
+                  <div className="px-4 py-3.5" style={{ background: 'linear-gradient(135deg, #312885 0%, #1a1745 100%)' }}>
+                    <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl bg-white/15 text-sm font-bold text-white ring-1 ring-white/20">
+                      {profileImageUrl ? <img src={profileImageUrl} alt={displayName} className="h-full w-full object-cover" /> : initials}
+                    </div>
+                    <p className="mt-2 truncate text-sm font-bold text-white">{displayName}</p>
+                    <p className="truncate text-[11px] text-white/50">{user?.email || ''}</p>
+                    <span className="mt-1.5 inline-flex rounded-full bg-white/15 px-2 py-0.5 text-[10px] font-semibold text-white/80">
+                      Administrator
+                    </span>
+                  </div>
+
+                  <div className="p-1.5">
+                    <button type="button"
+                      onClick={() => { setMenuOpen(false); navigate('/admin/settings') }}
+                      className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50">
+                      <Settings className="h-4 w-4 text-gray-400" strokeWidth={2} />
+                      Settings
+                    </button>
+                    <button type="button"
+                      onClick={() => { setMenuOpen(false); setShowLogoutConfirm(true) }}
+                      className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium text-red-600 transition hover:bg-red-50">
+                      <LogOut className="h-4 w-4" strokeWidth={2} />
+                      Log out
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </header>
@@ -152,7 +122,7 @@ export default function Header({ onMenuClick }) {
       <ConfirmDialog
         isOpen={showLogoutConfirm}
         onClose={() => setShowLogoutConfirm(false)}
-        onConfirm={handleLogout}
+        onConfirm={() => { setShowLogoutConfirm(false); logout(); navigate('/login', { replace: true }) }}
         title="Sign out?"
         message="You will need to sign in again to access the admin panel."
         confirmText="Log out"

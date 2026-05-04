@@ -50,14 +50,14 @@ export default function AdminLayout() {
           className={
             fullBleedCommunity
               ? 'flex min-h-0 flex-1 flex-col overflow-hidden p-0'
-              : 'flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8'
+              : 'flex-1 overflow-y-auto'
           }
         >
           <div
             className={
               fullBleedCommunity
                 ? 'flex min-h-0 min-w-0 flex-1 flex-col'
-                : 'mx-auto max-w-7xl'
+                : 'mx-auto max-w-7xl p-4 sm:p-6'
             }
           >
             <Outlet />
@@ -65,12 +65,8 @@ export default function AdminLayout() {
         </main>
       </div>
       {sidebarOpen ? (
-        <button
-          type="button"
-          className="fixed inset-0 z-40 bg-black/40 lg:hidden"
-          aria-label="Close menu"
-          onClick={() => setSidebarOpen(false)}
-        />
+        <button type="button" className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm lg:hidden"
+          aria-label="Close menu" onClick={() => setSidebarOpen(false)} />
       ) : null}
     </div>
   )

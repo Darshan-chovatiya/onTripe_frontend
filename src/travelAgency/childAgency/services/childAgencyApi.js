@@ -90,7 +90,8 @@ export function getChildProfile() {
 }
 
 export function updateChildProfile(body) {
-  return axiosInstance.patch('/child-agent/profile', body)
+  const isFormData = body instanceof FormData
+  return axiosInstance.patch('/child-agent/profile', body, isFormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : {})
 }
 
 export function changeChildPassword(body) {
@@ -152,4 +153,8 @@ export default {
 
 export function updateChildKyc(formData) {
   return axiosInstance.patch('/child-agent/kyc', formData)
+}
+
+export function getEarnings(params = {}) {
+  return axiosInstance.get('/child-agent/earnings', { params })
 }

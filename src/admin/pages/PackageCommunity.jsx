@@ -8,7 +8,7 @@ export default function AdminPackageCommunity() {
   const { user } = useAuth()
 
   return (
-    <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+    <div className="flex min-h-0 min-w-0 flex-1 flex-col px-2">
       <CommunityChat
         packageId={packageId}
         currentUserId={user?.id}

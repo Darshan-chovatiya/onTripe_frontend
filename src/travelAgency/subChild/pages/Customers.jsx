@@ -17,6 +17,8 @@ import { exportToExcel } from '@/admin/utils/exportExcel.js'
 import CustomerDetailModal from '@/travelAgency/shared/components/CustomerDetailModal.jsx'
 
 const PAGE_SIZE = 10
+const API_BASE = import.meta.env.VITE_API_BASE_URL?.replace('/api', '').replace(/\/$/, '') || 'http://localhost:5001'
+const getImgUrl = (p) => p ? (p.startsWith('http') ? p : `${API_BASE}/${String(p).replace(/^\//, '')}`) : null
 
 export default function SubChildCustomers() {
   const { toast } = useToast()
@@ -59,6 +61,7 @@ export default function SubChildCustomers() {
         name: c.name || c.customer?.name || '—',
         phone: c.phone || c.customer?.phone || '—',
         email: c.email || c.customer?.email || '—',
+        profileImage: c.customer?.profileImage || c.profileImage || null,
         notes: c.notes || '',
         isActive: c.isActive !== false,
         createdAt: c.createdAt || null,
@@ -297,7 +300,10 @@ export default function SubChildCustomers() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {rows.map(c => (
+                {rows.map(c => {
+                  const initials = (c.name || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
+                  const imgUrl = getImgUrl(c.profileImage)
+                  return (
                   <tr key={c.id} className="transition-colors hover:bg-gray-50/80">
                     <td className="px-4 py-2.5 align-middle">
                       <button
@@ -310,7 +316,9 @@ export default function SubChildCustomers() {
                     </td>
                     <td className="px-4 py-2.5 align-middle">
                       <div className="flex items-center gap-2">
-                        <UserCircle className="h-5 w-5 shrink-0 text-primary-400" />
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 text-[11px] font-bold text-white">
+                          {imgUrl ? <img src={imgUrl} alt={c.name} className="h-full w-full object-cover" /> : initials}
+                        </div>
                         <div className="min-w-0">
                           <p className="truncate text-sm font-semibold text-gray-900">{c.name}</p>
                           {c.notes && <p className="mt-0.5 truncate text-xs text-gray-400">{c.notes}</p>}
@@ -367,7 +375,8 @@ export default function SubChildCustomers() {
                       </div>
                     </td>
                   </tr>
-                ))}
+                  )
+                })}
               </tbody>
             </table>
           </div>
