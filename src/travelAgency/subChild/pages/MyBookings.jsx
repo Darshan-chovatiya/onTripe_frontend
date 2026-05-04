@@ -132,57 +132,71 @@ export default function MyBookings() {
         {bookings.length > 0 && (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[860px] text-sm">
-              <thead className="border-b border-gray-200 bg-gray-50">
-                <tr>
-                  <th className="px-4 py-2.5 text-left align-middle text-xs font-medium text-gray-600">Booking ID</th>
-                  <th className="px-4 py-2.5 text-left align-middle text-xs font-medium text-gray-600">Package / offer</th>
-                  <th className="px-4 py-2.5 text-left align-middle text-xs font-medium text-gray-600">Customer</th>
-                  <th className="px-4 py-2.5 text-left align-middle text-xs font-medium text-gray-600">Travel date</th>
-                  <th className="px-4 py-2.5 text-left align-middle text-xs font-medium text-gray-600">Amount</th>
-                  <th className="px-4 py-2.5 text-left align-middle text-xs font-medium text-gray-600">Status</th>
-                  <th className="px-4 py-2.5 text-right align-middle text-xs font-medium text-gray-600">Actions</th>
+              <thead>
+                <tr className="border-b border-gray-100 bg-gradient-to-r from-gray-50 to-gray-50/60">
+                  <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-gray-400">Booking</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-gray-400">Package / Offer</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-gray-400">Customer</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-gray-400">Travel Date</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-gray-400">Amount</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-gray-400">Status</th>
+                  <th className="px-4 py-3 text-right text-[11px] font-bold uppercase tracking-wider text-gray-400">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
-                {bookings.map((b) => (
-                  <tr key={b._id} className="transition-colors hover:bg-gray-50/80">
-                    <td className="px-4 py-2.5 align-middle font-mono text-xs font-semibold text-gray-900">{b.bookingId || '—'}</td>
-                    <td className="max-w-[12rem] px-4 py-2.5 align-middle">
-                      <button type="button" onClick={() => { const tab = b.whitelabelPackage ? 'whitelabels' : 'available'; navigate(`/agency/packages?tab=${tab}&search=${encodeURIComponent(bookingOfferLabel(b))}`) }}
-                        className="line-clamp-2 cursor-pointer text-left text-primary-600 transition-colors hover:text-primary-700 hover:underline">
-                        {bookingOfferLabel(b)}
-                      </button>
-                    </td>
-                    <td className="px-4 py-2.5 align-middle">
-                      <div className="font-medium text-gray-900">{b.customer?.name || '—'}</div>
-                      <div className="text-xs text-gray-500">{b.customer?.phone || ''}</div>
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-2.5 align-middle text-gray-600">
-                      <span className="inline-flex items-center gap-1">
-                        <CalendarDays className="h-3.5 w-3.5 text-gray-400" />
-                        {b.travelDate ? new Date(b.travelDate).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }) : '—'}
-                      </span>
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-2.5 align-middle text-gray-800">
-                      <span className="inline-flex items-center gap-0.5"><IndianRupee className="h-3.5 w-3.5" />{b.totalAmount != null ? Number(b.totalAmount).toLocaleString('en-IN') : '—'}</span>
-                    </td>
-                    <td className="px-4 py-2.5 align-middle">
-                      <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold capitalize ${statusClass(b.bookingStatus)}`}>{b.bookingStatus || '—'}</span>
-                    </td>
-                    <td className="px-4 py-2.5 align-middle text-right">
-                      <div className="inline-flex items-center gap-1.5">
-                        <button type="button" onClick={() => navigate(`/agency/my-bookings/${b._id}`)}
-                          className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border border-gray-200 bg-white text-gray-600 transition-colors hover:bg-gray-50 hover:text-gray-900" title="View">
-                          <Eye size={12} />
+              <tbody>
+                {bookings.map((b) => {
+                  const customerName = b.customer?.name || '—'
+                  const initials = customerName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
+                  return (
+                    <tr key={b._id} className="group border-b border-gray-50 transition-all last:border-0 hover:bg-gray-50/80">
+                      <td className="px-4 py-3.5 align-middle">
+                        <span className="font-mono text-[11px] font-semibold text-gray-400">#{b.bookingId?.slice(-8) || '—'}</span>
+                      </td>
+                      <td className="max-w-[12rem] px-4 py-3.5 align-middle">
+                        <button type="button" onClick={() => { const tab = b.whitelabelPackage ? 'whitelabels' : 'available'; navigate(`/agency/packages?tab=${tab}&search=${encodeURIComponent(bookingOfferLabel(b))}`) }}
+                          className="line-clamp-2 text-left text-sm font-medium text-primary-600 hover:text-primary-700 hover:underline">
+                          {bookingOfferLabel(b)}
                         </button>
-                        <button type="button" onClick={() => navigate(`/agency/my-bookings/edit/${b._id}`)}
-                          className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border border-gray-200 bg-white text-gray-600 transition-colors hover:border-primary-200 hover:bg-primary-50 hover:text-primary-600" title="Edit">
-                          <Pencil size={13} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                        {b.whitelabelPackage && <span className="text-[10px] font-semibold text-violet-500">Whitelabel</span>}
+                      </td>
+                      <td className="px-4 py-3.5 align-middle">
+                        <div className="flex items-center gap-2.5">
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary-400 to-primary-600 text-[10px] font-bold text-white shadow-sm">
+                            {initials}
+                          </div>
+                          <div>
+                            <p className="text-sm font-semibold text-gray-900">{customerName}</p>
+                            {b.customer?.phone && <p className="text-[11px] text-gray-400">{b.customer.phone}</p>}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3.5 align-middle text-[12px] text-gray-500">
+                        {b.travelDate ? new Date(b.travelDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
+                      </td>
+                      <td className="px-4 py-3.5 align-middle">
+                        <span className="text-sm font-bold text-gray-900">₹{b.totalAmount != null ? Number(b.totalAmount).toLocaleString('en-IN') : '—'}</span>
+                      </td>
+                      <td className="px-4 py-3.5 align-middle">
+                        <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold capitalize ${statusClass(b.bookingStatus)}`}>
+                          <span className="h-1.5 w-1.5 rounded-full bg-current opacity-60" />
+                          {b.bookingStatus || '—'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3.5 align-middle text-right">
+                        <div className="inline-flex items-center gap-1">
+                          <button type="button" onClick={() => navigate(`/agency/my-bookings/${b._id}`)} title="View"
+                            className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-400 shadow-sm transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-600">
+                            <Eye size={13} />
+                          </button>
+                          <button type="button" onClick={() => navigate(`/agency/my-bookings/edit/${b._id}`)} title="Edit"
+                            className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-400 shadow-sm transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-600">
+                            <Pencil size={13} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>

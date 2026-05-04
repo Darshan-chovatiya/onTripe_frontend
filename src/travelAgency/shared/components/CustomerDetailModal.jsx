@@ -69,6 +69,7 @@ export default function CustomerDetailModal({ isOpen, onClose, customer }) {
   ].filter(d => d.path) : []
 
   const initials = c?.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '?'
+  const profileImgUrl = c?.profileImage ? `${BASE_URL}/${String(c.profileImage).replace(/^\/+/, '')}` : null
 
   return (
     <>
@@ -83,8 +84,11 @@ export default function CustomerDetailModal({ isOpen, onClose, customer }) {
               <div className="rounded-2xl border border-gray-200 bg-gradient-to-br from-slate-50 to-white p-5 shadow-sm">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="flex items-center gap-4">
-                    <div className="h-14 w-14 shrink-0 rounded-full bg-primary-100 flex items-center justify-center text-primary-700 font-bold text-lg">
-                      {initials}
+                    <div className="h-14 w-14 shrink-0 overflow-hidden rounded-full bg-primary-100 flex items-center justify-center text-primary-700 font-bold text-lg">
+                      {profileImgUrl
+                        ? <img src={profileImgUrl} alt={c.name} className="h-full w-full object-cover" />
+                        : initials
+                      }
                     </div>
                     <div>
                       <p className="text-lg font-bold text-gray-900">{c.name}</p>

@@ -21,6 +21,9 @@ import {
   Download,
   Paperclip,
   X,
+  Pencil,
+  Camera,
+  Save,
 } from 'lucide-react'
 import adminApi from '@/admin/services/adminApi'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
@@ -33,6 +36,179 @@ const getFileUrl = (path) => {
   if (path.startsWith('http')) return path
   const base = import.meta.env.VITE_API_BASE_URL?.replace('/api', '').replace(/\/$/, '') || 'http://localhost:5001'
   return `${base}/${String(path).replace(/^\//, '')}`
+}
+
+// ── Edit Customer Modal ──────────────────────────────────────────────────────
+function EditCustomerModal({ customer, onClose, onSaved }) {
+  const { toast } = useToast()
+  const fileInputRef = useRef(null)
+  const [form, setForm] = useState({
+    name: customer.name || '',
+    email: customer.email || '',
+    phone: customer.phone || '',
+  })
+  const [errors, setErrors] = useState({})
+  const [saving, setSaving] = useState(false)
+  const [uploadingImg, setUploadingImg] = useState(false)
+  const [previewUrl, setPreviewUrl] = useState(customer.profileImage ? getFileUrl(customer.profileImage) : null)
+
+  const validate = () => {
+    const e = {}
+    if (!form.name.trim()) e.name = 'Name is required'
+    if (!form.phone.trim()) e.phone = 'Phone is required'
+    else if (!/^\d{10}$/.test(form.phone.trim())) e.phone = 'Must be 10 digits'
+    if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) e.email = 'Invalid email'
+    setErrors(e)
+    return !Object.keys(e).length
+  }
+
+  const handleImageChange = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setPreviewUrl(URL.createObjectURL(file))
+    setUploadingImg(true)
+    try {
+      const res = await adminApi.uploadCustomerProfileImage(customer._id, file)
+      if (res?.data?.success) {
+        toast.success('Photo updated')
+        onSaved({ ...customer, profileImage: res.data.data.profileImage })
+      }
+    } catch (err) {
+      toast.error(err?.response?.data?.message || 'Upload failed')
+      setPreviewUrl(customer.profileImage ? getFileUrl(customer.profileImage) : null)
+    } finally { setUploadingImg(false) }
+  }
+
+  const handleRemovePhoto = async () => {
+    setPreviewUrl(null)
+    try {
+      await adminApi.updateCustomer(customer._id, { profileImage: '' })
+      onSaved({ ...customer, profileImage: '' })
+      toast.success('Photo removed')
+    } catch { toast.error('Could not remove photo') }
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    if (!validate()) return
+    setSaving(true)
+    try {
+      const res = await adminApi.updateCustomer(customer._id, {
+        name: form.name.trim(),
+        email: form.email.trim(),
+        phone: form.phone.trim(),
+      })
+      if (res?.data?.success) {
+        toast.success('Customer updated')
+        onSaved(res.data.data.customer)
+        onClose()
+      }
+    } catch (err) {
+      toast.error(err?.response?.data?.message || 'Update failed')
+    } finally { setSaving(false) }
+  }
+
+  const initials = (form.name || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+      <div
+        className="relative z-10 w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl animate-scale-in"
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
+          <div className="flex items-center gap-2">
+            <Pencil className="h-4 w-4 text-primary-600" strokeWidth={2} />
+            <h2 className="text-sm font-bold text-gray-900">Edit Customer</h2>
+          </div>
+          <button type="button" onClick={onClose}
+            className="rounded-lg p-1.5 text-gray-400 transition hover:bg-gray-100 hover:text-gray-700">
+            <X className="h-4 w-4" strokeWidth={2} />
+          </button>
+        </div>
+
+        <div className="p-6 space-y-5">
+          {/* Profile photo */}
+          <div className="flex flex-col items-center gap-3">
+            <div className="relative">
+              <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-primary-400 to-primary-600 text-2xl font-black text-white shadow-md ring-4 ring-white">
+                {previewUrl
+                  ? <img src={previewUrl} alt="Profile" className="h-full w-full object-cover" />
+                  : initials
+                }
+              </div>
+              <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploadingImg}
+                className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-primary-600 shadow-md transition hover:bg-primary-700 disabled:opacity-60">
+                {uploadingImg
+                  ? <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                  : <Camera className="h-3.5 w-3.5 text-white" strokeWidth={2.5} />
+                }
+              </button>
+              {previewUrl && !uploadingImg && (
+                <button type="button" onClick={handleRemovePhoto}
+                  className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 shadow transition hover:bg-red-600">
+                  <X className="h-2.5 w-2.5 text-white" strokeWidth={3} />
+                </button>
+              )}
+              <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleImageChange} />
+            </div>
+            <button type="button" onClick={() => fileInputRef.current?.click()}
+              className="text-xs font-medium text-primary-600 hover:text-primary-800 transition">
+              {previewUrl ? 'Change photo' : 'Add photo'}
+            </button>
+          </div>
+
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-gray-500">Full Name *</label>
+              <input type="text" value={form.name}
+                onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
+                className="input-field w-full" placeholder="Customer name" />
+              {errors.name && <p className="mt-1 text-xs text-red-500">{errors.name}</p>}
+            </div>
+            <div>
+              <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-gray-500">Phone *</label>
+              <div className="relative">
+                <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" strokeWidth={2} />
+                <input type="tel" inputMode="numeric" maxLength={10} value={form.phone}
+                  onChange={e => setForm(p => ({ ...p, phone: e.target.value.replace(/\D/g, '') }))}
+                  className="input-field w-full pl-9" placeholder="10-digit number" />
+              </div>
+              {errors.phone && <p className="mt-1 text-xs text-red-500">{errors.phone}</p>}
+            </div>
+            <div>
+              <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-gray-500">Email</label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" strokeWidth={2} />
+                <input type="email" value={form.email}
+                  onChange={e => setForm(p => ({ ...p, email: e.target.value }))}
+                  className="input-field w-full pl-9" placeholder="email@example.com" />
+              </div>
+              {errors.email && <p className="mt-1 text-xs text-red-500">{errors.email}</p>}
+            </div>
+
+            <div className="flex gap-3 pt-1">
+              <button type="button" onClick={onClose}
+                className="flex-1 rounded-xl border border-gray-200 py-2.5 text-sm font-semibold text-gray-600 transition hover:bg-gray-50">
+                Cancel
+              </button>
+              <button type="submit" disabled={saving}
+                className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-primary-600 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-primary-700 disabled:opacity-60">
+                {saving
+                  ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                  : <Save className="h-4 w-4" strokeWidth={2.5} />
+                }
+                {saving ? 'Saving…' : 'Save changes'}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  )
 }
 
 function TicketsPopup({ tickets, bookingId, onClose }) {
@@ -309,6 +485,7 @@ export default function CustomerDetail() {
   const [bookingsLoading, setBookingsLoading] = useState(true)
   const [exportLoading, setExportLoading] = useState(false)
   const [ticketPopup, setTicketPopup] = useState(null)
+  const [editOpen, setEditOpen] = useState(false)
 
   const load = useCallback(async () => {
     if (!customerId) return
@@ -451,6 +628,7 @@ export default function CustomerDetail() {
 
   const profiles = Array.isArray(customer?.agencyProfiles) ? customer.agencyProfiles : []
   const displayName = customer?.name?.trim() || 'Unnamed traveler'
+  const profileImageUrl = customer?.profileImage ? getFileUrl(customer.profileImage) : null
 
   if (loading) {
     return (
@@ -504,8 +682,11 @@ export default function CustomerDetail() {
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex items-start gap-4">
-          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-gray-200 bg-gray-50 text-gray-600">
-            <UserCircle2 className="h-8 w-8" strokeWidth={1.5} />
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full border border-gray-200 bg-gray-50 text-gray-600">
+            {profileImageUrl
+              ? <img src={profileImageUrl} alt={displayName} className="h-full w-full object-cover" />
+              : <UserCircle2 className="h-8 w-8" strokeWidth={1.5} />
+            }
           </div>
           <div>
             <h1 className="text-xl font-semibold tracking-tight text-gray-900 sm:text-2xl">{displayName}</h1>
@@ -530,14 +711,14 @@ export default function CustomerDetail() {
             </div>
           </div>
         </div>
-        {/* <button
+        <button
           type="button"
-          onClick={() => navigate('/admin/customers')}
-          className="inline-flex shrink-0 items-center gap-2 self-start rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
+          onClick={() => setEditOpen(true)}
+          className="inline-flex shrink-0 items-center gap-2 self-start rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm transition hover:border-primary-300 hover:bg-primary-50 hover:text-primary-700"
         >
-          <ArrowLeft className="h-4 w-4" />
-          Back to list
-        </button> */}
+          <Pencil className="h-4 w-4" strokeWidth={2} />
+          Edit
+        </button>
       </div>
 
       <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm sm:p-5">
@@ -744,6 +925,14 @@ export default function CustomerDetail() {
           tickets={ticketPopup.tickets}
           bookingId={ticketPopup.bookingId}
           onClose={() => setTicketPopup(null)}
+        />
+      )}
+
+      {editOpen && (
+        <EditCustomerModal
+          customer={customer}
+          onClose={() => setEditOpen(false)}
+          onSaved={(updated) => setCustomer(prev => ({ ...prev, ...updated }))}
         />
       )}
     </div>

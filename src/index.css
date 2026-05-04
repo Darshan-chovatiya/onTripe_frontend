@@ -26,6 +26,15 @@
   body {
     @apply bg-gray-50 text-gray-900 font-sans antialiased;
   }
+  button,
+  [role="button"],
+  label[for],
+  label[htmlFor] {
+    cursor: pointer;
+  }
+  button:disabled {
+    cursor: not-allowed;
+  }
 }
 
 @layer components {

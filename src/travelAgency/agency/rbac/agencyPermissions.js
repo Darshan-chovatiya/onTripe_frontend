@@ -26,6 +26,7 @@ export const P = {
   /** Sub-child: only view own bookings */
   BOOKINGS_OWN: 'agency:bookings:own',
   SETTINGS: 'agency:settings',
+  EARNINGS: 'agency:earnings',
 }
 
 /** Parent: full ops — no sub-child-only screens (my bookings, profile). */
@@ -36,6 +37,7 @@ const PARENT_PERMISSIONS = [
   P.BOOKINGS_NETWORK,
   P.NETWORK_CHILDREN,
   P.CUSTOMERS,
+  P.EARNINGS,
   P.SETTINGS,
 ]
 
@@ -50,6 +52,7 @@ const ROLE_TO_PERMISSIONS = {
     P.NETWORK_CHILDREN,
     P.NETWORK_SUBCHILDREN,
     P.CUSTOMERS,
+    P.EARNINGS,
     P.SETTINGS,
   ],
   [ROLES.SUB_CHILD]: [

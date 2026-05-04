@@ -50,6 +50,8 @@ const KYC_ICONS = {
 }
 
 const PAGE_SIZE = 10
+const API_BASE = import.meta.env.VITE_API_BASE_URL?.replace('/api', '').replace(/\/$/, '') || 'http://localhost:5001'
+const getImgUrl = (p) => p ? (p.startsWith('http') ? p : `${API_BASE}/${String(p).replace(/^\//, '')}`) : null
 
 export default function ManageChildren() {
   const navigate = useNavigate()
@@ -341,134 +343,93 @@ export default function ManageChildren() {
         {children.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[860px] text-sm">
-              <thead className="border-b border-gray-200 bg-gray-50">
-                <tr>
-                  <th className="px-4 py-2.5 text-left align-middle text-xs font-medium text-gray-600">
-                    <button
-                      type="button"
-                      onClick={toggleSelectAllFiltered}
-                      className="inline-flex items-center gap-2 text-xs font-semibold text-gray-600 hover:text-gray-900"
-                      title={allFilteredSelected ? 'Deselect all in view' : 'Select all in view'}
-                    >
-                      <span
-                        className={`flex h-5 w-5 items-center justify-center rounded border ${
-                          allFilteredSelected ? 'border-primary-600 bg-primary-600 text-white' : 'border-gray-300 bg-white text-transparent'
-                        }`}
-                      >
-                        <Check size={12} strokeWidth={4} />
+              <thead>
+                <tr className="border-b border-gray-100 bg-gradient-to-r from-gray-50 to-gray-50/60">
+                  <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-gray-400">
+                    <button type="button" onClick={toggleSelectAllFiltered}
+                      className="inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-gray-400 hover:text-gray-700">
+                      <span className={`flex h-4.5 w-4.5 items-center justify-center rounded border ${allFilteredSelected ? 'border-primary-600 bg-primary-600 text-white' : 'border-gray-300 bg-white text-transparent'}`}>
+                        <Check size={11} strokeWidth={4} />
                       </span>
-                      Select
                     </button>
                   </th>
-                  <th className="px-4 py-2.5 text-left align-middle text-xs font-medium text-gray-600">Agent Name</th>
-                  <th className="px-4 py-2.5 text-left align-middle text-xs font-medium text-gray-600">Contact Info</th>
-                  <th className="px-4 py-2.5 text-left align-middle text-xs font-medium text-gray-600">KYC Status</th>
-                  <th className="px-4 py-2.5 text-left align-middle text-xs font-medium text-gray-600">Account Status</th>
-                  <th className="px-4 py-2.5 text-right align-middle text-xs font-medium text-gray-600">Actions</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-gray-400">Agent</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-gray-400">Contact</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-gray-400">KYC</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-gray-400">Status</th>
+                  <th className="px-4 py-3 text-right text-[11px] font-bold uppercase tracking-wider text-gray-400">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody>
                 {children.map(child => {
                   const kycStatus = child.kyc?.status || 'pending'
                   const KycIcon = KYC_ICONS[kycStatus] || Clock
                   const isSelected = selectedIds.has(child._id)
                   const isRejected = child.linkStatus === 'rejected'
+                  const initials = (child.name || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
+                  const logoUrl = getImgUrl(child.agencyLogo || child.profileImage)
 
                   return (
-                    <tr key={child._id} className={`transition-colors ${isRejected ? 'bg-red-50/40 hover:bg-red-50/60' : 'hover:bg-gray-50/80'}`}>
-                      <td className="px-4 py-2.5 align-middle">
-                        <button
-                          type="button"
-                          onClick={() => toggleSelect(child._id)}
-                          disabled={isRejected}
-                          className={`flex h-8 w-8 items-center justify-center rounded-lg border transition-colors ${
-                            isSelected ? 'border-primary-600 bg-primary-600 text-white' : 'border-gray-200 bg-white text-transparent hover:border-primary-400'
-                          } disabled:opacity-40 disabled:cursor-not-allowed`}
-                          title={isSelected ? 'Selected' : 'Select'}
-                        >
-                          <Check size={14} strokeWidth={4} />
+                    <tr key={child._id} className={`group border-b border-gray-50 transition-all last:border-0 ${isRejected ? 'bg-red-50/30 hover:bg-red-50/50' : 'hover:bg-gray-50/80'}`}>
+                      <td className="px-4 py-3.5 align-middle">
+                        <button type="button" onClick={() => toggleSelect(child._id)} disabled={isRejected}
+                          className={`flex h-8 w-8 items-center justify-center rounded-lg border transition-colors ${isSelected ? 'border-primary-600 bg-primary-600 text-white' : 'border-gray-200 bg-white text-transparent hover:border-primary-400'} disabled:opacity-40`}>
+                          <Check size={13} strokeWidth={4} />
                         </button>
                       </td>
-                      <td className="px-4 py-2.5 align-middle">
-                        <div className="flex items-center gap-2">
-                          <div className="h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500">
-                            <User size={14} />
+                      <td className="px-4 py-3.5 align-middle">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-primary-400 to-primary-600 text-[11px] font-bold text-white shadow-sm">
+                            {logoUrl ? <img src={logoUrl} alt={child.name} className="h-full w-full object-cover" /> : initials}
                           </div>
                           <div className="min-w-0">
-                            <p className="truncate text-sm font-semibold text-gray-900">
-                              {child.name}
-                            </p>
-                            {/* <p className="mt-0.5 truncate text-xs text-gray-500">Agent ID: {child._id.slice(-6).toUpperCase()}</p> */}
+                            <p className="truncate text-sm font-semibold text-gray-900">{child.name}</p>
+                            {child.agentCode && <p className="font-mono text-[10px] text-gray-400">{child.agentCode}</p>}
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-2.5 align-middle">
-                        <div className="min-w-0">
-                          <p className="flex items-center gap-1.5 text-xs text-gray-700"><Mail size={12} className="text-gray-400" />{child.email || '—'}</p>
-                          {child.phone && <p className="flex items-center gap-1.5 text-xs text-gray-500 mt-0.5"><Phone size={11} className="text-gray-400" />{child.phone}</p>}
-                        </div>
+                      <td className="px-4 py-3.5 align-middle">
+                        <p className="flex items-center gap-1.5 text-[12px] text-gray-700"><Mail size={11} className="text-gray-400" />{child.email || '—'}</p>
+                        {child.phone && <p className="mt-0.5 flex items-center gap-1.5 text-[11px] text-gray-400"><Phone size={11} className="text-gray-400" />{child.phone}</p>}
                       </td>
-                      <td className="px-4 py-2.5 align-middle">
+                      <td className="px-4 py-3.5 align-middle">
                         {isRejected ? (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2.5 py-0.5 text-xs font-medium text-red-700">
-                            Not verified
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-red-50 px-2.5 py-1 text-[11px] font-bold text-red-600">
+                            <span className="h-1.5 w-1.5 rounded-full bg-red-500" />Not verified
                           </span>
                         ) : (
-                          <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${KYC_STYLES[kycStatus]}`}>
-                            <KycIcon size={12} />
+                          <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold capitalize ${KYC_STYLES[kycStatus]}`}>
+                            <span className="h-1.5 w-1.5 rounded-full bg-current opacity-60" />
                             {kycStatus}
                           </span>
                         )}
                       </td>
-                      <td className="px-4 py-2.5 align-middle">
+                      <td className="px-4 py-3.5 align-middle">
                         {isRejected ? (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2.5 py-0.5 text-xs font-medium text-red-700">
-                            Rejected
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-red-50 px-2.5 py-1 text-[11px] font-bold text-red-600">
+                            <span className="h-1.5 w-1.5 rounded-full bg-red-500" />Rejected
                           </span>
                         ) : (
-                          <button
-                            onClick={() => setToggleTarget(child)}
-                            className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium transition-all hover:ring-2 hover:ring-offset-1 ${
-                              child.isActive 
-                                ? 'bg-green-50 text-green-700 hover:ring-green-200' 
-                                : 'bg-red-50 text-red-700 hover:ring-red-200'
-                            }`}
-                            title={child.isActive ? 'Click to Deactivate' : 'Click to Activate'}
-                          >
-                            <ShieldCheck size={12} />
+                          <button onClick={() => setToggleTarget(child)}
+                            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold transition-all hover:ring-2 hover:ring-offset-1 ${child.isActive ? 'bg-emerald-50 text-emerald-700 hover:ring-emerald-200' : 'bg-red-50 text-red-700 hover:ring-red-200'}`}>
+                            <span className={`h-1.5 w-1.5 rounded-full ${child.isActive ? 'bg-emerald-500' : 'bg-red-500'}`} />
                             {child.isActive ? 'Active' : 'Deactivated'}
                           </button>
                         )}
                       </td>
-                      <td className="px-4 py-2.5 align-middle text-right">
-                        {isRejected ? (
-                          <button 
-                            onClick={() => setViewId(child._id)} 
-                            className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border border-gray-200 bg-white text-gray-600 transition-colors hover:bg-gray-50 hover:text-gray-900" 
-                            title="View Details"
-                          >
-                            <Eye size={12} />
+                      <td className="px-4 py-3.5 align-middle text-right">
+                        <div className="inline-flex items-center gap-1">
+                          <button onClick={() => setViewId(child._id)} title="View"
+                            className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-400 shadow-sm transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-600">
+                            <Eye size={13} />
                           </button>
-                        ) : (
-                          <div className="inline-flex items-center gap-1.5">
-                            <button 
-                              onClick={() => setViewId(child._id)} 
-                              className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border border-gray-200 bg-white text-gray-600 transition-colors hover:bg-gray-50 hover:text-gray-900" 
-                              title="View Details"
-                            >
-                              <Eye size={12} />
+                          {!isRejected && child.kyc?.status === 'pending' && (
+                            <button onClick={() => setKycTarget(child)} title="Approve KYC"
+                              className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-400 shadow-sm transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-600">
+                              <UserCheck size={13} />
                             </button>
-                            {child.kyc?.status === 'pending' && (
-                              <button
-                                onClick={() => setKycTarget(child)}
-                                className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border border-gray-200 bg-white text-gray-600 transition-colors hover:bg-gray-50 hover:text-gray-900"
-                                title="Approve KYC"
-                              >
-                                <UserCheck size={13} />
-                              </button>
-                            )}
-                          </div>
-                        )}
+                          )}
+                        </div>
                       </td>
                     </tr>
                   )

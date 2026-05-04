@@ -930,33 +930,50 @@ export default function CommunityChat({
           <div className="p-3">
             <p className="mb-2 px-1 text-xs font-medium text-gray-500">Agents</p>
             <ul className="space-y-1">
-              {filterMembers(community.agentMembers || []).map((m) => (
+              {filterMembers(community.agentMembers || []).map((m) => {
+                const agentInitial = (m.name || '?').charAt(0).toUpperCase()
+                const agentImg = m.agencyLogo || m.profileImage
+                const agentImgUrl = agentImg ? `${BASE_IMG_URL}/${String(agentImg).replace(/^\//, '')}` : null
+                return (
                 <li
                   key={m._id}
                   className="flex items-center justify-between gap-2 rounded-lg px-3 py-2.5 hover:bg-gray-50 dark:hover:bg-white/5"
                 >
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-gray-900 dark:text-white">{m.name || '—'}</p>
-                    <p className="truncate text-xs text-gray-500">{m.email || m.phone || '—'}</p>
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-primary-400 to-primary-600 text-[10px] font-bold text-white">
+                      {agentImgUrl ? <img src={agentImgUrl} alt={m.name} className="h-full w-full object-cover" /> : agentInitial}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-gray-900 dark:text-white">{m.name || '—'}</p>
+                      <p className="truncate text-xs text-gray-500">{m.email || m.phone || '—'}</p>
+                    </div>
                   </div>
                   <span className="shrink-0 text-[11px] font-medium capitalize text-primary-700 dark:text-primary-400">
                     {(m.role || 'agent').replace(/_/g, ' ')}
                   </span>
                 </li>
-              ))}
+                )
+              })}
             </ul>
             <p className="mb-2 mt-4 px-1 text-xs font-medium text-gray-500">Travelers</p>
             <ul className="space-y-1">
               {filterMembers(community.customerMembers || []).map((m) => {
                 const travelerAllowed = travelerCanSendInCommunity(community, m._id)
+                const travelerInitial = (m.name || '?').charAt(0).toUpperCase()
+                const travelerImgUrl = m.profileImage ? `${BASE_IMG_URL}/${String(m.profileImage).replace(/^\//, '')}` : null
                 return (
                   <li
                     key={m._id}
                     className="flex items-center justify-between gap-2 rounded-lg px-3 py-2.5 hover:bg-gray-50 dark:hover:bg-white/5"
                   >
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-gray-900 dark:text-white">{m.name || 'Traveler'}</p>
-                      <p className="truncate text-xs text-gray-500">{m.email || m.phone || '—'}</p>
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 text-[10px] font-bold text-white">
+                        {travelerImgUrl ? <img src={travelerImgUrl} alt={m.name} className="h-full w-full object-cover" /> : travelerInitial}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium text-gray-900 dark:text-white">{m.name || 'Traveler'}</p>
+                        <p className="truncate text-xs text-gray-500">{m.email || m.phone || '—'}</p>
+                      </div>
                     </div>
                     {isAgentManager ? (
                       <button
@@ -1210,6 +1227,8 @@ export default function CommunityChat({
                 
                 const canDelete = Boolean(isMe || isAdmin)
                 const initial = (senderName.charAt(0) || '?').toUpperCase()
+                const senderImg = msg.sender?.profileImage || msg.sender?.agencyLogo || null
+                const senderImgUrl = senderImg ? `${BASE_IMG_URL}/${String(senderImg).replace(/^\//, '')}` : null
 
                 // Date separator logic
                 const msgDate = new Date(msg.createdAt).toDateString()
@@ -1232,8 +1251,11 @@ export default function CommunityChat({
                       {/* Avatar for others - Top aligned */}
                       {!isMe && (
                         <div className={`w-8 shrink-0 flex justify-center ${!isFirstInGroup ? 'invisible' : ''}`}>
-                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-[11px] font-bold shadow-sm">
-                            {initial}
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-[11px] font-bold shadow-sm overflow-hidden">
+                            {senderImgUrl
+                              ? <img src={senderImgUrl} alt={senderName} className="w-full h-full object-cover" />
+                              : initial
+                            }
                           </div>
                         </div>
                       )}

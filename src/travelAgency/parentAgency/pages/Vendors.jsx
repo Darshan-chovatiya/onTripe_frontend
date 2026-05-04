@@ -200,61 +200,61 @@ export default function Vendors() {
         {vendors.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[860px] text-sm">
-              <thead className="border-b border-gray-200 bg-gray-50">
-                <tr>
-                  <th className="px-4 py-2.5 text-left align-middle text-xs font-medium text-gray-600">Vendor</th>
-                  <th className="px-4 py-2.5 text-left align-middle text-xs font-medium text-gray-600">Type</th>
-                  <th className="px-4 py-2.5 text-left align-middle text-xs font-medium text-gray-600">Contact</th>
-                  <th className="px-4 py-2.5 text-left align-middle text-xs font-medium text-gray-600">Location</th>
-                  <th className="px-4 py-2.5 text-right align-middle text-xs font-medium text-gray-600">Actions</th>
+              <thead>
+                <tr className="border-b border-gray-100 bg-gradient-to-r from-gray-50 to-gray-50/60">
+                  <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-gray-400">Vendor</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-gray-400">Type</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-gray-400">Contact</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-gray-400">Location</th>
+                  <th className="px-4 py-3 text-right text-[11px] font-bold uppercase tracking-wider text-gray-400">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
-                {vendors.map((v) => (
-                  <tr key={v._id} className="transition-colors hover:bg-gray-50/80">
-                    <td className="px-4 py-2.5 align-middle">
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold text-gray-900">{v.name}</p>
-                        {v.contactPerson ? <p className="mt-0.5 truncate text-xs text-gray-500">{v.contactPerson}</p> : null}
-                      </div>
-                    </td>
-                    <td className="px-4 py-2.5 align-middle">
-                      <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${TYPE_COLORS[v.type] || TYPE_COLORS.other}`}>
-                        {v.type?.replace(/_/g, ' ')}
-                      </span>
-                    </td>
-                    <td className="px-4 py-2.5 align-middle">
-                      {v.email ? <p className="text-xs text-gray-700">{v.email}</p> : <p className="text-xs text-gray-400">-</p>}
-                      {v.phone ? <p className="mt-0.5 text-xs text-gray-500">{v.phone}</p> : null}
-                    </td>
-                    <td className="px-4 py-2.5 align-middle text-xs text-gray-600">{[v.city, v.state, v.country].filter(Boolean).join(', ') || '-'}</td>
-                    <td className="px-4 py-2.5 align-middle text-right">
-                      <div className="inline-flex items-center gap-1.5">
-                        <button
-                          onClick={() => setDetailVendor(v)}
-                          className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border border-gray-200 bg-white text-gray-600 transition-colors hover:bg-gray-50 hover:text-gray-900"
-                          title="View"
-                        >
-                          <Eye size={12} />
-                        </button>
-                        <button
-                          onClick={() => setFormModal({ open: true, data: v })}
-                          className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border border-gray-200 bg-white text-gray-600 transition-colors hover:bg-gray-50 hover:text-gray-900"
-                          title="Edit"
-                        >
-                          <Edit2 size={13} />
-                        </button>
-                        <button
-                          onClick={() => setConfirmDelete({ open: true, vendor: v })}
-                          className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border border-gray-200 bg-white text-gray-600 transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-700"
-                          title="Deactivate"
-                        >
-                          <Trash2 size={13} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+              <tbody>
+                {vendors.map((v) => {
+                  const initials = (v.name || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
+                  return (
+                    <tr key={v._id} className="group border-b border-gray-50 transition-all last:border-0 hover:bg-gray-50/80">
+                      <td className="px-4 py-3.5 align-middle">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-violet-400 to-violet-600 text-[11px] font-bold text-white shadow-sm">
+                            {initials}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-semibold text-gray-900">{v.name}</p>
+                            {v.contactPerson && <p className="mt-0.5 truncate text-[11px] text-gray-400">{v.contactPerson}</p>}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3.5 align-middle">
+                        <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold capitalize ${TYPE_COLORS[v.type] || TYPE_COLORS.other}`}>
+                          <span className="h-1.5 w-1.5 rounded-full bg-current opacity-60" />
+                          {v.type?.replace(/_/g, ' ')}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3.5 align-middle">
+                        {v.email ? <p className="text-[12px] font-medium text-gray-700">{v.email}</p> : <p className="text-xs text-gray-300">—</p>}
+                        {v.phone && <p className="mt-0.5 text-[11px] text-gray-400">{v.phone}</p>}
+                      </td>
+                      <td className="px-4 py-3.5 align-middle text-[12px] text-gray-500">{[v.city, v.state, v.country].filter(Boolean).join(', ') || '—'}</td>
+                      <td className="px-4 py-3.5 align-middle text-right">
+                        <div className="inline-flex items-center gap-1">
+                          <button onClick={() => setDetailVendor(v)} title="View"
+                            className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-400 shadow-sm transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-600">
+                            <Eye size={13} />
+                          </button>
+                          <button onClick={() => setFormModal({ open: true, data: v })} title="Edit"
+                            className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-400 shadow-sm transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-600">
+                            <Edit2 size={13} />
+                          </button>
+                          <button onClick={() => setConfirmDelete({ open: true, vendor: v })} title="Deactivate"
+                            className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-400 shadow-sm transition hover:border-red-200 hover:bg-red-50 hover:text-red-600">
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>

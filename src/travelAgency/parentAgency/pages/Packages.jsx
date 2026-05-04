@@ -49,7 +49,7 @@ function PackageGridCard({ pkg, onEdit, onClone, onCover, onGallery, onToggle, o
   return (
     <article className="group relative flex flex-col overflow-hidden rounded-2xl bg-white ring-1 ring-gray-200 shadow-sm transition-all duration-300 hover:shadow-xl hover:shadow-gray-200/60 hover:-translate-y-0.5">
       {/* Cover image */}
-      <div className="relative h-48 overflow-hidden bg-gray-100">
+      <div className="relative h-44 overflow-hidden bg-gray-100">
         <img
           src={cover || PLACEHOLDER}
           alt={pkg.title}
@@ -57,6 +57,19 @@ function PackageGridCard({ pkg, onEdit, onClone, onCover, onGallery, onToggle, o
           onError={(e) => { e.currentTarget.src = PLACEHOLDER }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+
+        {/* Status pill top-right */}
+        <div className="absolute right-3 top-3">
+          <button type="button" onClick={() => onToggle(pkg)}
+            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide shadow-sm backdrop-blur-sm transition active:scale-95 ${
+              pkg.isActive
+                ? 'bg-emerald-500/90 text-white hover:bg-emerald-600'
+                : 'bg-black/50 text-white/80 hover:bg-black/70'
+            }`}>
+            <span className={`h-1.5 w-1.5 rounded-full ${pkg.isActive ? 'bg-white animate-pulse' : 'bg-white/50'}`} />
+            {pkg.isActive ? 'Live' : 'Paused'}
+          </button>
+        </div>
 
         {/* Price bottom-left */}
         <div className="absolute bottom-3 left-3">
@@ -72,153 +85,101 @@ function PackageGridCard({ pkg, onEdit, onClone, onCover, onGallery, onToggle, o
 
       {/* Body */}
       <div className="flex flex-1 flex-col gap-3 p-4">
+        {/* Title + destination */}
         <div>
           <h3 className="line-clamp-1 text-sm font-semibold text-gray-900">{pkg.title}</h3>
-          {pkg.destination && (
-            <p className="mt-0.5 flex items-center gap-1 text-xs text-gray-500">
-              <MapPin className="h-3 w-3 shrink-0 text-gray-400" strokeWidth={2} />
-              {pkg.destination}
-            </p>
-          )}
-        </div>
-
-        {/* Meta chips */}
-        <div className="flex flex-wrap gap-1.5">
-          <span className="inline-flex items-center gap-1 rounded-lg bg-gray-50 px-2 py-1 text-[11px] font-medium text-gray-600 ring-1 ring-gray-100">
-            <Clock className="h-3 w-3 text-primary-500" strokeWidth={2} />
-            {pkg.totalDays}d
-          </span>
-          <span className="inline-flex items-center gap-1 rounded-lg bg-gray-50 px-2 py-1 text-[11px] font-medium text-gray-600 ring-1 ring-gray-100">
-            <Users className="h-3 w-3 text-primary-500" strokeWidth={2} />
-            {pkg.maxCapacity} pax
-          </span>
-          {pkg.itinerary?.length > 0 && (
-            <span className="inline-flex items-center gap-1 rounded-lg bg-primary-50 px-2 py-1 text-[11px] font-medium text-primary-700 ring-1 ring-primary-100">
-              <Calendar className="h-3 w-3" strokeWidth={2} />
-              {pkg.itinerary.length} days planned
+          <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-500">
+            {pkg.destination && (
+              <span className="flex items-center gap-1">
+                <MapPin className="h-3 w-3 shrink-0 text-gray-400" strokeWidth={2} />
+                {pkg.destination}
+              </span>
+            )}
+            <span className="flex items-center gap-1">
+              <Clock className="h-3 w-3 text-gray-400" strokeWidth={2} />
+              {pkg.totalDays}d
             </span>
-          )}
-        </div>
-
-        {/* Revenue + bookings */}
-        <div className="flex flex-col gap-2 rounded-xl bg-gray-50/80 p-3 ring-1 ring-gray-100">
-          <div className="grid grid-cols-2 gap-2 border-b border-gray-200 pb-2">
-            <div className="text-center">
-              <p className="text-[9px] font-medium uppercase tracking-wide text-gray-400">My Earnings</p>
-              <p className="mt-0.5 text-xs font-bold tabular-nums text-primary-700">
-                ₹{(Number(pkg.totalParentEarnings) || 0).toLocaleString('en-IN')}
-              </p>
-            </div>
-            <div className="text-center border-l border-gray-200">
-              <p className="text-[9px] font-medium uppercase tracking-wide text-gray-400">Child Comm.</p>
-              <button
-                type="button"
-                onClick={() => onShowCommissions?.(pkg)}
-                className="mt-0.5 inline-block text-xs font-bold tabular-nums text-emerald-700 hover:text-emerald-800 hover:underline"
-              >
-                ₹{(Number(pkg.totalChildEarnings) || 0).toLocaleString('en-IN')}
-              </button>
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <div className="text-center">
-              <p className="text-[9px] font-medium uppercase tracking-wide text-gray-400">Bookings</p>
-              <button
-                type="button"
-                onClick={() => navigate(`${AGENCY_PANEL_BASE}/bookings?packageId=${pkg._id}`)}
-                className="mt-0.5 inline-block text-xs font-bold tabular-nums text-primary-600 hover:text-primary-800 hover:underline"
-              >
-                {(Number(pkg.bookingCount) || 0) + (Number(pkg.totalAdditionalTravelers) || 0)}
-              </button>
-            </div>
-            <div className="text-center border-l border-gray-200">
-              <p className="text-[9px] font-medium uppercase tracking-wide text-gray-400">Whitelabels</p>
-              <button
-                type="button"
-                disabled={!pkg.whitelabelCount}
-                onClick={() => onShowAgents?.(pkg)}
-                className={`mt-0.5 inline-block text-xs font-bold tabular-nums transition ${pkg.whitelabelCount ? 'text-violet-600 hover:text-violet-800 hover:underline' : 'text-gray-400'}`}
-              >
-                {Number(pkg.whitelabelCount) || 0}
-              </button>
-            </div>
+            <span className="flex items-center gap-1">
+              <Users className="h-3 w-3 text-gray-400" strokeWidth={2} />
+              {pkg.maxCapacity} pax
+            </span>
+            {pkg.itinerary?.length > 0 && (
+              <span className="flex items-center gap-1">
+                <Calendar className="h-3 w-3 text-gray-400" strokeWidth={2} />
+                {pkg.itinerary.length} days
+              </span>
+            )}
           </div>
         </div>
 
-        {/* Actions Layout */}
-        <div className="mt-auto flex flex-col gap-1.5">
-          <button
-            type="button"
+        {/* Stats row — 4 numbers inline */}
+        <div className="grid grid-cols-4 divide-x divide-gray-100 rounded-xl border border-gray-100 bg-gray-50/60">
+          <div className="px-2 py-2.5 text-center">
+            <p className="text-[9px] font-semibold uppercase tracking-wide text-gray-400">Earnings</p>
+            <p className="mt-0.5 text-xs font-bold tabular-nums text-primary-700">
+              ₹{(Number(pkg.totalParentEarnings) || 0).toLocaleString('en-IN')}
+            </p>
+          </div>
+          <div className="px-2 py-2.5 text-center">
+            <p className="text-[9px] font-semibold uppercase tracking-wide text-gray-400">Child</p>
+            <button type="button" onClick={() => onShowCommissions?.(pkg)}
+              className="mt-0.5 block w-full text-xs font-bold tabular-nums text-emerald-700 hover:underline">
+              ₹{(Number(pkg.totalChildEarnings) || 0).toLocaleString('en-IN')}
+            </button>
+          </div>
+          <div className="px-2 py-2.5 text-center">
+            <p className="text-[9px] font-semibold uppercase tracking-wide text-gray-400">Bookings</p>
+            <button type="button"
+              onClick={() => navigate(`${AGENCY_PANEL_BASE}/bookings?packageId=${pkg._id}`)}
+              className="mt-0.5 block w-full text-xs font-bold tabular-nums text-primary-600 hover:underline">
+              {(Number(pkg.bookingCount) || 0) + (Number(pkg.totalAdditionalTravelers) || 0)}
+            </button>
+          </div>
+          <div className="px-2 py-2.5 text-center">
+            <p className="text-[9px] font-semibold uppercase tracking-wide text-gray-400">WL</p>
+            <button type="button" disabled={!pkg.whitelabelCount} onClick={() => onShowAgents?.(pkg)}
+              className={`mt-0.5 block w-full text-xs font-bold tabular-nums transition ${pkg.whitelabelCount ? 'text-violet-600 hover:underline' : 'text-gray-400'}`}>
+              {Number(pkg.whitelabelCount) || 0}
+            </button>
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="mt-auto space-y-2">
+          {/* Primary CTA */}
+          <button type="button"
             onClick={() => navigate(`${AGENCY_PANEL_BASE}/packages/${pkg._id}`)}
-            className="w-full rounded-xl bg-primary-600 py-2 text-xs font-semibold text-white transition hover:bg-primary-700 active:scale-[0.98]"
-          >
+            className="w-full rounded-xl bg-primary-600 py-2 text-xs font-semibold text-white transition hover:bg-primary-700 active:scale-[0.98]">
             View details
           </button>
 
-          {/* First row: Cover, Gallery, Chat */}
-          <div className="grid grid-cols-3 gap-1.5">
-            <button
-              type="button"
-              onClick={() => onCover(pkg)}
-              className="flex flex-col items-center justify-center gap-0.5 rounded-lg border border-gray-200 bg-white py-1.5 text-[10px] font-medium text-gray-700 transition hover:border-sky-200 hover:bg-sky-50 hover:text-sky-800"
-            >
+          {/* Secondary actions — single row of icon buttons */}
+          <div className="flex items-center gap-1.5">
+            <button type="button" onClick={() => onEdit(pkg)} title="Edit"
+              className="flex flex-1 items-center justify-center gap-1 rounded-lg border border-gray-200 bg-white py-1.5 text-[11px] font-medium text-gray-600 transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-700">
+              <Edit2 className="h-3.5 w-3.5" strokeWidth={2} /> Edit
+            </button>
+            <button type="button" onClick={() => onClone(pkg)} title="Clone"
+              className="flex flex-1 items-center justify-center gap-1 rounded-lg border border-gray-200 bg-white py-1.5 text-[11px] font-medium text-gray-600 transition hover:border-gray-300 hover:bg-gray-50">
+              <Copy className="h-3.5 w-3.5" strokeWidth={2} /> Clone
+            </button>
+            <button type="button" onClick={() => onCover(pkg)} title="Cover image"
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 transition hover:border-sky-200 hover:bg-sky-50 hover:text-sky-700">
               <ImageIcon className="h-3.5 w-3.5" strokeWidth={2} />
-              Cover
             </button>
-            <button
-              type="button"
-              onClick={() => onGallery(pkg)}
-              className="flex flex-col items-center justify-center gap-0.5 rounded-lg border border-gray-200 bg-white py-1.5 text-[10px] font-medium text-gray-700 transition hover:border-violet-200 hover:bg-violet-50 hover:text-violet-800"
-            >
+            <button type="button" onClick={() => onGallery(pkg)} title="Gallery"
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 transition hover:border-violet-200 hover:bg-violet-50 hover:text-violet-700">
               <ImagePlus className="h-3.5 w-3.5" strokeWidth={2} />
-              Gallery
             </button>
-            <button
-              type="button"
+            <button type="button"
               onClick={() => navigate(`${AGENCY_PANEL_BASE}/packages/${pkg._id}/community?title=${encodeURIComponent(pkg.title || '')}`)}
-              className="flex flex-col items-center justify-center gap-0.5 rounded-lg border border-gray-200 bg-white py-1.5 text-[10px] font-medium text-gray-700 transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-800"
-            >
+              title="Community chat"
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700">
               <MessageSquare className="h-3.5 w-3.5" strokeWidth={2} />
-              Chat
             </button>
-          </div>
-          {/* Second row: Edit, Clone, Live */}
-          <div className="grid grid-cols-3 gap-1.5">
-            <button
-              type="button"
-              onClick={() => onEdit(pkg)}
-              className="flex items-center justify-center gap-1.5 rounded-lg border border-gray-200 bg-white py-2 text-[11px] font-medium text-gray-700 transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-800"
-            >
-              <Edit2 className="h-3.5 w-3.5" strokeWidth={2} />
-              Edit
-            </button>
-            <button
-              type="button"
-              onClick={() => onClone(pkg)}
-              className="flex items-center justify-center gap-1.5 rounded-lg border border-gray-200 bg-white py-2 text-[11px] font-medium text-gray-700 transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-800"
-            >
-              <Copy className="h-3.5 w-3.5" strokeWidth={2} />
-              Clone
-            </button>
-            <button
-              type="button"
-              onClick={() => onToggle(pkg)}
-              className={`flex items-center justify-center gap-1.5 rounded-lg border py-2 text-[11px] font-medium transition ${pkg.isActive
-                  ? 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
-                  : 'border-red-200 bg-red-50 text-red-700 hover:bg-red-100'
-                }`}
-            >
-              {pkg.isActive ? <CheckCircle2 className="h-3.5 w-3.5" strokeWidth={2} /> : <XCircle className="h-3.5 w-3.5" strokeWidth={2} />}
-              {pkg.isActive ? 'Live' : 'Paused'}
-            </button>
-            <button
-              type="button"
-              onClick={() => onDelete(pkg)}
-              className="flex items-center justify-center gap-1.5 rounded-lg border border-red-100 bg-white py-2 text-[11px] font-medium text-red-600 transition hover:border-red-200 hover:bg-red-50 hover:text-red-700"
-              title="Delete package"
-            >
+            <button type="button" onClick={() => onDelete(pkg)} title="Delete"
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-red-100 bg-white text-red-400 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600">
               <Trash2 className="h-3.5 w-3.5" strokeWidth={2} />
-              Delete
             </button>
           </div>
         </div>

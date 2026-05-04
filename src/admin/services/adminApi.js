@@ -22,11 +22,13 @@ export function toggleAgent(userId) {
 }
 
 export function createAgent(data) {
-  return axiosInstance.post('/admin/agents', data)
+  const isFormData = data instanceof FormData
+  return axiosInstance.post('/admin/agents', data, isFormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : {})
 }
 
 export function updateAgent(userId, data) {
-  return axiosInstance.put(`/admin/agents/${userId}`, data)
+  const isFormData = data instanceof FormData
+  return axiosInstance.put(`/admin/agents/${userId}`, data, isFormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : {})
 }
 
 export function deleteAgent(userId) {
@@ -46,12 +48,32 @@ export function updateAdminUser(userId, body) {
   return axiosInstance.put(`/admin/users/${userId}`, body)
 }
 
+export function uploadAdminProfileImage(userId, file) {
+  const formData = new FormData()
+  formData.append('profileImage', file)
+  return axiosInstance.post(`/admin/users/${userId}/profile-image`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  })
+}
+
 export function listCustomers(params) {
   return axiosInstance.get('/admin/customers/detailed', { params })
 }
 
 export function getCustomer(customerId) {
   return axiosInstance.get(`/admin/customers/${customerId}`)
+}
+
+export function updateCustomer(customerId, body) {
+  return axiosInstance.put(`/admin/customers/${customerId}`, body)
+}
+
+export function uploadCustomerProfileImage(customerId, file) {
+  const formData = new FormData()
+  formData.append('profileImage', file)
+  return axiosInstance.post(`/admin/customers/${customerId}/profile-image`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  })
 }
 
 export function listPackages(params) {
@@ -100,11 +122,14 @@ const adminApi = {
   getAnalytics,
   listUsers,
   updateAdminUser,
+  uploadAdminProfileImage,
   createAgent,
   updateAgent,
   deleteAgent,
   listCustomers,
   getCustomer,
+  updateCustomer,
+  uploadCustomerProfileImage,
   listPackages,
   listWhitelabelsByPackage,
   listBookingsByPackage,

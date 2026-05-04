@@ -30,7 +30,7 @@ const emptyDay = (day) => ({ day, dateSuffix: '', title: '', description: '', ev
 
 const EMPTY_FORM = {
   title: '', description: '', destination: '', totalDays: '', basePrice: '',
-  currency: 'INR', maxCapacity: '50',
+  currency: 'INR', maxCapacity: '50', startDate: '',
   inclusions: [''], exclusions: [''], importantNotes: [''],
   itinerary: [emptyDay(1)],
 }
@@ -84,12 +84,60 @@ export default function CreatePackage() {
   }
 
   const set = (field, value) => setForm(f => ({ ...f, [field]: value }))
+
+  // When start date changes, auto-calculate each day's dateSuffix
+  const handleStartDateChange = (dateStr) => {
+    set('startDate', dateStr)
+    if (!dateStr) {
+      setForm(f => ({ ...f, startDate: '', itinerary: f.itinerary.map(d => ({ ...d, dateSuffix: '' })) }))
+      return
+    }
+    setForm(f => ({
+      ...f,
+      startDate: dateStr,
+      itinerary: f.itinerary.map((d, i) => {
+        const date = new Date(dateStr)
+        date.setDate(date.getDate() + i)
+        const dateSuffix = date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })
+        return { ...d, dateSuffix }
+      })
+    }))
+  }
   const handleListChange = (field, idx, value) => { const arr = [...form[field]]; arr[idx] = value; set(field, arr) }
   const addListItem = (field) => set(field, [...form[field], ''])
   const removeListItem = (field, idx) => set(field, form[field].filter((_, i) => i !== idx))
 
+  const handleListKeyDown = (e, field, idx) => {
+    if (e.key !== 'Enter') return
+    e.preventDefault()
+    e.stopPropagation()
+    // If last item, add new one; else focus next
+    if (idx === form[field].length - 1) {
+      set(field, [...form[field], ''])
+      // focus will land on new input via autoFocus-like effect below
+      setTimeout(() => {
+        const inputs = document.querySelectorAll(`[data-list="${field}"]`)
+        if (inputs[idx + 1]) inputs[idx + 1].focus()
+      }, 0)
+    } else {
+      const inputs = document.querySelectorAll(`[data-list="${field}"]`)
+      if (inputs[idx + 1]) inputs[idx + 1].focus()
+    }
+  }
+
   const updateDay = (di, key, value) => setForm(f => { const arr = [...f.itinerary]; arr[di] = { ...arr[di], [key]: value }; return { ...f, itinerary: arr } })
-  const addDay = () => setForm(f => { const arr = [...f.itinerary, emptyDay(f.itinerary.length + 1)]; setExpandedDays(e => ({ ...e, [f.itinerary.length]: true })); return { ...f, itinerary: arr } })
+  const addDay = () => setForm(f => {
+    const newDayIndex = f.itinerary.length
+    let dateSuffix = ''
+    if (f.startDate) {
+      const date = new Date(f.startDate)
+      date.setDate(date.getDate() + newDayIndex)
+      dateSuffix = date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })
+    }
+    const arr = [...f.itinerary, { ...emptyDay(f.itinerary.length + 1), dateSuffix }]
+    setExpandedDays(e => ({ ...e, [f.itinerary.length]: true }))
+    return { ...f, itinerary: arr }
+  })
   const removeDay = (di) => setForm(f => { const arr = f.itinerary.filter((_, i) => i !== di).map((d, i) => ({ ...d, day: i + 1 })); return { ...f, itinerary: arr } })
 
   const addEvent = (di) => setForm(f => { const arr = [...f.itinerary]; arr[di] = { ...arr[di], events: [...(arr[di].events || []), emptyEvent()] }; return { ...f, itinerary: arr } })
@@ -141,6 +189,7 @@ export default function CreatePackage() {
         inclusions: form.inclusions.filter(Boolean), exclusions: form.exclusions.filter(Boolean),
         importantNotes: form.importantNotes.filter(Boolean),
         itinerary: formItineraryToApi(form.itinerary),
+        ...(form.startDate && { startDate: form.startDate }),
       }
       const fd = new FormData()
       Object.entries(payload).forEach(([k, v]) => fd.append(k, typeof v === 'object' ? JSON.stringify(v) : v))
@@ -188,6 +237,17 @@ export default function CreatePackage() {
             <div>
               <label className="mb-1 block text-xs font-medium text-gray-600">Total days *</label>
               <input required type="number" min="1" className={inputCls} value={form.totalDays} onChange={e => set('totalDays', e.target.value)} />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-gray-600">Start date <span className="text-gray-400">(optional)</span></label>
+              <input type="date" className={inputCls} value={form.startDate}
+                onChange={e => handleStartDateChange(e.target.value)}
+                placeholder="Package start date" />
+              {form.startDate && (
+                <p className="mt-1 text-xs text-primary-600">
+                  Itinerary dates auto-calculated from {new Date(form.startDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                </p>
+              )}
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-gray-600">Max capacity</label>
@@ -261,7 +321,7 @@ export default function CreatePackage() {
           <div className="space-y-2">
             {form.inclusions.map((inc, i) => (
               <div key={i} className="flex gap-2">
-                <input className={`${inputCls} flex-1`} value={inc} onChange={e => handleListChange('inclusions', i, e.target.value)} placeholder="e.g. Breakfast included" />
+                <input className={`${inputCls} flex-1`} value={inc} data-list="inclusions" onChange={e => handleListChange('inclusions', i, e.target.value)} onKeyDown={e => handleListKeyDown(e, 'inclusions', i)} placeholder="e.g. Breakfast included" />
                 {form.inclusions.length > 1 && <button type="button" onClick={() => removeListItem('inclusions', i)} className="p-2 text-red-400 hover:text-red-600"><Trash2 size={15} /></button>}
               </div>
             ))}
@@ -275,7 +335,7 @@ export default function CreatePackage() {
           <div className="space-y-2">
             {form.exclusions.map((exc, i) => (
               <div key={i} className="flex gap-2">
-                <input className={`${inputCls} flex-1`} value={exc} onChange={e => handleListChange('exclusions', i, e.target.value)} placeholder="e.g. Flights not included" />
+                <input className={`${inputCls} flex-1`} value={exc} data-list="exclusions" onChange={e => handleListChange('exclusions', i, e.target.value)} onKeyDown={e => handleListKeyDown(e, 'exclusions', i)} placeholder="e.g. Flights not included" />
                 {form.exclusions.length > 1 && <button type="button" onClick={() => removeListItem('exclusions', i)} className="p-2 text-red-400 hover:text-red-600"><Trash2 size={15} /></button>}
               </div>
             ))}
@@ -290,7 +350,7 @@ export default function CreatePackage() {
           <div className="space-y-2">
             {form.importantNotes.map((note, i) => (
               <div key={i} className="flex gap-2">
-                <input className={`${inputCls} flex-1`} value={note} onChange={e => handleListChange('importantNotes', i, e.target.value)} placeholder="e.g. Valid passport required" />
+                <input className={`${inputCls} flex-1`} value={note} data-list="importantNotes" onChange={e => handleListChange('importantNotes', i, e.target.value)} onKeyDown={e => handleListKeyDown(e, 'importantNotes', i)} placeholder="e.g. Valid passport required" />
                 {form.importantNotes.length > 1 && <button type="button" onClick={() => removeListItem('importantNotes', i)} className="p-2 text-red-400 hover:text-red-600"><Trash2 size={15} /></button>}
               </div>
             ))}
@@ -325,16 +385,24 @@ export default function CreatePackage() {
                         <input className={inputCls} value={day.title} onChange={e => updateDay(di, 'title', e.target.value)} placeholder="e.g. Arrival & City Tour" />
                       </div>
                       <div>
-                        <label className="mb-1 block text-xs font-medium text-gray-600">Date</label>
-                        <input
-                          type="date" className={inputCls}
-                          value={day.dateSuffix ? (() => { const d = new Date(`${day.dateSuffix} ${new Date().getFullYear()}`); return isNaN(d) ? '' : d.toISOString().split('T')[0] })() : ''}
-                          onChange={e => {
-                            if (!e.target.value) { updateDay(di, 'dateSuffix', ''); return }
-                            updateDay(di, 'dateSuffix', new Date(e.target.value).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }))
-                          }}
-                        />
-                        {day.dateSuffix && <p className="mt-1 text-xs text-gray-400">{day.dateSuffix}</p>}
+                        <label className="mb-1 block text-xs font-medium text-gray-600">
+                          Date {form.startDate ? <span className="text-primary-500">(auto)</span> : ''}
+                        </label>
+                        {form.startDate ? (
+                          <div className={`${inputCls} bg-gray-50 text-gray-600 cursor-default`}>
+                            {day.dateSuffix || '—'}
+                          </div>
+                        ) : (
+                          <input
+                            type="date" className={inputCls}
+                            value={day.dateSuffix ? (() => { const d = new Date(`${day.dateSuffix} ${new Date().getFullYear()}`); return isNaN(d) ? '' : d.toISOString().split('T')[0] })() : ''}
+                            onChange={e => {
+                              if (!e.target.value) { updateDay(di, 'dateSuffix', ''); return }
+                              updateDay(di, 'dateSuffix', new Date(e.target.value).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }))
+                            }}
+                          />
+                        )}
+                        {day.dateSuffix && !form.startDate && <p className="mt-1 text-xs text-gray-400">{day.dateSuffix}</p>}
                       </div>
                     </div>
                     <div>

@@ -15,6 +15,8 @@ import { exportToExcel } from '@/admin/utils/exportExcel.js'
 import CustomerDetailModal from '@/travelAgency/shared/components/CustomerDetailModal.jsx'
 
 const PAGE_SIZE = 10
+const API_BASE = import.meta.env.VITE_API_BASE_URL?.replace('/api', '').replace(/\/$/, '') || 'http://localhost:5001'
+const getImgUrl = (p) => p ? (p.startsWith('http') ? p : `${API_BASE}/${String(p).replace(/^\//, '')}`) : null
 
 export default function Customers() {
   const { toast } = useToast()
@@ -57,6 +59,7 @@ export default function Customers() {
         name: c.name || c.customer?.name || '—',
         phone: c.phone || c.customer?.phone || '—',
         email: c.email || c.customer?.email || '—',
+        profileImage: c.customer?.profileImage || c.profileImage || null,
         notes: c.notes || '',
         isActive: c.isActive !== false,
         createdAt: c.createdAt || null,
@@ -265,93 +268,80 @@ export default function Customers() {
         {rows.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[700px] text-sm">
-              <thead className="border-b border-gray-200 bg-gray-50">
-                <tr>
-                  <th className="px-4 py-2.5 text-left align-middle text-xs font-medium text-gray-600">
-                    <button
-                      type="button"
-                      onClick={toggleSelectAll}
-                      className="inline-flex items-center gap-2 text-xs font-semibold text-gray-600 hover:text-gray-900"
-                    >
+              <thead>
+                <tr className="border-b border-gray-100 bg-gradient-to-r from-gray-50 to-gray-50/60">
+                  <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-gray-400">
+                    <button type="button" onClick={toggleSelectAll}
+                      className="flex h-4.5 w-4.5 items-center justify-center rounded border transition-colors">
                       <span className={`flex h-5 w-5 items-center justify-center rounded border ${allSelected ? 'border-primary-600 bg-primary-600 text-white' : 'border-gray-300 bg-white text-transparent'}`}>
-                        <Check size={12} strokeWidth={4} />
+                        <Check size={11} strokeWidth={4} />
                       </span>
-                      Select
                     </button>
                   </th>
-                  <th className="px-4 py-2.5 text-left align-middle text-xs font-medium text-gray-600">Customer</th>
-                  <th className="px-4 py-2.5 text-left align-middle text-xs font-medium text-gray-600">Contact</th>
-                  <th className="px-4 py-2.5 text-left align-middle text-xs font-medium text-gray-600">Status</th>
-                  <th className="px-4 py-2.5 text-left align-middle text-xs font-medium text-gray-600">Last Activity</th>
-                  <th className="px-4 py-2.5 text-right align-middle text-xs font-medium text-gray-600">Actions</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-gray-400">Customer</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-gray-400">Contact</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-gray-400">Status</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-gray-400">Last Activity</th>
+                  <th className="px-4 py-3 text-right text-[11px] font-bold uppercase tracking-wider text-gray-400">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
-                {rows.map(c => (
-                  <tr key={c.id} className="transition-colors hover:bg-gray-50/80">
-                    <td className="px-4 py-2.5 align-middle">
-                      <button
-                        type="button"
-                        onClick={() => toggleSelect(c.id)}
-                        className={`flex h-8 w-8 items-center justify-center rounded-lg border transition-colors ${selectedIds.has(c.id) ? 'border-primary-600 bg-primary-600 text-white' : 'border-gray-200 bg-white text-transparent hover:border-primary-400'}`}
-                      >
-                        <Check size={14} strokeWidth={4} />
-                      </button>
-                    </td>
-                    <td className="px-4 py-2.5 align-middle">
-                      <div className="flex items-center gap-2">
-                        <UserCircle className="h-5 w-5 shrink-0 text-primary-400" />
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-semibold text-gray-900">{c.name}</p>
-                          {c.notes && <p className="mt-0.5 truncate text-xs text-gray-400">{c.notes}</p>}
+              <tbody>
+                {rows.map(c => {
+                  const initials = (c.name || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
+                  const imgUrl = getImgUrl(c.profileImage)
+                  return (
+                    <tr key={c.id} className="group border-b border-gray-50 transition-all last:border-0 hover:bg-gray-50/80">
+                      <td className="px-4 py-3.5 align-middle">
+                        <button type="button" onClick={() => toggleSelect(c.id)}
+                          className={`flex h-8 w-8 items-center justify-center rounded-lg border transition-colors ${selectedIds.has(c.id) ? 'border-primary-600 bg-primary-600 text-white' : 'border-gray-200 bg-white text-transparent hover:border-primary-400'}`}>
+                          <Check size={13} strokeWidth={4} />
+                        </button>
+                      </td>
+                      <td className="px-4 py-3.5 align-middle">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-emerald-400 to-emerald-600 text-[11px] font-bold text-white shadow-sm">
+                            {imgUrl ? <img src={imgUrl} alt={c.name} className="h-full w-full object-cover" /> : initials}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-semibold text-gray-900">{c.name}</p>
+                            {c.notes && <p className="mt-0.5 truncate text-[11px] text-gray-400">{c.notes}</p>}
+                          </div>
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-2.5 align-middle">
-                      <p className="flex items-center gap-1.5 text-xs text-gray-700"><Phone size={11} className="text-gray-400" />{c.phone}</p>
-                      {c.email && c.email !== '—' && (
-                        <p className="mt-0.5 flex items-center gap-1.5 text-xs text-gray-500"><Mail size={11} className="text-gray-400" />{c.email}</p>
-                      )}
-                    </td>
-                    <td className="px-4 py-2.5 align-middle">
-                      <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${c.isActive ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-100 text-gray-600'}`}>
-                        {c.isActive ? 'Active' : 'Inactive'}
-                      </span>
-                    </td>
-                    <td className="px-4 py-2.5 align-middle text-xs text-gray-500">
-                      {c.lastActivity ? new Date(c.lastActivity).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
-                    </td>
-                    <td className="px-4 py-2.5 align-middle text-right">
-                      <div className="inline-flex items-center gap-1.5">
-                        <button
-                          type="button"
-                          onClick={() => setViewTarget(c)}
-                          className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border border-gray-200 bg-white text-gray-600 transition-colors hover:bg-gray-50 hover:text-gray-900"
-                          title="View"
-                        >
-                          <Eye size={13} />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => openEdit(c)}
-                          className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border border-gray-200 bg-white text-gray-600 transition-colors hover:bg-gray-50 hover:text-gray-900"
-                          title="Edit"
-                        >
-                          <Edit2 size={13} />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleToggleActive(c)}
-                          disabled={toggleBusyId === c.agencyCustomerId}
-                          className={`inline-flex h-8 cursor-pointer items-center justify-center rounded-md border px-2 text-xs font-medium transition-colors disabled:opacity-50 ${c.isActive ? 'border-red-100 bg-white text-red-600 hover:bg-red-50' : 'border-green-100 bg-white text-green-700 hover:bg-green-50'}`}
-                          title={c.isActive ? 'Deactivate' : 'Activate'}
-                        >
-                          {toggleBusyId === c.agencyCustomerId ? '…' : c.isActive ? 'Deactivate' : 'Activate'}
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td className="px-4 py-3.5 align-middle">
+                        <p className="flex items-center gap-1.5 text-[12px] text-gray-700"><Phone size={11} className="text-gray-400" />{c.phone}</p>
+                        {c.email && c.email !== '—' && (
+                          <p className="mt-0.5 flex items-center gap-1.5 text-[11px] text-gray-400"><Mail size={11} className="text-gray-400" />{c.email}</p>
+                        )}
+                      </td>
+                      <td className="px-4 py-3.5 align-middle">
+                        <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold ${c.isActive ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>
+                          <span className={`h-1.5 w-1.5 rounded-full ${c.isActive ? 'bg-emerald-500' : 'bg-gray-400'}`} />
+                          {c.isActive ? 'Active' : 'Inactive'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3.5 align-middle text-[12px] text-gray-400">
+                        {c.lastActivity ? new Date(c.lastActivity).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
+                      </td>
+                      <td className="px-4 py-3.5 align-middle text-right">
+                        <div className="inline-flex items-center gap-1">
+                          <button type="button" onClick={() => setViewTarget(c)} title="View"
+                            className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-400 shadow-sm transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-600">
+                            <Eye size={13} />
+                          </button>
+                          <button type="button" onClick={() => openEdit(c)} title="Edit"
+                            className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-400 shadow-sm transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-600">
+                            <Edit2 size={13} />
+                          </button>
+                          <button type="button" onClick={() => handleToggleActive(c)} disabled={toggleBusyId === c.agencyCustomerId}
+                            className={`flex h-8 items-center justify-center rounded-lg border px-2.5 text-[11px] font-bold shadow-sm transition disabled:opacity-50 ${c.isActive ? 'border-red-100 bg-white text-red-500 hover:bg-red-50' : 'border-emerald-100 bg-white text-emerald-600 hover:bg-emerald-50'}`}>
+                            {toggleBusyId === c.agencyCustomerId ? '…' : c.isActive ? 'Deactivate' : 'Activate'}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>
