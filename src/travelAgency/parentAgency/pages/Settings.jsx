@@ -222,7 +222,7 @@ export default function Settings() {
 
             {/* Profile photo upload */}
             <div>
-              <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-gray-500">Profile Photo</label>
+              <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-gray-500">Agency Logo</label>
               <div className="flex items-center gap-3">
                 <div className="h-12 w-12 shrink-0 overflow-hidden rounded-xl border border-gray-200 bg-gray-50">
                   {currentLogoUrl

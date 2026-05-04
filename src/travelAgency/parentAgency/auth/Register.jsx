@@ -199,7 +199,7 @@ export default function ParentRegister() {
           <div className="border-t border-gray-100 pt-6 space-y-4">
             <div className="flex items-center gap-2 border-b border-gray-100 pb-2">
               <span className="h-1.5 w-1.5 rounded-full bg-primary-600" />
-              <h3 className="text-sm font-bold tracking-tight text-gray-900 uppercase">Business Details</h3>
+              <h3 className="text-sm font-bold tracking-tight text-[#a3e635] uppercase">Business Details</h3>
             </div>
             
             <div className="rform-grid">
