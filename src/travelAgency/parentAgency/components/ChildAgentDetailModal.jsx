@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import {
   Mail, Phone, Calendar, FileText, User,
   CheckCircle, XCircle, Clock, Layers, BookOpen,
-  Hash, ShieldCheck,
+  Hash, ShieldCheck, Briefcase
 } from 'lucide-react'
 import Modal from '@/shared/components/Modal.jsx'
 import { getChildAgent } from '@/travelAgency/parentAgency/services/parentAgencyApi.js'
@@ -84,9 +84,15 @@ export default function ChildAgentDetailModal({ isOpen, onClose, childId }) {
             <div className="rounded-2xl border border-gray-200 bg-gradient-to-br from-slate-50 to-white p-5 shadow-sm">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="flex items-center gap-4">
-                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-primary-100 text-primary-700 font-bold text-xl">
-                    {child.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '?'}
-                  </div>
+                  {child.agencyLogo ? (
+                    <div className="h-16 w-16 shrink-0 overflow-hidden rounded-2xl border-2 border-white shadow-sm ring-1 ring-gray-100">
+                      <img src={filePublicUrl(child.agencyLogo)} alt={child.name} className="h-full w-full object-cover" />
+                    </div>
+                  ) : (
+                    <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-primary-50 text-primary-600 font-bold text-xl shadow-sm ring-1 ring-primary-100">
+                      {child.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '?'}
+                    </div>
+                  )}
                   <div>
                     <p className="mb-1 flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-gray-500">
                       <User size={14} className="text-primary-500" />
@@ -153,6 +159,16 @@ export default function ChildAgentDetailModal({ isOpen, onClose, childId }) {
                     </span>
                   </DetailRow>
                 )}
+              </div>
+            </div>
+
+            {/* Business details */}
+            <div>
+              <SectionTitle icon={Briefcase}>Business details</SectionTitle>
+              <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+                <DetailRow label="GST Number">{child.gstNumber || '—'}</DetailRow>
+                <DetailRow label="Contact Person">{child.contactPersonName || '—'}</DetailRow>
+                <DetailRow label="Address">{child.address || '—'}</DetailRow>
               </div>
             </div>
 

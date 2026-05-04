@@ -150,7 +150,7 @@ export default function Dashboard() {
       accent: 'from-sky-500 to-sky-600',
       text: 'text-sky-700',
       bar: 'bg-sky-400',
-      link: '/admin/packages',
+      link: '/admin/bookings',
     },
     {
       label: 'Travelers',

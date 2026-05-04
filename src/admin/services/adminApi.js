@@ -146,6 +146,8 @@ const adminApi = {
   getSentNotifications,
   getNotificationPreview,
   syncBookingStatus: () => axiosInstance.post('/admin/bookings/sync-status'),
+  listAllBookings: (params) => axiosInstance.get('/admin/bookings', { params }),
+  getBookingDetail: (id) => axiosInstance.get(`/admin/bookings/${id}`),
 }
 
 export const getAgentHierarchy = (id) => axiosInstance.get(`/admin/agents/${id}/hierarchy`);

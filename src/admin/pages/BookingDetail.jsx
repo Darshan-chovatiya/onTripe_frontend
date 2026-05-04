@@ -3,9 +3,9 @@ import { useNavigate, useParams } from 'react-router-dom'
 import {
   ArrowLeft, Hash, Calendar, IndianRupee, Users, Navigation,
   Clock, Package, MapPin, Phone, Mail, User, Layers, Ticket,
-  Building2, Pencil,
+  Building2
 } from 'lucide-react'
-import { useChildBookings } from '@/travelAgency/childAgency/hooks/useChildBookings.js'
+import adminApi from '@/admin/services/adminApi.js'
 import {
   filePublicUrl, formatDateTime, formatDateOnly,
   bookingOfferTitle, basePackageFromBooking, flattenDocPaths,
@@ -61,10 +61,9 @@ function DocLinks({ docs }) {
   )
 }
 
-export default function BookingDetail() {
+export default function AdminBookingDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { fetchBooking } = useChildBookings()
   const [booking, setBooking] = useState(null)
   const [loading, setLoading] = useState(true)
   const [err, setErr] = useState(null)
@@ -74,16 +73,16 @@ export default function BookingDetail() {
     ;(async () => {
       setLoading(true)
       try {
-        const data = await fetchBooking(id)
-        if (!cancelled) setBooking(data)
-      } catch {
-        if (!cancelled) setErr('Could not load booking.')
+        const res = await adminApi.getBookingDetail(id)
+        if (!cancelled) setBooking(res.data?.data?.booking)
+      } catch (err) {
+        if (!cancelled) setErr(err.response?.data?.message || 'Could not load booking.')
       } finally {
         if (!cancelled) setLoading(false)
       }
     })()
     return () => { cancelled = true }
-  }, [id, fetchBooking])
+  }, [id])
 
   if (loading) {
     return (
@@ -94,7 +93,14 @@ export default function BookingDetail() {
   }
 
   if (err || !booking) {
-    return <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{err || 'Booking not found.'}</div>
+    return (
+      <div className="space-y-4">
+        <button onClick={() => navigate('/admin/bookings')} className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700">
+          <ArrowLeft size={16} /> Back to Bookings
+        </button>
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{err || 'Booking not found.'}</div>
+      </div>
+    )
   }
 
   const b = booking
@@ -103,23 +109,18 @@ export default function BookingDetail() {
   const ac = b?.agencyCustomer && typeof b.agencyCustomer === 'object' ? b.agencyCustomer : null
 
   return (
-    <div className="animate-fade-in mx-auto _max-w-3xl space-y-6 pb-16">
+    <div className="animate-fade-in mx-auto space-y-6 pb-16">
       {/* Header */}
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <button type="button" onClick={() => navigate('/agency/bookings')}
+          <button type="button" onClick={() => navigate('/admin/bookings')}
             className="flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-600 transition hover:bg-gray-50" aria-label="Back">
             <ArrowLeft className="h-4 w-4" strokeWidth={2} />
           </button>
           <div>
             <h1 className="text-xl font-semibold tracking-tight text-gray-900">Booking details</h1>
-            {/* <p className="font-mono text-xs text-gray-400">{b.bookingId}</p> */}
           </div>
         </div>
-        {/* <button type="button" onClick={() => navigate(`/agency/bookings/edit/${b._id}`)}
-          className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3.5 py-2 text-sm font-medium text-gray-700 transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-700">
-          <Pencil className="h-4 w-4" strokeWidth={2} /> Edit
-        </button> */}
       </div>
 
       {/* Summary card */}
@@ -245,7 +246,8 @@ export default function BookingDetail() {
           <div className="rounded-2xl border border-gray-200 bg-gray-50/80 p-4">
             <p className="font-semibold text-gray-900">{b.bookedBy.name || '—'}</p>
             <p className="mt-1 text-sm text-gray-600">{b.bookedBy.email || ''}</p>
-            {b.bookedBy.role && <p className="mt-2 text-xs uppercase tracking-wide text-gray-400">{String(b.bookedBy.role).replace(/_/g, ' ')}</p>}
+            {b.bookedBy.phone && <p className="mt-1 text-sm text-gray-600">{b.bookedBy.phone}</p>}
+            {b.bookedBy.role && <p className="mt-2 text-xs uppercase tracking-wide text-gray-400 font-bold text-primary-600">{String(b.bookedBy.role).replace(/_/g, ' ')}</p>}
           </div>
         ) : <p className="text-sm text-gray-500">—</p>}
       </section>

@@ -27,15 +27,20 @@ import {
   listPendingRequests,
   approveParentRequest,
   rejectParentRequest,
+  createChildAgent,
+  updateChildAgent,
 } from '@/travelAgency/parentAgency/services/parentAgencyApi.js'
 import { getApiErrorMessage } from '@/shared/services/apiHelpers.js'
 import ChildAgentDetailModal from '@/travelAgency/parentAgency/components/ChildAgentDetailModal.jsx'
+import ChildAgentFormModal from '@/travelAgency/parentAgency/components/ChildAgentFormModal.jsx'
 import ConfirmDialog from '@/shared/components/ConfirmDialog.jsx'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
 import Modal from '@/shared/components/Modal.jsx'
 import PendingRequestsSection from '@/travelAgency/shared/components/PendingRequestsSection.jsx'
 import Pagination from '@/admin/components/Pagination.jsx'
 import { exportToExcel } from '@/admin/utils/exportExcel.js'
+import { Plus, Pencil } from 'lucide-react'
+import { filePublicUrl } from '@/travelAgency/shared/utils/bookingDetailHelpers.js'
 
 const KYC_STYLES = {
   approved: 'bg-green-50 text-green-700',
@@ -73,6 +78,9 @@ export default function ManageChildren() {
   const [notifyOpen, setNotifyOpen] = useState(false)
   const [notifyBusy, setNotifyBusy] = useState(false)
   const [notifyForm, setNotifyForm] = useState({ subject: '', message: '', attachments: [] })
+
+  const [isFormOpen, setIsFormOpen] = useState(false)
+  const [editingAgent, setEditingAgent] = useState(null)
 
   const fetchChildren = useCallback(async () => {
     setLoading(true)
@@ -232,6 +240,22 @@ export default function ManageChildren() {
     }
   }
 
+  const handleSaveChildAgent = async (formData, id) => {
+    try {
+      if (id) {
+        await updateChildAgent(id, formData)
+        toast.success('Child agent updated successfully')
+      } else {
+        await createChildAgent(formData)
+        toast.success('Child agent created successfully')
+      }
+      fetchChildren()
+    } catch (err) {
+      toast.error(getApiErrorMessage(err))
+      throw err
+    }
+  }
+
   return (
     <div className="animate-fade-in space-y-4">
       {/* Header */}
@@ -268,7 +292,14 @@ export default function ManageChildren() {
             <Bell size={15} />
             Notify
           </button>
-
+          <button
+            type="button"
+            onClick={() => { setEditingAgent(null); setIsFormOpen(true) }}
+            className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-zinc-900 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-zinc-800"
+          >
+            <Plus size={16} />
+            Add Child Agency
+          </button>
         </div>
       </div>
 
@@ -366,22 +397,26 @@ export default function ManageChildren() {
                   const KycIcon = KYC_ICONS[kycStatus] || Clock
                   const isSelected = selectedIds.has(child._id)
                   const isRejected = child.linkStatus === 'rejected'
-                  const initials = (child.name || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
-                  const logoUrl = getImgUrl(child.agencyLogo || child.profileImage)
 
                   return (
-                    <tr key={child._id} className={`group border-b border-gray-50 transition-all last:border-0 ${isRejected ? 'bg-red-50/30 hover:bg-red-50/50' : 'hover:bg-gray-50/80'}`}>
-                      <td className="px-4 py-3.5 align-middle">
+                    <tr key={child._id} className="group transition-colors hover:bg-gray-50/50">
+                      <td className="px-4 py-4">
                         <button type="button" onClick={() => toggleSelect(child._id)} disabled={isRejected}
                           className={`flex h-8 w-8 items-center justify-center rounded-lg border transition-colors ${isSelected ? 'border-primary-600 bg-primary-600 text-white' : 'border-gray-200 bg-white text-transparent hover:border-primary-400'} disabled:opacity-40`}>
                           <Check size={13} strokeWidth={4} />
                         </button>
                       </td>
-                      <td className="px-4 py-3.5 align-middle">
+                      <td className="px-4 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-primary-400 to-primary-600 text-[11px] font-bold text-white shadow-sm">
-                            {logoUrl ? <img src={logoUrl} alt={child.name} className="h-full w-full object-cover" /> : initials}
-                          </div>
+                          {child.agencyLogo ? (
+                            <div className="h-9 w-9 shrink-0 overflow-hidden rounded-lg border border-gray-200">
+                              <img src={filePublicUrl(child.agencyLogo)} alt={child.name} className="h-full w-full object-cover" />
+                            </div>
+                          ) : (
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-700 font-bold text-xs">
+                              {child.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '?'}
+                            </div>
+                          )}
                           <div className="min-w-0">
                             <p className="truncate text-sm font-semibold text-gray-900">{child.name}</p>
                             {child.agentCode && <p className="font-mono text-[10px] text-gray-400">{child.agentCode}</p>}
@@ -429,6 +464,10 @@ export default function ManageChildren() {
                               <UserCheck size={13} />
                             </button>
                           )}
+                          <button onClick={() => { setEditingAgent(child); setIsFormOpen(true) }} title="Edit"
+                            className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-400 shadow-sm transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-600">
+                            <Pencil size={13} />
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -529,6 +568,13 @@ export default function ManageChildren() {
         isOpen={!!viewId}
         onClose={() => setViewId(null)}
         childId={viewId}
+      />
+
+      <ChildAgentFormModal
+        isOpen={isFormOpen}
+        onClose={() => setIsFormOpen(false)}
+        agent={editingAgent}
+        onSave={handleSaveChildAgent}
       />
 
       {/* Toggle status confirm */}

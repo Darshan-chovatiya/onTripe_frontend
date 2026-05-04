@@ -1,4 +1,4 @@
-﻿import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
   AlertCircle,
@@ -178,6 +178,9 @@ function AgentFormModal({ mode, agent, agentRole, onClose, onSaved }) {
     parentRef: existingParentId,
     kycStatus: agent?.kyc?.status || 'approved',
     kycRejectionReason: agent?.kyc?.rejectionReason || '',
+    gstNumber: agent?.gstNumber || '',
+    address: agent?.address || '',
+    contactPersonName: agent?.contactPersonName || '',
   })
   const [parentSearch, setParentSearch] = useState('')
   const [parentDropdownOpen, setParentDropdownOpen] = useState(false)
@@ -261,6 +264,9 @@ function AgentFormModal({ mode, agent, agentRole, onClose, onSaved }) {
       fd.append('kycStatus', form.kycStatus)
       if (form.kycStatus === 'rejected' && form.kycRejectionReason)
         fd.append('kycRejectionReason', form.kycRejectionReason)
+      fd.append('gstNumber', form.gstNumber)
+      fd.append('address', form.address)
+      fd.append('contactPersonName', form.contactPersonName)
       if (mode === 'add') fd.append('role', agentRole)
       Object.keys(files).forEach(k => { if (files[k]) fd.append(k, files[k]) })
 
@@ -400,6 +406,21 @@ function AgentFormModal({ mode, agent, agentRole, onClose, onSaved }) {
                 </button>
               </div>
               {errors.password && <div className="mt-1 ml-1 flex items-center gap-1 text-[11px] font-medium text-red-500"><AlertCircle size={11} /> {errors.password}</div>}
+            </div>
+
+            <div>
+              <label className="mb-1.5 ml-1 block text-xs font-medium text-gray-600">Contact person name</label>
+              <input type="text" value={form.contactPersonName} onChange={e => set('contactPersonName', e.target.value)} className="h-11 w-full rounded-xl border border-gray-200 bg-gray-50/50 px-4 text-sm outline-none transition focus:border-gray-400 focus:bg-white" placeholder="Full name" />
+            </div>
+
+            <div>
+              <label className="mb-1.5 ml-1 block text-xs font-medium text-gray-600">GST number</label>
+              <input type="text" value={form.gstNumber} onChange={e => set('gstNumber', e.target.value)} className="h-11 w-full rounded-xl border border-gray-200 bg-gray-50/50 px-4 text-sm outline-none transition focus:border-gray-400 focus:bg-white" placeholder="GSTIN (Optional)" />
+            </div>
+
+            <div className="sm:col-span-2">
+              <label className="mb-1.5 ml-1 block text-xs font-medium text-gray-600">Business Address</label>
+              <textarea value={form.address} onChange={e => set('address', e.target.value)} rows={2} className="w-full resize-y rounded-xl border border-gray-200 bg-gray-50/50 px-4 py-2.5 text-sm outline-none focus:border-gray-400 focus:bg-white" placeholder="Complete office address" />
             </div>
           </div>
         </section>
@@ -804,6 +825,18 @@ export default function ChildAgencies({ agentRole = 'child_agent', pageTitle = '
                   <p className="text-xs font-medium text-gray-400">Phone</p>
                   <p className="mt-0.5 text-sm text-gray-900">{selectedAgent.phone || '—'}</p>
                 </div>
+                <div>
+                  <p className="text-xs font-medium text-gray-400">Contact person</p>
+                  <p className="mt-0.5 text-sm text-gray-900">{selectedAgent.contactPersonName || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-gray-400">GST number</p>
+                  <p className="mt-0.5 text-sm text-gray-900">{selectedAgent.gstNumber || '—'}</p>
+                </div>
+                <div className="sm:col-span-2">
+                  <p className="text-xs font-medium text-gray-400">Address</p>
+                  <p className="mt-0.5 whitespace-pre-wrap text-sm text-gray-900">{selectedAgent.address || '—'}</p>
+                </div>
               </div>
 
               {selectedAgent.kyc?.status === 'rejected' && selectedAgent.kyc?.rejectionReason && (
@@ -965,9 +998,9 @@ export default function ChildAgencies({ agentRole = 'child_agent', pageTitle = '
                       {agentRole === 'sub_child_agent' ? 'Child agency' : 'Parent agency'}
                     </th>
                     <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-600">Contact</th>
-                    {agentRole !== 'sub_child_agent' ? (
+                    {/* {agentRole !== 'sub_child_agent' ? (
                       <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-600">Sub-child</th>
-                    ) : null}
+                    ) : null} */}
                     <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-600">Whitelabels</th>
                     <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-600">Customers</th>
                     <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-600">Status</th>
@@ -1009,12 +1042,17 @@ export default function ChildAgencies({ agentRole = 'child_agent', pageTitle = '
                             ? `/admin/sub-child-agencies/${agent._id}/parents`
                             : `/admin/child-agencies/${agent._id}/parents`
                           return (
-                            <button type="button" onClick={() => navigate(parentsPath)}
-                              className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-800 transition-colors hover:border-primary-200 hover:bg-primary-50/50 hover:text-primary-900"
-                              title="View all parent agencies">
-                              <Building2 className="h-3.5 w-3.5 text-gray-500" strokeWidth={2} />
-                              <span className="tabular-nums">{parents.length}</span>
-                            </button>
+                            // <button type="button" onClick={() => navigate(parentsPath)}
+                            //   className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-800 transition-colors hover:border-primary-200 hover:bg-primary-50/50 hover:text-primary-900"
+                            //   title="View all parent agencies">
+                            //   <Building2 className="h-3.5 w-3.5 text-gray-500" strokeWidth={2} />
+                            //   <span className="tabular-nums">{parents.length}</span>
+                              
+                            // </button>
+                             <div>
+                              <p className="text-xs font-medium text-gray-900 leading-tight">{parents[0].name}</p>
+                              <p className="text-[10px] text-gray-400">Code: {parents[0].agentCode || 'â€”'}</p>
+                            </div>
                           )
                         })()}
                       </td>
@@ -1026,7 +1064,7 @@ export default function ChildAgencies({ agentRole = 'child_agent', pageTitle = '
                           <span className="text-xs font-medium text-gray-700">{agent.phone || 'N/A'}</span>
                         </div>
                       </td>
-                      {agentRole !== 'sub_child_agent' ? (
+                      {/* {agentRole !== 'sub_child_agent' ? (
                         <td className="px-4 py-2.5">
                           <button type="button" onClick={() => navigate(`/admin/sub-child-agencies?parentRef=${agent._id}`)}
                             className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-800 transition-colors hover:border-primary-200 hover:bg-primary-50/50 hover:text-primary-900">
@@ -1034,7 +1072,7 @@ export default function ChildAgencies({ agentRole = 'child_agent', pageTitle = '
                             <span>{agent.childCount || 0}</span>
                           </button>
                         </td>
-                      ) : null}
+                      ) : null} */}
                       <td className="px-4 py-2.5">
                         <button type="button"
                           onClick={() => navigate(agentRole === 'sub_child_agent' ? `/admin/sub-child-agencies/${agent._id}/whitelabels` : `/admin/child-agencies/${agent._id}/whitelabels`)}

@@ -208,7 +208,7 @@ export default function Bookings() {
             <table className="w-full min-w-[900px] text-sm">
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50/80">
-                  <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wide text-gray-400">Booking</th>
+                  {/* <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wide text-gray-400">Booking</th> */}
                   <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wide text-gray-400">Customer</th>
                   <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wide text-gray-400">Package</th>
                   <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wide text-gray-400">Travel Date</th>
@@ -225,9 +225,9 @@ export default function Bookings() {
                   const isWl = !!b.whitelabelPackage
                   return (
                     <tr key={b._id} className="group transition-colors hover:bg-primary-50/30">
-                      <td className="px-4 py-3.5 align-middle">
+                      {/* <td className="px-4 py-3.5 align-middle">
                         <span className="font-mono text-[11px] font-semibold text-gray-400">#{b.bookingId?.slice(-8) || '—'}</span>
-                      </td>
+                      </td> */}
                       <td className="px-4 py-3.5 align-middle">
                         <div className="flex items-center gap-2.5">
                           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary-400 to-primary-600 text-[11px] font-bold text-white shadow-sm">

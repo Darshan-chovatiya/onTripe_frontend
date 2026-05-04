@@ -18,6 +18,9 @@ export default function Settings() {
     name: user?.name || '',
     email: user?.email || '',
     phone: user?.phone || '',
+    gstNumber: user?.gstNumber || '',
+    address: user?.address || '',
+    contactPersonName: user?.contactPersonName || '',
   })
   const [logoFile, setLogoFile] = useState(null)
   const [logoPreview, setLogoPreview] = useState(null)
@@ -36,6 +39,9 @@ export default function Settings() {
           name: u.name ?? p.name,
           email: u.email ?? p.email,
           phone: u.phone ?? p.phone,
+          gstNumber: u.gstNumber ?? p.gstNumber,
+          address: u.address ?? p.address,
+          contactPersonName: u.contactPersonName ?? p.contactPersonName,
         }))
         if (u.agencyLogo) setExistingLogo(u.agencyLogo)
       }
@@ -87,12 +93,25 @@ export default function Settings() {
       fd.append('name', profile.name)
       fd.append('email', profile.email)
       fd.append('phone', profile.phone)
+      fd.append('gstNumber', profile.gstNumber)
+      fd.append('address', profile.address)
+      fd.append('contactPersonName', profile.contactPersonName)
       if (logoFile) fd.append('agencyLogo', logoFile)
 
       const res = await updateProfile(fd)
       const updated = res.data?.data?.user
       if (updated) {
-        setUser(prev => ({ ...prev, name: updated.name, email: updated.email, phone: updated.phone, agencyLogo: updated.agencyLogo, kyc: updated.kyc }))
+        setUser(prev => ({ 
+          ...prev, 
+          name: updated.name, 
+          email: updated.email, 
+          phone: updated.phone, 
+          gstNumber: updated.gstNumber,
+          address: updated.address,
+          contactPersonName: updated.contactPersonName,
+          agencyLogo: updated.agencyLogo, 
+          kyc: updated.kyc 
+        }))
         if (updated.agencyLogo) { setExistingLogo(updated.agencyLogo); setLogoFile(null); setLogoPreview(null) }
       }
       toast.success('Profile updated successfully')
@@ -203,7 +222,7 @@ export default function Settings() {
 
             {/* Profile photo upload */}
             <div>
-              <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-gray-500">Profile Photo</label>
+              <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-gray-500">Agency Logo</label>
               <div className="flex items-center gap-3">
                 <div className="h-12 w-12 shrink-0 overflow-hidden rounded-xl border border-gray-200 bg-gray-50">
                   {currentLogoUrl
@@ -236,6 +255,27 @@ export default function Settings() {
               <input className={`input-field w-full ${profileErrors.phone ? 'border-red-400' : ''}`}
                 value={profile.phone} onChange={e => setP('phone', e.target.value)} placeholder="10-digit mobile" />
               {profileErrors.phone && <p className="mt-1 text-xs font-medium text-red-500">{profileErrors.phone}</p>}
+            </div>
+
+            <div className="pt-2 border-t border-gray-50">
+              <h3 className="text-[11px] font-bold uppercase tracking-widest text-primary-600 mb-4">Business Details</h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-gray-500">GST Number</label>
+                  <input className="input-field w-full"
+                    value={profile.gstNumber} onChange={e => setP('gstNumber', e.target.value)} placeholder="22AAAAA0000A1Z5" />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-gray-500">Contact Person Name</label>
+                  <input className="input-field w-full"
+                    value={profile.contactPersonName} onChange={e => setP('contactPersonName', e.target.value)} placeholder="Full name of contact person" />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-gray-500">Business Address</label>
+                  <textarea className="input-field w-full min-h-[80px] py-2"
+                    value={profile.address} onChange={e => setP('address', e.target.value)} placeholder="Complete office address" />
+                </div>
+              </div>
             </div>
 
             <button type="submit" disabled={profileLoading}

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { X, LogOut, LayoutDashboard, Settings, Building2, Users2, Package, Bell, ChevronDown, Key } from 'lucide-react'
+import { X, LogOut, LayoutDashboard, Settings, Building2, Users2, Package, Bell, ChevronDown, Key, Ticket } from 'lucide-react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/shared/context/AuthContext.jsx'
 import ConfirmDialog from '@/shared/components/ConfirmDialog.jsx'
@@ -19,6 +19,7 @@ export default function Sidebar({ isOpen, onClose }) {
 
   const navItems = [
     { path: '/admin/packages', icon: Package, label: 'Packages' },
+    { path: '/admin/bookings', icon: Ticket, label: 'Bookings' },
     { path: '/admin/customers', icon: Users2, label: 'Customers' },
     { path: '/admin/notifications', icon: Bell, label: 'Notifications' },
     { path: '/admin/otp-logs', icon: Key, label: 'OTP Logs' },

@@ -233,15 +233,20 @@
   border: 1px solid rgba(255,255,255,0.11);
 }
 
+.areg-step-wrap {
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+
+.areg-step-wrap:last-child {
+  flex: 0 0 auto;
+}
+
 .areg-step-item {
   display: flex;
   align-items: center;
   gap: 8px;
-  flex: 1;
-  justify-content: flex-start;
-}
-
-.areg-step-item:last-child {
   flex: 0 0 auto;
 }
 
