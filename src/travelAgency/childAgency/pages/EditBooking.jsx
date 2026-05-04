@@ -20,7 +20,7 @@ function toDatetimeLocal(iso) {
 }
 
 const emptyTraveler = (id = 0) => ({
-  _key: id, name: '', age: '', gender: 'male',
+  _key: id, name: '', phone: '', age: '', gender: 'male',
   aadharFront: null, aadharBack: null, panCard: null,
   passport: null, visaDoc: null, otherDocs: [],
 })
@@ -89,6 +89,7 @@ export default function EditBooking() {
               return {
                 _key: travelerIdRef.current,
                 name: t.name || '',
+                phone: t.phone || '',
                 age: t.age != null ? String(t.age) : '',
                 gender: t.gender || 'male',
                 aadharFront: null, aadharBack: null, panCard: null,
@@ -140,6 +141,7 @@ export default function EditBooking() {
         name: r.name.trim(),
         age: Number(r.age) || 0,
         gender: r.gender,
+        phone: r.phone.replace(/\D/g, '') || undefined,
         docs: originalTravelers[i]?.docs ? { ...originalTravelers[i].docs } : undefined,
       }))
 
@@ -227,13 +229,13 @@ export default function EditBooking() {
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700">Travel date <span className="text-red-500">*</span></label>
-              <input type="datetime-local" className={inputCls} value={travelDate}
-                onChange={(e) => setTravelDate(e.target.value)} required />
+              <input type="datetime-local" className={`${inputCls} bg-gray-50 text-gray-500 cursor-default`} value={travelDate} readOnly required />
+              <p className="mt-1 text-xs text-primary-600">Fixed by package schedule.</p>
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Total amount (₹) <span className="text-red-500">*</span></label>
-              <input type="number" min="0" step="0.01" className={inputCls} value={totalAmount}
-                onChange={(e) => setTotalAmount(e.target.value)} required />
+              <label className="mb-1 block text-sm font-medium text-gray-700">Total amount (₹)</label>
+              <input type="number" className={`${inputCls} bg-gray-50 text-gray-500 cursor-default`} value={totalAmount} readOnly />
+              <p className="mt-1 text-xs text-gray-400">₹{basePackagePrice.toLocaleString('en-IN')} × {travelers.length + 1} traveler(s)</p>
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700">Payment status</label>
@@ -287,6 +289,9 @@ export default function EditBooking() {
                     <div className="flex flex-wrap items-end gap-2">
                       <input className={`${inputCls} min-w-[8rem] flex-1`} placeholder="Name *"
                         value={row.name} onChange={(e) => setT(i, 'name', e.target.value)} />
+                      <input className={`${inputCls} w-36`} placeholder="Phone (10 digits)"
+                        inputMode="numeric" maxLength={10}
+                        value={row.phone} onChange={(e) => setT(i, 'phone', e.target.value.replace(/\D/g, '').slice(0, 10))} />
                       <input type="number" min={1} className={`${inputCls} w-20`} placeholder="Age *"
                         value={row.age} onChange={(e) => setT(i, 'age', e.target.value)} />
                       <select className={`${inputCls} w-28`} value={row.gender}

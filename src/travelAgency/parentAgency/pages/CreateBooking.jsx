@@ -11,7 +11,7 @@ import { getApiErrorMessage } from '@/shared/services/apiHelpers.js'
 const inputCls = 'w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-gray-300 focus:outline-none focus:ring-1 focus:ring-gray-300'
 
 const emptyTraveler = () => ({
-  name: '', age: '', gender: 'male',
+  name: '', phone: '', age: '', gender: 'male',
   aadharFront: null, aadharBack: null, panCard: null,
   passport: null, visaDoc: null, otherDocs: [],
 })
@@ -113,13 +113,13 @@ export default function CreateBooking() {
     const pkg = activePackages.find(p => String(p._id) === id)
     setBasePackagePrice(pkg?.basePrice || 0)
     setMaxCapacity(pkg?.maxCapacity ?? null)
-    // auto-fill travel date from package startDate
+    // auto-fill travel date from package startDate (date only, no time)
     if (pkg?.startDate) {
       const d = new Date(pkg.startDate)
-      // format to datetime-local value: YYYY-MM-DDTHH:mm
+      // format to date value: YYYY-MM-DD
       const pad = (n) => String(n).padStart(2, '0')
-      const local = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
-      setTravelDate(local)
+      const dateOnly = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+      setTravelDate(dateOnly)
     } else {
       setTravelDate('')
     }
@@ -235,7 +235,7 @@ export default function CreateBooking() {
 
     const validTravelers = travelers
       .filter((r) => r.name.trim() && r.age !== '' && !Number.isNaN(Number(r.age)))
-      .map((r) => ({ name: r.name.trim(), age: Number(r.age), gender: r.gender }))
+      .map((r) => ({ name: r.name.trim(), age: Number(r.age), gender: r.gender, phone: r.phone.replace(/\D/g, '') }))
     if (validTravelers.length) fd.append('travelers', JSON.stringify(validTravelers))
 
     if (custDocs.aadharFront) fd.append('aadharFront', custDocs.aadharFront)
@@ -276,7 +276,7 @@ export default function CreateBooking() {
     travelDate &&
     totalAmount &&
     packageId &&
-    travelers.every(t => t.name.trim() && t.age !== '' && !Number.isNaN(Number(t.age)))
+    travelers.every(t => t.name.trim() && t.age !== '' && !Number.isNaN(Number(t.age)) && /^\d{10}$/.test(t.phone.replace(/\D/g, '')))
   )
 
   const lookupBanner = () => {
@@ -474,6 +474,9 @@ export default function CreateBooking() {
                   <div className="flex flex-wrap items-end gap-2">
                     <input className={`${inputCls} min-w-[8rem] flex-1`} placeholder="Name *"
                       value={row.name} onChange={(e) => setTravelerField(i, 'name', e.target.value)} />
+                    <input className={`${inputCls} w-36`} placeholder="Phone * (10 digits)"
+                      inputMode="numeric" maxLength={10}
+                      value={row.phone} onChange={(e) => setTravelerField(i, 'phone', e.target.value.replace(/\D/g, '').slice(0, 10))} />
                     <input type="number" min={1} className={`${inputCls} w-20`} placeholder="Age *"
                       value={row.age} onChange={(e) => setTravelerField(i, 'age', e.target.value)} />
                     <select className={`${inputCls} w-28`} value={row.gender}
@@ -514,18 +517,15 @@ export default function CreateBooking() {
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <label htmlFor="bk-date" className="mb-1 block text-sm font-medium text-gray-700">Travel date <span className="text-red-500">*</span></label>
-            <input id="bk-date" type="datetime-local" className={`${inputCls} ${packageHasDate ? 'bg-gray-50 text-gray-600 cursor-default' : ''}`} value={travelDate}
-              onChange={(e) => !packageHasDate && setTravelDate(e.target.value)}
-              readOnly={packageHasDate}
-              required />
-            {packageHasDate && (
-              <p className="mt-1 text-xs text-primary-600">Date is fixed by the package schedule.</p>
-            )}
+            <input id="bk-date" type="date" className={`${inputCls} bg-gray-50 text-gray-500 cursor-default`} value={travelDate}
+              readOnly required />
+            <p className="mt-1 text-xs text-primary-600">Fixed by package schedule.</p>
           </div>
           <div>
-            <label htmlFor="bk-amount" className="mb-1 block text-sm font-medium text-gray-700">Total amount (₹) <span className="text-red-500">*</span></label>
-            <input id="bk-amount" type="number" min="0" step="0.01" className={inputCls}
-              value={totalAmount} onChange={(e) => setTotalAmount(e.target.value)} required />
+            <label htmlFor="bk-amount" className="mb-1 block text-sm font-medium text-gray-700">Total amount (₹)</label>
+            <input id="bk-amount" type="number" className={`${inputCls} bg-gray-50 text-gray-500 cursor-default`}
+              value={totalAmount} readOnly />
+            <p className="mt-1 text-xs text-gray-400">₹{basePackagePrice.toLocaleString('en-IN')} × {travelers.length + 1} traveler(s)</p>
           </div>
         </div>
 

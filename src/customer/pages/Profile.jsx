@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   User,
   Mail,
@@ -22,9 +22,13 @@ import { useToast } from '@/shared/components/ToastContainer.jsx'
 import axiosInstance from '@/shared/services/axiosInstance.js'
 import Loader from '@/shared/components/Loader.jsx'
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL?.replace('/api', '').replace(/\/$/, '') || 'http://localhost:5001'
+const avatarUrl = (path) => path ? (path.startsWith('http') ? path : `${API_BASE}/${String(path).replace(/^\//, '')}`) : null
+
 export default function Profile() {
   const { setUser } = useAuth()
   const { toast } = useToast()
+  const imgInputRef = useRef(null)
 
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -32,6 +36,8 @@ export default function Profile() {
   const [formData, setFormData] = useState({ name: '', email: '' })
   const [isUpdating, setIsUpdating] = useState(false)
   const [showReviewsPopup, setShowReviewsPopup] = useState(false)
+  const [imgFile, setImgFile] = useState(null)
+  const [imgPreview, setImgPreview] = useState(null)
 
   const [reviews, setReviews] = useState([])
 
@@ -68,10 +74,19 @@ export default function Profile() {
     e.preventDefault()
     setIsUpdating(true)
     try {
-      const { data } = await axiosInstance.put('/customer/profile', formData)
+      const fd = new FormData()
+      fd.append('name', formData.name)
+      fd.append('email', formData.email)
+      if (imgFile) fd.append('profileImage', imgFile)
+
+      const { data } = await axiosInstance.put('/customer/profile', fd, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      })
       if (data?.success) {
         setProfile(data.data.customer)
-        setUser({ name: data.data.customer.name, email: data.data.customer.email })
+        setUser(prev => ({ ...prev, name: data.data.customer.name, email: data.data.customer.email }))
+        setImgFile(null)
+        setImgPreview(null)
         setIsEditing(false)
         toast.success('Your profile has been updated!')
       }
@@ -139,15 +154,39 @@ export default function Profile() {
             <div className="relative mb-6">
               <div className="w-40 h-40 md:w-48 md:h-48 rounded-full bg-gradient-to-tr from-primary-500 to-indigo-600 p-[3px] shadow-2xl transition-transform duration-500 hover:scale-105">
                 <div className="w-full h-full rounded-full bg-white dark:bg-gray-900 flex items-center justify-center relative overflow-hidden">
-                  <span className="text-7xl font-black text-transparent bg-clip-text bg-gradient-to-br from-primary-600 to-indigo-700 select-none">
-                    {profile?.name?.charAt(0).toUpperCase() || 'T'}
-                  </span>
+                  {(imgPreview || avatarUrl(profile?.profileImage))
+                    ? <img src={imgPreview || avatarUrl(profile.profileImage)} alt="profile" className="w-full h-full object-cover" />
+                    : <span className="text-7xl font-black text-transparent bg-clip-text bg-gradient-to-br from-primary-600 to-indigo-700 select-none">
+                        {profile?.name?.charAt(0).toUpperCase() || 'T'}
+                      </span>
+                  }
                 </div>
               </div>
-              <div className="absolute bottom-2 right-2 bg-emerald-500 border-4 border-white dark:border-gray-800 w-10 h-10 rounded-full flex items-center justify-center shadow-lg" title="Account Verified">
-                <ShieldCheck size={20} className="text-white" />
+              {/* Camera edit button */}
+              <button
+                type="button"
+                onClick={() => imgInputRef.current?.click()}
+                className="absolute bottom-2 right-2 bg-gray-900 hover:bg-gray-700 border-4 border-white dark:border-gray-800 w-10 h-10 rounded-full flex items-center justify-center shadow-lg transition"
+                title="Change profile photo"
+              >
+                <Camera size={18} className="text-white" />
+              </button>
+              <input ref={imgInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0]
+                  if (!file) return
+                  setImgFile(file)
+                  setImgPreview(URL.createObjectURL(file))
+                  setIsEditing(true)
+                }}
+              />
+              <div className="absolute top-2 right-2 bg-emerald-500 border-4 border-white dark:border-gray-800 w-8 h-8 rounded-full flex items-center justify-center shadow-lg" title="Account Verified">
+                <ShieldCheck size={16} className="text-white" />
               </div>
             </div>
+            {imgFile && (
+              <p className="text-xs font-semibold text-amber-600 mb-2">Photo selected — save to apply</p>
+            )}
           </div>
 
         </div>

@@ -440,7 +440,7 @@ export default function CreateBooking() {
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <label htmlFor="bk-date" className="mb-1 block text-sm font-medium text-gray-700">Travel date</label>
-            <input id="bk-date" type="datetime-local" className={inputCls} value={travelDate}
+            <input id="bk-date" type="date" className={inputCls} value={travelDate}
               onChange={(e) => setTravelDate(e.target.value)} required />
           </div>
           <div>

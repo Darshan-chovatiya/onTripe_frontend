@@ -206,7 +206,6 @@ export default function Booking() {
                     {booking.bookedBy.name.charAt(0)}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-primary-600 mb-0.5">Your Travel Expert</p>
                     <p className="text-sm font-bold text-gray-900 dark:text-white truncate mb-1">{booking.bookedBy.name}</p>
                     <a href={`tel:${booking.bookedBy.phone}`} className="inline-flex items-center gap-1.5 text-lg font-black text-gray-700 hover:text-primary-600 transition-colors">
                       <Phone size={16} />
