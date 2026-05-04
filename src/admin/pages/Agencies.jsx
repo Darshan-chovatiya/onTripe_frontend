@@ -398,6 +398,9 @@ const AddAgencyModal = ({ isOpen, onClose, onRefresh }) => {
     role: 'parent_agent',
     kycStatus: 'approved',
     kycRejectionReason: '',
+    gstNumber: '',
+    address: '',
+    contactPersonName: '',
   })
   const [files, setFiles] = useState({
     aadharFront: null,
@@ -489,6 +492,9 @@ const AddAgencyModal = ({ isOpen, onClose, onRefresh }) => {
           role: 'parent_agent',
           kycStatus: 'approved',
           kycRejectionReason: '',
+          gstNumber: '',
+          address: '',
+          contactPersonName: '',
         })
         setFiles({ aadharFront: null, aadharBack: null, panCard: null, agencyLogo: null })
         setErrors({})
@@ -633,6 +639,21 @@ const AddAgencyModal = ({ isOpen, onClose, onRefresh }) => {
                 </button>
               </div>
               {errors.password && <div className="mt-1 ml-1 flex items-center gap-1 text-[11px] font-medium text-red-500"><AlertCircle size={11} /> {errors.password}</div>}
+            </div>
+
+            <div>
+              <label className="mb-1.5 ml-1 block text-xs font-medium text-gray-600">Contact person name</label>
+              <input type="text" value={formData.contactPersonName} onChange={(e) => setFormData({ ...formData, contactPersonName: e.target.value })} className="h-11 w-full rounded-xl border border-gray-200 bg-gray-50/50 px-4 text-sm outline-none transition focus:border-gray-400 focus:bg-white" placeholder="Full name" />
+            </div>
+
+            <div>
+              <label className="mb-1.5 ml-1 block text-xs font-medium text-gray-600">GST number</label>
+              <input type="text" value={formData.gstNumber} onChange={(e) => setFormData({ ...formData, gstNumber: e.target.value })} className="h-11 w-full rounded-xl border border-gray-200 bg-gray-50/50 px-4 text-sm outline-none transition focus:border-gray-400 focus:bg-white" placeholder="GSTIN (Optional)" />
+            </div>
+
+            <div className="sm:col-span-2">
+              <label className="mb-1.5 ml-1 block text-xs font-medium text-gray-600">Business Address</label>
+              <textarea value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} rows={2} className="w-full resize-y rounded-xl border border-gray-200 bg-gray-50/50 px-4 py-2.5 text-sm outline-none focus:border-gray-400 focus:bg-white" placeholder="Complete office address" />
             </div>
           </div>
         </section>

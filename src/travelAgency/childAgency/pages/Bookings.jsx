@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { CalendarDays, Eye, IndianRupee, Plus, Ticket, MessageSquare, Pencil, Search, Download, RefreshCw } from 'lucide-react'
 import { useChildBookings } from '@/travelAgency/childAgency/hooks/useChildBookings.js'
-import { listBookings } from '@/travelAgency/childAgency/services/childAgencyApi.js'
+import { listBookings, listMyWhitelabels } from '@/travelAgency/childAgency/services/childAgencyApi.js'
 import Button from '@/shared/components/Button.jsx'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
 import { basePackageFromBooking } from '@/travelAgency/shared/utils/bookingDetailHelpers.js'
@@ -46,13 +46,22 @@ export default function Bookings() {
   const { toast } = useToast()
   const [search, setSearch] = useState(initialSearch)
   const [statusFilter, setStatusFilter] = useState('all')
+  const [whitelabelFilter, setWhitelabelFilter] = useState(whitelabelId || 'all')
+  const [whitelabels, setWhitelabels] = useState([])
   const [page, setPage] = useState(1)
   const [exportLoading, setExportLoading] = useState(false)
+
+  // Fetch whitelabels for filter
+  useEffect(() => {
+    listMyWhitelabels()
+      .then(res => setWhitelabels(res.data?.data?.whitelabels || []))
+      .catch(err => console.error('Failed to fetch whitelabels', err))
+  }, [])
 
   // Reset page when filters change
   useEffect(() => {
     setPage(1)
-  }, [search, statusFilter])
+  }, [search, statusFilter, whitelabelFilter])
 
   // Fetch bookings with pagination
   useEffect(() => {
@@ -62,9 +71,9 @@ export default function Bookings() {
       search: search.trim(),
       status: statusFilter === 'all' ? undefined : statusFilter,
       packageId,
-      whitelabelId
+      whitelabelId: whitelabelFilter === 'all' ? undefined : whitelabelFilter
     })
-  }, [fetchBookings, page, search, statusFilter, packageId, whitelabelId])
+  }, [fetchBookings, page, search, statusFilter, packageId, whitelabelFilter])
 
   const handleExport = async () => {
     setExportLoading(true)
@@ -146,6 +155,19 @@ export default function Bookings() {
             <option value="ongoing">Ongoing</option>
             <option value="completed">Completed</option>
             <option value="cancelled">Cancelled</option>
+          </select>
+
+          <select
+            className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:border-gray-300 focus:outline-none focus:ring-1 focus:ring-gray-300 sm:w-56"
+            value={whitelabelFilter}
+            onChange={(e) => setWhitelabelFilter(e.target.value)}
+          >
+            <option value="all">All Packages</option>
+            {whitelabels.map(wl => (
+              <option key={wl._id} value={wl._id}>
+                {wl.customTitle || wl.originalPackage?.title || 'Unnamed Package'}
+              </option>
+            ))}
           </select>
         </div>
 

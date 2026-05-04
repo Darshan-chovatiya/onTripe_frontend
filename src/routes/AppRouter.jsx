@@ -28,6 +28,8 @@ import AdminPackages from '@/admin/pages/Packages.jsx'
 import AdminPackageDetail from '@/admin/pages/PackageDetail.jsx'
 import AdminPackageWhitelabels from '@/admin/pages/PackageWhitelabels.jsx'
 import AdminPackageBookings from '@/admin/pages/PackageBookings.jsx'
+import AdminBookings from '@/admin/pages/Bookings.jsx'
+import AdminBookingDetail from '@/admin/pages/BookingDetail.jsx'
 import AdminPackageCommunity from '@/admin/pages/PackageCommunity.jsx'
 import AdminAgencyNetwork from '@/admin/pages/AgencyNetwork.jsx'
 import AdminChildAgencies from '@/admin/pages/ChildAgencies.jsx'
@@ -129,6 +131,8 @@ export default function AppRouter() {
         <Route path="packages/:packageId/reviews" element={<PackageReviewsPage />} />
         <Route path="packages" element={<AdminPackages />} />
         <Route path="packages/:packageId/detail" element={<AdminPackageDetail />} />
+        <Route path="bookings" element={<AdminBookings />} />
+        <Route path="bookings/:id" element={<AdminBookingDetail />} />
         <Route path="agencies" element={<AdminAgencies />} />
         <Route path="agencies/network/:parentId" element={<AdminAgencyNetwork />} />
         <Route path="child-agencies/:agentId/whitelabels" element={<AdminAgentWhitelabels />} />

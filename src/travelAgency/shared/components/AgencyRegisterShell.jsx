@@ -6,7 +6,7 @@ import './AgencyRegisterShell.css'
 
 /* ─── Step Indicator ─── */
 export function StepIndicator({ step }) {
-  const steps = ['Your Info', 'KYC Documents']
+  const steps = ['Your Info', 'KYC Documents', 'Business Details']
   return (
     <div className="areg-steps">
       {steps.map((label, i) => {
@@ -14,11 +14,13 @@ export function StepIndicator({ step }) {
         const done = step > idx
         const active = step === idx
         return (
-          <div key={label} className="areg-step-item">
-            <div className={`areg-step-circle ${done ? 'areg-step-done' : active ? 'areg-step-active' : 'areg-step-idle'}`}>
-              {done ? <Check size={13} strokeWidth={3} /> : idx}
+          <div key={label} className="areg-step-wrap">
+            <div className="areg-step-item">
+              <div className={`areg-step-circle ${done ? 'areg-step-done' : active ? 'areg-step-active' : 'areg-step-idle'}`}>
+                {done ? <Check size={13} strokeWidth={3} /> : idx}
+              </div>
+              <span className={`areg-step-label ${active ? 'areg-step-label-active' : ''}`}>{label}</span>
             </div>
-            <span className={`areg-step-label ${active ? 'areg-step-label-active' : ''}`}>{label}</span>
             {i < steps.length - 1 && (
               <div className={`areg-step-connector ${done ? 'areg-step-connector-done' : ''}`} />
             )}

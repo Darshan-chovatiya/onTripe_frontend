@@ -16,6 +16,18 @@ export function approveChildKyc(id) {
   return axiosInstance.patch(`/parent-agent/children/${id}/approve-kyc`)
 }
 
+export function createChildAgent(formData) {
+  return axiosInstance.post('/parent-agent/children', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  })
+}
+
+export function updateChildAgent(id, formData) {
+  return axiosInstance.patch(`/parent-agent/children/${id}`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  })
+}
+
 export function listPendingRequests() {
   return axiosInstance.get('/parent-agent/pending-requests')
 }
