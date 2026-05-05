@@ -64,6 +64,7 @@ export default function EditBooking() {
     passport: null, visaDoc: null, otherDocs: [],
   })
   const [basePackagePrice, setBasePackagePrice] = useState(0)
+  const [minTotalAmount, setMinTotalAmount] = useState(0)
   const isFirstRender = useRef(true)
 
   useEffect(() => {
@@ -116,6 +117,7 @@ export default function EditBooking() {
       return
     }
     const total = basePackagePrice * (travelers.length + 1)
+    setMinTotalAmount(total)
     setTotalAmount(String(total))
   }, [basePackagePrice, travelers.length])
 
@@ -233,9 +235,14 @@ export default function EditBooking() {
               <p className="mt-1 text-xs text-primary-600">Fixed by package schedule.</p>
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Total amount (₹)</label>
-              <input type="number" className={`${inputCls} bg-gray-50 text-gray-500 cursor-default`} value={totalAmount} readOnly />
-              <p className="mt-1 text-xs text-gray-400">₹{basePackagePrice.toLocaleString('en-IN')} × {travelers.length + 1} traveler(s)</p>
+              <label className="mb-1 block text-sm font-medium text-gray-700">Total amount (₹) <span className="text-red-500">*</span></label>
+              <input type="number" min={minTotalAmount} className={`${inputCls} ${Number(totalAmount) < minTotalAmount ? 'border-red-300 bg-red-50' : ''}`}
+                value={totalAmount} 
+                onChange={(e) => setTotalAmount(e.target.value)}
+                required />
+              <p className={`mt-1 text-xs ${Number(totalAmount) < minTotalAmount ? 'text-red-600 font-medium' : 'text-gray-400'}`}>
+                Minimum: ₹{minTotalAmount.toLocaleString('en-IN')} (₹{basePackagePrice.toLocaleString('en-IN')} × {travelers.length + 1} traveler{travelers.length + 1 !== 1 ? 's' : ''})
+              </p>
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700">Payment status</label>
@@ -338,7 +345,7 @@ export default function EditBooking() {
               !customerPhone.trim() || 
               !travelDate || 
               !totalAmount || 
-              Number(totalAmount) <= 0 ||
+              Number(totalAmount) < minTotalAmount ||
               !travelers.every(t => t.name.trim() && t.age !== '' && !Number.isNaN(Number(t.age)))
             }>
               {saving ? 'Saving…' : 'Save changes'}

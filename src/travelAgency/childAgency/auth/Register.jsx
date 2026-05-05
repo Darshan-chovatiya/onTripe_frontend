@@ -259,7 +259,7 @@ export default function ChildRegister() {
               </div>
 
               <div className="rform-field">
-                <label className="rform-label">Contact Person Name</label>
+                <label className="rform-label">Business Name</label>
                 <div className="rform-input-wrap">
                   <span className="rform-input-icon">
                     <svg size={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-user-check"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/></svg>
@@ -267,7 +267,7 @@ export default function ChildRegister() {
                   <input
                     type="text" name="contactPersonName" className="rform-input"
                     value={formData.contactPersonName} onChange={handleChange}
-                    placeholder="Full name of contact person" required
+                    placeholder="Business name" required
                   />
                 </div>
               </div>

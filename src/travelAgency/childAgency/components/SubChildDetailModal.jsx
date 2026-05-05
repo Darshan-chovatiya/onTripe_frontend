@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
   User, Mail, Phone, Calendar, FileText, CheckCircle, XCircle,
-  Clock, BookOpen, ShieldCheck, X, ChevronLeft, ChevronRight,
+  Clock, BookOpen, ShieldCheck, X, ChevronLeft, ChevronRight, Pencil,
 } from 'lucide-react'
 import Modal from '@/shared/components/Modal.jsx'
 import Button from '@/shared/components/Button.jsx'
@@ -47,7 +47,7 @@ function isImage(url) {
   return /\.(jpg|jpeg|png|gif|webp|bmp|svg)(\?|$)/i.test(url)
 }
 
-export default function SubChildDetailModal({ isOpen, onClose, subId, fetchOne, onToggleActive, busyId }) {
+export default function SubChildDetailModal({ isOpen, onClose, subId, fetchOne, onToggleActive, busyId, onEdit }) {
   const [sub, setSub] = useState(null)
   const [loadErr, setLoadErr] = useState(null)
   const [lightbox, setLightbox] = useState(null)
@@ -65,6 +65,12 @@ export default function SubChildDetailModal({ isOpen, onClose, subId, fetchOne, 
     })()
     return () => { cancelled = true }
   }, [isOpen, subId, fetchOne])
+
+  const handleEdit = () => {
+    if (onEdit && sub) {
+      onEdit(sub)
+    }
+  }
 
   const baseUrl = useMemo(() => {
     const envUrl = import.meta.env.VITE_API_BASE_URL
@@ -101,17 +107,31 @@ export default function SubChildDetailModal({ isOpen, onClose, subId, fetchOne, 
 
   const footer = (
     <div className="flex items-center justify-between gap-3 px-5 py-4 border-t border-gray-100">
-      {sub ? (
-        <Button
-          type="button"
-          variant={sub.isActive ? 'secondary' : 'primary'}
-          disabled={busy}
-          onClick={handleStatusClick}
-        >
-          {busy ? 'Please wait…' : sub.isActive ? 'Deactivate account' : 'Activate account'}
-        </Button>
-      ) : <span />}
-      <Button type="button" variant="secondary" onClick={onClose}>Close</Button>
+      <button
+        type="button"
+        onClick={handleStatusClick}
+        disabled={busy}
+        className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
+          sub?.isActive
+            ? 'bg-red-50 text-red-700 border border-red-200 hover:bg-red-100'
+            : 'bg-primary-600 text-white hover:bg-primary-700'
+        } disabled:opacity-50`}
+      >
+        {busy ? 'Please wait…' : sub?.isActive ? 'Deactivate account' : 'Activate account'}
+      </button>
+      <div className="flex gap-2">
+        {onEdit && sub && (
+          <button
+            type="button"
+            onClick={handleEdit}
+            className="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-700"
+          >
+            <Pencil size={16} />
+            Edit Details
+          </button>
+        )}
+        <button type="button" onClick={onClose} className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Close</button>
+      </div>
     </div>
   )
 

@@ -449,6 +449,17 @@ const AddAgencyModal = ({ isOpen, onClose, onRefresh }) => {
       newErrors.password = 'Password must be at least 8 characters'
     }
 
+    // Business details validation (mandatory)
+    if (!formData.contactPersonName.trim()) {
+      newErrors.contactPersonName = 'Business name is required'
+    }
+    if (!formData.gstNumber.trim()) {
+      newErrors.gstNumber = 'GST number is required'
+    }
+    if (!formData.address.trim()) {
+      newErrors.address = 'Business address is required'
+    }
+
     // Agency logo validation
     if (!files.agencyLogo) {
       newErrors.agencyLogo = 'Agency logo is required'
@@ -642,18 +653,21 @@ const AddAgencyModal = ({ isOpen, onClose, onRefresh }) => {
             </div>
 
             <div>
-              <label className="mb-1.5 ml-1 block text-xs font-medium text-gray-600">Contact person name</label>
-              <input type="text" value={formData.contactPersonName} onChange={(e) => setFormData({ ...formData, contactPersonName: e.target.value })} className="h-11 w-full rounded-xl border border-gray-200 bg-gray-50/50 px-4 text-sm outline-none transition focus:border-gray-400 focus:bg-white" placeholder="Full name" />
+              <label className={`mb-1.5 ml-1 block text-xs font-medium ${errors.contactPersonName ? 'text-red-500' : 'text-gray-600'}`}>Business name <span className="text-red-500">*</span></label>
+              <input required type="text" value={formData.contactPersonName} onChange={(e) => setFormData({ ...formData, contactPersonName: e.target.value })} className={`h-11 w-full rounded-xl border px-4 text-sm outline-none transition ${errors.contactPersonName ? 'border-red-500 bg-red-50' : 'border-gray-200 bg-gray-50/50 focus:border-gray-400 focus:bg-white'}`} placeholder="Business name" />
+              {errors.contactPersonName && <div className="mt-1 ml-1 flex items-center gap-1 text-[11px] font-medium text-red-500"><AlertCircle size={11} /> {errors.contactPersonName}</div>}
             </div>
 
             <div>
-              <label className="mb-1.5 ml-1 block text-xs font-medium text-gray-600">GST number</label>
-              <input type="text" value={formData.gstNumber} onChange={(e) => setFormData({ ...formData, gstNumber: e.target.value })} className="h-11 w-full rounded-xl border border-gray-200 bg-gray-50/50 px-4 text-sm outline-none transition focus:border-gray-400 focus:bg-white" placeholder="GSTIN (Optional)" />
+              <label className={`mb-1.5 ml-1 block text-xs font-medium ${errors.gstNumber ? 'text-red-500' : 'text-gray-600'}`}>GST number <span className="text-red-500">*</span></label>
+              <input required type="text" value={formData.gstNumber} onChange={(e) => setFormData({ ...formData, gstNumber: e.target.value })} className={`h-11 w-full rounded-xl border px-4 text-sm outline-none transition ${errors.gstNumber ? 'border-red-500 bg-red-50' : 'border-gray-200 bg-gray-50/50 focus:border-gray-400 focus:bg-white'}`} placeholder="GSTIN" />
+              {errors.gstNumber && <div className="mt-1 ml-1 flex items-center gap-1 text-[11px] font-medium text-red-500"><AlertCircle size={11} /> {errors.gstNumber}</div>}
             </div>
 
             <div className="sm:col-span-2">
-              <label className="mb-1.5 ml-1 block text-xs font-medium text-gray-600">Business Address</label>
-              <textarea value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} rows={2} className="w-full resize-y rounded-xl border border-gray-200 bg-gray-50/50 px-4 py-2.5 text-sm outline-none focus:border-gray-400 focus:bg-white" placeholder="Complete office address" />
+              <label className={`mb-1.5 ml-1 block text-xs font-medium ${errors.address ? 'text-red-500' : 'text-gray-600'}`}>Business Address <span className="text-red-500">*</span></label>
+              <textarea required value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} rows={2} className={`w-full resize-y rounded-xl border px-4 py-2.5 text-sm outline-none transition ${errors.address ? 'border-red-500 bg-red-50' : 'border-gray-200 bg-gray-50/50 focus:border-gray-400 focus:bg-white'}`} placeholder="Complete office address" />
+              {errors.address && <div className="mt-1 ml-1 flex items-center gap-1 text-[11px] font-medium text-red-500"><AlertCircle size={11} /> {errors.address}</div>}
             </div>
           </div>
         </section>
@@ -667,32 +681,6 @@ const AddAgencyModal = ({ isOpen, onClose, onRefresh }) => {
               <h3 className="text-sm font-semibold text-gray-900">KYC documents & status</h3>
               <p className="text-xs text-gray-500">Upload documents and set initial verification status</p>
             </div>
-          </div>
-          <div className="mb-4">
-            <label className="mb-1.5 ml-1 block text-xs font-medium text-gray-600">KYC status</label>
-            <CustomDropdown
-              value={formData.kycStatus}
-              onChange={(v) => setFormData({ ...formData, kycStatus: v })}
-              options={[
-                { value: 'approved', label: 'Approved' },
-                { value: 'pending', label: 'Pending' },
-                { value: 'rejected', label: 'Rejected' },
-              ]}
-              className="w-full max-w-xs"
-              buttonClassName="!py-2.5"
-            />
-            {formData.kycStatus === 'rejected' && (
-              <div className="mt-3">
-                <label className="mb-1.5 ml-1 block text-xs font-medium text-gray-600">Rejection reason</label>
-                <textarea
-                  value={formData.kycRejectionReason}
-                  onChange={(e) => setFormData({ ...formData, kycRejectionReason: e.target.value })}
-                  rows={2}
-                  className="w-full resize-none rounded-xl border border-gray-200 bg-gray-50/50 px-3 py-2 text-sm outline-none focus:border-gray-400 focus:bg-white"
-                  placeholder="Shown to the agency when status is rejected"
-                />
-              </div>
-            )}
           </div>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             <FileSlot label="Aadhar front *" id="aadharFront" currentFile={files.aadharFront} hasError={!!errors.aadharFront} />
@@ -713,9 +701,6 @@ const AddAgencyModal = ({ isOpen, onClose, onRefresh }) => {
               hasError={!!errors.agencyLogo}
             />
             {errors.agencyLogo && <div className="mt-1 ml-1 flex items-center gap-1 text-[11px] font-medium text-red-500"><AlertCircle size={11} /> {errors.agencyLogo}</div>}
-          </div>
-          <div className="mt-4 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-600">
-            Default is Approved when you add documents from admin. Choose Pending or Rejected if you need a different initial state.
           </div>
         </section>
       </div>
@@ -899,6 +884,12 @@ const EditAgencyModal = ({ isOpen, onClose, agent, onRefresh }) => {
   const handleSubmit = async (e) => {
     if (e) e.preventDefault()
     if (!validate()) return
+    
+    // Validate rejection reason is required when status is rejected
+    if (formData.kycStatus === 'rejected' && !formData.kycRejectionReason.trim()) {
+      toast.error('Rejection reason is required when rejecting KYC')
+      return
+    }
 
     setLoading(true)
     const submissionData = new FormData()
@@ -938,8 +929,9 @@ const EditAgencyModal = ({ isOpen, onClose, agent, onRefresh }) => {
           <button
             form="edit-agency-form"
             type="submit"
-            disabled={loading}
+            disabled={loading || (formData.kycStatus === 'rejected' && !formData.kycRejectionReason.trim())}
             className="inline-flex items-center gap-2 rounded-lg bg-zinc-900 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-zinc-800 disabled:opacity-50"
+            title={formData.kycStatus === 'rejected' && !formData.kycRejectionReason.trim() ? 'Rejection reason is required' : ''}
           >
             {loading ? <Loader size="sm" color="white" /> : 'Save changes'}
           </button>
@@ -965,7 +957,7 @@ const EditAgencyModal = ({ isOpen, onClose, agent, onRefresh }) => {
               {errors.name && <div className="mt-1 ml-1 flex items-center gap-1 text-[11px] font-medium text-red-500"><AlertCircle size={11} /> {errors.name}</div>}
             </div>
             <div>
-              <label className="mb-1.5 ml-1 block text-xs font-medium text-gray-600">Contact person name</label>
+              <label className="mb-1.5 ml-1 block text-xs font-medium text-gray-600">Business name</label>
               <input
                 type="text"
                 value={formData.contactPersonName}
@@ -1038,7 +1030,7 @@ const EditAgencyModal = ({ isOpen, onClose, agent, onRefresh }) => {
           </div>
           {formData.kycStatus === 'rejected' && (
             <div className="mb-4">
-              <label className="mb-1.5 ml-1 block text-xs font-medium text-gray-600">Rejection reason</label>
+              <label className="mb-1.5 ml-1 block text-xs font-medium text-gray-600">Rejection reason <span className="text-red-600">*</span></label>
               <textarea
                 value={formData.kycRejectionReason}
                 onChange={(e) => setFormData({ ...formData, kycRejectionReason: e.target.value })}
@@ -1058,7 +1050,7 @@ const EditAgencyModal = ({ isOpen, onClose, agent, onRefresh }) => {
             />
           </div>
 
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {[
               { id: 'aadharFront', label: 'Aadhar front' },
               { id: 'aadharBack', label: 'Aadhar back' },
@@ -1264,7 +1256,7 @@ export default function Agencies() {
       await exportToExcel(
         (data?.data?.agents ?? []).map((a) => ({
           'Full name': a.name || '',
-          'Contact person': a.contactPersonName || '',
+          'Business name': a.contactPersonName || '',
           Email: a.email || '',
           Mobile: a.phone || '',
           'GST number': a.gstNumber || '',
@@ -1594,7 +1586,7 @@ export default function Agencies() {
               <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-400">Details</p>
               <dl className="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
                 {[
-                  { label: 'Contact person', value: selectedAgent.contactPersonName },
+                  { label: 'Business name', value: selectedAgent.contactPersonName },
                   { label: 'Mobile', value: selectedAgent.phone },
                   { label: 'GST number', value: selectedAgent.gstNumber },
                   { label: 'Agent code', value: selectedAgent.agentCode, highlight: true },
@@ -1713,7 +1705,7 @@ export default function Agencies() {
                     className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-emerald-700 disabled:opacity-50">
                     {isActionLoading ? <Loader size="sm" color="white" /> : <><ShieldCheck className="h-4 w-4" strokeWidth={2} /> Approve</>}
                   </button>
-                  <button type="button" onClick={() => handleKycAction('reject')} disabled={isActionLoading}
+                  <button type="button" onClick={() => handleKycAction('reject')} disabled={isActionLoading || !rejectionReason.trim()}
                     className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm font-semibold text-red-700 transition-colors hover:bg-red-50 disabled:opacity-50">
                     {isActionLoading ? <Loader size="sm" /> : <><ShieldAlert className="h-4 w-4" strokeWidth={2} /> Reject</>}
                   </button>

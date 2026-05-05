@@ -1,12 +1,13 @@
 import { useMemo, useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Eye, RefreshCw, Users, UserCheck, UserX, Bell, Send, History, Check, Search, Download } from 'lucide-react'
+import { Eye, RefreshCw, Users, UserCheck, UserX, Bell, Send, History, Check, Search, Download, Plus, Pencil } from 'lucide-react'
 import { useManageSubChildren } from '@/travelAgency/childAgency/hooks/useManageSubChildren.js'
 import SubChildDetailModal from '@/travelAgency/childAgency/components/SubChildDetailModal.jsx'
+import SubChildAgentFormModal from '@/travelAgency/childAgency/components/SubChildAgentFormModal.jsx'
 import ConfirmDialog from '@/shared/components/ConfirmDialog.jsx'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
 import { getApiErrorMessage } from '@/shared/services/apiHelpers.js'
-import { approveSubChildKyc, sendNotification, listPendingRequests, approveParentRequest, rejectParentRequest, listSubChildren } from '@/travelAgency/childAgency/services/childAgencyApi.js'
+import { approveSubChildKyc, rejectSubChildKyc, sendNotification, listPendingRequests, approveParentRequest, rejectParentRequest, listSubChildren, createSubChild, updateSubChildAgent } from '@/travelAgency/childAgency/services/childAgencyApi.js'
 import Modal from '@/shared/components/Modal.jsx'
 import PendingRequestsSection from '@/travelAgency/shared/components/PendingRequestsSection.jsx'
 import Pagination from '@/admin/components/Pagination.jsx'
@@ -31,6 +32,8 @@ export default function ManageSubChildren() {
   const [kycFilter, setKycFilter] = useState('all')
   const [page, setPage] = useState(1)
   const [exportLoading, setExportLoading] = useState(false)
+  const [isFormOpen, setIsFormOpen] = useState(false)
+  const [editingAgent, setEditingAgent] = useState(null)
 
   const attachmentUrl = (attachment) => attachment?.url || ''
 
@@ -95,6 +98,22 @@ export default function ManageSubChildren() {
     } finally {
       setBusyId(null)
       setKycTarget(null)
+    }
+  }
+
+  const handleSaveSubAgent = async (formData, id) => {
+    try {
+      if (id) {
+        await updateSubChildAgent(id, formData)
+        toast.success('Sub-agent updated successfully')
+      } else {
+        await createSubChild(formData)
+        toast.success('Sub-agent created successfully')
+      }
+      refresh()
+    } catch (err) {
+      toast.error(getApiErrorMessage(err))
+      throw err
     }
   }
 
@@ -229,9 +248,18 @@ export default function ManageSubChildren() {
             onClick={openNotify}
             disabled={loading || selectedCount === 0}
             className="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-700 disabled:opacity-50"
+            title={selectedCount === 0 ? 'Select sub-agents first' : 'Send notification'}
           >
             <Bell className="h-4 w-4" />
             Notify
+          </button>
+          <button
+            type="button"
+            onClick={() => { setEditingAgent(null); setIsFormOpen(true) }}
+            className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-zinc-900 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-zinc-800"
+          >
+            <Plus size={16} />
+            Add Sub-Agent
           </button>
         </div>
       </header>
@@ -352,13 +380,18 @@ export default function ManageSubChildren() {
                           Not verified
                         </span>
                       ) : (
-                        <span className={`rounded-full px-2 py-0.5 text-xs font-medium capitalize ${
-                          sub.kyc?.status === 'approved' ? 'bg-green-50 text-green-700' :
-                          sub.kyc?.status === 'rejected' ? 'bg-red-50 text-red-700' :
-                          'bg-yellow-50 text-yellow-700'
-                        }`}>
-                          {sub.kyc?.status || 'pending'}
-                        </span>
+                        <div>
+                          <span className={`rounded-full px-2 py-0.5 text-xs font-medium capitalize ${
+                            sub.kyc?.status === 'approved' ? 'bg-green-50 text-green-700' :
+                            sub.kyc?.status === 'rejected' ? 'bg-red-50 text-red-700' :
+                            'bg-yellow-50 text-yellow-700'
+                          }`}>
+                            {sub.kyc?.status || 'pending'}
+                          </span>
+                          {sub.kyc?.status === 'rejected' && sub.kyc?.rejectionReason && (
+                            <p className="mt-1.5 text-xs text-red-600 font-medium">{sub.kyc.rejectionReason}</p>
+                          )}
+                        </div>
                       )}
                     </td>
                     <td className="px-4 py-3">
@@ -397,14 +430,24 @@ export default function ManageSubChildren() {
                           View
                         </button>
                         {sub.kyc?.status === 'pending' && (
-                          <button
-                            type="button"
-                            disabled={busyId === sub._id}
-                            onClick={() => setKycTarget(sub)}
-                            className="inline-flex items-center gap-1 rounded-lg border border-blue-200 px-2.5 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-50"
-                          >
-                            Approve KYC
-                          </button>
+                          <>
+                            <button
+                              type="button"
+                              disabled={busyId === sub._id}
+                              onClick={() => setKycTarget(sub)}
+                              className="inline-flex items-center gap-1 rounded-lg border border-blue-200 px-2.5 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-50"
+                            >
+                              Approve KYC
+                            </button>
+                            <button
+                              type="button"
+                              disabled={busyId === sub._id}
+                              onClick={() => { setKycRejectModal({ open: true, target: sub }); setRejectionReason('') }}
+                              className="inline-flex items-center gap-1 rounded-lg border border-red-200 px-2.5 py-1.5 text-xs font-medium text-red-700 hover:bg-red-50"
+                            >
+                              Reject KYC
+                            </button>
+                          </>
                         )}
                         <button
                           type="button"
@@ -524,6 +567,11 @@ export default function ManageSubChildren() {
           }
           await runToggle(sub, true)
         }}
+        onEdit={(sub) => {
+          setEditingAgent(sub)
+          setIsFormOpen(true)
+          setDetailId(null)
+        }}
       />
 
       <ConfirmDialog
@@ -546,6 +594,13 @@ export default function ManageSubChildren() {
         confirmText="Approve"
         cancelText="Cancel"
         variant="primary"
+      />
+
+      <SubChildAgentFormModal
+        isOpen={isFormOpen}
+        onClose={() => setIsFormOpen(false)}
+        agent={editingAgent}
+        onSave={handleSaveSubAgent}
       />
     </div>
   )

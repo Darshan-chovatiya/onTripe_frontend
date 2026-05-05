@@ -264,8 +264,8 @@ export default function Settings() {
                     <input className="input-field w-full" value={gstNumber} onChange={e => setGstNumber(e.target.value)} placeholder="22AAAAA0000A1Z5" />
                   </div>
                   <div>
-                    <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-gray-500">Contact Person Name</label>
-                    <input className="input-field w-full" value={contactPersonName} onChange={e => setContactPersonName(e.target.value)} placeholder="Full name of contact person" />
+                    <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-gray-500">Business Name</label>
+                    <input className="input-field w-full" value={contactPersonName} onChange={e => setContactPersonName(e.target.value)} placeholder="Business name" />
                   </div>
                   <div>
                     <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-gray-500">Business Address</label>
@@ -288,6 +288,12 @@ export default function Settings() {
                       return <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold ${cls}`}><span className="h-1.5 w-1.5 rounded-full bg-current opacity-60" />{label}</span>
                     })()}
                   </div>
+                  {kycStatus === 'rejected' && kyc?.rejectionReason && (
+                    <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2.5">
+                      <p className="text-xs font-semibold text-red-700">Rejection Reason</p>
+                      <p className="mt-1 text-xs text-red-600">{kyc.rejectionReason}</p>
+                    </div>
+                  )}
                   <KycDocumentsSection kyc={kyc} onUpdateKyc={handleKycUpdate} loadingUpdate={kycUpdating} />
                 </div>
               )}
@@ -351,8 +357,7 @@ export default function Settings() {
           </form>
         </div>
       </div>
-
-      {/* <ParentManagement listParents={listParents} addParent={addParent} toggleParentActive={toggleParentActive} label="Parent agencies" /> */}
+      <ParentManagement listParents={listParents} addParent={addParent} toggleParentActive={toggleParentActive} label="Parent agencies" />
     </div>
   )
 }

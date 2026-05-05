@@ -65,9 +65,8 @@ export default function ParentManagement({ listParents, addParent, toggleParentA
   }
 
   return (
-    <section className="">
-    {/*<section className="flex flex-col rounded-xl border border-gray-100 bg-white p-6 shadow-sm space-y-5">*/}
-      {/* <div className="flex items-center gap-3 border-b border-gray-100 pb-4">
+    <section className="flex flex-col rounded-xl border border-gray-100 bg-white p-6 shadow-sm space-y-5">
+      <div className="flex items-center gap-3 border-b border-gray-100 pb-4">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-100 text-indigo-700">
           <Building2 className="h-5 w-5" />
         </div>
@@ -75,9 +74,9 @@ export default function ParentManagement({ listParents, addParent, toggleParentA
           <h2 className="text-lg font-semibold text-gray-900">{label}</h2>
           <p className="text-xs text-gray-500">Add a parent code to link your account. Set inactive to hide their packages.</p>
         </div>
-      </div> */}
+      </div> 
 
-      {/* <form onSubmit={handleAdd} className="flex gap-2">
+      <form onSubmit={handleAdd} className="flex gap-2">
         <input
           className="input-field flex-1"
           placeholder="Enter parent agent code…"
@@ -89,9 +88,9 @@ export default function ParentManagement({ listParents, addParent, toggleParentA
           <Plus className="mr-1 inline h-4 w-4" />
           {adding ? 'Adding…' : 'Add'}
         </Button>
-      </form> */}
+      </form>
 
-      {/* {loading ? (
+      {loading ? (
         <p className="text-sm text-gray-400">Loading…</p>
       ) : parents.length === 0 ? (
         <p className="text-sm text-gray-400">No parent agencies linked yet.</p>
@@ -145,7 +144,7 @@ export default function ParentManagement({ listParents, addParent, toggleParentA
             </li>
           ))}
         </ul>
-      )} */}
+      )}
     </section>
   )
 }

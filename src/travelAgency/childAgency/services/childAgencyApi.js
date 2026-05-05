@@ -57,6 +57,22 @@ export function approveSubChildKyc(id) {
   return axiosInstance.patch(`/child-agent/sub-children/${id}/approve-kyc`)
 }
 
+export function rejectSubChildKyc(id, rejectionReason) {
+  return axiosInstance.patch(`/child-agent/sub-children/${id}/reject-kyc`, { status: 'rejected', rejectionReason })
+}
+
+export function createSubChild(formData) {
+  return axiosInstance.post('/child-agent/sub-children', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  })
+}
+
+export function updateSubChildAgent(id, formData) {
+  return axiosInstance.patch(`/child-agent/sub-children/${id}`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  })
+}
+
 export function listPendingRequests() {
   return axiosInstance.get('/child-agent/pending-requests')
 }

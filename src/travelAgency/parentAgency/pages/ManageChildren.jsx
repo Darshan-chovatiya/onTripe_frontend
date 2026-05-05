@@ -23,6 +23,7 @@ import {
   listChildAgencies,
   toggleChildAgentStatus,
   approveChildKyc,
+  rejectChildKyc,
   sendNotification,
   listPendingRequests,
   approveParentRequest,
@@ -433,10 +434,15 @@ export default function ManageChildren() {
                             <span className="h-1.5 w-1.5 rounded-full bg-red-500" />Not verified
                           </span>
                         ) : (
-                          <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold capitalize ${KYC_STYLES[kycStatus]}`}>
-                            <span className="h-1.5 w-1.5 rounded-full bg-current opacity-60" />
-                            {kycStatus}
-                          </span>
+                          <div>
+                            <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold capitalize ${KYC_STYLES[kycStatus]}`}>
+                              <span className="h-1.5 w-1.5 rounded-full bg-current opacity-60" />
+                              {kycStatus}
+                            </span>
+                            {kycStatus === 'rejected' && child.kyc?.rejectionReason && (
+                              <p className="mt-1.5 text-[11px] text-red-600 font-bold">{child.kyc.rejectionReason}</p>
+                            )}
+                          </div>
                         )}
                       </td>
                       <td className="px-4 py-3.5 align-middle">
@@ -458,12 +464,6 @@ export default function ManageChildren() {
                             className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-400 shadow-sm transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-600">
                             <Eye size={13} />
                           </button>
-                          {!isRejected && child.kyc?.status === 'pending' && (
-                            <button onClick={() => setKycTarget(child)} title="Approve KYC"
-                              className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-400 shadow-sm transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-600">
-                              <UserCheck size={13} />
-                            </button>
-                          )}
                           <button onClick={() => { setEditingAgent(child); setIsFormOpen(true) }} title="Edit"
                             className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-400 shadow-sm transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-600">
                             <Pencil size={13} />
@@ -568,6 +568,11 @@ export default function ManageChildren() {
         isOpen={!!viewId}
         onClose={() => setViewId(null)}
         childId={viewId}
+        onEdit={(child) => {
+          setEditingAgent(child)
+          setIsFormOpen(true)
+          setViewId(null)
+        }}
       />
 
       <ChildAgentFormModal

@@ -266,9 +266,9 @@ export default function Settings() {
                     value={profile.gstNumber} onChange={e => setP('gstNumber', e.target.value)} placeholder="22AAAAA0000A1Z5" />
                 </div>
                 <div>
-                  <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-gray-500">Contact Person Name</label>
+                  <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-gray-500">Business Name</label>
                   <input className="input-field w-full"
-                    value={profile.contactPersonName} onChange={e => setP('contactPersonName', e.target.value)} placeholder="Full name of contact person" />
+                    value={profile.contactPersonName} onChange={e => setP('contactPersonName', e.target.value)} placeholder="Business name" />
                 </div>
                 <div>
                   <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-gray-500">Business Address</label>
@@ -296,7 +296,7 @@ export default function Settings() {
               {kyc?.status === 'rejected' && (
                 <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm">
                   <p className="font-bold text-red-900">KYC Rejected</p>
-                  <p className="mt-1 text-xs leading-relaxed text-red-800">{kyc.rejectionReason || 'Please re-upload clear, valid documents.'}</p>
+                  <p className="mt-1 text-xs leading-relaxed text-red-800">Reason : {kyc.rejectionReason || 'Please re-upload clear, valid documents.'}</p>
                 </div>
               )}
               {kyc?.status === 'pending' && !showKycReverificationSent && (

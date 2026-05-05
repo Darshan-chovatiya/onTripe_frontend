@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import {
   Mail, Phone, Calendar, FileText, User,
   CheckCircle, XCircle, Clock, Layers, BookOpen,
-  Hash, ShieldCheck, Briefcase
+  Hash, ShieldCheck, Briefcase, Pencil
 } from 'lucide-react'
 import Modal from '@/shared/components/Modal.jsx'
 import { getChildAgent } from '@/travelAgency/parentAgency/services/parentAgencyApi.js'
@@ -34,7 +34,7 @@ function DetailRow({ label, children }) {
   )
 }
 
-export default function ChildAgentDetailModal({ isOpen, onClose, childId }) {
+export default function ChildAgentDetailModal({ isOpen, onClose, childId, onEdit }) {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -62,8 +62,40 @@ export default function ChildAgentDetailModal({ isOpen, onClose, childId }) {
     ...(kyc.otherDocs || []).map((p, i) => ({ label: `Other Doc ${i + 1}`, path: p })),
   ].filter(d => d.path) : []
 
+  const handleEdit = () => {
+    if (onEdit && child) {
+      onEdit(child)
+    }
+  }
+
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Child agent details" size="xl">
+    <Modal 
+      isOpen={isOpen} 
+      onClose={onClose} 
+      title="Child agent details" 
+      size="xl"
+      footer={
+        onEdit && child ? (
+          <div className="flex items-center justify-end gap-3 border-t border-gray-100 bg-gray-50/80 px-6 py-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+            >
+              Close
+            </button>
+            <button
+              type="button"
+              onClick={handleEdit}
+              className="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-700"
+            >
+              <FileText size={16} />
+              Edit Details
+            </button>
+          </div>
+        ) : null
+      }
+    >
       <div className="pr-1">
 
         {/* Loading skeleton */}
@@ -167,7 +199,7 @@ export default function ChildAgentDetailModal({ isOpen, onClose, childId }) {
               <SectionTitle icon={Briefcase}>Business details</SectionTitle>
               <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
                 <DetailRow label="GST Number">{child.gstNumber || '—'}</DetailRow>
-                <DetailRow label="Contact Person">{child.contactPersonName || '—'}</DetailRow>
+                <DetailRow label="Business Name">{child.contactPersonName || '—'}</DetailRow>
                 <DetailRow label="Address">{child.address || '—'}</DetailRow>
               </div>
             </div>

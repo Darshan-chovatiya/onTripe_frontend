@@ -253,6 +253,13 @@ function AgentFormModal({ mode, agent, agentRole, onClose, onSaved }) {
 
   const handleSubmit = async () => {
     if (!validate()) return
+    
+    // Validate rejection reason is required when status is rejected
+    if (form.kycStatus === 'rejected' && !form.kycRejectionReason.trim()) {
+      toast.error('Rejection reason is required when rejecting KYC')
+      return
+    }
+    
     setSaving(true)
     try {
       const fd = new FormData()
@@ -350,8 +357,9 @@ function AgentFormModal({ mode, agent, agentRole, onClose, onSaved }) {
           <button type="button" onClick={onClose} className="rounded-lg px-4 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900">
             Cancel
           </button>
-          <button type="button" onClick={handleSubmit} disabled={saving}
-            className="inline-flex items-center gap-2 rounded-lg bg-zinc-900 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-zinc-800 disabled:opacity-50">
+          <button type="button" onClick={handleSubmit} disabled={saving || (form.kycStatus === 'rejected' && !form.kycRejectionReason.trim())}
+            className="inline-flex items-center gap-2 rounded-lg bg-zinc-900 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-zinc-800 disabled:opacity-50"
+            title={form.kycStatus === 'rejected' && !form.kycRejectionReason.trim() ? 'Rejection reason is required' : ''}>
             {saving ? <Loader size="sm" color="white" /> : isEdit ? <><Save size={16} strokeWidth={2} /> Save changes</> : <><Plus size={16} strokeWidth={2} /> Add agency</>}
           </button>
         </div>
@@ -409,8 +417,8 @@ function AgentFormModal({ mode, agent, agentRole, onClose, onSaved }) {
             </div>
 
             <div>
-              <label className="mb-1.5 ml-1 block text-xs font-medium text-gray-600">Contact person name</label>
-              <input type="text" value={form.contactPersonName} onChange={e => set('contactPersonName', e.target.value)} className="h-11 w-full rounded-xl border border-gray-200 bg-gray-50/50 px-4 text-sm outline-none transition focus:border-gray-400 focus:bg-white" placeholder="Full name" />
+              <label className="mb-1.5 ml-1 block text-xs font-medium text-gray-600">Business name</label>
+              <input type="text" value={form.contactPersonName} onChange={e => set('contactPersonName', e.target.value)} className="h-11 w-full rounded-xl border border-gray-200 bg-gray-50/50 px-4 text-sm outline-none transition focus:border-gray-400 focus:bg-white" placeholder="Business name" />
             </div>
 
             <div>
@@ -529,7 +537,7 @@ function AgentFormModal({ mode, agent, agentRole, onClose, onSaved }) {
               className="w-full max-w-xs" buttonClassName="!py-2.5" />
             {form.kycStatus === 'rejected' && (
               <div className="mt-3">
-                <label className="mb-1.5 ml-1 block text-xs font-medium text-gray-600">Rejection reason</label>
+                <label className="mb-1.5 ml-1 block text-xs font-medium text-gray-600">Rejection reason <span className="text-red-600">*</span></label>
                 <textarea value={form.kycRejectionReason} onChange={e => set('kycRejectionReason', e.target.value)}
                   rows={2} className="w-full resize-none rounded-xl border border-gray-200 bg-gray-50/50 px-3 py-2 text-sm outline-none focus:border-gray-400 focus:bg-white"
                   placeholder="Shown to the agency when status is rejected" />
@@ -537,16 +545,18 @@ function AgentFormModal({ mode, agent, agentRole, onClose, onSaved }) {
             )}
           </div>
           {isEdit ? (
-            <div className="space-y-3">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <EditKycDocRow doc={{ label: 'Aadhar front' }} existingUrl={agent?.kyc?.aadharFront}
                 newFile={files.aadharFront} onFileChange={e => setFiles(p => ({ ...p, aadharFront: e.target.files[0] || null }))} />
               <EditKycDocRow doc={{ label: 'Aadhar back' }} existingUrl={agent?.kyc?.aadharBack}
                 newFile={files.aadharBack} onFileChange={e => setFiles(p => ({ ...p, aadharBack: e.target.files[0] || null }))} />
               <EditKycDocRow doc={{ label: 'PAN card' }} existingUrl={agent?.kyc?.panCard}
                 newFile={files.panCard} onFileChange={e => setFiles(p => ({ ...p, panCard: e.target.files[0] || null }))} />
-              <EditKycDocRow doc={{ label: 'Agency logo' }} existingUrl={agent?.agencyLogo}
-                newFile={files.agencyLogo} onFileChange={e => setFiles(p => ({ ...p, agencyLogo: e.target.files[0] || null }))}
-                accept="image/jpeg,image/png,image/webp" />
+              <div className="sm:col-span-2 lg:col-span-1">
+                <EditKycDocRow doc={{ label: 'Agency logo' }} existingUrl={agent?.agencyLogo}
+                  newFile={files.agencyLogo} onFileChange={e => setFiles(p => ({ ...p, agencyLogo: e.target.files[0] || null }))}
+                  accept="image/jpeg,image/png,image/webp" />
+              </div>
             </div>
           ) : (
             <>
@@ -578,11 +588,11 @@ function AgentFormModal({ mode, agent, agentRole, onClose, onSaved }) {
 function ParentApprovalBadge({ status }) {
   if (!status || status === 'none') return null
   const cfg = {
-    approved:     { label: 'All Approved', cls: 'border-emerald-200 bg-emerald-50 text-emerald-800' },
-    partial:      { label: 'Partial',      cls: 'border-amber-200 bg-amber-50 text-amber-800' },
-    not_approved: { label: 'Not Approved', cls: 'border-red-200 bg-red-50 text-red-800' },
+    approved:  { label: 'Approved', cls: 'border-emerald-200 bg-emerald-50 text-emerald-800' },
+    pending:   { label: 'Pending', cls: 'border-amber-200 bg-amber-50 text-amber-800' },
+    rejected:  { label: 'Rejected', cls: 'border-red-200 bg-red-50 text-red-800' },
   }
-  const { label, cls } = cfg[status] || cfg.not_approved
+  const { label, cls } = cfg[status] || cfg.pending
   return (
     <span className={`inline-flex items-center rounded-md border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${cls}`}>
       {label}
@@ -826,7 +836,7 @@ export default function ChildAgencies({ agentRole = 'child_agent', pageTitle = '
                   <p className="mt-0.5 text-sm text-gray-900">{selectedAgent.phone || '—'}</p>
                 </div>
                 <div>
-                  <p className="text-xs font-medium text-gray-400">Contact person</p>
+                  <p className="text-xs font-medium text-gray-400">Business name</p>
                   <p className="mt-0.5 text-sm text-gray-900">{selectedAgent.contactPersonName || '—'}</p>
                 </div>
                 <div>
@@ -869,7 +879,7 @@ export default function ChildAgencies({ agentRole = 'child_agent', pageTitle = '
                     className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-emerald-700 disabled:opacity-50">
                     {isActionLoading ? <Loader size="sm" color="white" /> : <><ShieldCheck className="h-4 w-4" strokeWidth={2} /> Approve</>}
                   </button>
-                  <button type="button" onClick={() => handleKycAction('reject')} disabled={isActionLoading}
+                  <button type="button" onClick={() => handleKycAction('reject')} disabled={isActionLoading || !rejectionReason.trim()}
                     className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm font-semibold text-red-700 transition-colors hover:bg-red-50 disabled:opacity-50">
                     {isActionLoading ? <Loader size="sm" /> : <><ShieldAlert className="h-4 w-4" strokeWidth={2} /> Reject</>}
                   </button>

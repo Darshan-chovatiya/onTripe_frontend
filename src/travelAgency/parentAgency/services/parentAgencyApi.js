@@ -16,6 +16,10 @@ export function approveChildKyc(id) {
   return axiosInstance.patch(`/parent-agent/children/${id}/approve-kyc`)
 }
 
+export function rejectChildKyc(id, rejectionReason) {
+  return axiosInstance.patch(`/parent-agent/children/${id}/reject-kyc`, { status: 'rejected', rejectionReason })
+}
+
 export function createChildAgent(formData) {
   return axiosInstance.post('/parent-agent/children', formData, {
     headers: { 'Content-Type': 'multipart/form-data' }

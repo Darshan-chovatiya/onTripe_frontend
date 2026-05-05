@@ -1,10 +1,5 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { 
-  X, 
-  User, 
-  Mail, 
-  Phone, 
-  Lock, 
   Eye, 
   EyeOff, 
   Loader2, 
@@ -14,7 +9,6 @@ import {
   AlertCircle,
   FileText,
   CheckCircle2,
-  XCircle
 } from 'lucide-react'
 import Modal from '@/shared/components/Modal.jsx'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
@@ -30,7 +24,7 @@ const DOCUMENT_RULES = {
   agencyLogo: { label: 'Agency Logo', required: true, maxSize: 2 * 1024 * 1024 }
 }
 
-export default function ChildAgentFormModal({ isOpen, onClose, agent, onSave }) {
+export default function SubChildAgentFormModal({ isOpen, onClose, agent, onSave }) {
   const { toast } = useToast()
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
@@ -207,7 +201,7 @@ export default function ChildAgentFormModal({ isOpen, onClose, agent, onSave }) 
       await onSave(data, agent?._id)
       onClose()
     } catch (err) {
-      toast.error(err?.response?.data?.message || 'Failed to save child agent')
+      toast.error(err?.response?.data?.message || 'Failed to save sub-agent')
     } finally {
       setLoading(false)
     }
@@ -217,7 +211,7 @@ export default function ChildAgentFormModal({ isOpen, onClose, agent, onSave }) 
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={agent ? 'Edit Child Agent' : 'Add New Child Agent'}
+      title={agent ? 'Edit Sub-Agent' : 'Add New Sub-Agent'}
       size="2xl"
     >
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -464,7 +458,7 @@ export default function ChildAgentFormModal({ isOpen, onClose, agent, onSave }) 
             className="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-gray-800 disabled:opacity-60"
           >
             {loading ? <Loader2 size={16} className="animate-spin" /> : null}
-            {agent ? 'Update Agent' : 'Add agency'}
+            {agent ? 'Update Agent' : 'Add sub-agent'}
           </button>
         </div>
       </form>
