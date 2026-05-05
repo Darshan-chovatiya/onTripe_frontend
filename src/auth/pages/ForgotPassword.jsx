@@ -1,18 +1,22 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Mail, Lock, ShieldCheck, ArrowRight, ChevronLeft, RefreshCw } from 'lucide-react'
+import { Mail, Lock, ShieldCheck, ArrowRight, ChevronLeft, RefreshCw, Eye, EyeOff } from 'lucide-react'
 import { useAuth } from '@/shared/context/AuthContext.jsx'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
+import AgencyRegisterShell from '@/travelAgency/shared/components/AgencyRegisterShell.jsx'
+import '@/travelAgency/shared/components/RegisterForm.css'
 
 export default function ForgotPassword() {
   const navigate = useNavigate()
   const { toast } = useToast()
   const { requestPasswordReset, verifyResetOtp, resetPassword, isLoading } = useAuth()
 
-  const [step, setStep] = useState(1) // 1: Email, 2: OTP, 3: Reset
+  const [step, setStep] = useState(1)
   const [email, setEmail] = useState('')
   const [otp, setOtp] = useState('')
   const [passwords, setPasswords] = useState({ newPassword: '', confirmPassword: '' })
+  const [showNew, setShowNew] = useState(false)
+  const [showConfirm, setShowConfirm] = useState(false)
 
   const handleRequestOtp = async (e) => {
     e.preventDefault()
@@ -41,9 +45,8 @@ export default function ForgotPassword() {
   const handleResetPassword = async (e) => {
     e.preventDefault()
     if (!passwords.newPassword) return toast.error('Please enter new password')
-    if (passwords.newPassword.length < 6) return toast.error('Password must be at least 6 characters')
+    if (passwords.newPassword.length < 8) return toast.error('Password must be at least 8 characters')
     if (passwords.newPassword !== passwords.confirmPassword) return toast.error('Passwords do not match')
-
     const res = await resetPassword(email, otp, passwords.newPassword)
     if (res.success) {
       toast.success('Password reset successful. Please login.')
@@ -53,149 +56,125 @@ export default function ForgotPassword() {
     }
   }
 
+  const stepTitles = ['Forgot password?', 'Verify OTP', 'Reset password']
+  const stepSubs = [
+    "No worries, we'll send reset instructions to your email.",
+    `We've sent a 4-digit OTP to ${email}`,
+    'Choose a strong new password for your account.',
+  ]
+
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-[#f8fafc] p-4">
-      <div className="w-full max-w-[420px] rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
-        
-        {/* Header */}
-        <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary-50 text-primary-600">
-            {step === 1 && <Mail size={24} />}
-            {step === 2 && <ShieldCheck size={24} />}
-            {step === 3 && <Lock size={24} />}
+    <AgencyRegisterShell
+      title={stepTitles[step - 1]}
+      subtitle={stepSubs[step - 1]}
+    >
+      {/* Step 1 — Email */}
+      {step === 1 && (
+        <form onSubmit={handleRequestOtp} className="rform-grid">
+          <div className="rform-field rform-field-full">
+            <label className="rform-label">Email Address</label>
+            <div className="rform-input-wrap">
+              <span className="rform-input-icon"><Mail size={15} /></span>
+              <input
+                type="email" className="rform-input"
+                value={email} onChange={(e) => setEmail(e.target.value)}
+                placeholder="name@company.com" autoComplete="email" required
+              />
+            </div>
           </div>
-          <h1 className="text-xl font-bold text-slate-900">
-            {step === 1 && 'Forgot password?'}
-            {step === 2 && 'Verify OTP'}
-            {step === 3 && 'Reset password'}
-          </h1>
-          <p className="mt-1.5 text-sm text-slate-500">
-            {step === 1 && "No worries, we'll send you reset instructions."}
-            {step === 2 && `We've sent an OTP to ${email}`}
-            {step === 3 && 'Choose a strong password for your account.'}
-          </p>
-        </div>
 
-        {/* Form Step 1: Email */}
-        {step === 1 && (
-          <form onSubmit={handleRequestOtp} className="space-y-5">
-            <div>
-              <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">Email Address</label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
-                  <Mail size={16} />
-                </span>
-                <input
-                  type="email"
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-4 text-sm outline-none transition focus:border-primary-500 focus:bg-white focus:ring-4 focus:ring-primary-50"
-                  placeholder="Enter your email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </div>
-            </div>
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary-600 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-primary-700 disabled:opacity-60"
-            >
-              {isLoading ? <RefreshCw className="animate-spin" size={18} /> : 'Send OTP'}
-              {!isLoading && <ArrowRight size={18} />}
+          <div className="rform-field rform-field-full rform-actions" style={{ marginTop: '8px' }}>
+            <button type="submit" disabled={isLoading} className="rform-btn-primary">
+              {isLoading
+                ? <><span className="rform-spinner" /> Sending…</>
+                : <>Send OTP <ArrowRight size={15} /></>
+              }
             </button>
-          </form>
-        )}
+          </div>
 
-        {/* Form Step 2: OTP */}
-        {step === 2 && (
-          <form onSubmit={handleVerifyOtp} className="space-y-5">
-            <div>
-              <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">Verification OTP</label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
-                  <ShieldCheck size={16} />
-                </span>
-                <input
-                  type="text"
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-4 text-sm font-medium tracking-[0.5em] outline-none transition focus:border-primary-500 focus:bg-white focus:ring-4 focus:ring-primary-50"
-                  placeholder="••••"
-                  maxLength={4}
-                  value={otp}
-                  onChange={(e) => setOtp(e.target.value)}
-                  required
-                />
-              </div>
-              {/* <p className="mt-2 text-xs text-slate-400">Hint: Use 2345 for bypass</p> */}
-            </div>
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-slate-800 disabled:opacity-60"
-            >
-              {isLoading ? <RefreshCw className="animate-spin" size={18} /> : 'Verify OTP'}
-            </button>
-            <button
-              type="button"
-              onClick={() => setStep(1)}
-              className="flex w-full items-center justify-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-700"
-            >
-              <ChevronLeft size={14} /> Change Email
-            </button>
-          </form>
-        )}
+          <div className="rform-field rform-field-full" style={{ textAlign: 'center', marginTop: '4px' }}>
+            <Link to="/login" className="rform-back-link">
+              <ChevronLeft size={14} /> Back to login
+            </Link>
+          </div>
+        </form>
+      )}
 
-        {/* Form Step 3: Reset Password */}
-        {step === 3 && (
-          <form onSubmit={handleResetPassword} className="space-y-5">
-            <div>
-              <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">New Password</label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
-                  <Lock size={16} />
-                </span>
-                <input
-                  type="password"
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-4 text-sm outline-none transition focus:border-primary-500 focus:bg-white focus:ring-4 focus:ring-primary-50"
-                  placeholder="••••••••"
-                  value={passwords.newPassword}
-                  onChange={(e) => setPasswords({ ...passwords, newPassword: e.target.value })}
-                  required
-                />
-              </div>
+      {/* Step 2 — OTP */}
+      {step === 2 && (
+        <form onSubmit={handleVerifyOtp} className="rform-grid">
+          <div className="rform-field rform-field-full">
+            <label className="rform-label">Verification OTP</label>
+            <div className="rform-input-wrap">
+              <span className="rform-input-icon"><ShieldCheck size={15} /></span>
+              <input
+                type="text" className="rform-input"
+                style={{ letterSpacing: '0.4em', fontWeight: 700 }}
+                value={otp} onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                placeholder="••••" maxLength={4} inputMode="numeric" required
+              />
             </div>
-            <div>
-              <label className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-slate-500">Confirm Password</label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
-                  <Lock size={16} />
-                </span>
-                <input
-                  type="password"
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-4 text-sm outline-none transition focus:border-primary-500 focus:bg-white focus:ring-4 focus:ring-primary-50"
-                  placeholder="••••••••"
-                  value={passwords.confirmPassword}
-                  onChange={(e) => setPasswords({ ...passwords, confirmPassword: e.target.value })}
-                  required
-                />
-              </div>
-            </div>
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary-600 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-primary-700 disabled:opacity-60"
-            >
-              {isLoading ? <RefreshCw className="animate-spin" size={18} /> : 'Reset Password'}
-            </button>
-          </form>
-        )}
+          </div>
 
-        <div className="mt-8 text-center">
-          <Link to="/login" className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary-600 hover:text-primary-700 hover:underline">
-            <ChevronLeft size={16} />
-            Back to login
-          </Link>
-        </div>
-      </div>
-    </div>
+          <div className="rform-field rform-field-full rform-actions" style={{ marginTop: '8px' }}>
+            <button type="button" className="rform-btn-back" onClick={() => setStep(1)}>
+              <ChevronLeft size={15} /> Back
+            </button>
+            <button type="submit" disabled={isLoading} className="rform-btn-primary">
+              {isLoading
+                ? <><span className="rform-spinner" /> Verifying…</>
+                : <>Verify OTP <ArrowRight size={15} /></>
+              }
+            </button>
+          </div>
+        </form>
+      )}
+
+      {/* Step 3 — New Password */}
+      {step === 3 && (
+        <form onSubmit={handleResetPassword} className="rform-grid">
+          <div className="rform-field rform-field-full">
+            <label className="rform-label">New Password</label>
+            <div className="rform-input-wrap">
+              <span className="rform-input-icon"><Lock size={15} /></span>
+              <input
+                type={showNew ? 'text' : 'password'} className="rform-input"
+                value={passwords.newPassword}
+                onChange={(e) => setPasswords({ ...passwords, newPassword: e.target.value })}
+                placeholder="Min. 8 characters" minLength={8} required
+              />
+              <button type="button" className="rform-eye-btn" onClick={() => setShowNew(v => !v)}>
+                {showNew ? <EyeOff size={15} /> : <Eye size={15} />}
+              </button>
+            </div>
+          </div>
+
+          <div className="rform-field rform-field-full">
+            <label className="rform-label">Confirm Password</label>
+            <div className="rform-input-wrap">
+              <span className="rform-input-icon"><Lock size={15} /></span>
+              <input
+                type={showConfirm ? 'text' : 'password'} className="rform-input"
+                value={passwords.confirmPassword}
+                onChange={(e) => setPasswords({ ...passwords, confirmPassword: e.target.value })}
+                placeholder="Repeat password" required
+              />
+              <button type="button" className="rform-eye-btn" onClick={() => setShowConfirm(v => !v)}>
+                {showConfirm ? <EyeOff size={15} /> : <Eye size={15} />}
+              </button>
+            </div>
+          </div>
+
+          <div className="rform-field rform-field-full rform-actions" style={{ marginTop: '8px' }}>
+            <button type="submit" disabled={isLoading} className="rform-btn-primary">
+              {isLoading
+                ? <><span className="rform-spinner" /> Resetting…</>
+                : <>Reset Password <ArrowRight size={15} /></>
+              }
+            </button>
+          </div>
+        </form>
+      )}
+    </AgencyRegisterShell>
   )
 }

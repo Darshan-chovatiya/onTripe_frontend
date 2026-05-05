@@ -233,6 +233,11 @@ function AgentFormModal({ mode, agent, agentRole, onClose, onSaved }) {
     else if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(form.email.trim())) e.email = 'Please enter a valid email'
     if (!form.phone.trim()) e.phone = 'Phone is required'
     else if (!/^\d{10}$/.test(form.phone.trim())) e.phone = 'Must be exactly 10 digits'
+    if (!form.contactPersonName.trim()) e.contactPersonName = 'Business name is required'
+    const gstRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/
+    if (!form.gstNumber.trim()) e.gstNumber = 'GST number is required'
+    else if (!gstRegex.test(form.gstNumber.trim().toUpperCase())) e.gstNumber = 'Invalid GST number. Format: 22AAAAA0000A1Z5'
+    if (!form.address.trim()) e.address = 'Business address is required'
     if (mode === 'add') {
       if (!form.password) e.password = 'Password is required'
       else if (form.password.length < 8) e.password = 'Minimum 8 characters'
@@ -419,18 +424,21 @@ function AgentFormModal({ mode, agent, agentRole, onClose, onSaved }) {
             </div>
 
             <div>
-              <label className="mb-1.5 ml-1 block text-xs font-medium text-gray-600">Business Name</label>
-              <input type="text" value={form.contactPersonName} onChange={e => set('contactPersonName', e.target.value)} className="h-11 w-full rounded-xl border border-gray-200 bg-gray-50/50 px-4 text-sm outline-none transition focus:border-gray-400 focus:bg-white" placeholder="Full name" />
+              <label className={`mb-1.5 ml-1 block text-xs font-medium ${errors.contactPersonName ? 'text-red-500' : 'text-gray-600'}`}>Business Name <span className="text-red-500">*</span></label>
+              <input type="text" value={form.contactPersonName} onChange={e => set('contactPersonName', e.target.value)} className={`h-11 w-full rounded-xl border px-4 text-sm outline-none transition ${errors.contactPersonName ? 'border-red-500 bg-red-50' : 'border-gray-200 bg-gray-50/50 focus:border-gray-400 focus:bg-white'}`} placeholder="Registered business name" />
+              {errors.contactPersonName && <div className="mt-1 ml-1 flex items-center gap-1 text-[11px] font-medium text-red-500"><AlertCircle size={11} /> {errors.contactPersonName}</div>}
             </div>
 
             <div>
-              <label className="mb-1.5 ml-1 block text-xs font-medium text-gray-600">GST number</label>
-              <input type="text" value={form.gstNumber} onChange={e => set('gstNumber', e.target.value)} className="h-11 w-full rounded-xl border border-gray-200 bg-gray-50/50 px-4 text-sm outline-none transition focus:border-gray-400 focus:bg-white" placeholder="GSTIN (Optional)" />
+              <label className={`mb-1.5 ml-1 block text-xs font-medium ${errors.gstNumber ? 'text-red-500' : 'text-gray-600'}`}>GST number <span className="text-red-500">*</span></label>
+              <input type="text" value={form.gstNumber} onChange={e => set('gstNumber', e.target.value.toUpperCase())} maxLength={15} className={`h-11 w-full rounded-xl border px-4 text-sm outline-none transition ${errors.gstNumber ? 'border-red-500 bg-red-50' : 'border-gray-200 bg-gray-50/50 focus:border-gray-400 focus:bg-white'}`} placeholder="22AAAAA0000A1Z5" />
+              {errors.gstNumber && <div className="mt-1 ml-1 flex items-center gap-1 text-[11px] font-medium text-red-500"><AlertCircle size={11} /> {errors.gstNumber}</div>}
             </div>
 
             <div className="sm:col-span-2">
-              <label className="mb-1.5 ml-1 block text-xs font-medium text-gray-600">Business Address</label>
-              <textarea value={form.address} onChange={e => set('address', e.target.value)} rows={2} className="w-full resize-y rounded-xl border border-gray-200 bg-gray-50/50 px-4 py-2.5 text-sm outline-none focus:border-gray-400 focus:bg-white" placeholder="Complete office address" />
+              <label className={`mb-1.5 ml-1 block text-xs font-medium ${errors.address ? 'text-red-500' : 'text-gray-600'}`}>Business Address <span className="text-red-500">*</span></label>
+              <textarea value={form.address} onChange={e => set('address', e.target.value)} rows={2} className={`w-full resize-y rounded-xl border px-4 py-2.5 text-sm outline-none ${errors.address ? 'border-red-500 bg-red-50' : 'border-gray-200 bg-gray-50/50 focus:border-gray-400 focus:bg-white'}`} placeholder="Complete office address" />
+              {errors.address && <div className="mt-1 ml-1 flex items-center gap-1 text-[11px] font-medium text-red-500"><AlertCircle size={11} /> {errors.address}</div>}
             </div>
           </div>
         </section>
@@ -535,20 +543,6 @@ function AgentFormModal({ mode, agent, agentRole, onClose, onSaved }) {
               <p className="text-xs text-gray-500">Upload documents and set verification status</p>
             </div>
           </div>
-          <div className="mb-4">
-            <label className="mb-1.5 ml-1 block text-xs font-medium text-gray-600">KYC status</label>
-            <CustomDropdown value={form.kycStatus} onChange={v => set('kycStatus', v)}
-              options={[{ value: 'approved', label: 'Approved' }, { value: 'pending', label: 'Pending' }, { value: 'rejected', label: 'Rejected' }]}
-              className="w-full max-w-xs" buttonClassName="!py-2.5" />
-            {form.kycStatus === 'rejected' && (
-              <div className="mt-3">
-                <label className="mb-1.5 ml-1 block text-xs font-medium text-gray-600">Rejection reason <span className="text-red-600">*</span></label>
-                <textarea value={form.kycRejectionReason} onChange={e => set('kycRejectionReason', e.target.value)}
-                  rows={2} className="w-full resize-none rounded-xl border border-gray-200 bg-gray-50/50 px-3 py-2 text-sm outline-none focus:border-gray-400 focus:bg-white"
-                  placeholder="Shown to the agency when status is rejected" />
-              </div>
-            )}
-          </div>
           {isEdit ? (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               <EditKycDocRow doc={{ label: 'Aadhar front' }} existingUrl={agent?.kyc?.aadharFront}
@@ -578,9 +572,6 @@ function AgentFormModal({ mode, agent, agentRole, onClose, onSaved }) {
               <div className="mt-4 max-w-md">
                 <FileSlot label="Agency logo *" id="agencyLogo" currentFile={files.agencyLogo}
                   accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" hasError={errors.agencyLogo} />
-              </div>
-              <div className="mt-4 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-600">
-                Default is Approved when you add documents from admin. Choose Pending or Rejected if you need a different initial state.
               </div>
             </>
           )}

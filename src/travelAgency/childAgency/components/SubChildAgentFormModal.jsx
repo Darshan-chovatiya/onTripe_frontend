@@ -103,7 +103,7 @@ export default function SubChildAgentFormModal({ isOpen, onClose, agent, onSave 
 
   const handleChange = (e) => {
     const { name, value } = e.target
-    setFormData(prev => ({ ...prev, [name]: value }))
+    setFormData(prev => ({ ...prev, [name]: name === 'gstNumber' ? value.toUpperCase() : value }))
   }
 
   const handleFileChange = (e, key) => {
@@ -155,7 +155,9 @@ export default function SubChildAgentFormModal({ isOpen, onClose, agent, onSave 
 
     // Business details validation (mandatory)
     if (!formData.contactPersonName.trim()) newErrors.contactPersonName = 'Business name is required'
+    const gstRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/
     if (!formData.gstNumber.trim()) newErrors.gstNumber = 'GST number is required'
+    else if (!gstRegex.test(formData.gstNumber.trim())) newErrors.gstNumber = 'Invalid GST number. Format: 22AAAAA0000A1Z5'
     if (!formData.address.trim()) newErrors.address = 'Business address is required'
 
     // Rejection reason validation (mandatory when status is rejected)
@@ -320,8 +322,9 @@ export default function SubChildAgentFormModal({ isOpen, onClose, agent, onSave 
                 name="gstNumber"
                 value={formData.gstNumber}
                 onChange={handleChange}
+                maxLength={15}
                 className={`h-11 w-full rounded-xl border ${errors.gstNumber ? 'border-red-500 bg-red-50' : 'border-gray-200 bg-gray-50/50'} px-4 text-sm outline-none transition focus:border-gray-400 focus:bg-white`}
-                placeholder="GSTIN"
+                placeholder="22AAAAA0000A1Z5"
               />
               {errors.gstNumber && <p className="mt-1 ml-1 text-[10px] font-medium text-red-500">{errors.gstNumber}</p>}
             </div>

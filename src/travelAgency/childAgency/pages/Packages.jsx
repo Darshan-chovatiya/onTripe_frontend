@@ -29,6 +29,7 @@ export default function Packages() {
   const [parentFilter, setParentFilter] = useState('all')
   const [search, setSearch] = useState(initialSearch)
   const [activeTab, setActiveTab] = useState(initialTab)
+  const [wlStatusFilter, setWlStatusFilter] = useState('all')
   const [inactiveParentIds, setInactiveParentIds] = useState(new Set())
   const [modal, setModal] = useState({ open: false, mode: 'create', sourcePackage: null, whitelabel: null })
   const [agentsModal, setAgentsModal] = useState({ open: false, agents: [], title: '' })
@@ -74,13 +75,16 @@ export default function Packages() {
   }, [availablePackages, parentFilter, search])
 
   const filteredWhitelabels = useMemo(() => {
+    let list = whitelabels
+    if (wlStatusFilter === 'live') list = list.filter(wl => wl.isActive)
+    else if (wlStatusFilter === 'paused') list = list.filter(wl => !wl.isActive)
     const q = search.trim().toLowerCase()
-    if (!q) return whitelabels
-    return whitelabels.filter(wl => {
+    if (q) list = list.filter(wl => {
       const title = wl.customTitle || wl.originalPackage?.title || ''
       return title.toLowerCase().includes(q)
     })
-  }, [whitelabels, search])
+    return list
+  }, [whitelabels, search, wlStatusFilter])
 
   const packagesEligibleForNewWhitelabel = useMemo(
     () => availablePackages.filter((p) => !whitelabelBySourceId.has(String(p._id))),
@@ -206,7 +210,18 @@ export default function Packages() {
               {parentOptions.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
             </select>
           )}
-        </div>
+          {/* Status filter — only on whitelabels tab */}
+          {activeTab === 'whitelabels' && (
+            <select
+              value={wlStatusFilter}
+              onChange={(e) => setWlStatusFilter(e.target.value)}
+              className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-700 shadow-sm focus:border-primary-300 focus:outline-none"
+            >
+              <option value="all">All offers</option>
+              <option value="live">Live</option>
+              <option value="paused">Paused</option>
+            </select>
+          )}        </div>
       </div>
 
       {/* Content */}

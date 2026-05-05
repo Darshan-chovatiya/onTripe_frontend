@@ -453,8 +453,11 @@ const AddAgencyModal = ({ isOpen, onClose, onRefresh }) => {
     if (!formData.contactPersonName.trim()) {
       newErrors.contactPersonName = 'Business name is required'
     }
+    const gstRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/
     if (!formData.gstNumber.trim()) {
       newErrors.gstNumber = 'GST number is required'
+    } else if (!gstRegex.test(formData.gstNumber.trim().toUpperCase())) {
+      newErrors.gstNumber = 'Invalid GST number. Format: 22AAAAA0000A1Z5'
     }
     if (!formData.address.trim()) {
       newErrors.address = 'Business address is required'
@@ -653,13 +656,14 @@ const AddAgencyModal = ({ isOpen, onClose, onRefresh }) => {
             </div>
 
             <div>
-              <label className="mb-1.5 ml-1 block text-xs font-medium text-gray-600">Business name</label>
-              <input type="text" value={formData.contactPersonName} onChange={(e) => setFormData({ ...formData, contactPersonName: e.target.value })} className="h-11 w-full rounded-xl border border-gray-200 bg-gray-50/50 px-4 text-sm outline-none transition focus:border-gray-400 focus:bg-white" placeholder="Full name" />
+              <label className={`mb-1.5 ml-1 block text-xs font-medium ${errors.contactPersonName ? 'text-red-500' : 'text-gray-600'}`}>Business name <span className="text-red-500">*</span></label>
+              <input type="text" value={formData.contactPersonName} onChange={(e) => setFormData({ ...formData, contactPersonName: e.target.value })} className={`h-11 w-full rounded-xl border px-4 text-sm outline-none transition ${errors.contactPersonName ? 'border-red-500 bg-red-50' : 'border-gray-200 bg-gray-50/50 focus:border-gray-400 focus:bg-white'}`} placeholder="Registered business name" />
+              {errors.contactPersonName && <div className="mt-1 ml-1 flex items-center gap-1 text-[11px] font-medium text-red-500"><AlertCircle size={11} /> {errors.contactPersonName}</div>}
             </div>
 
             <div>
               <label className={`mb-1.5 ml-1 block text-xs font-medium ${errors.gstNumber ? 'text-red-500' : 'text-gray-600'}`}>GST number <span className="text-red-500">*</span></label>
-              <input required type="text" value={formData.gstNumber} onChange={(e) => setFormData({ ...formData, gstNumber: e.target.value })} className={`h-11 w-full rounded-xl border px-4 text-sm outline-none transition ${errors.gstNumber ? 'border-red-500 bg-red-50' : 'border-gray-200 bg-gray-50/50 focus:border-gray-400 focus:bg-white'}`} placeholder="GSTIN" />
+              <input required type="text" value={formData.gstNumber} onChange={(e) => setFormData({ ...formData, gstNumber: e.target.value.toUpperCase() })} maxLength={15} className={`h-11 w-full rounded-xl border px-4 text-sm outline-none transition ${errors.gstNumber ? 'border-red-500 bg-red-50' : 'border-gray-200 bg-gray-50/50 focus:border-gray-400 focus:bg-white'}`} placeholder="22AAAAA0000A1Z5" />
               {errors.gstNumber && <div className="mt-1 ml-1 flex items-center gap-1 text-[11px] font-medium text-red-500"><AlertCircle size={11} /> {errors.gstNumber}</div>}
             </div>
 

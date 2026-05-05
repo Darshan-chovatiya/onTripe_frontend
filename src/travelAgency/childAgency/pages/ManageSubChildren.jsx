@@ -22,14 +22,12 @@ export default function ManageSubChildren() {
   const [detailId, setDetailId] = useState(null)
   const [busyId, setBusyId] = useState(null)
   const [confirm, setConfirm] = useState({ open: false, sub: null, nextActive: false })
-  const [kycTarget, setKycTarget] = useState(null)
-
+  const [kycFilter, setKycFilter] = useState('all')
   const [selectedIds, setSelectedIds] = useState(() => new Set())
   const [notifyOpen, setNotifyOpen] = useState(false)
   const [notifyBusy, setNotifyBusy] = useState(false)
   const [notifyForm, setNotifyForm] = useState({ subject: '', message: '', attachments: [] })
   const [search, setSearch] = useState('')
-  const [kycFilter, setKycFilter] = useState('all')
   const [page, setPage] = useState(1)
   const [exportLoading, setExportLoading] = useState(false)
   const [isFormOpen, setIsFormOpen] = useState(false)
@@ -86,24 +84,24 @@ export default function ManageSubChildren() {
     runToggle(sub, nextActive)
   }
 
-  const handleApproveKyc = async () => {
-    if (!kycTarget) return
-    setBusyId(kycTarget._id)
-    try {
-      await approveSubChildKyc(kycTarget._id)
-      toast.success(`KYC approved for ${kycTarget.name}`)
-      refresh()
-    } catch (err) {
-      toast.error(getApiErrorMessage(err))
-    } finally {
-      setBusyId(null)
-      setKycTarget(null)
-    }
-  }
-
   const handleSaveSubAgent = async (formData, id) => {
     try {
       if (id) {
+        // Extract kycStatus and rejectionReason before sending to update endpoint
+        const kycStatus = formData.get('kycStatus')
+        const rejectionReason = formData.get('rejectionReason')
+
+        // Call the appropriate KYC endpoint if status changed
+        if (kycStatus === 'approved') {
+          await approveSubChildKyc(id)
+        } else if (kycStatus === 'rejected' && rejectionReason) {
+          await rejectSubChildKyc(id, rejectionReason)
+        }
+
+        // Remove kycStatus and rejectionReason from formData before sending to update
+        formData.delete('kycStatus')
+        formData.delete('rejectionReason')
+
         await updateSubChildAgent(id, formData)
         toast.success('Sub-agent updated successfully')
       } else {
@@ -429,26 +427,14 @@ export default function ManageSubChildren() {
                           <Eye className="h-3.5 w-3.5" />
                           View
                         </button>
-                        {sub.kyc?.status === 'pending' && (
-                          <>
-                            <button
-                              type="button"
-                              disabled={busyId === sub._id}
-                              onClick={() => setKycTarget(sub)}
-                              className="inline-flex items-center gap-1 rounded-lg border border-blue-200 px-2.5 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-50"
-                            >
-                              Approve KYC
-                            </button>
-                            <button
-                              type="button"
-                              disabled={busyId === sub._id}
-                              onClick={() => { setKycRejectModal({ open: true, target: sub }); setRejectionReason('') }}
-                              className="inline-flex items-center gap-1 rounded-lg border border-red-200 px-2.5 py-1.5 text-xs font-medium text-red-700 hover:bg-red-50"
-                            >
-                              Reject KYC
-                            </button>
-                          </>
-                        )}
+                        <button
+                          type="button"
+                          onClick={() => { setEditingAgent(sub); setIsFormOpen(true) }}
+                          className="inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                          Edit
+                        </button>
                         <button
                           type="button"
                           disabled={busyId === sub._id}
@@ -583,17 +569,6 @@ export default function ManageSubChildren() {
         confirmText="Deactivate"
         cancelText="Cancel"
         variant="danger"
-      />
-
-      <ConfirmDialog
-        isOpen={!!kycTarget}
-        onClose={() => setKycTarget(null)}
-        onConfirm={handleApproveKyc}
-        title="Approve KYC"
-        message={`Approve KYC for "${kycTarget?.name}"? They will gain full access to the platform.`}
-        confirmText="Approve"
-        cancelText="Cancel"
-        variant="primary"
       />
 
       <SubChildAgentFormModal

@@ -85,10 +85,18 @@ export default function CreatePackage() {
     if (!coverFile) e.coverImage = 'Cover image is required'
     if (galleryFiles.length < 1) e.gallery = 'At least 1 gallery photo is required'
     if (galleryFiles.length > 10) e.gallery = 'Maximum 10 gallery photos allowed'
-    // Itinerary days
+    // Itinerary days + events
     form.itinerary.forEach((day, i) => {
       if (!day.title?.trim()) e[`day_${i}_title`] = `Day ${day.day} title is required`
       if (!day.description?.trim()) e[`day_${i}_desc`] = `Day ${day.day} description is required`
+      ;(day.events || []).forEach((ev, ei) => {
+        if (!ev.title?.trim()) e[`ev_${i}_${ei}_title`] = 'Event title is required'
+        if (!ev.startTime) e[`ev_${i}_${ei}_startTime`] = 'Start time is required'
+        if (!ev.endTime) e[`ev_${i}_${ei}_endTime`] = 'End time is required'
+        else if (ev.startTime && ev.endTime && ev.endTime <= ev.startTime) e[`ev_${i}_${ei}_endTime`] = 'End time must be after start time'
+        if (!ev.description?.trim()) e[`ev_${i}_${ei}_desc`] = 'Event description is required'
+        if (!ev.image) e[`ev_${i}_${ei}_image`] = 'Event image is required'
+      })
     })
     return e
   }
@@ -212,27 +220,13 @@ export default function CreatePackage() {
   const updateEvent = (di, ei, key, value) => setForm(f => { const arr = [...f.itinerary]; const evs = [...(arr[di].events || [])]; evs[ei] = { ...evs[ei], [key]: value }; arr[di] = { ...arr[di], events: evs }; return { ...f, itinerary: arr } })
   const removeEvent = (di, ei) => setForm(f => { const arr = [...f.itinerary]; arr[di] = { ...arr[di], events: arr[di].events.filter((_, i) => i !== ei) }; return { ...f, itinerary: arr } })
 
-  const handleEventImageUpload = async (di, ei, file) => {
+  const handleEventImageSelect = (di, ei, file) => {
     if (!file) return
-    const key = `${di}-${ei}`
-    // Show local preview immediately
+    // Store the File object locally — upload happens at save time
     const localUrl = URL.createObjectURL(file)
+    updateEvent(di, ei, 'imageFile', file)
     updateEvent(di, ei, 'image', localUrl)
-    setUploadingEvent(key)
-    try {
-      const fd = new FormData(); fd.append('eventImage', file)
-      const res = await uploadEventImage(fd)
-      const serverUrl = res.data?.data?.url || res.data?.data?.imageUrl || ''
-      if (serverUrl) {
-        URL.revokeObjectURL(localUrl)
-        updateEvent(di, ei, 'image', serverUrl)
-      }
-    } catch (err) {
-      toast.error(getApiErrorMessage(err))
-      // keep local preview on error so user can see what they selected
-    } finally {
-      setUploadingEvent(null)
-    }
+    clearErr(`ev_${di}_${ei}_image`)
   }
 
   const handleVendorSubmit = async (formData) => {
@@ -257,7 +251,10 @@ export default function CreatePackage() {
       // Auto-expand days that have errors
       const newExpanded = { ...expandedDays }
       form.itinerary.forEach((_, i) => {
-        if (errs[`day_${i}_title`] || errs[`day_${i}_desc`]) newExpanded[i] = true
+        if (errs[`day_${i}_title`] || errs[`day_${i}_desc`] ||
+            Object.keys(errs).some(k => k.startsWith(`ev_${i}_`))) {
+          newExpanded[i] = true
+        }
       })
       setExpandedDays(newExpanded)
       toast.error('Please fix the errors before submitting')
@@ -272,13 +269,35 @@ export default function CreatePackage() {
     setErrors({})
     setSubmitting(true)
     try {
+      // Upload any pending event images first
+      const itinerary = form.itinerary.map(d => ({ ...d, events: [...(d.events || [])] }))
+      for (let di = 0; di < itinerary.length; di++) {
+        for (let ei = 0; ei < itinerary[di].events.length; ei++) {
+          const ev = itinerary[di].events[ei]
+          if (ev.imageFile) {
+            setUploadingEvent(`${di}-${ei}`)
+            try {
+              const fd = new FormData(); fd.append('eventImage', ev.imageFile)
+              const res = await uploadEventImage(fd)
+              const serverUrl = res.data?.data?.url || res.data?.data?.imageUrl || ''
+              if (serverUrl) {
+                itinerary[di].events[ei] = { ...ev, image: serverUrl, imageFile: undefined }
+              }
+            } catch (err) {
+              toast.error(`Event ${ei + 1} image upload failed: ${getApiErrorMessage(err)}`)
+              setSubmitting(false); setUploadingEvent(null); return
+            }
+          }
+        }
+      }
+      setUploadingEvent(null)
       const payload = {
         title: form.title, description: form.description, destination: form.destination,
         totalDays: Number(form.totalDays), basePrice: Number(form.basePrice),
         currency: form.currency, maxCapacity: Number(form.maxCapacity),
         inclusions: form.inclusions.filter(Boolean), exclusions: form.exclusions.filter(Boolean),
         importantNotes: form.importantNotes.filter(Boolean),
-        itinerary: formItineraryToApi(form.itinerary),
+        itinerary: formItineraryToApi(itinerary),
         ...(form.startDate && { startDate: form.startDate }),
         ...(form.endDate && { endDate: form.endDate }),
       }
@@ -599,8 +618,15 @@ export default function CreatePackage() {
                         </div>
                         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                           <div>
-                            <label className="mb-1 block text-xs text-gray-500">Title</label>
-                            <input className={inputCls(false)} value={ev.title} onChange={e => updateEvent(di, ei, 'title', e.target.value)} placeholder="Event title" />
+                            <label className="mb-1 block text-xs text-gray-500">Title <span className="text-red-500">*</span></label>
+                            <input
+                              className={inputCls(!!errors[`ev_${di}_${ei}_title`])}
+                              value={ev.title}
+                              onChange={e => { updateEvent(di, ei, 'title', e.target.value); clearErr(`ev_${di}_${ei}_title`) }}
+                              placeholder="Event title"
+                              data-error={!!errors[`ev_${di}_${ei}_title`]}
+                            />
+                            <FieldError msg={errors[`ev_${di}_${ei}_title`]} />
                           </div>
                           <div>
                             <label className="mb-1 block text-xs text-gray-500">Type</label>
@@ -609,12 +635,26 @@ export default function CreatePackage() {
                             </select>
                           </div>
                           <div>
-                            <label className="mb-1 block text-xs text-gray-500">Start time</label>
-                            <input type="time" className={inputCls(false)} value={ev.startTime} onChange={e => updateEvent(di, ei, 'startTime', e.target.value)} />
+                            <label className="mb-1 block text-xs text-gray-500">Start time <span className="text-red-500">*</span></label>
+                            <input
+                              type="time"
+                              className={inputCls(!!errors[`ev_${di}_${ei}_startTime`])}
+                              value={ev.startTime}
+                              onChange={e => { updateEvent(di, ei, 'startTime', e.target.value); clearErr(`ev_${di}_${ei}_startTime`); clearErr(`ev_${di}_${ei}_endTime`) }}
+                              data-error={!!errors[`ev_${di}_${ei}_startTime`]}
+                            />
+                            <FieldError msg={errors[`ev_${di}_${ei}_startTime`]} />
                           </div>
                           <div>
-                            <label className="mb-1 block text-xs text-gray-500">End time</label>
-                            <input type="time" className={inputCls(false)} value={ev.endTime} onChange={e => updateEvent(di, ei, 'endTime', e.target.value)} />
+                            <label className="mb-1 block text-xs text-gray-500">End time <span className="text-red-500">*</span></label>
+                            <input
+                              type="time"
+                              className={inputCls(!!errors[`ev_${di}_${ei}_endTime`])}
+                              value={ev.endTime}
+                              onChange={e => { updateEvent(di, ei, 'endTime', e.target.value); clearErr(`ev_${di}_${ei}_endTime`) }}
+                              data-error={!!errors[`ev_${di}_${ei}_endTime`]}
+                            />
+                            <FieldError msg={errors[`ev_${di}_${ei}_endTime`]} />
                           </div>
                           <div>
                             <label className="mb-1 block text-xs text-gray-500">Location</label>
@@ -631,8 +671,16 @@ export default function CreatePackage() {
                             </div>
                           </div>
                           <div className="sm:col-span-2">
-                            <label className="mb-1 block text-xs text-gray-500">Description</label>
-                            <textarea rows={2} className={`${inputCls(false)} resize-none`} value={ev.description} onChange={e => updateEvent(di, ei, 'description', e.target.value)} placeholder="Event details…" />
+                            <label className="mb-1 block text-xs text-gray-500">Description <span className="text-red-500">*</span></label>
+                            <textarea
+                              rows={2}
+                              className={`${inputCls(!!errors[`ev_${di}_${ei}_desc`])} resize-none`}
+                              value={ev.description}
+                              onChange={e => { updateEvent(di, ei, 'description', e.target.value); clearErr(`ev_${di}_${ei}_desc`) }}
+                              placeholder="Event details…"
+                              data-error={!!errors[`ev_${di}_${ei}_desc`]}
+                            />
+                            <FieldError msg={errors[`ev_${di}_${ei}_desc`]} />
                           </div>
 
                           {/* Extra chargeable only for Activity type */}
@@ -651,18 +699,33 @@ export default function CreatePackage() {
 
                           {/* Event image with preview */}
                           <div className="sm:col-span-2">
-                            <label className="mb-1 block text-xs text-gray-500">Event image</label>
-                            <input
-                              type="file" accept="image/*" className={inputCls(false)}
-                              onChange={e => handleEventImageUpload(di, ei, e.target.files[0])}
-                            />
-                            {uploadingEvent === `${di}-${ei}` && <p className="mt-1 text-xs text-gray-400">Uploading</p>}
+                            <label className="mb-1 block text-xs text-gray-500">
+                              Event image <span className="text-red-500">*</span>
+                            </label>
+                            <label
+                              data-error={!!errors[`ev_${di}_${ei}_image`]}
+                              className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm transition ${
+                                errors[`ev_${di}_${ei}_image`]
+                                  ? 'border-red-400 bg-red-50 text-red-500'
+                                  : ev.image
+                                  ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
+                                  : 'border-dashed border-gray-300 bg-gray-50 text-gray-500 hover:border-gray-400 hover:bg-white'
+                              }`}
+                            >
+                              <input
+                                type="file" accept="image/*" className="hidden"
+                                onChange={e => handleEventImageSelect(di, ei, e.target.files[0])}
+                              />
+                              {ev.image ? 'Image selected — click to change' : 'Click to upload event image'}
+                            </label>
+                            <FieldError msg={errors[`ev_${di}_${ei}_image`]} />
+                            {submitting && uploadingEvent === `${di}-${ei}` && <p className="mt-1 text-xs text-primary-500">Uploading image…</p>}
                             {ev.image && (
                               <div className="relative mt-2 overflow-hidden rounded-lg border border-gray-200">
                                 <img src={fullImgUrl(ev.image)} alt="Event" className="h-28 _w-full object-contain" />
                                 <button
                                   type="button"
-                                  onClick={() => updateEvent(di, ei, 'image', '')}
+                                  onClick={() => { updateEvent(di, ei, 'image', ''); updateEvent(di, ei, 'imageFile', null); clearErr(`ev_${di}_${ei}_image`) }}
                                   className="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-black/50 text-white hover:bg-black/70"
                                 >
                                   <X size={12} />

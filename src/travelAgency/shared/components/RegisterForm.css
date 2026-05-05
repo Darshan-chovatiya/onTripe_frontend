@@ -179,3 +179,18 @@
   flex-shrink: 0;
   width: 120px;
 }
+
+.rform-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.45);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.rform-back-link:hover {
+  color: rgba(163,230,53,0.85);
+}

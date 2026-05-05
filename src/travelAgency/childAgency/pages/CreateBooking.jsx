@@ -97,18 +97,28 @@ export default function CreateBooking() {
     setOfferType(hasWl ? 'whitelabel' : hasPkg ? 'package' : 'whitelabel')
   }, [activeWhitelabels.length, availablePackages?.length])
 
+  const toDateOnly = (dateStr) => {
+    if (!dateStr) return ''
+    const d = new Date(dateStr)
+    if (isNaN(d)) return ''
+    const pad = (n) => String(n).padStart(2, '0')
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+  }
+
   useEffect(() => {
     if (offerType === 'whitelabel' && activeWhitelabels.length && !whitelabelId) {
       const first = activeWhitelabels[0]
       setWhitelabelId(String(first._id))
       setBasePackagePrice(first.finalPrice || 0)
       setMaxCapacity(first.originalPackage?.maxCapacity ?? first.maxCapacity ?? null)
+      setTravelDate(toDateOnly(first.originalPackage?.startDate))
     }
     if (offerType === 'package' && availablePackages?.length && !packageId) {
       const first = availablePackages[0]
       setPackageId(String(first._id))
       setBasePackagePrice(first.basePrice || 0)
       setMaxCapacity(first.maxCapacity ?? null)
+      setTravelDate(toDateOnly(first.startDate))
     }
   }, [offerType, activeWhitelabels, availablePackages, whitelabelId, packageId])
 
@@ -126,6 +136,7 @@ export default function CreateBooking() {
     const cap = wl?.originalPackage?.maxCapacity ?? wl?.maxCapacity ?? null
     setMaxCapacity(cap)
     if (cap) setTravelers(t => t.slice(0, Math.max(0, cap - 1)))
+    setTravelDate(toDateOnly(wl?.originalPackage?.startDate))
   }
 
   const handlePackageChange = (id) => {
@@ -136,16 +147,7 @@ export default function CreateBooking() {
     const cap = pkg?.maxCapacity ?? null
     setMaxCapacity(cap)
     if (cap) setTravelers(t => t.slice(0, Math.max(0, cap - 1)))
-    // auto-fill travel date from package startDate (date only, no time)
-    if (pkg?.startDate) {
-      const d = new Date(pkg.startDate)
-      // format to date value: YYYY-MM-DD
-      const pad = (n) => String(n).padStart(2, '0')
-      const dateOnly = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
-      setTravelDate(dateOnly)
-    } else {
-      setTravelDate('')
-    }
+    setTravelDate(toDateOnly(pkg?.startDate))
   }
 
   useEffect(() => {
