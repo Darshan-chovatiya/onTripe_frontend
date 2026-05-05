@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Plus, Trash2, ChevronDown, ChevronUp, ArrowLeft, X, AlertCircle } from 'lucide-react'
 import {
@@ -220,7 +220,7 @@ export default function CreatePackage() {
     updateEvent(di, ei, 'image', localUrl)
     setUploadingEvent(key)
     try {
-      const fd = new FormData(); fd.append('image', file)
+      const fd = new FormData(); fd.append('eventImage', file)
       const res = await uploadEventImage(fd)
       const serverUrl = res.data?.data?.url || res.data?.data?.imageUrl || ''
       if (serverUrl) {

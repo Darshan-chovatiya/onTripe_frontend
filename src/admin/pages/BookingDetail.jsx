@@ -208,8 +208,11 @@ export default function AdminBookingDetail() {
           <ul className="space-y-3">
             {b.travelers.map((t, i) => (
               <li key={i} className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
-                <p className="font-semibold text-gray-900">{t.name}{t.age != null ? <span className="ml-2 font-normal text-gray-500">· Age {t.age}</span> : null}</p>
-                {t.gender && <p className="mt-1 text-xs capitalize text-gray-500">{t.gender}</p>}
+                <p className="font-semibold text-gray-900">{t.name}</p>
+                <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
+                  {t.phone && <span className="inline-flex items-center gap-1"><Phone className="h-3 w-3" /> {t.phone}</span>}
+                  {t.email && <span className="inline-flex items-center gap-1"><Mail className="h-3 w-3" /> {t.email}</span>}
+                </div>
                 <div className="mt-2 border-t border-gray-100 pt-2">
                   <p className="mb-1 text-[11px] font-semibold uppercase text-gray-400">Documents</p>
                   <DocLinks docs={t.docs ? { ...t.docs } : null} />

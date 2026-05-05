@@ -167,7 +167,7 @@ export default function ChildAgentDetailModal({ isOpen, onClose, childId }) {
               <SectionTitle icon={Briefcase}>Business details</SectionTitle>
               <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
                 <DetailRow label="GST Number">{child.gstNumber || '—'}</DetailRow>
-                <DetailRow label="Contact Person">{child.contactPersonName || '—'}</DetailRow>
+                <DetailRow label="Business Name">{child.contactPersonName || '—'}</DetailRow>
                 <DetailRow label="Address">{child.address || '—'}</DetailRow>
               </div>
             </div>

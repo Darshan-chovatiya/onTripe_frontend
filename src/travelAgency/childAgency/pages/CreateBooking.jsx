@@ -11,7 +11,7 @@ import { getApiErrorMessage } from '@/shared/services/apiHelpers.js'
 const inputCls = 'w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-gray-300 focus:outline-none focus:ring-1 focus:ring-gray-300'
 
 const emptyTraveler = () => ({
-  name: '', phone: '', age: '', gender: 'male',
+  name: '', phone: '', email: '',
   aadharFront: null, aadharBack: null, panCard: null,
   passport: null, visaDoc: null, otherDocs: [],
 })
@@ -242,8 +242,8 @@ export default function CreateBooking() {
     else { if (!whitelabelId) return; fd.append('whitelabelPackageId', whitelabelId) }
 
     const validTravelers = travelers
-      .filter((r) => r.name.trim() && r.age !== '' && !Number.isNaN(Number(r.age)))
-      .map((r) => ({ name: r.name.trim(), age: Number(r.age), gender: r.gender, phone: r.phone.replace(/\D/g, '') }))
+      .filter((r) => r.name.trim())
+      .map((r) => ({ name: r.name.trim(), email: r.email?.trim(), phone: r.phone.replace(/\D/g, '') }))
     if (validTravelers.length) fd.append('travelers', JSON.stringify(validTravelers))
 
     if (custDocs.aadharFront) fd.append('aadharFront', custDocs.aadharFront)
@@ -276,11 +276,10 @@ export default function CreateBooking() {
 
   const canSubmit = Boolean(
     customerName.trim() && 
-    normalizePhone(customerPhone) && 
-    travelDate && 
-    totalAmount && 
     (whitelabelId || packageId) &&
-    travelers.every(t => t.name.trim() && t.age !== '' && !Number.isNaN(Number(t.age)) && /^\d{10}$/.test(t.phone.replace(/\D/g, '')))
+    normalizePhone(customerPhone).length === 10 &&
+    /^[6-9]/.test(normalizePhone(customerPhone)) &&
+    travelers.every(t => t.name.trim() && /^\d{10}$/.test(t.phone.replace(/\D/g, '')))
   )
 
   const lookupBanner = () => {
@@ -410,8 +409,9 @@ export default function CreateBooking() {
               <label htmlFor="bk-phone" className="mb-1 block text-sm font-medium text-gray-700">Customer phone <span className="text-red-500">*</span></label>
               <div className="relative">
                 <input id="bk-phone" className={`${inputCls} pr-9`} value={customerPhone}
-                  onChange={(e) => setCustomerPhone(e.target.value)}
-                  onBlur={() => customerMode === 'new' && runPhoneLookup()} required autoComplete="tel" />
+                  onChange={(e) => setCustomerPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                  onBlur={() => customerMode === 'new' && runPhoneLookup()} required autoComplete="tel"
+                  inputMode="numeric" maxLength={10} placeholder="10-digit mobile number" />
                 {lookupLoading && customerMode === 'new' && (
                   <Loader2 className="absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-primary-500" />
                 )}
@@ -477,19 +477,13 @@ export default function CreateBooking() {
               {travelers.map((row, i) => (
                 <li key={i} className="rounded-xl border border-gray-100 bg-gray-50/60 p-3 space-y-3">
                   <div className="flex flex-wrap items-end gap-2">
-                    <input className={`${inputCls} min-w-[8rem] flex-1`} placeholder="Name *"
+                    <input className={`${inputCls} min-w-[10rem] flex-1`} placeholder="Name *"
                       value={row.name} onChange={(e) => setTravelerField(i, 'name', e.target.value)} />
-                    <input className={`${inputCls} w-36`} placeholder="Phone * (10 digits)"
+                    <input className={`${inputCls} w-40`} placeholder="Phone * (10 digits)"
                       inputMode="numeric" maxLength={10}
                       value={row.phone} onChange={(e) => setTravelerField(i, 'phone', e.target.value.replace(/\D/g, '').slice(0, 10))} />
-                    <input type="number" min={1} className={`${inputCls} w-20`} placeholder="Age *"
-                      value={row.age} onChange={(e) => setTravelerField(i, 'age', e.target.value)} />
-                    <select className={`${inputCls} w-28`} value={row.gender}
-                      onChange={(e) => setTravelerField(i, 'gender', e.target.value)}>
-                      <option value="male">Male</option>
-                      <option value="female">Female</option>
-                      <option value="other">Other</option>
-                    </select>
+                    <input type="email" className={`${inputCls} flex-1`} placeholder="Email (optional)"
+                      value={row.email} onChange={(e) => setTravelerField(i, 'email', e.target.value)} />
                     <button type="button" onClick={() => removeTraveler(i)}
                       className="rounded-lg p-2 text-gray-400 hover:bg-red-50 hover:text-red-600" aria-label="Remove">
                       <Trash2 className="h-4 w-4" />

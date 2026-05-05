@@ -253,7 +253,7 @@ export default function EditPackage() {
     updateEvent(di, ei, 'image', localUrl)
     setUploadingEvent(key)
     try {
-      const fd = new FormData(); fd.append('image', file)
+      const fd = new FormData(); fd.append('eventImage', file)
       const res = await uploadEventImage(fd)
       const serverUrl = res.data?.data?.url || res.data?.data?.imageUrl || ''
       if (serverUrl) {

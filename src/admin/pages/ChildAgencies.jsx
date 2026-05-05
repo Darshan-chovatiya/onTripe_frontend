@@ -198,7 +198,9 @@ function AgentFormModal({ mode, agent, agentRole, onClose, onSaved }) {
         const roleForParents = agentRole === 'sub_child_agent' ? 'child_agent' : 'parent_agent'
         const { data } = await adminApi.listAgents({ role: roleForParents, limit: 200 })
         if (data?.success) {
-          setParentOptions(data.data.agents.map(a => ({ value: a._id, label: a.name, code: a.agentCode })))
+          // Filter to only include active and KYC-approved parents
+          const validParents = data.data.agents.filter(a => a.isActive && a.kyc?.status === 'approved')
+          setParentOptions(validParents.map(a => ({ value: a._id, label: a.name, code: a.agentCode })))
         }
       } catch { /* silent */ }
       finally { setParentsLoading(false) }
@@ -409,7 +411,7 @@ function AgentFormModal({ mode, agent, agentRole, onClose, onSaved }) {
             </div>
 
             <div>
-              <label className="mb-1.5 ml-1 block text-xs font-medium text-gray-600">Contact person name</label>
+              <label className="mb-1.5 ml-1 block text-xs font-medium text-gray-600">Business Name</label>
               <input type="text" value={form.contactPersonName} onChange={e => set('contactPersonName', e.target.value)} className="h-11 w-full rounded-xl border border-gray-200 bg-gray-50/50 px-4 text-sm outline-none transition focus:border-gray-400 focus:bg-white" placeholder="Full name" />
             </div>
 
@@ -494,7 +496,10 @@ function AgentFormModal({ mode, agent, agentRole, onClose, onSaved }) {
                         <Building2 className="h-3.5 w-3.5" strokeWidth={2} />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-xs font-semibold text-gray-900">{opt.label}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="truncate text-xs font-semibold text-gray-900">{opt.label}</p>
+                          <span className="shrink-0 rounded-md border border-emerald-100 bg-emerald-50 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-tight text-emerald-700">Approved</span>
+                        </div>
                         {opt.code && <p className="mt-0.5 font-mono text-[10px] text-gray-400">{opt.code}</p>}
                       </div>
                       {form.parentRef === opt.value && <CheckCircle className="h-4 w-4 shrink-0 text-gray-700" strokeWidth={2} />}
@@ -826,7 +831,7 @@ export default function ChildAgencies({ agentRole = 'child_agent', pageTitle = '
                   <p className="mt-0.5 text-sm text-gray-900">{selectedAgent.phone || '—'}</p>
                 </div>
                 <div>
-                  <p className="text-xs font-medium text-gray-400">Contact person</p>
+                  <p className="text-xs font-medium text-gray-400">Business Name</p>
                   <p className="mt-0.5 text-sm text-gray-900">{selectedAgent.contactPersonName || '—'}</p>
                 </div>
                 <div>

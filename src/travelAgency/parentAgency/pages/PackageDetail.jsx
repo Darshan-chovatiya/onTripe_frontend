@@ -14,6 +14,7 @@ import { getDetailExperiencesForDay } from '@/travelAgency/parentAgency/utils/pa
 import { destinationText } from '@/travelAgency/parentAgency/utils/packageDisplay.js'
 
 const BASE = import.meta.env.VITE_API_BASE_URL?.replace('/api', '').replace(/\/$/, '') || 'http://localhost:5001'
+const DEFAULT_COVER = 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&q=80&w=1200'
 const imgUrl = (path) => (path ? `${BASE}/${path.replace(/\\/g, '/')}` : null)
 
 const EVENT_TYPE_COLORS = {
@@ -197,14 +198,12 @@ export default function PackageDetail() {
       {/* Cover image */}
       <div className="overflow-hidden rounded-xl border border-gray-200 bg-gray-900 shadow-sm">
         <div className="relative aspect-[3/1] max-h-[min(320px,40vh)] min-h-[160px]">
-          {cover ? (
-            <img src={cover} alt="" className="h-full w-full object-cover" />
-          ) : (
-            <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-gradient-to-br from-slate-800 to-slate-900 text-slate-400">
-              <Sparkles className="h-10 w-10 opacity-40" strokeWidth={1.25} />
-              <span className="text-xs font-medium">No cover image</span>
-            </div>
-          )}
+          <img 
+            src={cover || DEFAULT_COVER} 
+            alt="" 
+            className="h-full w-full object-cover" 
+            onError={(e) => { e.currentTarget.src = DEFAULT_COVER }}
+          />
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
 
           {/* Overlay: title + badges */}

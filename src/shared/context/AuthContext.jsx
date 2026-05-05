@@ -21,6 +21,9 @@ import { createContext, useContext } from 'react'
  * @property {(partial: Partial<AuthUser>) => void} setUser
  * @property {(mobile: string) => Promise<{ success: boolean, message?: string }>} sendCustomerOTP
  * @property {(mobile: string, otp: string, name?: string, email?: string) => Promise<{ success: boolean, message?: string }>} verifyCustomerOTP
+ * @property {(email: string) => Promise<{ success: boolean, message?: string }>} requestPasswordReset
+ * @property {(email: string, otp: string) => Promise<{ success: boolean, message?: string }>} verifyResetOtp
+ * @property {(email: string, otp: string, newPassword: string) => Promise<{ success: boolean, message?: string }>} resetPassword
  */
 
 /** @type {import('react').Context<AuthContextValue | null>} */

@@ -87,7 +87,7 @@ const PAYMENT_BADGE = {
   refunded: 'bg-violet-50 text-violet-900 ring-violet-100',
 }
 
-const emptyTraveler = (id = 0) => ({ _key: id, name: '', age: '', gender: 'male', aadharFront: null, aadharBack: null, panCard: null, passport: null, visaDoc: null, otherDocs: [] })
+const emptyTraveler = (id = 0) => ({ _key: id, name: '', phone: '', email: '', aadharFront: null, aadharBack: null, panCard: null, passport: null, visaDoc: null, otherDocs: [] })
 
 const PAYMENT = ['pending', 'partial', 'paid', 'refunded']
 const BOOKING = ['confirmed', 'ongoing', 'completed', 'cancelled']
@@ -157,8 +157,8 @@ export default function BookingDetailModal({ isOpen, onClose, bookingId, fetchBo
         return {
           _key: travelerIdRef.current,
           name: t.name || '',
-          age: t.age != null ? String(t.age) : '',
-          gender: t.gender || 'male',
+          phone: t.phone || '',
+          email: t.email || '',
           aadharFront: null, aadharBack: null, panCard: null, passport: null, visaDoc: null, otherDocs: [],
         }
       })
@@ -197,8 +197,8 @@ export default function BookingDetailModal({ isOpen, onClose, bookingId, fetchBo
       .filter((r) => r.name.trim() || r.age !== '')
       .map((r, i) => ({
         name: r.name.trim(),
-        age: Number(r.age) || 0,
-        gender: r.gender,
+        email: r.email?.trim(),
+        phone: r.phone?.replace(/\D/g, '') || undefined,
         // carry forward existing docs so backend doesn't wipe them
         docs: originalTravelers[i]?.docs ? { ...originalTravelers[i].docs } : undefined,
       }))
@@ -481,13 +481,11 @@ export default function BookingDetailModal({ isOpen, onClose, bookingId, fetchBo
                 <ul className="space-y-3">
                   {b.travelers.map((t, i) => (
                     <li key={i} className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
-                      <p className="font-semibold text-gray-900">
-                        {t.name}
-                        {t.age != null ? <span className="ml-2 font-normal text-gray-500">· Age {t.age}</span> : null}
-                      </p>
-                      {t.gender != null && String(t.gender).trim() ? (
-                        <p className="mt-1 text-xs capitalize text-gray-500">{String(t.gender)}</p>
-                      ) : null}
+                      <p className="font-semibold text-gray-900">{t.name}</p>
+                      <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
+                        {t.phone && <span className="inline-flex items-center gap-1"><Phone className="h-3 w-3" /> {t.phone}</span>}
+                        {t.email && <span className="inline-flex items-center gap-1"><Mail className="h-3 w-3" /> {t.email}</span>}
+                      </div>
                       {t.idProof != null && String(t.idProof).trim() ? (
                         <p className="mt-1 text-xs text-gray-500">ID note: {String(t.idProof)}</p>
                       ) : null}
@@ -658,28 +656,26 @@ export default function BookingDetailModal({ isOpen, onClose, bookingId, fetchBo
                     <li key={row._key} className="rounded-xl border border-gray-100 bg-gray-50/60 p-3 space-y-3">
                       <div className="flex flex-wrap items-end gap-2">
                         <input
-                          className="input-field min-w-[8rem] flex-1"
-                          placeholder="Name"
+                          className="input-field min-w-[10rem] flex-1"
+                          placeholder="Name *"
                           value={row.name}
                           onChange={(e) => setT(i, 'name', e.target.value)}
                         />
                         <input
-                          type="number"
-                          min={1}
-                          className="input-field w-20"
-                          placeholder="Age"
-                          value={row.age}
-                          onChange={(e) => setT(i, 'age', e.target.value)}
+                          className="input-field w-40"
+                          placeholder="Phone (10 digits)"
+                          inputMode="numeric"
+                          maxLength={10}
+                          value={row.phone}
+                          onChange={(e) => setT(i, 'phone', e.target.value.replace(/\D/g, '').slice(0, 10))}
                         />
-                        <select
-                          className="input-field w-28"
-                          value={row.gender}
-                          onChange={(e) => setT(i, 'gender', e.target.value)}
-                        >
-                          <option value="male">Male</option>
-                          <option value="female">Female</option>
-                          <option value="other">Other</option>
-                        </select>
+                        <input
+                          type="email"
+                          className="input-field flex-1"
+                          placeholder="Email (optional)"
+                          value={row.email}
+                          onChange={(e) => setT(i, 'email', e.target.value)}
+                        />
                         <button
                           type="button"
                           className="rounded-lg p-2 text-gray-400 hover:bg-red-50 hover:text-red-600"

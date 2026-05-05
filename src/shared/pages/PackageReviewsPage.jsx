@@ -18,27 +18,31 @@ export default function PackageReviewsPage() {
 
     const [pkg, setPkg] = useState(null)
 
+    const isAdmin = user?.role === 'admin' || user?.role === 'super_admin'
+    const isAgency = ['parent_agent', 'child_agent', 'sub_child_agent'].includes(user?.role)
+    const isCustomer = user?.role === 'customer'
+
     useEffect(() => {
         const fetchPkg = async () => {
             try {
-                // Try fetching package title from guest or admin endpoint
-                const url = user?.role === 'customer'
-                    ? `/customer/packages/${packageId}`
-                    : `/admin/packages/${packageId}`
-                const res = await axiosInstance.get(url)
-                if (res.data?.success) {
-                    setPkg(res.data.data.package)
+                let url = ''
+                if (isAdmin) url = `/admin/packages/${packageId}`
+                else if (user?.role === 'parent_agent') url = `/parent-agent/packages/${packageId}`
+                else if (user?.role === 'child_agent' || user?.role === 'sub_child_agent') url = `/child-agent/packages/${packageId}`
+                else if (isCustomer) url = `/customer/packages/${packageId}`
+
+                if (url) {
+                    const res = await axiosInstance.get(url)
+                    if (res.data?.success) {
+                        setPkg(res.data.data.package)
+                    }
                 }
             } catch (err) {
                 console.error('Failed to fetch package title', err)
             }
         }
         if (packageId) fetchPkg()
-    }, [packageId, user?.role])
-
-    const isAdmin = user?.role === 'admin' || user?.role === 'super_admin'
-    const isAgency = ['parent_agency', 'child_agency', 'sub_child_agent'].includes(user?.role)
-    const isCustomer = user?.role === 'customer'
+    }, [packageId, user?.role, isAdmin, isCustomer])
 
     return (
         <div className={`min-h-[80vh] ${isCustomer ? 'bg-gray-50 py-8 px-4 sm:px-6 lg:px-8' : 'animate-fade-in space-y-6'}`}>
@@ -93,7 +97,13 @@ export default function PackageReviewsPage() {
                         bookingId={bookingId}
                         readOnly={readOnly}
                         bookingStatus={bookingStatus}
-                        reviewsApiEndpoint={readOnly ? `/admin/reviews?packageId=${packageId}` : undefined}
+                        reviewsApiEndpoint={
+                            readOnly
+                                ? (user?.role === 'parent_agent' ? `/parent-agent/packages/${packageId}/reviews`
+                                    : (user?.role === 'child_agent' || user?.role === 'sub_child_agent') ? `/child-agent/packages/${packageId}/reviews`
+                                        : `/admin/reviews?packageId=${packageId}`)
+                                : undefined
+                        }
                     />
                 </div>
             </div>

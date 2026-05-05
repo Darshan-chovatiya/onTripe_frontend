@@ -11,7 +11,7 @@ import { getApiErrorMessage } from '@/shared/services/apiHelpers.js'
 const inputCls = 'w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-gray-300 focus:outline-none focus:ring-1 focus:ring-gray-300'
 
 const emptyTraveler = () => ({
-  name: '', age: '', gender: 'male',
+  name: '', email: '',
   aadharFront: null, aadharBack: null, panCard: null,
   passport: null, visaDoc: null, otherDocs: [],
 })
@@ -185,8 +185,8 @@ export default function CreateBooking() {
     else { if (!whitelabelId) return; fd.append('whitelabelPackageId', whitelabelId) }
 
     const validTravelers = travelers
-      .filter((r) => r.name.trim() && r.age !== '' && !Number.isNaN(Number(r.age)))
-      .map((r) => ({ name: r.name.trim(), age: Number(r.age), gender: r.gender }))
+      .filter((r) => r.name.trim())
+      .map((r) => ({ name: r.name.trim(), email: r.email?.trim() }))
     if (validTravelers.length) fd.append('travelers', JSON.stringify(validTravelers))
 
     if (custDocs.aadharFront) fd.append('aadharFront', custDocs.aadharFront)
@@ -398,16 +398,10 @@ export default function CreateBooking() {
               {travelers.map((row, i) => (
                 <li key={i} className="rounded-xl border border-gray-100 bg-gray-50/60 p-3 space-y-3">
                   <div className="flex flex-wrap items-end gap-2">
-                    <input className={`${inputCls} min-w-[8rem] flex-1`} placeholder="Name"
+                    <input className={`${inputCls} min-w-[10rem] flex-1`} placeholder="Name"
                       value={row.name} onChange={(e) => setTravelerField(i, 'name', e.target.value)} />
-                    <input type="number" min={1} className={`${inputCls} w-20`} placeholder="Age"
-                      value={row.age} onChange={(e) => setTravelerField(i, 'age', e.target.value)} />
-                    <select className={`${inputCls} w-28`} value={row.gender}
-                      onChange={(e) => setTravelerField(i, 'gender', e.target.value)}>
-                      <option value="male">Male</option>
-                      <option value="female">Female</option>
-                      <option value="other">Other</option>
-                    </select>
+                    <input type="email" className={`${inputCls} flex-1`} placeholder="Email (optional)"
+                      value={row.email} onChange={(e) => setTravelerField(i, 'email', e.target.value)} />
                     <button type="button" onClick={() => removeTraveler(i)}
                       className="rounded-lg p-2 text-gray-400 hover:bg-red-50 hover:text-red-600" aria-label="Remove">
                       <Trash2 className="h-4 w-4" />

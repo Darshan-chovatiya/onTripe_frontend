@@ -90,8 +90,29 @@ export default function ChildRegister() {
     setStep(3)
   }
 
+  const validateStep3 = () => {
+    if (!formData.gstNumber.trim()) {
+      toast.error('GST Number is required')
+      return false
+    }
+    if (!/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/.test(formData.gstNumber)) {
+      toast.error('Please enter a valid GST number')
+      return false
+    }
+    if (!formData.contactPersonName.trim()) {
+      toast.error('Business Name is required')
+      return false
+    }
+    if (!formData.address.trim()) {
+      toast.error('Business Address is required')
+      return false
+    }
+    return true
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
+    if (!validateStep3()) return
     const submitData = new FormData()
     Object.keys(formData).forEach((k) => submitData.append(k, formData[k]))
     if (files.aadharFront) submitData.append('aadharFront', files.aadharFront)
@@ -245,7 +266,7 @@ export default function ChildRegister() {
             
             <div className="rform-grid">
               <div className="rform-field">
-                <label className="rform-label">GST Number (Optional)</label>
+                <label className="rform-label">GST Number</label>
                 <div className="rform-input-wrap">
                   <span className="rform-input-icon">
                     <svg size={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-file-text"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/><line x1="10" x2="8" y1="9" y2="9"/></svg>
@@ -259,7 +280,7 @@ export default function ChildRegister() {
               </div>
 
               <div className="rform-field">
-                <label className="rform-label">Contact Person Name</label>
+                <label className="rform-label">Business Name</label>
                 <div className="rform-input-wrap">
                   <span className="rform-input-icon">
                     <svg size={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-user-check"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/></svg>

@@ -20,7 +20,7 @@ function toDatetimeLocal(iso) {
 }
 
 const emptyTraveler = (id = 0) => ({
-  _key: id, name: '', age: '', gender: 'male',
+  _key: id, name: '', phone: '', email: '',
   aadharFront: null, aadharBack: null, panCard: null,
   passport: null, visaDoc: null, otherDocs: [],
 })
@@ -84,10 +84,9 @@ export default function EditBooking() {
             (data.travelers || []).map((t) => {
               travelerIdRef.current += 1
               return {
-                _key: travelerIdRef.current,
                 name: t.name || '',
-                age: t.age != null ? String(t.age) : '',
-                gender: t.gender || 'male',
+                phone: t.phone || '',
+                email: t.email || '',
                 aadharFront: null, aadharBack: null, panCard: null,
                 passport: null, visaDoc: null, otherDocs: [],
               }
@@ -123,11 +122,11 @@ export default function EditBooking() {
 
     const originalTravelers = booking.travelers || []
     const validTravelers = travelers
-      .filter((r) => r.name.trim() || r.age !== '')
+      .filter((r) => r.name.trim())
       .map((r, i) => ({
         name: r.name.trim(),
-        age: Number(r.age) || 0,
-        gender: r.gender,
+        email: r.email?.trim(),
+        phone: r.phone?.replace(/\D/g, '') || undefined,
         docs: originalTravelers[i]?.docs ? { ...originalTravelers[i].docs } : undefined,
       }))
 
@@ -273,16 +272,13 @@ export default function EditBooking() {
                 {travelers.map((row, i) => (
                   <li key={row._key} className="rounded-xl border border-gray-100 bg-gray-50/60 p-3 space-y-3">
                     <div className="flex flex-wrap items-end gap-2">
-                      <input className={`${inputCls} min-w-[8rem] flex-1`} placeholder="Name"
+                      <input className={`${inputCls} min-w-[10rem] flex-1`} placeholder="Name"
                         value={row.name} onChange={(e) => setT(i, 'name', e.target.value)} />
-                      <input type="number" min={1} className={`${inputCls} w-20`} placeholder="Age"
-                        value={row.age} onChange={(e) => setT(i, 'age', e.target.value)} />
-                      <select className={`${inputCls} w-28`} value={row.gender}
-                        onChange={(e) => setT(i, 'gender', e.target.value)}>
-                        <option value="male">Male</option>
-                        <option value="female">Female</option>
-                        <option value="other">Other</option>
-                      </select>
+                      <input className={`${inputCls} w-40`} placeholder="Phone (10 digits)"
+                        inputMode="numeric" maxLength={10}
+                        value={row.phone} onChange={(e) => setT(i, 'phone', e.target.value.replace(/\D/g, '').slice(0, 10))} />
+                      <input type="email" className={`${inputCls} flex-1`} placeholder="Email (optional)"
+                        value={row.email} onChange={(e) => setT(i, 'email', e.target.value)} />
                       <button type="button" className="rounded-lg p-2 text-gray-400 hover:bg-red-50 hover:text-red-600"
                         onClick={() => removeTraveler(i)} aria-label="Remove">
                         <Trash2 className="h-4 w-4" />

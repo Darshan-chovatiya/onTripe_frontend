@@ -246,7 +246,7 @@ export default function ChildAgentFormModal({ isOpen, onClose, agent, onSave }) 
 
             <div className="space-y-3">
               <div>
-                <label className="mb-1 block text-xs font-semibold text-gray-500 uppercase">Contact Person Name</label>
+                <label className="mb-1 block text-xs font-semibold text-gray-500 uppercase">Business Name</label>
                 <input
                   name="contactPersonName"
                   value={formData.contactPersonName}

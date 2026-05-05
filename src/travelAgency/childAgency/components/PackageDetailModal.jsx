@@ -6,6 +6,7 @@ import {
 import Modal from '@/shared/components/Modal.jsx'
 
 const BASE = import.meta.env.VITE_API_BASE_URL?.replace('/api', '').replace(/\/$/, '') || 'http://localhost:5001'
+const DEFAULT_COVER = 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&q=80&w=1200'
 const imgUrl = (path) => path ? `${BASE}/${path.replace(/\\/g, '/')}` : null
 
 function Row({ label, children }) {
@@ -45,11 +46,13 @@ export default function PackageDetailModal({ isOpen, onClose, pkg, isWhitelabel 
       <div className="space-y-6">
 
         {/* Cover */}
-        <div className="overflow-hidden rounded-2xl bg-gray-100 h-52 flex items-center justify-center">
-          {cover
-            ? <img src={cover} alt={title} className="h-full w-full object-cover" />
-            : <Image className="h-12 w-12 text-gray-300" />
-          }
+        <div className="overflow-hidden rounded-2xl bg-gray-100 h-52">
+          <img 
+            src={cover || DEFAULT_COVER} 
+            alt={title} 
+            className="h-full w-full object-cover" 
+            onError={(e) => { e.currentTarget.src = DEFAULT_COVER }}
+          />
         </div>
 
         {/* Key stats */}
@@ -95,7 +98,7 @@ export default function PackageDetailModal({ isOpen, onClose, pkg, isWhitelabel 
                 : `₹${Number(pkg.commissionValue ?? 0).toLocaleString('en-IN')}`}
             </Row>
             <Row label="Final price">₹{Number(pkg.finalPrice ?? 0).toLocaleString('en-IN')}</Row>
-            <Row label="Visible to sub-children">{pkg.visibleToSubChildren ? 'Yes' : 'No'}</Row>
+            {/* <Row label="Visible to sub-children">{pkg.visibleToSubChildren ? 'Yes' : 'No'}</Row> */}
             <Row label="Status">{pkg.isActive ? 'Active' : 'Inactive'}</Row>
           </div>
         )}

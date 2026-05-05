@@ -109,7 +109,7 @@ export default function PackageCard({ pkg, onEdit, onUpdateCover, onUpdateGaller
           {pkg.maxCapacity != null && (
             <span className="inline-flex items-center gap-1 rounded-lg bg-slate-50 px-2 py-1 text-[11px] font-medium text-slate-600 ring-1 ring-slate-100">
               <Users className="h-3 w-3 text-primary-600" />
-              {pkg.maxCapacity} pax
+              {pkg.maxCapacity} max
             </span>
           )}
           <span className="inline-flex items-center gap-1 rounded-lg bg-slate-50 px-2 py-1 text-[11px] font-medium text-slate-600 ring-1 ring-slate-100">

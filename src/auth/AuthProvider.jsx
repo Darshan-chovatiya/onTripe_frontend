@@ -289,6 +289,42 @@ export function AuthProvider({ children }) {
     [applySession]
   )
 
+  const requestPasswordReset = useCallback(async (email) => {
+    setIsLoading(true)
+    try {
+      const { data } = await axiosInstance.post('/auth/forgot-password/request', { email })
+      return { success: data?.success, message: data?.message }
+    } catch (e) {
+      return { success: false, message: e?.response?.data?.message || 'Failed to send OTP' }
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
+  const verifyResetOtp = useCallback(async (email, otp) => {
+    setIsLoading(true)
+    try {
+      const { data } = await axiosInstance.post('/auth/forgot-password/verify', { email, otp })
+      return { success: data?.success, message: data?.message }
+    } catch (e) {
+      return { success: false, message: e?.response?.data?.message || 'Invalid OTP' }
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
+  const resetPassword = useCallback(async (email, otp, newPassword) => {
+    setIsLoading(true)
+    try {
+      const { data } = await axiosInstance.post('/auth/forgot-password/reset', { email, otp, newPassword })
+      return { success: data?.success, message: data?.message }
+    } catch (e) {
+      return { success: false, message: e?.response?.data?.message || 'Failed to reset password' }
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
   const value = useMemo(
     () => ({
       user,
@@ -306,8 +342,11 @@ export function AuthProvider({ children }) {
       requestCustomerOtp,
       loginVendor,
       requestVendorOtp,
+      requestPasswordReset,
+      verifyResetOtp,
+      resetPassword,
     }),
-    [user, token, isCheckingAuth, isLoading, login, logout, checkAuth, setUser, registerAgent, registerParent, loginCustomer, requestCustomerOtp, loginVendor, requestVendorOtp]
+    [user, token, isCheckingAuth, isLoading, login, logout, checkAuth, setUser, registerAgent, registerParent, loginCustomer, requestCustomerOtp, loginVendor, requestVendorOtp, requestPasswordReset, verifyResetOtp, resetPassword]
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

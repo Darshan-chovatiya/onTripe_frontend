@@ -80,7 +80,7 @@ export default function WhitelabelPackageCard({ item, onEdit, onToggleActive, on
           )}
           {orig?.maxCapacity != null && (
             <span className="inline-flex items-center gap-1 rounded-lg bg-gray-50 px-2 py-1 text-[11px] font-medium text-gray-600 ring-1 ring-gray-100">
-              <Users className="h-3 w-3 text-primary-500" strokeWidth={2} />{orig.maxCapacity} pax
+              <Users className="h-3 w-3 text-primary-500" strokeWidth={2} />{orig.maxCapacity} max
             </span>
           )}
           <button
@@ -161,8 +161,8 @@ export default function WhitelabelPackageCard({ item, onEdit, onToggleActive, on
                 type="button"
                 onClick={() => onToggleActive(item)}
                 className={`flex-1 flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-medium transition ${item.isActive
-                    ? 'border border-red-100 bg-white text-red-600 hover:bg-red-50'
-                    : 'border border-emerald-200 bg-white text-emerald-700 hover:bg-emerald-50'
+                  ? 'border border-red-100 bg-white text-red-600 hover:bg-red-50'
+                  : 'border border-emerald-200 bg-white text-emerald-700 hover:bg-emerald-50'
                   }`}
               >
                 <Power className="h-4 w-4" strokeWidth={2} />

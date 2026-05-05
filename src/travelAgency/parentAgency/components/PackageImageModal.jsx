@@ -98,7 +98,7 @@ export default function PackageImageModal({ isOpen, onClose, onSubmit, mode, pkg
               <div className="grid grid-cols-3 gap-1.5">
                 {existingGallery.map((src, i) => (
                   <div key={i} className="overflow-hidden rounded-lg border border-gray-200">
-                    <img src={src} alt="" className="h-20 w-full object-cover" />
+                    <img src={src} alt="" className="h-20 _w-full object-cover" />
                   </div>
                 ))}
               </div>
