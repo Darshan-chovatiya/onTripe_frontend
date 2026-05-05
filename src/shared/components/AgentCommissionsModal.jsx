@@ -364,7 +364,7 @@ export default function AgentCommissionsModal({ isOpen, onClose, data = [], indi
                 <thead className="bg-gray-50 text-[10px] font-bold uppercase tracking-wider text-gray-500">
                   <tr>
                     <th className="px-4 py-3">Customer & Date</th>
-                    <th className="px-4 py-3">Commission Split</th>
+                    <th className="px-4 py-3 text-center">Commission Split</th>
                     <th className="px-4 py-3 text-right">My Earnings</th>
                     <th className="px-4 py-3 text-right">Total Child Comm.</th>
                   </tr>
