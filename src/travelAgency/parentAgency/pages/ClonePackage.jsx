@@ -43,8 +43,10 @@ export default function ClonePackage() {
   const [loadingData, setLoadingData] = useState(true)
   const [coverFile, setCoverFile] = useState(null)
   const [coverPreview, setCoverPreview] = useState(null)
+  const [existingCover, setExistingCover] = useState(null)
   const [galleryFiles, setGalleryFiles] = useState([])
   const [galleryPreviews, setGalleryPreviews] = useState([])
+  const [existingGallery, setExistingGallery] = useState([])
   const [submitting, setSubmitting] = useState(false)
   const [expandedDays, setExpandedDays] = useState({ 0: true })
   const [uploadingEvent, setUploadingEvent] = useState(null)
@@ -58,6 +60,8 @@ export default function ClonePackage() {
         const [pkgRes, vendorRes] = await Promise.all([getPackageById(id), listVendors()])
         const pkg = pkgRes.data?.data?.package || pkgRes.data?.data
         setVendors(vendorRes.data?.data?.vendors || [])
+        setExistingCover(pkg.coverImage || null)
+        setExistingGallery(pkg.images || [])
         setForm({
           title: `${pkg.title || ''} (Copy)`,
           description: pkg.description || '',
@@ -66,6 +70,8 @@ export default function ClonePackage() {
           basePrice: pkg.basePrice || '',
           currency: pkg.currency || 'INR',
           maxCapacity: pkg.maxCapacity || '50',
+          startDate: pkg.startDate ? new Date(pkg.startDate).toISOString().split('T')[0] : '',
+          endDate: pkg.endDate ? new Date(pkg.endDate).toISOString().split('T')[0] : '',
           inclusions: pkg.inclusions?.length ? pkg.inclusions : [''],
           exclusions: pkg.exclusions?.length ? pkg.exclusions : [''],
           importantNotes: pkg.importantNotes?.length ? pkg.importantNotes : [''],
@@ -109,6 +115,44 @@ export default function ClonePackage() {
   }
 
   const set = (field, value) => setForm(f => ({ ...f, [field]: value }))
+
+  const rebuildItinerary = (startDate, endDate, existingItinerary) => {
+    if (!startDate || !endDate) return existingItinerary
+    const start = new Date(startDate)
+    const end = new Date(endDate)
+    if (end < start) return existingItinerary
+    const days = Math.round((end - start) / 86400000) + 1
+    return Array.from({ length: days }, (_, i) => {
+      const date = new Date(start)
+      date.setDate(date.getDate() + i)
+      const dateSuffix = date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })
+      const existing = existingItinerary[i]
+      return existing
+        ? { ...existing, day: i + 1, dateSuffix }
+        : { ...emptyDay(i + 1), dateSuffix }
+    })
+  }
+
+  const handleStartDateChange = (dateStr) => {
+    setForm(f => {
+      let newEndDate = f.endDate
+      if (dateStr && f.endDate && new Date(dateStr) > new Date(f.endDate)) {
+        newEndDate = dateStr
+      }
+      const newItinerary = rebuildItinerary(dateStr, newEndDate, f.itinerary)
+      const totalDays = newItinerary.length > 0 ? String(newItinerary.length) : f.totalDays
+      return { ...f, startDate: dateStr, endDate: newEndDate, itinerary: newItinerary, totalDays }
+    })
+  }
+
+  const handleEndDateChange = (dateStr) => {
+    setForm(f => {
+      const newItinerary = rebuildItinerary(f.startDate, dateStr, f.itinerary)
+      const totalDays = newItinerary.length > 0 ? String(newItinerary.length) : f.totalDays
+      return { ...f, endDate: dateStr, itinerary: newItinerary, totalDays }
+    })
+  }
+
   const handleListChange = (field, idx, value) => { const arr = [...form[field]]; arr[idx] = value; set(field, arr) }
   const addListItem = (field) => set(field, [...form[field], ''])
   const removeListItem = (field, idx) => set(field, form[field].filter((_, i) => i !== idx))
@@ -128,7 +172,7 @@ export default function ClonePackage() {
     updateEvent(di, ei, 'image', localUrl)
     setUploadingEvent(key)
     try {
-      const fd = new FormData(); fd.append('image', file)
+      const fd = new FormData(); fd.append('eventImage', file)
       const res = await uploadEventImage(fd)
       const serverUrl = res.data?.data?.url || res.data?.data?.imageUrl || ''
       if (serverUrl) {
@@ -161,11 +205,22 @@ export default function ClonePackage() {
         inclusions: form.inclusions.filter(Boolean), exclusions: form.exclusions.filter(Boolean),
         importantNotes: form.importantNotes.filter(Boolean),
         itinerary: formItineraryToApi(form.itinerary),
+        startDate: form.startDate,
+        endDate: form.endDate,
       }
       const fd = new FormData()
       Object.entries(payload).forEach(([k, v]) => fd.append(k, typeof v === 'object' ? JSON.stringify(v) : v))
-      if (coverFile) fd.append('coverImage', coverFile)
-      galleryFiles.forEach(f => fd.append('images', f))
+      if (coverFile) {
+        fd.append('coverImage', coverFile)
+      } else if (existingCover) {
+        fd.append('coverImage', existingCover)
+      }
+
+      if (galleryFiles.length > 0) {
+        galleryFiles.forEach(f => fd.append('images', f))
+      } else if (existingGallery.length > 0) {
+        fd.append('images', JSON.stringify(existingGallery))
+      }
       await createPackage(fd)
       toast.success('Package cloned')
       navigate('/agency/packages')
@@ -221,6 +276,35 @@ export default function ClonePackage() {
               <label className="mb-1 block text-xs font-medium text-gray-600">Max capacity</label>
               <input type="number" min="1" className={inputCls} value={form.maxCapacity} onChange={e => set('maxCapacity', e.target.value)} />
             </div>
+
+            {/* Start date */}
+            <div>
+              <label className="mb-1 block text-xs font-medium text-gray-600">Start date *</label>
+              <input
+                type="date"
+                className={inputCls}
+                value={form.startDate}
+                min={new Date().toISOString().split('T')[0]}
+                onChange={e => handleStartDateChange(e.target.value)}
+              />
+            </div>
+
+            {/* End date */}
+            <div>
+              <label className="mb-1 block text-xs font-medium text-gray-600">End date *</label>
+              <input
+                type="date"
+                className={inputCls}
+                value={form.endDate}
+                min={form.startDate ? (() => { const d = new Date(form.startDate); d.setDate(d.getDate() + 1); return d.toISOString().split('T')[0] })() : new Date().toISOString().split('T')[0]}
+                onChange={e => handleEndDateChange(e.target.value)}
+              />
+              {form.startDate && form.endDate && form.totalDays && (
+                <p className="mt-1 text-xs text-primary-600 font-medium">
+                  {form.totalDays} day{Number(form.totalDays) > 1 ? 's' : ''} · {new Date(form.startDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })} – {new Date(form.endDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                </p>
+              )}
+            </div>
             <div className="sm:col-span-2">
               <label className="mb-1 block text-xs font-medium text-gray-600">Base price incl. GST *</label>
               <div className="flex gap-2">
@@ -244,7 +328,7 @@ export default function ClonePackage() {
             <div>
               <label className="mb-1 block text-xs font-medium text-gray-600">Cover image</label>
               <input type="file" accept="image/*" className={inputCls} onChange={handleCoverChange} />
-              {coverPreview && (
+              {coverPreview ? (
                 <div className="relative mt-2 overflow-hidden rounded-lg border border-gray-200">
                   <img src={coverPreview} alt="Cover preview" className="h-36 w-full object-cover" />
                   <button type="button" onClick={() => { URL.revokeObjectURL(coverPreview); setCoverFile(null); setCoverPreview(null) }}
@@ -252,12 +336,21 @@ export default function ClonePackage() {
                     <X size={12} />
                   </button>
                 </div>
-              )}
+              ) : existingCover ? (
+                <div className="relative mt-2 overflow-hidden rounded-lg border border-gray-200">
+                  <img src={fullImgUrl(existingCover)} alt="Original cover" className="h-36 w-full object-cover" />
+                  <button type="button" onClick={() => setExistingCover(null)}
+                    className="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-black/50 text-white hover:bg-black/70">
+                    <X size={12} />
+                  </button>
+                  <span className="absolute bottom-1.5 left-1.5 rounded bg-gray-900/50 px-1.5 py-0.5 text-[10px] font-bold text-white">Original</span>
+                </div>
+              ) : null}
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-gray-600">Gallery (up to 10)</label>
               <input type="file" accept="image/*" multiple className={inputCls} onChange={handleGalleryChange} />
-              {galleryPreviews.length > 0 && (
+              {galleryPreviews.length > 0 ? (
                 <div className="mt-2 grid grid-cols-3 gap-1.5">
                   {galleryPreviews.map((src, idx) => (
                     <div key={idx} className="relative overflow-hidden rounded-lg border border-gray-200">
@@ -269,7 +362,19 @@ export default function ClonePackage() {
                     </div>
                   ))}
                 </div>
-              )}
+              ) : existingGallery.length > 0 ? (
+                <div className="mt-2 grid grid-cols-3 gap-1.5">
+                  {existingGallery.map((src, idx) => (
+                    <div key={idx} className="relative overflow-hidden rounded-lg border border-gray-200">
+                      <img src={fullImgUrl(src)} alt="" className="h-20 w-full object-cover" />
+                      <button type="button" onClick={() => setExistingGallery(prev => prev.filter((_, i) => i !== idx))}
+                        className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/50 text-white hover:bg-black/70">
+                        <X size={10} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
             </div>
           </div>
         </section>

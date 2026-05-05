@@ -17,6 +17,7 @@ import { listParents } from '@/travelAgency/childAgency/services/childAgencyApi.
 import WhitelabelAgentsModal from '@/shared/components/WhitelabelAgentsModal.jsx'
 
 export default function Packages() {
+  const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const initialTab = searchParams.get('tab') || 'available'
   const initialSearch = searchParams.get('search') || ''

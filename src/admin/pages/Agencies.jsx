@@ -653,9 +653,8 @@ const AddAgencyModal = ({ isOpen, onClose, onRefresh }) => {
             </div>
 
             <div>
-              <label className={`mb-1.5 ml-1 block text-xs font-medium ${errors.contactPersonName ? 'text-red-500' : 'text-gray-600'}`}>Business name <span className="text-red-500">*</span></label>
-              <input required type="text" value={formData.contactPersonName} onChange={(e) => setFormData({ ...formData, contactPersonName: e.target.value })} className={`h-11 w-full rounded-xl border px-4 text-sm outline-none transition ${errors.contactPersonName ? 'border-red-500 bg-red-50' : 'border-gray-200 bg-gray-50/50 focus:border-gray-400 focus:bg-white'}`} placeholder="Business name" />
-              {errors.contactPersonName && <div className="mt-1 ml-1 flex items-center gap-1 text-[11px] font-medium text-red-500"><AlertCircle size={11} /> {errors.contactPersonName}</div>}
+              <label className="mb-1.5 ml-1 block text-xs font-medium text-gray-600">Business name</label>
+              <input type="text" value={formData.contactPersonName} onChange={(e) => setFormData({ ...formData, contactPersonName: e.target.value })} className="h-11 w-full rounded-xl border border-gray-200 bg-gray-50/50 px-4 text-sm outline-none transition focus:border-gray-400 focus:bg-white" placeholder="Full name" />
             </div>
 
             <div>
@@ -1256,7 +1255,7 @@ export default function Agencies() {
       await exportToExcel(
         (data?.data?.agents ?? []).map((a) => ({
           'Full name': a.name || '',
-          'Business name': a.contactPersonName || '',
+          'Business Name': a.contactPersonName || '',
           Email: a.email || '',
           Mobile: a.phone || '',
           'GST number': a.gstNumber || '',
@@ -1586,7 +1585,7 @@ export default function Agencies() {
               <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-400">Details</p>
               <dl className="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
                 {[
-                  { label: 'Business name', value: selectedAgent.contactPersonName },
+                  { label: 'Business Name', value: selectedAgent.contactPersonName },
                   { label: 'Mobile', value: selectedAgent.phone },
                   { label: 'GST number', value: selectedAgent.gstNumber },
                   { label: 'Agent code', value: selectedAgent.agentCode, highlight: true },

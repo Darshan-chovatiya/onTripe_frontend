@@ -292,6 +292,14 @@ export default function ChildAgentFormModal({ isOpen, onClose, agent, onSave }) 
                   </button>
                 </div>
                 {errors.password && <p className="mt-1 ml-1 text-[10px] font-medium text-red-500">{errors.password}</p>}
+                <label className="mb-1 block text-xs font-semibold text-gray-500 uppercase">Business Name</label>
+                <input
+                  name="contactPersonName"
+                  value={formData.contactPersonName}
+                  onChange={handleChange}
+                  className="w-full rounded-lg border border-gray-200 py-2 px-3 text-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/10"
+                  placeholder="Full name"
+                />
               </div>
             )}
           </div>

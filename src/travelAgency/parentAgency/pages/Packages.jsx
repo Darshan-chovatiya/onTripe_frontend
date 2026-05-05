@@ -101,7 +101,7 @@ function PackageGridCard({ pkg, onEdit, onClone, onCover, onGallery, onToggle, o
             </span>
             <span className="flex items-center gap-1">
               <Users className="h-3 w-3 text-gray-400" strokeWidth={2} />
-              {pkg.maxCapacity} pax
+              {pkg.maxCapacity} max
             </span>
             {pkg.itinerary?.length > 0 && (
               <span className="flex items-center gap-1">
@@ -219,7 +219,7 @@ function PackageListRow({ pkg, onEdit, onClone, onCover, onGallery, onToggle, on
             <Clock className="h-3 w-3 text-gray-400" strokeWidth={2} />{pkg.totalDays} days
           </span>
           <span className="flex items-center gap-1">
-            <Users className="h-3 w-3 text-gray-400" strokeWidth={2} />{pkg.maxCapacity} pax
+            <Users className="h-3 w-3 text-gray-400" strokeWidth={2} />{pkg.maxCapacity} max
           </span>
         </div>
       </div>

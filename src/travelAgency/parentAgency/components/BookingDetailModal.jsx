@@ -311,13 +311,11 @@ export default function BookingDetailModal({ isOpen, onClose, bookingId }) {
                 <ul className="space-y-3">
                   {b.travelers.map((t, i) => (
                     <li key={i} className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
-                      <p className="font-semibold text-gray-900">
-                        {t.name}
-                        {t.age != null ? <span className="ml-2 font-normal text-gray-500">· Age {t.age}</span> : null}
-                      </p>
-                      {t.gender != null && String(t.gender).trim() ? (
-                        <p className="mt-1 text-xs capitalize text-gray-500">{String(t.gender)}</p>
-                      ) : null}
+                      <p className="font-semibold text-gray-900">{t.name}</p>
+                      <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
+                        {t.phone && <span className="inline-flex items-center gap-1"><Phone className="h-3 w-3" /> {t.phone}</span>}
+                        {t.email && <span className="inline-flex items-center gap-1"><Mail className="h-3 w-3" /> {t.email}</span>}
+                      </div>
                       {t.idProof != null && String(t.idProof).trim() ? (
                         <p className="mt-1 text-xs text-gray-500">ID note: {String(t.idProof)}</p>
                       ) : null}

@@ -80,7 +80,7 @@ export default function AvailablePackageCard({ pkg, existingWhitelabel, onCreate
           )}
           {displayPax != null && (
             <span className="inline-flex items-center gap-1 rounded-lg bg-gray-50 px-2 py-1 text-[11px] font-medium text-gray-600 ring-1 ring-gray-100">
-              <Users className="h-3 w-3 text-primary-500" strokeWidth={2} />{displayPax} pax
+              <Users className="h-3 w-3 text-primary-500" strokeWidth={2} />{displayPax} max
             </span>
           )}
           {displayItineraryCount > 0 && (
