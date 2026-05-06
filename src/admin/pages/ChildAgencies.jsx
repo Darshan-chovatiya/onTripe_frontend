@@ -544,17 +544,45 @@ function AgentFormModal({ mode, agent, agentRole, onClose, onSaved }) {
             </div>
           </div>
           {isEdit ? (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              <EditKycDocRow doc={{ label: 'Aadhar front' }} existingUrl={agent?.kyc?.aadharFront}
-                newFile={files.aadharFront} onFileChange={e => setFiles(p => ({ ...p, aadharFront: e.target.files[0] || null }))} />
-              <EditKycDocRow doc={{ label: 'Aadhar back' }} existingUrl={agent?.kyc?.aadharBack}
-                newFile={files.aadharBack} onFileChange={e => setFiles(p => ({ ...p, aadharBack: e.target.files[0] || null }))} />
-              <EditKycDocRow doc={{ label: 'PAN card' }} existingUrl={agent?.kyc?.panCard}
-                newFile={files.panCard} onFileChange={e => setFiles(p => ({ ...p, panCard: e.target.files[0] || null }))} />
-              <div className="sm:col-span-2 lg:col-span-1">
+            <div className="space-y-4">
+              {/* KYC status + rejection reason */}
+              <div className="mb-4 max-w-xs">
+                <label className="mb-1.5 ml-1 block text-xs font-medium text-gray-600">KYC status</label>
+                <CustomDropdown
+                  value={form.kycStatus}
+                  onChange={v => set('kycStatus', v)}
+                  options={[
+                    { value: 'approved', label: 'Approved' },
+                    { value: 'pending', label: 'Pending' },
+                    { value: 'rejected', label: 'Rejected' },
+                  ]}
+                  className="w-full"
+                  buttonClassName="!py-2.5"
+                />
+              </div>
+              {form.kycStatus === 'rejected' && (
+                <div className="mb-4">
+                  <label className="mb-1.5 ml-1 block text-xs font-medium text-gray-600">Rejection reason <span className="text-red-600">*</span></label>
+                  <textarea
+                    value={form.kycRejectionReason}
+                    onChange={e => set('kycRejectionReason', e.target.value)}
+                    rows={2}
+                    className="w-full resize-none rounded-xl border border-gray-200 bg-gray-50/50 px-3 py-2 text-sm outline-none focus:border-gray-400 focus:bg-white"
+                  />
+                </div>
+              )}
+              <div className="mb-4 max-w-md">
                 <EditKycDocRow doc={{ label: 'Agency logo' }} existingUrl={agent?.agencyLogo}
                   newFile={files.agencyLogo} onFileChange={e => setFiles(p => ({ ...p, agencyLogo: e.target.files[0] || null }))}
                   accept="image/jpeg,image/png,image/webp" />
+              </div>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <EditKycDocRow doc={{ label: 'Aadhar front' }} existingUrl={agent?.kyc?.aadharFront}
+                  newFile={files.aadharFront} onFileChange={e => setFiles(p => ({ ...p, aadharFront: e.target.files[0] || null }))} />
+                <EditKycDocRow doc={{ label: 'Aadhar back' }} existingUrl={agent?.kyc?.aadharBack}
+                  newFile={files.aadharBack} onFileChange={e => setFiles(p => ({ ...p, aadharBack: e.target.files[0] || null }))} />
+                <EditKycDocRow doc={{ label: 'PAN card' }} existingUrl={agent?.kyc?.panCard}
+                  newFile={files.panCard} onFileChange={e => setFiles(p => ({ ...p, panCard: e.target.files[0] || null }))} />
               </div>
             </div>
           ) : (
