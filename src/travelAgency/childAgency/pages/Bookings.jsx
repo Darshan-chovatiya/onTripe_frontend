@@ -94,6 +94,7 @@ export default function Bookings() {
           'Phone': b.customer?.phone || '',
           'Travel Date': b.travelDate ? new Date(b.travelDate).toLocaleString() : '—',
           'Amount': b.totalAmount != null ? Number(b.totalAmount).toLocaleString('en-IN') : '—',
+          'Commission': b.whitelabelPackage ? `${b.whitelabelPackage.commissionType} (${b.whitelabelPackage.commissionValue})` : 'Base Price',
           'Booked By': b.bookedBy?.name || '—',
           'Status': b.bookingStatus || '—'
         })),
@@ -219,6 +220,7 @@ export default function Bookings() {
                   <th className="px-4 py-2.5 text-left align-middle text-xs font-medium text-gray-600">Customer</th>
                   <th className="px-4 py-2.5 text-left align-middle text-xs font-medium text-gray-600">Travel date</th>
                   <th className="px-4 py-2.5 text-left align-middle text-xs font-medium text-gray-600">Amount</th>
+                  <th className="px-4 py-2.5 text-left align-middle text-xs font-medium text-gray-600">Commission</th>
                   <th className="px-4 py-2.5 text-left align-middle text-xs font-medium text-gray-600">Booked by</th>
                   <th className="px-4 py-2.5 text-left align-middle text-xs font-medium text-gray-600">Status</th>
                   <th className="px-4 py-2.5 text-right align-middle text-xs font-medium text-gray-600">Actions</th>
@@ -274,6 +276,27 @@ export default function Bookings() {
                           <IndianRupee className="h-3.5 w-3.5" />
                           {b.totalAmount != null ? Number(b.totalAmount).toLocaleString('en-IN') : '—'}
                         </span>
+                      </td>
+                      <td className="px-4 py-2.5 align-middle text-gray-600">
+                        {b.whitelabelPackage ? (
+                          <div className="flex flex-col">
+                            <span className="text-xs font-medium capitalize text-gray-900">
+                              {b.whitelabelPackage.commissionType || '—'}
+                            </span>
+                            <span className="text-[10px] text-gray-500">
+                              {b.whitelabelPackage.commissionType === 'flat' ? (
+                                <span className="inline-flex items-center">
+                                  <IndianRupee className="h-2.5 w-2.5" />
+                                  {b.whitelabelPackage.commissionValue?.toLocaleString('en-IN')}
+                                </span>
+                              ) : (
+                                `${b.whitelabelPackage.commissionValue || 0}%`
+                              )}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-gray-400 italic">Base Price</span>
+                        )}
                       </td>
                       <td className="px-4 py-2.5 align-middle text-gray-600">
                         {typeof bookedBy === 'object' && bookedBy?.name ? (

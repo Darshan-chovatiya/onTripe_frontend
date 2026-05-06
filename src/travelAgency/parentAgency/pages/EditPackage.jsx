@@ -156,13 +156,8 @@ export default function EditPackage() {
           inclusions: pkg.inclusions?.length ? pkg.inclusions : [''],
           exclusions: pkg.exclusions?.length ? pkg.exclusions : [''],
           importantNotes: pkg.importantNotes?.length ? pkg.importantNotes : [''],
-          itinerary: apiItineraryToForm(pkg.itinerary || []).map(day => ({
-            ...day,
-            events: (day.events || []).map(ev => ({
-              ...ev,
-              extraChargeable: ev.includedInPrice === false,
-            })),
-          })),
+          itinerary: apiItineraryToForm(pkg.itinerary || []),
+          isPriceLocked: pkg.isPriceLocked || false,
         })
       } catch (err) {
         toast.error(getApiErrorMessage(err))
@@ -453,17 +448,29 @@ export default function EditPackage() {
             <div>
               <label className="mb-1 block text-xs font-medium text-gray-600">Base price incl. GST <span className="text-red-500">*</span></label>
               <div className="flex gap-2">
-                <select className={`${inputCls(false)} !w-24`} value={form.currency} onChange={e => set('currency', e.target.value)}>
+                <select 
+                  className={`${inputCls(false)} !w-24 disabled:bg-gray-50 disabled:text-gray-400`} 
+                  value={form.currency} 
+                  onChange={e => set('currency', e.target.value)}
+                  disabled={form.isPriceLocked}
+                >
                   <option>INR</option><option>USD</option><option>EUR</option>
                 </select>
                 <input
                   type="number" min="0"
-                  className={`${inputCls(!!errors.basePrice)} flex-1`}
+                  className={`${inputCls(!!errors.basePrice)} flex-1 disabled:bg-gray-50 disabled:text-gray-400`}
                   value={form.basePrice}
                   onChange={e => { set('basePrice', e.target.value); clearErr('basePrice') }}
                   placeholder="0" data-error={!!errors.basePrice}
+                  disabled={form.isPriceLocked}
                 />
               </div>
+              {form.isPriceLocked && (
+                <p className="mt-1.5 flex items-center gap-1 text-[10px] font-medium text-amber-600">
+                  <AlertCircle className="h-3 w-3" />
+                  Price is locked as whitelabel offers or bookings already exist.
+                </p>
+              )}
               <FieldError msg={errors.basePrice} />
             </div>
             <div className="sm:col-span-2">

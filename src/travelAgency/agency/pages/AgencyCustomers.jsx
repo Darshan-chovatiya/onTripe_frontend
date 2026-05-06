@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Mail, Phone, Search, UserCircle, Bell, Send, History, Check, Download, RefreshCw } from 'lucide-react'
+import { Mail, Phone, Search, UserCircle, Bell, Send, History, Check, Download, RefreshCw, Plus, Upload } from 'lucide-react'
 import { ROLES } from '@/shared/utils/constants.js'
 import { useAgencyPermissions } from '@/travelAgency/agency/hooks/useAgencyPermissions.js'
 import ChildCustomers from '@/travelAgency/childAgency/pages/Customers.jsx'
@@ -13,10 +13,13 @@ import {
   listBookings as listParentBookings,
   updateAgencyCustomer as updateParentAgencyCustomer,
   toggleAgencyCustomerActive as toggleParentAgencyCustomerActive,
+  createAgencyCustomer as createParentAgencyCustomer,
+  importAgencyCustomers as importParentAgencyCustomers
 } from '@/travelAgency/parentAgency/services/parentAgencyApi.js'
 import { getApiErrorMessage } from '@/shared/services/apiHelpers.js'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
 import Modal from '@/shared/components/Modal.jsx'
+import ExcelJS from 'exceljs'
 import {
   sendNotification as sendChildNotification,
   getSentNotifications as getChildSentNotifications,
@@ -30,10 +33,13 @@ import {
 import {
   updateAgencyCustomer as updateChildAgencyCustomer,
   toggleAgencyCustomerActive as toggleChildAgencyCustomerActive,
+  createAgencyCustomer as createChildAgencyCustomer,
+  importAgencyCustomers as importChildAgencyCustomers
 } from '@/travelAgency/childAgency/services/childAgencyApi.js'
 import Pagination from '@/admin/components/Pagination.jsx'
 import { exportToExcel } from '@/admin/utils/exportExcel.js'
 import CustomerDetailModal from '@/travelAgency/shared/components/CustomerDetailModal.jsx'
+import ExcelImportModal from '@/travelAgency/shared/components/ExcelImportModal.jsx'
 
 const PAGE_SIZE = 10
 
@@ -52,6 +58,14 @@ export default function AgencyCustomers() {
   const [exportLoading, setExportLoading] = useState(false)
 
   const [selectedIds, setSelectedIds] = useState(() => new Set())
+
+  const [addOpen, setAddOpen] = useState(false)
+  const [addBusy, setAddBusy] = useState(false)
+  const [addForm, setAddForm] = useState({ name: '', email: '', phone: '', notes: '' })
+
+  const [importFile, setImportFile] = useState(null)
+  const [importModalOpen, setImportModalOpen] = useState(false)
+  const [importBusy, setImportBusy] = useState(false)
 
   const [notifyOpen, setNotifyOpen] = useState(false)
   const [notifyBusy, setNotifyBusy] = useState(false)
@@ -93,6 +107,51 @@ export default function AgencyCustomers() {
       : ''
 
   const selectedCount = selectedIds.size
+
+  const handleAddCustomer = async () => {
+    if (!addForm.name.trim() || !addForm.phone.trim()) {
+      toast.error('Name and phone are required'); return
+    }
+    const phoneRegex = /^[0-9]{10}$/;
+    if (!phoneRegex.test(addForm.phone.trim())) {
+      toast.error('Please enter a valid 10-digit phone number'); return
+    }
+    setAddBusy(true)
+    try {
+      if (role === ROLES.CHILD_AGENCY) await createChildAgencyCustomer(addForm)
+      else await createParentAgencyCustomer(addForm)
+
+      toast.success('Customer added successfully')
+      setAddOpen(false)
+      setAddForm({ name: '', email: '', phone: '', notes: '' })
+      fetchCustomers()
+    } catch (err) { toast.error(getApiErrorMessage(err)) }
+    finally { setAddBusy(false) }
+  }
+
+  const handleImportExcelSelect = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setImportFile(file)
+    setImportModalOpen(true)
+    e.target.value = ''
+  }
+
+  const handleFinalImport = async (customers) => {
+    setImportBusy(true)
+    try {
+      const res = role === ROLES.CHILD_AGENCY 
+        ? await importChildAgencyCustomers(customers)
+        : await importParentAgencyCustomers(customers)
+
+      toast.success(`Import complete: ${res.data.data.imported} imported, ${res.data.data.skipped} skipped`)
+      fetchCustomers()
+    } catch (err) {
+      toast.error('Excel import failed: ' + err.message)
+    } finally {
+      setImportBusy(false)
+    }
+  }
 
   // Reset page when search changes
   useEffect(() => {
@@ -451,6 +510,24 @@ export default function AgencyCustomers() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {canManageCustomers && (
+            <>
+              <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-gray-200 bg-white px-3.5 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 shadow-sm transition-colors">
+                {importBusy ? <RefreshCw size={15} className="animate-spin" /> : <Upload size={15} />}
+                Import
+                <input type="file" className="hidden" accept=".xlsx,.xls,.csv" onChange={handleImportExcelSelect} disabled={importBusy} />
+              </label>
+
+              <button
+                type="button"
+                onClick={() => setAddOpen(true)}
+                className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-primary-600 px-3.5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-700 transition-all active:scale-[0.98]"
+              >
+                <Plus size={15} />
+                Add Customer
+              </button>
+            </>
+          )}
           <button
             type="button"
             onClick={handleExport}
@@ -458,7 +535,7 @@ export default function AgencyCustomers() {
             className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
           >
             {exportLoading ? <RefreshCw size={16} className="animate-spin" /> : <Download size={16} />}
-            Export Excel
+            Export
           </button>
           <button
             type="button"
@@ -634,6 +711,65 @@ export default function AgencyCustomers() {
           />
         ) : null}
       </div>
+
+      {/* Add customer */}
+      <Modal isOpen={addOpen} onClose={() => !addBusy && setAddOpen(false)} title="Add new customer" size="lg">
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-gray-700">Name <span className="text-red-500">*</span></label>
+              <input
+                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/10"
+                value={addForm.name}
+                onChange={e => setAddForm(p => ({ ...p, name: e.target.value }))}
+                placeholder="Full name"
+              />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-gray-700">Phone <span className="text-red-500">*</span></label>
+              <input
+                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/10"
+                value={addForm.phone}
+                onChange={e => setAddForm(p => ({ ...p, phone: e.target.value }))}
+                placeholder="Phone number"
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <label className="mb-1.5 block text-sm font-medium text-gray-700">Email</label>
+              <input
+                type="email"
+                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/10"
+                value={addForm.email}
+                onChange={e => setAddForm(p => ({ ...p, email: e.target.value }))}
+                placeholder="Email address (optional)"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-gray-700">Notes</label>
+            <textarea
+              rows={3}
+              className="w-full resize-none rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/10"
+              value={addForm.notes}
+              onChange={e => setAddForm(p => ({ ...p, notes: e.target.value }))}
+              placeholder="Any internal notes…"
+            />
+          </div>
+          <div className="flex justify-end gap-2">
+            <button type="button" onClick={() => setAddOpen(false)} disabled={addBusy} className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60">Cancel</button>
+            <button type="button" onClick={handleAddCustomer} disabled={addBusy} className="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-60">
+              {addBusy ? 'Adding…' : 'Add Customer'}
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      <ExcelImportModal 
+        isOpen={importModalOpen} 
+        onClose={() => setImportModalOpen(false)} 
+        onImport={handleFinalImport} 
+        file={importFile} 
+      />
 
       {/* View customer details */}
       <CustomerDetailModal isOpen={viewOpen} onClose={() => setViewOpen(false)} customer={viewTarget} />

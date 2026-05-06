@@ -12,6 +12,9 @@ import {
   Star,
   IndianRupee,
   GitBranch,
+  ShieldAlert,
+  ShieldCheck,
+  AlertTriangle,
 } from 'lucide-react'
 import adminApi from '@/admin/services/adminApi'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
@@ -72,6 +75,8 @@ export default function Packages() {
   const [exportLoading, setExportLoading] = useState(false)
   const packagesFetchIdRef = useRef(0)
   const [pkgMapModal, setPkgMapModal] = useState({ open: false, id: null, title: '' })
+  const [suspensionModal, setSuspensionModal] = useState({ open: false, pkg: null })
+  const [toggling, setToggling] = useState(false)
 
   const statusOptions = useMemo(
     () => [
@@ -191,6 +196,30 @@ export default function Packages() {
     },
     [navigate]
   )
+
+  const handleToggleSuspension = async (pkg) => {
+    setSuspensionModal({ open: true, pkg })
+  }
+
+  const confirmToggleSuspension = async () => {
+    const pkg = suspensionModal.pkg
+    if (!pkg) return
+    setToggling(true)
+    try {
+      const { data } = await adminApi.togglePackageSuspension(String(pkg._id))
+      if (data?.success) {
+        toastRef.current.success(`Package ${pkg.isSuspended ? 'unsuspended' : 'suspended'} successfully`)
+        setPackages((prev) =>
+          prev.map((p) => (p._id === pkg._id ? { ...p, isSuspended: !p.isSuspended } : p))
+        )
+        setSuspensionModal({ open: false, pkg: null })
+      }
+    } catch (err) {
+      toastRef.current.error(err?.response?.data?.message || `Failed to update package status`)
+    } finally {
+      setToggling(false)
+    }
+  }
 
   const handleExport = async () => {
     setExportLoading(true)
@@ -500,6 +529,14 @@ export default function Packages() {
                           <span className={`h-1.5 w-1.5 rounded-full ${pkg.isActive ? 'bg-emerald-500' : 'bg-gray-400'}`} />
                           {pkg.isActive ? 'Active' : 'Inactive'}
                         </span>
+                        {pkg.isSuspended && (
+                          <div className="mt-1">
+                            <span className="inline-flex items-center gap-1 rounded-lg border border-red-200 bg-red-50 px-2 py-0.5 text-[10px] font-bold text-red-700">
+                              <ShieldAlert size={10} />
+                              Suspended
+                            </span>
+                          </div>
+                        )}
                       </td>
                       <td className="whitespace-nowrap px-4 py-3 pr-5 text-right">
                         <div className="flex items-center justify-end gap-1.5">
@@ -545,6 +582,18 @@ export default function Packages() {
                           >
                             <Star className="h-4 w-4" strokeWidth={2} />
                           </button>
+                          <button
+                            type="button"
+                            onClick={() => handleToggleSuspension(pkg)}
+                            className={`inline-flex cursor-pointer rounded-lg border p-2 transition-colors active:scale-95 ${
+                              pkg.isSuspended
+                                ? 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:border-emerald-300 hover:bg-emerald-100'
+                                : 'border-red-200 bg-red-50 text-red-700 hover:border-red-300 hover:bg-red-100'
+                            }`}
+                            title={pkg.isSuspended ? 'Unsuspend package' : 'Suspend package'}
+                          >
+                            {pkg.isSuspended ? <ShieldCheck size={16} /> : <ShieldAlert size={16} />}
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -572,6 +621,55 @@ export default function Packages() {
       >
         <div className="flex h-[calc(100dvh-7rem)] min-h-[min(560px,85dvh)] w-full flex-col">
           {pkgMapModal.id ? <HierarchyFlowchart type="package" id={pkgMapModal.id} /> : null}
+        </div>
+      </Modal>
+
+      {/* Suspension Confirmation Modal */}
+      <Modal
+        isOpen={suspensionModal.open}
+        onClose={() => !toggling && setSuspensionModal({ open: false, pkg: null })}
+        title={suspensionModal.pkg?.isSuspended ? 'Unsuspend Package' : 'Suspend Package'}
+        size="md"
+      >
+        <div className="p-1">
+          <div className="flex items-start gap-4 rounded-xl bg-amber-50 p-4">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-600">
+              <AlertTriangle size={20} />
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-amber-900">
+                {suspensionModal.pkg?.isSuspended ? 'Are you sure you want to unsuspend this package?' : 'Are you sure you want to suspend this package?'}
+              </h3>
+              <p className="mt-1 text-xs leading-relaxed text-amber-700">
+                {suspensionModal.pkg?.isSuspended
+                  ? 'The package will be restored to the marketplace and agents will be able to book it again.'
+                  : 'This package will be hidden from the marketplace and agents will not be able to create new bookings or whitelabels from it.'}
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-6 flex items-center justify-end gap-3">
+            <button
+              type="button"
+              disabled={toggling}
+              onClick={() => setSuspensionModal({ open: false, pkg: null })}
+              className="rounded-lg px-4 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-100 disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              disabled={toggling}
+              onClick={confirmToggleSuspension}
+              className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white shadow-sm transition active:scale-95 disabled:opacity-50 ${
+                suspensionModal.pkg?.isSuspended
+                  ? 'bg-emerald-600 hover:bg-emerald-700'
+                  : 'bg-red-600 hover:bg-red-700'
+              }`}
+            >
+              {toggling ? <Loader size="sm" color="white" /> : suspensionModal.pkg?.isSuspended ? 'Unsuspend' : 'Suspend'}
+            </button>
+          </div>
         </div>
       </Modal>
     </div>

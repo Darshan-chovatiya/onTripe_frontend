@@ -4,7 +4,7 @@ import {
   Plus, Search, MapPin, Clock, Users, IndianRupee,
   Edit2, ImageIcon, ImagePlus, MessageSquare, LayoutGrid,
   List, TrendingUp, Package, CheckCircle2, XCircle,
-  Calendar, Star, Eye, Copy, Trash2
+  Calendar, Star, Eye, Copy, Trash2, ShieldAlert
 } from 'lucide-react'
 import { usePackages } from '@/travelAgency/parentAgency/hooks/usePackages.js'
 import PackageFormModal from '@/travelAgency/parentAgency/components/PackageFormModal.jsx'
@@ -34,8 +34,8 @@ function StatusPill({ isActive, onClick }) {
       type="button"
       onClick={onClick}
       className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide transition active:scale-95 ${isActive
-          ? 'bg-emerald-500/10 text-emerald-700 ring-1 ring-emerald-400/40 hover:bg-emerald-500/20'
-          : 'bg-gray-100 text-gray-500 ring-1 ring-gray-200 hover:bg-gray-200'
+        ? 'bg-emerald-500/10 text-emerald-700 ring-1 ring-emerald-400/40 hover:bg-emerald-500/20'
+        : 'bg-gray-100 text-gray-500 ring-1 ring-gray-200 hover:bg-gray-200'
         }`}
     >
       <span className={`h-1.5 w-1.5 rounded-full ${isActive ? 'bg-emerald-500 animate-pulse' : 'bg-gray-400'}`} />
@@ -61,15 +61,30 @@ function PackageGridCard({ pkg, onEdit, onClone, onCover, onGallery, onToggle, o
         {/* Status pill top-right */}
         <div className="absolute right-3 top-3">
           <button type="button" onClick={() => onToggle(pkg)}
-            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide shadow-sm backdrop-blur-sm transition active:scale-95 ${
-              pkg.isActive
-                ? 'bg-emerald-500/90 text-white hover:bg-emerald-600'
-                : 'bg-black/50 text-white/80 hover:bg-black/70'
-            }`}>
+            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide shadow-sm backdrop-blur-sm transition active:scale-95 ${pkg.isActive
+              ? 'bg-emerald-500/90 text-white hover:bg-emerald-600'
+              : 'bg-black/50 text-white/80 hover:bg-black/70'
+              }`}>
             <span className={`h-1.5 w-1.5 rounded-full ${pkg.isActive ? 'bg-white animate-pulse' : 'bg-white/50'}`} />
             {pkg.isActive ? 'Live' : 'Paused'}
           </button>
         </div>
+        {pkg.isSuspended && (
+          <div className="absolute left-3 top-3">
+            <div className="inline-flex items-center gap-1.5 rounded-full bg-red-600 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white shadow-sm backdrop-blur-sm">
+              <ShieldAlert className="h-3 w-3" />
+              Suspended
+            </div>
+          </div>
+        )}
+
+        {pkg.whitelabelCount > 0 && (
+          <div className="absolute left-3 top-3 _translate-y-8">
+            <div className="inline-flex items-center gap-1 rounded-full bg-violet-600/90 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white shadow-sm backdrop-blur-sm ring-1 ring-white/20">
+              Whitelabeled
+            </div>
+          </div>
+        )}
 
         {/* Price bottom-left */}
         <div className="absolute bottom-3 left-3">
@@ -155,7 +170,9 @@ function PackageGridCard({ pkg, onEdit, onClone, onCover, onGallery, onToggle, o
 
           {/* Secondary actions — icon buttons only */}
           <div className="flex items-center gap-2">
-            <button type="button" onClick={() => onEdit(pkg)} title="Edit"
+            <button type="button"
+              onClick={() => onEdit(pkg)}
+              title="Edit"
               className="flex-1 flex items-center justify-center gap-1.5 rounded-lg border border-gray-200 bg-white py-2 text-xs font-medium text-gray-600 transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-700">
               <Edit2 className="h-4 w-4" strokeWidth={2} />
               Edit
@@ -208,6 +225,11 @@ function PackageListRow({ pkg, onEdit, onClone, onCover, onGallery, onToggle, on
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
           <h3 className="truncate text-sm font-semibold text-gray-900">{pkg.title}</h3>
+          {pkg.whitelabelCount > 0 && (
+            <span className="inline-flex items-center rounded-full bg-violet-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-violet-700 ring-1 ring-inset ring-violet-200">
+              Whitelabeled
+            </span>
+          )}
         </div>
         <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-gray-500">
           {pkg.destination && (
@@ -272,14 +294,24 @@ function PackageListRow({ pkg, onEdit, onClone, onCover, onGallery, onToggle, on
           className="flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-700">
           <Eye className="h-3.5 w-3.5" strokeWidth={2} />
         </button>
-        <button type="button" title="Edit"
+        <button type="button"
+          title={pkg.isSuspended ? 'Suspended packages cannot be edited' : 'Edit'}
+          disabled={pkg.isSuspended}
           onClick={() => onEdit(pkg)}
-          className="flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-700">
+          className={`flex h-7 w-7 items-center justify-center rounded-lg border transition ${pkg.isSuspended
+            ? 'border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed'
+            : 'border-gray-200 bg-white text-gray-500 hover:border-primary-200 hover:bg-primary-50 hover:text-primary-700'
+            }`}>
           <Edit2 className="h-3.5 w-3.5" strokeWidth={2} />
         </button>
-        <button type="button" title="Clone"
+        <button type="button"
+          title={pkg.isSuspended ? 'Suspended packages cannot be cloned' : 'Clone'}
+          disabled={pkg.isSuspended}
           onClick={() => onClone(pkg)}
-          className="flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 transition hover:border-gray-300 hover:bg-gray-50 hover:text-gray-700">
+          className={`flex h-7 w-7 items-center justify-center rounded-lg border transition ${pkg.isSuspended
+            ? 'border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed'
+            : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300 hover:bg-gray-50 hover:text-gray-700'
+            }`}>
           <Copy className="h-3.5 w-3.5" strokeWidth={2} />
         </button>
         <button type="button" title="Update cover"
@@ -299,11 +331,10 @@ function PackageListRow({ pkg, onEdit, onClone, onCover, onGallery, onToggle, on
         </button>
         <button type="button" onClick={() => onToggle(pkg)}
           title={pkg.isActive ? 'Pause package' : 'Activate package'}
-          className={`flex h-7 items-center gap-1 rounded-lg border px-2 text-[10px] font-bold transition ${
-            pkg.isActive
-              ? 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
-              : 'border-red-200 bg-red-50 text-red-700 hover:bg-red-100'
-          }`}>
+          className={`flex h-7 items-center gap-1 rounded-lg border px-2 text-[10px] font-bold transition ${pkg.isActive
+            ? 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+            : 'border-red-200 bg-red-50 text-red-700 hover:bg-red-100'
+            }`}>
           <span className={`h-1.5 w-1.5 rounded-full ${pkg.isActive ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}`} />
           {pkg.isActive ? 'Live' : 'Paused'}
         </button>

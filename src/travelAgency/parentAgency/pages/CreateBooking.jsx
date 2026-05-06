@@ -88,7 +88,7 @@ export default function CreateBooking() {
   const [maxCapacity, setMaxCapacity] = useState(null)
   const [minTotalAmount, setMinTotalAmount] = useState(0)
 
-  const activePackages = (availablePackages ?? []).filter((p) => p.isActive !== false)
+  const activePackages = (availablePackages ?? []).filter((p) => p.isActive !== false && p.isSuspended !== true)
 
   useEffect(() => {
     if (activePackages.length && !packageId) {

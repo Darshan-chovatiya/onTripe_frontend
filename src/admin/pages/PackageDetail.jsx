@@ -3,6 +3,7 @@ import { useNavigate, useParams, Link } from 'react-router-dom'
 import {
   ArrowLeft, Package, MapPin, User, Clock, Calendar,
   Layers, Ticket, IndianRupee, MessageSquare, Star,
+  ShieldAlert, ShieldCheck,
 } from 'lucide-react'
 import adminApi from '@/admin/services/adminApi'
 import Loader from '@/shared/components/Loader.jsx'
@@ -134,6 +135,12 @@ export default function AdminPackageDetail() {
                 <Layers className="h-3.5 w-3.5 text-gray-500" strokeWidth={2} />
                 {Number(pkg.whitelabelCount) || 0} whitelabel{(Number(pkg.whitelabelCount) || 0) === 1 ? '' : 's'}
               </span>
+              {pkg.isSuspended && (
+                <span className="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-2.5 py-1 text-[11px] font-bold text-red-700">
+                  <ShieldAlert className="h-3.5 w-3.5" />
+                  Suspended
+                </span>
+              )}
             </div>
           </div>
           <div className="min-w-[160px] shrink-0 rounded-xl border border-gray-200 bg-gray-50/80 px-5 py-4 text-center">

@@ -32,15 +32,16 @@ export default function AgencyEarnings() {
   const [packageFilter, setPackageFilter] = useState('all')
   const [wlFilter, setWlFilter] = useState('all')
   const [statusFilter, setStatusFilter] = useState('all')
+  const [agentTypeFilter, setAgentTypeFilter] = useState('all')
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
 
   // Load filter options
   useEffect(() => {
     if (isParent) {
-      listMyPackages().then(r => setPackages(r.data?.data?.packages || [])).catch(() => {})
+      listMyPackages().then(r => setPackages(r.data?.data?.packages || [])).catch(() => { })
     } else {
-      listMyWhitelabels().then(r => setWhitelabels(r.data?.data?.whitelabels || [])).catch(() => {})
+      listMyWhitelabels().then(r => setWhitelabels(r.data?.data?.whitelabels || [])).catch(() => { })
     }
   }, [isParent])
 
@@ -49,6 +50,7 @@ export default function AgencyEarnings() {
     try {
       const params = {
         status: statusFilter === 'all' ? undefined : statusFilter,
+        agentType: agentTypeFilter === 'all' ? undefined : agentTypeFilter,
         dateFrom: dateFrom || undefined,
         dateTo: dateTo || undefined,
       }
@@ -64,20 +66,20 @@ export default function AgencyEarnings() {
     } finally {
       setLoading(false)
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isParent, packageFilter, wlFilter, statusFilter, dateFrom, dateTo])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isParent, packageFilter, wlFilter, statusFilter, agentTypeFilter, dateFrom, dateTo])
 
   useEffect(() => { fetchEarnings() }, [fetchEarnings])
 
   const handleExport = () => {
     if (!rows.length) return
     const headers = isParent
-      ? ['Booking ID', 'Date', 'Travel Date', 'Package', 'Customer', 'Travelers', 'My Earning (Base)', 'Child Earned (Markup)', 'Total Sold', 'Status']
-      : ['Booking ID', 'Date', 'Travel Date', 'Offer', 'Customer', 'Travelers', 'Provider Cost', 'My Selling Price', 'My Earning', 'Total Sold', 'Status']
+      ? ['Booking ID', 'Date', 'Travel Date', 'Package', 'Customer', 'Booked By', 'Role', 'Travelers', 'My Earning (Base)', 'Child Earned (Markup)', 'Total Sold', 'Status']
+      : ['Booking ID', 'Date', 'Travel Date', 'Offer', 'Customer', 'Booked By', 'Role', 'Travelers', 'Provider Cost', 'My Selling Price', 'My Earning', 'Total Sold', 'Status']
 
     const csvRows = rows.map(r => isParent
-      ? [r.bookingId, fmtDate(r.date), fmtDate(r.travelDate), r.packageTitle, r.customerName, r.travelerCount, r.myEarning, r.childEarning, r.totalSold, r.status]
-      : [r.bookingId, fmtDate(r.date), fmtDate(r.travelDate), r.offerTitle, r.customerName, r.travelerCount, r.providerCost, r.mySellingPrice, r.myEarning, r.totalSold, r.status]
+      ? [r.bookingId, fmtDate(r.date), fmtDate(r.travelDate), r.packageTitle, r.customerName, r.bookedByName, r.bookedByRole, r.travelerCount, r.myEarning, r.childEarning, r.totalSold, r.status]
+      : [r.bookingId, fmtDate(r.date), fmtDate(r.travelDate), r.offerTitle, r.customerName, r.bookedByName, r.bookedByRole, r.travelerCount, r.providerCost, r.mySellingPrice, r.myEarning, r.totalSold, r.status]
     )
 
     const csv = [headers, ...csvRows].map(r => r.join(',')).join('\n')
@@ -139,6 +141,21 @@ export default function AgencyEarnings() {
             <option value="completed">Completed</option>
             <option value="cancelled">Cancelled</option>
           </select>
+          {isParent ? (
+            <select className="rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-300"
+              value={agentTypeFilter} onChange={e => setAgentTypeFilter(e.target.value)}>
+              <option value="all">All bookings</option>
+              <option value="parent">Created by Me</option>
+              <option value="child">Created by Agents</option>
+            </select>
+          ) : (
+            <select className="rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-300"
+              value={agentTypeFilter} onChange={e => setAgentTypeFilter(e.target.value)}>
+              <option value="all">All bookings</option>
+              <option value="child">Created by Me</option>
+              <option value="subChild">Created by Agents</option>
+            </select>
+          )}
           <div className="flex items-center gap-2">
             <Calendar className="h-4 w-4 text-gray-400" />
             <input type="date" className="rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-300"
@@ -147,7 +164,7 @@ export default function AgencyEarnings() {
             <input type="date" className="rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-300"
               value={dateTo} onChange={e => setDateTo(e.target.value)} placeholder="To" />
           </div>
-          <button onClick={() => { setPackageFilter('all'); setWlFilter('all'); setStatusFilter('all'); setDateFrom(''); setDateTo('') }}
+          <button onClick={() => { setPackageFilter('all'); setWlFilter('all'); setStatusFilter('all'); setAgentTypeFilter('all'); setDateFrom(''); setDateTo('') }}
             className="rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-500 hover:bg-gray-50">
             Clear
           </button>
@@ -176,6 +193,7 @@ export default function AgencyEarnings() {
                   <th className="px-4 py-3">Date</th>
                   <th className="px-4 py-3">{isParent ? 'Package' : 'Offer'}</th>
                   <th className="px-4 py-3">Customer</th>
+                  <th className="px-4 py-3">Booked By</th>
                   <th className="px-4 py-3 text-right">{isParent ? 'Base Price (My Earning)' : 'Provider Cost'}</th>
                   <th className="px-4 py-3 text-right">{isParent ? 'Child Markup' : 'My Selling Price'}</th>
                   <th className="px-4 py-3 text-right">{isParent ? 'Total Sold' : 'My Earning'}</th>
@@ -194,6 +212,10 @@ export default function AgencyEarnings() {
                     <td className="px-4 py-3">
                       <div className="font-medium text-gray-900">{r.customerName}</div>
                       <div className="text-[10px] text-gray-400">{r.travelerCount} traveler{r.travelerCount !== 1 ? 's' : ''}</div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="font-medium text-gray-900">{r.bookedByName}</div>
+                      <div className="text-[10px] text-gray-400 capitalize">{r.bookedByRole?.replace(/_/g, ' ')}</div>
                     </td>
                     {isParent ? (
                       <>

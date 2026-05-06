@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
   User, Mail, Phone, Calendar, FileText, CheckCircle, XCircle,
-  Clock, BookOpen, ShieldCheck, X, ChevronLeft, ChevronRight, Pencil,
+  Clock, BookOpen, ShieldCheck, X, ChevronLeft, ChevronRight, Pencil, Building2
 } from 'lucide-react'
 import Modal from '@/shared/components/Modal.jsx'
 import Button from '@/shared/components/Button.jsx'
@@ -217,6 +217,18 @@ export default function SubChildDetailModal({ isOpen, onClose, subId, fetchOne, 
                       ? <span className="inline-flex items-center gap-1"><Phone className="h-3.5 w-3.5 text-gray-400" />{sub.phone}</span>
                       : '—'}
                   </DetailRow>
+                </div>
+              </div>
+
+              {/* Business */}
+              <div>
+                <SectionTitle icon={Building2}>Business</SectionTitle>
+                <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+                  <DetailRow label="Business Name">{sub.contactPersonName || '—'}</DetailRow>
+                  <DetailRow label="GST Number">
+                    <span className="font-mono text-xs font-semibold text-primary-700">{sub.gstNumber || '—'}</span>
+                  </DetailRow>
+                  <DetailRow label="Business Address">{sub.address || '—'}</DetailRow>
                 </div>
               </div>
 

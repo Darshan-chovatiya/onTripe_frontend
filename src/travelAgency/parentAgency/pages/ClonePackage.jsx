@@ -75,13 +75,7 @@ export default function ClonePackage() {
           inclusions: pkg.inclusions?.length ? pkg.inclusions : [''],
           exclusions: pkg.exclusions?.length ? pkg.exclusions : [''],
           importantNotes: pkg.importantNotes?.length ? pkg.importantNotes : [''],
-          itinerary: apiItineraryToForm(pkg.itinerary || []).map(day => ({
-            ...day,
-            events: (day.events || []).map(ev => ({
-              ...ev,
-              extraChargeable: ev.includedInPrice === false,
-            })),
-          })),
+          itinerary: apiItineraryToForm(pkg.itinerary || []),
         })
       } catch (err) {
         toast.error(getApiErrorMessage(err))

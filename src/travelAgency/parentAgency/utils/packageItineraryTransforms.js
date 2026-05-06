@@ -65,7 +65,7 @@ export function formItineraryToApi(days) {
           vendorNotes: '',
           whatToBring: [],
           difficulty: 'easy',
-          includedInPrice: ev.includedInPrice !== false,
+          includedInPrice: ev.extraChargeable !== undefined ? !ev.extraChargeable : ev.includedInPrice !== false,
           extraCost: Number(ev.extraCost) || 0,
         }
         return exp
@@ -150,6 +150,7 @@ function apiDayToForm(day, index) {
       image: firstImg,
       vendor: vendorId || null,
       includedInPrice: ex.includedInPrice !== false,
+      extraChargeable: ex.includedInPrice === false,
       extraCost: ex.extraCost || '',
     }
   })
@@ -255,6 +256,7 @@ export function getDetailExperiencesForDay(day) {
         isOptional: false,
         isHighlight: false,
         includedInPrice: true,
+        extraChargeable: false,
         extraCost: undefined,
         vendorNotes: '',
         vendor: e.vendor,
@@ -295,6 +297,7 @@ export function getDetailExperiencesForDay(day) {
       isOptional: Boolean(ex.isOptional),
       isHighlight: Boolean(ex.isHighlight),
       includedInPrice: ex.includedInPrice !== false,
+      extraChargeable: ex.includedInPrice === false,
       extraCost: extra,
       vendorNotes: ex.vendorNotes != null ? String(ex.vendorNotes) : '',
       vendor: ex.vendor,

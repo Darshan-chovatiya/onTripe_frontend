@@ -5,7 +5,7 @@ import {
   CheckCircle2, XCircle, CalendarDays, Clock3, MapPinned,
   Layers, ImagePlus, Store, Sparkles, AlertTriangle,
   UtensilsCrossed, FileText, BadgeCheck, PauseCircle,
-  Link2, Video, MessageSquare,
+  Link2, Video, MessageSquare
 } from 'lucide-react'
 import { AGENCY_PANEL_BASE } from '@/travelAgency/agency/constants.js'
 import { getPackageById } from '@/travelAgency/parentAgency/services/parentAgencyApi.js'
@@ -482,11 +482,17 @@ export default function PackageDetail() {
                             </div>
                           </div>
                         )}
-                        <p className="mt-2 text-xs text-gray-500">
+                        <p className="mt-2 text-xs flex flex-wrap items-center gap-2">
                           <span className="font-medium text-gray-700">Pricing: </span>
-                          {ev.includedInPrice ? 'Included in base price' : 'Not included'}
+                          {ev.extraChargeable ? (
+                            <span className="inline-flex items-center gap-1 rounded-md bg-amber-50 px-2 py-0.5 text-[10px] font-bold uppercase text-amber-700 ring-1 ring-amber-200">
+                              Extra Chargeable
+                            </span>
+                          ) : (
+                            <span className="text-gray-500 italic">Included in base price</span>
+                          )}
                           {ev.extraCost != null && ev.extraCost > 0 && (
-                            <span className="ml-2 tabular-nums text-gray-800">+ {Number(ev.extraCost).toLocaleString('en-IN')} {pkg.currency || 'INR'} extra</span>
+                            <span className="tabular-nums text-gray-800 font-semibold">+ {Number(ev.extraCost).toLocaleString('en-IN')} {pkg.currency || 'INR'}</span>
                           )}
                         </p>
                         {ev.vendorNotes?.trim() && (

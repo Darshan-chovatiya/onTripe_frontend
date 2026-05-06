@@ -26,20 +26,20 @@ function lastMonthRange() {
 }
 
 const PRESETS = [
-  { label: 'Today',      getRange: () => { const t = todayStr(); return { start: t, end: t } } },
-  { label: '7 days',     getRange: () => ({ start: daysAgoStr(6), end: todayStr() }) },
-  { label: '30 days',    getRange: () => ({ start: daysAgoStr(29), end: todayStr() }) },
+  { label: 'Today', getRange: () => { const t = todayStr(); return { start: t, end: t } } },
+  { label: '7 days', getRange: () => ({ start: daysAgoStr(6), end: todayStr() }) },
+  { label: '30 days', getRange: () => ({ start: daysAgoStr(29), end: todayStr() }) },
   { label: 'This month', getRange: () => ({ start: startOfMonthStr(), end: todayStr() }) },
   { label: 'Last month', getRange: () => lastMonthRange() },
-  { label: 'This year',  getRange: () => ({ start: startOfYearStr(), end: todayStr() }) },
+  { label: 'This year', getRange: () => ({ start: startOfYearStr(), end: todayStr() }) },
 ]
 const DEFAULT_RANGE = { start: startOfMonthStr(), end: todayStr() }
 
 function fmt(n) {
   if (n == null || n === 0) return '₹0'
   if (n >= 10000000) return `₹${(n / 10000000).toFixed(1)}Cr`
-  if (n >= 100000)   return `₹${(n / 100000).toFixed(1)}L`
-  if (n >= 1000)     return `₹${(n / 1000).toFixed(1)}K`
+  if (n >= 100000) return `₹${(n / 100000).toFixed(1)}L`
+  if (n >= 1000) return `₹${(n / 1000).toFixed(1)}K`
   return `₹${n}`
 }
 
@@ -62,19 +62,19 @@ function StatCard({ label, value, icon: Icon, accent, loading }) {
 }
 
 const QUICK_LINKS = [
-  { to: '/agency/packages',          label: 'Whitelabels',   desc: 'Manage package catalog and pricing', icon: Package },
-  { to: '/agency/bookings',          label: 'Bookings',      desc: 'Track sales and traveler requests',  icon: BookOpen },
-  { to: '/agency/manage-downstream', label: 'Agent network', desc: 'Manage downstream sub-agents',       icon: GitBranch },
-  { to: '/agency/customers',         label: 'Customers',     desc: 'View and update traveler profiles',  icon: ContactRound },
+  { to: '/agency/packages', label: 'Whitelabels', desc: 'Manage package catalog and pricing', icon: Package },
+  { to: '/agency/bookings', label: 'Bookings', desc: 'Track sales and traveler requests', icon: BookOpen },
+  { to: '/agency/manage-downstream', label: 'Agent network', desc: 'Manage downstream sub-agents', icon: GitBranch },
+  { to: '/agency/customers', label: 'Customers', desc: 'View and update traveler profiles', icon: ContactRound },
 ]
 
 export default function ChildDashboard() {
   const { user } = useAuth()
   const [analytics, setAnalytics] = useState(null)
-  const [earnings, setEarnings]   = useState(null)
-  const [loading, setLoading]     = useState(true)
-  const [err, setErr]             = useState('')
-  const [copied, setCopied]       = useState(false)
+  const [earnings, setEarnings] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [err, setErr] = useState('')
+  const [copied, setCopied] = useState(false)
   const [linkCopied, setLinkCopied] = useState(false)
   const [dateRange, setDateRange] = useState(DEFAULT_RANGE)
 
@@ -95,14 +95,14 @@ export default function ChildDashboard() {
       const [aRes, eRes] = await Promise.allSettled([getAnalytics(params), getEarnings(params)])
       if (aRes.status === 'fulfilled') setAnalytics(aRes.value.data?.data || null)
       if (eRes.status === 'fulfilled') setEarnings(eRes.value.data?.data || null)
-      if (aRes.status === 'rejected')  setErr(getApiErrorMessage(aRes.reason))
+      if (aRes.status === 'rejected') setErr(getApiErrorMessage(aRes.reason))
     } finally { setLoading(false) }
   }
 
   useEffect(() => { fetchAll(DEFAULT_RANGE) }, [])
 
-  const totalRevenue  = earnings?.totalRevenue  ?? analytics?.totalRevenue  ?? null
-  const totalEarnings = earnings?.totalEarnings ?? earnings?.netEarnings    ?? null
+  const totalRevenue = earnings?.summary?.totalRevenue ?? analytics?.totalRevenue ?? 0
+  const totalEarnings = earnings?.summary?.totalEarnings ?? analytics?.totalEarnings ?? 0
   const bookingsByStatus = analytics?.bookingsByStatus || []
   const getStatus = (s) => bookingsByStatus.find(b => b._id === s)?.count ?? 0
 
@@ -115,7 +115,23 @@ export default function ChildDashboard() {
         <h1 className="text-2xl font-bold tracking-tight text-gray-900">
           Hello, {user?.name?.split(' ')[0] || 'Agent'} 👋
         </h1>
-        <p className="text-sm text-gray-500">Monitor your bookings, agent network, and customer growth.</p>
+        {user?.parent && (
+          <div className="mt-1 flex items-center gap-2">
+            <span className="text-xs font-medium text-gray-400">Associated with</span>
+            <div className="flex items-center gap-1.5 rounded-full border border-primary-100 bg-primary-50 px-2.5 py-0.5">
+              {user.parent.agencyLogo && (
+                <img
+                  src={`${import.meta.env.VITE_API_URL}/${user.parent.agencyLogo}`}
+                  alt=""
+                  className="h-3.5 w-3.5 rounded-full object-cover"
+                  onError={(e) => (e.target.style.display = 'none')}
+                />
+              )}
+              <span className="text-[11px] font-bold text-primary-700">{user.parent.name}</span>
+            </div>
+          </div>
+        )}
+        <p className="mt-1 text-sm text-gray-500">Monitor your bookings, agent network, and customer growth.</p>
       </div>
 
       {/* ── Date filter bar ── */}
@@ -128,11 +144,10 @@ export default function ChildDashboard() {
               return (
                 <button key={p.label} type="button"
                   onClick={() => { setDateRange(r); fetchAll(r) }}
-                  className={`rounded-full border px-3 py-1 text-xs font-semibold transition-all ${
-                    active
+                  className={`rounded-full border px-3 py-1 text-xs font-semibold transition-all ${active
                       ? 'border-gray-900 bg-gray-900 text-white'
                       : 'border-gray-200 bg-white text-gray-500 hover:border-gray-400 hover:text-gray-700'
-                  }`}>
+                    }`}>
                   {p.label}
                 </button>
               )
@@ -161,14 +176,14 @@ export default function ChildDashboard() {
 
       {/* ── Stat cards ── */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatCard label="Bookings"    value={loading ? null : analytics?.totalBookings ?? 0}
-          icon={BookOpen}     accent="bg-sky-50 text-sky-600"      loading={loading} />
-        <StatCard label="Whitelabels" value={loading ? null : analytics?.totalPackages ?? 0}
-          icon={Package}      accent="bg-violet-50 text-violet-600" loading={loading} />
-        <StatCard label="Customers"   value={loading ? null : analytics?.totalCustomers ?? 0}
-          icon={ContactRound} accent="bg-amber-50 text-amber-600"   loading={loading} />
-        <StatCard label="Earnings"    value={loading ? null : fmt(totalEarnings ?? totalRevenue ?? 0)}
-          icon={Wallet}       accent="bg-emerald-50 text-emerald-600" loading={loading} />
+        <StatCard label="Bookings" value={loading ? null : analytics?.totalBookings ?? 0}
+          icon={BookOpen} accent="bg-sky-50 text-sky-600" loading={loading} />
+        <StatCard label="Available Whitelabels Packages" value={loading ? null : analytics?.totalAvailableToWhitelabel ?? 0}
+          icon={Package} accent="bg-violet-50 text-violet-600" loading={loading} />
+        <StatCard label="Customers" value={loading ? null : analytics?.totalCustomers ?? 0}
+          icon={ContactRound} accent="bg-amber-50 text-amber-600" loading={loading} />
+        <StatCard label="Earnings" value={loading ? null : fmt(totalEarnings ?? totalRevenue ?? 0)}
+          icon={Wallet} accent="bg-emerald-50 text-emerald-600" loading={loading} />
       </div>
 
       {/* ── Main grid ── */}
@@ -191,10 +206,10 @@ export default function ChildDashboard() {
             </div>
             <div className="grid grid-cols-2 gap-px bg-gray-100 sm:grid-cols-4">
               {[
-                { label: 'Confirmed', status: 'confirmed', num: 'text-sky-700',     badge: 'bg-sky-100 text-sky-700' },
-                { label: 'Ongoing',   status: 'ongoing',   num: 'text-amber-700',   badge: 'bg-amber-100 text-amber-700' },
+                { label: 'Confirmed', status: 'confirmed', num: 'text-sky-700', badge: 'bg-sky-100 text-sky-700' },
+                { label: 'Ongoing', status: 'ongoing', num: 'text-amber-700', badge: 'bg-amber-100 text-amber-700' },
                 { label: 'Completed', status: 'completed', num: 'text-emerald-700', badge: 'bg-emerald-100 text-emerald-700' },
-                { label: 'Cancelled', status: 'cancelled', num: 'text-red-600',     badge: 'bg-red-100 text-red-600' },
+                { label: 'Cancelled', status: 'cancelled', num: 'text-red-600', badge: 'bg-red-100 text-red-600' },
               ].map(({ label, status, num, badge }) => (
                 <div key={status} className="bg-white p-5">
                   <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${badge}`}>{label}</span>
@@ -237,9 +252,9 @@ export default function ChildDashboard() {
             </div>
             <div className="grid grid-cols-3 divide-x divide-gray-100">
               {[
-                { label: 'Sub-agents',  value: analytics?.totalSubChildAgencies ?? 0, icon: Users,        to: '/agency/manage-downstream' },
-                { label: 'Customers',   value: analytics?.totalCustomers ?? 0,         icon: ContactRound, to: '/agency/customers' },
-                { label: 'Whitelabels', value: analytics?.totalPackages ?? 0,          icon: Layers,       to: '/agency/packages' },
+                { label: 'Sub-agents', value: analytics?.totalSubChildAgencies ?? 0, icon: Users, to: '/agency/manage-downstream' },
+                { label: 'Customers', value: analytics?.totalCustomers ?? 0, icon: ContactRound, to: '/agency/customers' },
+                { label: 'Whitelabels', value: analytics?.totalPackages ?? 0, icon: Layers, to: '/agency/packages' },
               ].map(({ label, value, icon: Icon, to }) => (
                 <Link key={label} to={to}
                   className="group flex flex-col items-start gap-2 p-5 transition hover:bg-gray-50">
@@ -270,9 +285,8 @@ export default function ChildDashboard() {
                 <div className="flex items-center justify-between gap-2 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
                   <span className="font-mono text-base font-black tracking-widest text-gray-900">{user.agentCode}</span>
                   <button type="button" onClick={handleCopy}
-                    className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-all ${
-                      copied ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
-                    }`}>
+                    className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-all ${copied ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
+                      }`}>
                     {copied ? <Check className="h-3.5 w-3.5" strokeWidth={2.5} /> : <Copy className="h-3.5 w-3.5" strokeWidth={2} />}
                     {copied ? 'Copied!' : 'Copy'}
                   </button>
@@ -281,11 +295,10 @@ export default function ChildDashboard() {
                   <p className="text-xs font-semibold text-gray-700">Registration link</p>
                   <p className="mt-1 text-[11px] text-gray-400">Auto-fills your code for new sub-agents signing up.</p>
                   <button type="button" onClick={handleCopyLink}
-                    className={`mt-3 flex w-full items-center justify-center gap-2 rounded-xl border py-2.5 text-xs font-bold transition-all ${
-                      linkCopied
+                    className={`mt-3 flex w-full items-center justify-center gap-2 rounded-xl border py-2.5 text-xs font-bold transition-all ${linkCopied
                         ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
                         : 'border-gray-900 bg-gray-900 text-white hover:bg-gray-800'
-                    }`}>
+                      }`}>
                     {linkCopied
                       ? <><Check className="h-3.5 w-3.5" strokeWidth={2.5} /> Copied!</>
                       : <><Share2 className="h-3.5 w-3.5" strokeWidth={2} /> Copy Registration Link</>}
@@ -306,8 +319,8 @@ export default function ChildDashboard() {
             </div>
             <div className="divide-y divide-gray-50">
               {[
-                { label: 'Total Revenue', value: fmt(totalRevenue ?? 0),  color: 'text-emerald-700' },
-                { label: 'Net Earnings',  value: fmt(totalEarnings ?? 0), color: 'text-sky-700' },
+                { label: 'Total Revenue', value: fmt(totalRevenue ?? 0), color: 'text-emerald-700' },
+                { label: 'Net Earnings', value: fmt(totalEarnings ?? 0), color: 'text-sky-700' },
               ].map(({ label, value, color }) => (
                 <div key={label} className="flex items-center justify-between px-5 py-3.5">
                   <span className="text-xs font-medium text-gray-500">{label}</span>
@@ -328,9 +341,9 @@ export default function ChildDashboard() {
               {(() => {
                 const status = user?.kyc?.status || 'pending'
                 const cfg = {
-                  approved: { label: 'Verified',        cls: 'bg-emerald-50 text-emerald-700 border-emerald-200', icon: ShieldCheck },
-                  pending:  { label: 'Under Review',    cls: 'bg-amber-50 text-amber-700 border-amber-200',       icon: Clock },
-                  rejected: { label: 'Action Required', cls: 'bg-red-50 text-red-700 border-red-200',             icon: XCircle },
+                  approved: { label: 'Verified', cls: 'bg-emerald-50 text-emerald-700 border-emerald-200', icon: ShieldCheck },
+                  pending: { label: 'Under Review', cls: 'bg-amber-50 text-amber-700 border-amber-200', icon: Clock },
+                  rejected: { label: 'Action Required', cls: 'bg-red-50 text-red-700 border-red-200', icon: XCircle },
                 }
                 const { label, cls, icon: Icon } = cfg[status] || cfg.pending
                 return (

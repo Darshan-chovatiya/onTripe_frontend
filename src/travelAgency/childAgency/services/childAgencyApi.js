@@ -130,6 +130,14 @@ export function toggleAgencyCustomerActive(id) {
   return axiosInstance.patch(`/child-agent/customers/${id}/toggle-active`)
 }
 
+export function createAgencyCustomer(body) {
+  return axiosInstance.post('/child-agent/customers', body)
+}
+
+export function importAgencyCustomers(customers) {
+  return axiosInstance.post('/child-agent/customers/import', { customers })
+}
+
 // Notifications (reuse global notification endpoints)
 export function sendNotification(data) {
   return axiosInstance.post('/notifications/send', data)

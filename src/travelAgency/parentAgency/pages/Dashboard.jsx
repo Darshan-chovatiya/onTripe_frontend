@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import {
   Users, Package, BookOpen, Store,
   Copy, Check, ArrowRight, Share2,
@@ -76,6 +76,7 @@ const QUICK_LINKS = [
 ]
 
 export default function ParentDashboard() {
+  const navigate = useNavigate()
   const { user } = useAuth()
   const [analytics, setAnalytics] = useState(null)
   const [earnings, setEarnings]   = useState(null)
@@ -108,8 +109,8 @@ export default function ParentDashboard() {
 
   useEffect(() => { fetchAll(DEFAULT_RANGE) }, [])
 
-  const totalRevenue  = earnings?.totalRevenue  ?? analytics?.totalRevenue  ?? null
-  const totalEarnings = earnings?.totalEarnings ?? earnings?.netEarnings    ?? null
+  const totalRevenue  = earnings?.summary?.totalRevenue  ?? analytics?.totalRevenue  ?? 0
+  const totalEarnings = earnings?.summary?.totalEarnings ?? analytics?.totalEarnings ?? 0
   const bookingsByStatus = analytics?.bookingsByStatus || []
   const getStatus = (s) => bookingsByStatus.find(b => b._id === s)?.count ?? 0
 
@@ -172,13 +173,13 @@ export default function ParentDashboard() {
       {/* ── Stat cards ── */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatCard label="Total Bookings"  value={loading ? null : analytics?.totalBookings ?? 0}
-          icon={BookOpen} accent="bg-sky-50 text-sky-600"    loading={loading} onClick={() => {}} />
+          icon={BookOpen} accent="bg-sky-50 text-sky-600"    loading={loading} onClick={() => navigate('/agency/bookings')} />
         <StatCard label="Packages"        value={loading ? null : analytics?.totalPackages ?? 0}
-          icon={Package}  accent="bg-violet-50 text-violet-600" loading={loading} onClick={() => {}} />
+          icon={Package}  accent="bg-violet-50 text-violet-600" loading={loading} onClick={() => navigate('/agency/packages')} />
         <StatCard label="Child Agencies"  value={loading ? null : analytics?.totalChildAgencies ?? 0}
-          icon={Users}    accent="bg-amber-50 text-amber-600"  loading={loading} onClick={() => {}} />
+          icon={Users}    accent="bg-amber-50 text-amber-600"  loading={loading} onClick={() => navigate('/agency/manage-downstream')} />
         <StatCard label="Revenue"         value={loading ? null : fmt(totalRevenue ?? 0)}
-          icon={Wallet}   accent="bg-emerald-50 text-emerald-600" loading={loading} onClick={() => {}} />
+          icon={Wallet}   accent="bg-emerald-50 text-emerald-600" loading={loading} onClick={() => navigate('/agency/earnings')} />
       </div>
 
       {/* ── Main grid ── */}

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { MapPin, Clock, IndianRupee, Sparkles, Tag, Pencil, Eye, Users, CalendarDays } from 'lucide-react'
+import { MapPin, Clock, IndianRupee, Sparkles, Tag, Pencil, Eye, Users, CalendarDays, ShieldAlert, CheckCircle2 } from 'lucide-react'
 import { packageCoverUrl } from '@/travelAgency/childAgency/components/packageMedia.js'
 import PackageDetailModal from '@/travelAgency/childAgency/components/PackageDetailModal.jsx'
 
@@ -45,9 +45,21 @@ export default function AvailablePackageCard({ pkg, existingWhitelabel, onCreate
               From {creatorName}
             </div>
           )}
+          {existingWhitelabel && (
+            <div className="flex items-center gap-1 rounded-full bg-emerald-600 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white shadow-sm backdrop-blur-sm">
+              <CheckCircle2 className="h-3 w-3" />
+              Whitelabeled
+            </div>
+          )}
           {disabled && (
             <div className="rounded-full bg-gray-900/70 px-2.5 py-0.5 text-[10px] font-semibold text-white backdrop-blur-sm">
               Parent inactive
+            </div>
+          )}
+          {pkg.isSuspended && (
+            <div className="rounded-full bg-red-600 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white shadow-sm backdrop-blur-sm">
+              <ShieldAlert className="h-3 w-3" />
+              Suspended
             </div>
           )}
         </div>
@@ -88,6 +100,11 @@ export default function AvailablePackageCard({ pkg, existingWhitelabel, onCreate
               <CalendarDays className="h-3 w-3" strokeWidth={2} />{displayItineraryCount} days
             </span>
           )}
+          {pkg.whitelabelCount > 0 && (
+            <span className="inline-flex items-center gap-1 rounded-lg bg-violet-50 px-2 py-1 text-[11px] font-medium text-violet-700 ring-1 ring-violet-100">
+              <Tag className="h-3 w-3 text-violet-500" strokeWidth={2} />{pkg.whitelabelCount} Whitelabeled
+            </span>
+          )}
         </div>
 
         {displayDescription && (
@@ -112,30 +129,24 @@ export default function AvailablePackageCard({ pkg, existingWhitelabel, onCreate
           View details
         </button>
 
-        {!disabled && (
-          existingWhitelabel ? (
-            <button
-              type="button"
-              onClick={() => onEditWhiteLabel(existingWhitelabel)}
-              className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-primary-600 py-2 text-xs font-semibold text-white transition hover:bg-primary-700"
-            >
-              <Pencil className="h-3.5 w-3.5" strokeWidth={2} />
-              Edit white-label
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={() => onCreateWhiteLabel(pkg)}
-              className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-primary-600 py-2 text-xs font-semibold text-white transition hover:bg-primary-700"
-            >
-              <Tag className="h-3.5 w-3.5" strokeWidth={2} />
-              Create white-label
-            </button>
-          )
-        )}
+        <button
+          type="button"
+          disabled={disabled || pkg.isSuspended}
+          onClick={() => existingWhitelabel ? onEditWhiteLabel(existingWhitelabel) : onCreateWhiteLabel(pkg)}
+          className={`flex w-full items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-semibold transition ${
+            (disabled || pkg.isSuspended)
+              ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+              : 'bg-primary-600 text-white hover:bg-primary-700 shadow-sm active:scale-[0.98]'
+          }`}
+        >
+          {existingWhitelabel ? <Pencil className="h-3.5 w-3.5" /> : <Tag className="h-3.5 w-3.5" />}
+          {existingWhitelabel ? 'Edit white-label' : 'Create white-label'}
+        </button>
 
-        {disabled && (
-          <p className="text-center text-[11px] text-gray-400">Actions disabled — parent is inactive.</p>
+        {(disabled || pkg.isSuspended) && (
+          <p className="text-center text-[10px] font-medium text-red-500/80">
+            {pkg.isSuspended ? 'Original package suspended by admin' : 'Parent agent is currently inactive'}
+          </p>
         )}
       </div>
 

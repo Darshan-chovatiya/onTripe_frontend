@@ -87,21 +87,6 @@ export default function ManageSubChildren() {
   const handleSaveSubAgent = async (formData, id) => {
     try {
       if (id) {
-        // Extract kycStatus and rejectionReason before sending to update endpoint
-        const kycStatus = formData.get('kycStatus')
-        const rejectionReason = formData.get('rejectionReason')
-
-        // Call the appropriate KYC endpoint if status changed
-        if (kycStatus === 'approved') {
-          await approveSubChildKyc(id)
-        } else if (kycStatus === 'rejected' && rejectionReason) {
-          await rejectSubChildKyc(id, rejectionReason)
-        }
-
-        // Remove kycStatus and rejectionReason from formData before sending to update
-        formData.delete('kycStatus')
-        formData.delete('rejectionReason')
-
         await updateSubChildAgent(id, formData)
         toast.success('Sub-agent updated successfully')
       } else {

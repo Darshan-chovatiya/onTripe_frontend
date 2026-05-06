@@ -146,6 +146,14 @@ export function toggleAgencyCustomerActive(id) {
   return axiosInstance.patch(`/parent-agent/customers/${id}/toggle-status`)
 }
 
+export function createAgencyCustomer(body) {
+  return axiosInstance.post('/parent-agent/customers', body)
+}
+
+export function importAgencyCustomers(customers) {
+  return axiosInstance.post('/parent-agent/customers/import', { customers })
+}
+
 export function updateBooking(id, data) {
   return axiosInstance.patch(`/parent-agent/bookings/${id}`, data)
 }

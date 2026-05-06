@@ -89,13 +89,13 @@ export default function CreateBooking() {
   const [maxCapacity, setMaxCapacity] = useState(null)
   const [minTotalAmount, setMinTotalAmount] = useState(0)
 
-  const activeWhitelabels = (whitelabels ?? []).filter((w) => w.isActive !== false)
+  const activeWhitelabels = (whitelabels ?? []).filter((w) => w.isActive !== false && w.originalPackage?.isSuspended !== true)
 
   useEffect(() => {
     const hasWl = activeWhitelabels.length > 0
-    const hasPkg = (availablePackages ?? []).length > 0
+    const hasPkg = (availablePackages ?? []).filter(p => !p.isSuspended).length > 0
     setOfferType(hasWl ? 'whitelabel' : hasPkg ? 'package' : 'whitelabel')
-  }, [activeWhitelabels.length, availablePackages?.length])
+  }, [activeWhitelabels.length, (availablePackages ?? []).filter(p => !p.isSuspended).length])
 
   const toDateOnly = (dateStr) => {
     if (!dateStr) return ''

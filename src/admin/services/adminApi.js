@@ -141,6 +141,7 @@ const adminApi = {
   getPackageHierarchy: (id) => axiosInstance.get(`/admin/packages/${id}/hierarchy`),
   approvePackage: (id) => axiosInstance.patch(`/admin/packages/approve/${id}`),
   rejectPackage: (id, rejectionReason) => axiosInstance.patch(`/admin/packages/reject/${id}`, { rejectionReason }),
+  togglePackageSuspension: (id) => axiosInstance.patch(`/admin/packages/toggle-suspension/${id}`),
   getNotificationRecipients,
   sendNotification,
   getSentNotifications,

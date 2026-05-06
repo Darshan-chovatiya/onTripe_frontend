@@ -30,6 +30,7 @@ const emptyEdit = (item) => ({
   commissionValue: String(item?.commissionValue ?? 0),
   isActive: item?.isActive !== false,
   visibleToSubChildren: item?.visibleToSubChildren !== false,
+  isPriceLocked: item?.isPriceLocked || false,
 })
 
 export default function WhitelabelModal({
@@ -222,21 +223,23 @@ export default function WhitelabelModal({
           <div>
             <span className="mb-1 block text-sm font-medium text-gray-700">Markup type</span>
             <div className="flex gap-4 text-sm">
-              <label className="flex cursor-pointer items-center gap-2">
+              <label className={`flex items-center gap-2 ${form.isPriceLocked ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}>
                 <input
                   type="radio"
                   name="commissionType"
                   checked={form.commissionType === 'flat'}
                   onChange={() => setForm((f) => ({ ...f, commissionType: 'flat' }))}
+                  disabled={form.isPriceLocked}
                 />
                 Flat (₹)
               </label>
-              <label className="flex cursor-pointer items-center gap-2">
+              <label className={`flex items-center gap-2 ${form.isPriceLocked ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}>
                 <input
                   type="radio"
                   name="commissionType"
                   checked={form.commissionType === 'percentage'}
                   onChange={() => setForm((f) => ({ ...f, commissionType: 'percentage' }))}
+                  disabled={form.isPriceLocked}
                 />
                 Percent (%)
               </label>
@@ -251,13 +254,20 @@ export default function WhitelabelModal({
               type="number"
               min={0}
               step="0.01"
-              className="input-field w-full"
+              className="input-field w-full disabled:bg-gray-50 disabled:text-gray-400"
               value={form.commissionValue}
               onChange={(e) => setForm((f) => ({ ...f, commissionValue: e.target.value }))}
               required
+              disabled={form.isPriceLocked}
             />
           </div>
         </div>
+        {form.isPriceLocked && (
+          <p className="flex items-center gap-1 text-[10px] font-medium text-amber-600">
+            <span className="flex h-3.5 w-3.5 items-center justify-center rounded-full bg-amber-100 text-[10px] font-bold text-amber-600">!</span>
+            Markup is locked once the white-label offer is created.
+          </p>
+        )}
 
         {mode === 'edit' && (
           <div className="border-t border-gray-100 pt-4">

@@ -15,11 +15,12 @@ import { getApiErrorMessage } from '@/shared/services/apiHelpers.js'
 import { mapWhitelabelBySourceId } from '@/travelAgency/childAgency/utils/whitelabelHelpers.js'
 import { listParents } from '@/travelAgency/childAgency/services/childAgencyApi.js'
 import WhitelabelAgentsModal from '@/shared/components/WhitelabelAgentsModal.jsx'
+import AgentCommissionsModal from '@/shared/components/AgentCommissionsModal.jsx'
 
 export default function Packages() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const initialTab = searchParams.get('tab') || 'available'
+  const initialTab = searchParams.get('tab') || 'whitelabels'
   const initialSearch = searchParams.get('search') || ''
 
   const { availablePackages, whitelabels, loading, error, createWhitelabel, updateWhitelabel } = useChildPackages()
@@ -33,6 +34,7 @@ export default function Packages() {
   const [inactiveParentIds, setInactiveParentIds] = useState(new Set())
   const [modal, setModal] = useState({ open: false, mode: 'create', sourcePackage: null, whitelabel: null })
   const [agentsModal, setAgentsModal] = useState({ open: false, agents: [], title: '' })
+  const [commissionsModal, setCommissionsModal] = useState({ open: false, data: [], individualBookings: [], whitelabelAgents: [], title: '', basePrice: 0 })
 
   useEffect(() => {
     listParents().then(({ data }) => {
@@ -87,7 +89,7 @@ export default function Packages() {
   }, [whitelabels, search, wlStatusFilter])
 
   const packagesEligibleForNewWhitelabel = useMemo(
-    () => availablePackages.filter((p) => !whitelabelBySourceId.has(String(p._id))),
+    () => availablePackages.filter((p) => !p.isSuspended && !whitelabelBySourceId.has(String(p._id))),
     [availablePackages, whitelabelBySourceId]
   )
 
@@ -281,6 +283,14 @@ export default function Packages() {
                 onEdit={(item) => setModal({ open: true, mode: 'edit', sourcePackage: null, whitelabel: item })}
                 onToggleActive={handleToggleActive}
                 onShowAgents={(item) => setAgentsModal({ open: true, agents: item.whitelabelAgents || [], title: `Agents who whitelabeled "${item.customTitle || item.originalPackage?.title}"` })}
+                onShowCommissions={(item) => setCommissionsModal({
+                  open: true,
+                  data: item.agentEarningsBreakdown || [],
+                  individualBookings: item.individualBookings || [],
+                  whitelabelAgents: item.whitelabelAgents || [],
+                  title: `Financial Breakdown: ${item.customTitle || item.originalPackage?.title}`,
+                  basePrice: item.parentWhitelabel?.finalPrice || item.originalPackage?.basePrice || 0
+                })}
                 onChat={() => {
                   const pid = wl.originalPackage?._id || wl.originalPackage
                   if (!pid) return
@@ -315,6 +325,16 @@ export default function Packages() {
         onClose={() => setAgentsModal({ open: false, agents: [], title: '' })}
         agents={agentsModal.agents}
         title={agentsModal.title}
+      />
+
+      <AgentCommissionsModal
+        isOpen={commissionsModal.open}
+        onClose={() => setCommissionsModal({ open: false, data: [], individualBookings: [], title: '' })}
+        data={commissionsModal.data}
+        individualBookings={commissionsModal.individualBookings}
+        whitelabelAgents={commissionsModal.whitelabelAgents}
+        basePrice={commissionsModal.basePrice}
+        title={commissionsModal.title}
       />
     </div>
   )
