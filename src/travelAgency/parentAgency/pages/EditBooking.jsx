@@ -1,7 +1,9 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Plus, Trash2, FileUp } from 'lucide-react'
+import { ArrowLeft, Plus, Trash2, FileUp, Loader2 } from 'lucide-react'
 import { useParentBookings } from '@/travelAgency/parentAgency/hooks/useParentBookings.js'
+import { listCustomers } from '@/travelAgency/parentAgency/services/parentAgencyApi.js'
+import { Search, UserPlus, Users, X } from 'lucide-react'
 import Button from '@/shared/components/Button.jsx'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
 import { getApiErrorMessage } from '@/shared/services/apiHelpers.js'
@@ -39,6 +41,27 @@ function FileField({ label, name, value, onChange, multiple = false }) {
   )
 }
 
+function agencyCustomerDisplayName(c) {
+  return String(
+    (c.name != null && String(c.name).trim()) ||
+    (c.customer?.name != null && String(c.customer.name).trim()) ||
+    'Customer'
+  )
+}
+function agencyCustomerPhone(c) {
+  return c.customer?.phone != null ? String(c.customer.phone) : ''
+}
+function agencyCustomerEmail(c) {
+  return String(
+    (c.email != null && String(c.email).trim()) ||
+    (c.customer?.email != null && String(c.customer.email).trim()) ||
+    ''
+  )
+}
+function agencyCustomerSearchHaystack(c) {
+  return [agencyCustomerDisplayName(c), agencyCustomerPhone(c), agencyCustomerEmail(c)].join(' ').toLowerCase()
+}
+
 export default function EditBooking() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -64,8 +87,68 @@ export default function EditBooking() {
     passport: null, visaDoc: null, otherDocs: [],
   })
   const [basePackagePrice, setBasePackagePrice] = useState(0)
+  const [maxCapacity, setMaxCapacity] = useState(null)
+  const [remainingCapacity, setRemainingCapacity] = useState(null)
   const [minTotalAmount, setMinTotalAmount] = useState(0)
   const isFirstRender = useRef(true)
+
+  const [customerMode, setCustomerMode] = useState('new')
+  const [agencyCustomers, setAgencyCustomers] = useState([])
+  const [selectedExistingId, setSelectedExistingId] = useState('')
+  const [existingSearchQuery, setExistingSearchQuery] = useState('')
+
+  const [customersPage, setCustomersPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [loadingCustomers, setLoadingCustomers] = useState(false)
+  const isFetchingCustomersRef = useRef(false)
+
+  const loadCustomers = useCallback(async (p, q, append = false) => {
+    if (isFetchingCustomersRef.current) return
+    isFetchingCustomersRef.current = true
+    setLoadingCustomers(true)
+    try {
+      const res = await listCustomers({ page: p, limit: 10, search: q })
+      const data = res.data?.data
+      const newCustomers = data?.customers ?? []
+      setAgencyCustomers((prev) => (append ? [...prev, ...newCustomers] : newCustomers))
+      setTotalPages(data?.pagination?.totalPages ?? 1)
+      setCustomersPage(p)
+    } catch (err) {
+      console.error('Failed to load customers:', err)
+    } finally {
+      isFetchingCustomersRef.current = false
+      setLoadingCustomers(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    loadCustomers(1, '')
+  }, []) // Initial load
+
+  useEffect(() => {
+    if (customerMode !== 'existing') return
+    const t = setTimeout(() => {
+      loadCustomers(1, existingSearchQuery)
+    }, 400)
+    return () => clearTimeout(t)
+  }, [existingSearchQuery, customerMode, loadCustomers])
+
+  const selectedExistingRow = useMemo(
+    () => selectedExistingId ? agencyCustomers.find((c) => String(c._id) === selectedExistingId) ?? null : null,
+    [agencyCustomers, selectedExistingId]
+  )
+
+  const applyExistingCustomer = (row) => {
+    if (!row) return
+    const phone = row.customer?.phone != null ? String(row.customer.phone) : ''
+    const name = (row.name != null && String(row.name).trim()) || (row.customer?.name != null ? String(row.customer.name) : '')
+    const email = (row.email != null && String(row.email).trim()) || (row.customer?.email != null ? String(row.customer.email) : '')
+    setCustomerPhone(phone.replace(/\D/g, '').slice(0, 10)); setCustomerName(name); setCustomerEmail(email)
+  }
+
+  const clearExistingCustomerSelection = () => {
+    setSelectedExistingId(''); setCustomerName(''); setCustomerPhone(''); setCustomerEmail('')
+  }
 
   useEffect(() => {
     if (!id) return
@@ -84,6 +167,8 @@ export default function EditBooking() {
           setPaymentStatus(data.paymentStatus || 'pending')
           setBookingStatus(data.bookingStatus || 'confirmed')
           setBasePackagePrice(data.package?.basePrice || 0)
+          setMaxCapacity(data.package?.maxCapacity ?? null)
+          setRemainingCapacity(data.package?.remainingCapacity ?? null)
           setTravelers(
             (data.travelers || []).map((t) => {
               travelerIdRef.current += 1
@@ -114,6 +199,22 @@ export default function EditBooking() {
   }, [id, getDetail])
 
   const addTraveler = () => {
+    if (maxCapacity != null) {
+      // currentTotal = others + currentNew
+      // others = totalBooked - currentOld
+      // currentTotal = totalBooked - currentOld + currentNew
+      // We want currentTotal <= maxCapacity
+      // totalBooked - currentOld + travelers.length + 2 <= maxCapacity
+      // remainingCapacity + currentOld - currentOld + travelers.length + 2 <= maxCapacity
+      // remainingCapacity + travelers.length + 2 <= maxCapacity
+      // Wait, remainingCapacity already accounts for current booking.
+      // So available seats = remainingCapacity + currentBooking.travelerCount
+      const available = (remainingCapacity ?? 0) + (booking?.travelerCount || 0)
+      if (travelers.length + 2 > available) {
+        toast.error(`Package capacity is ${maxCapacity}. You can have at most ${available} people in this booking.`)
+        return
+      }
+    }
     travelerIdRef.current += 1
     setTravelers((t) => [...t, emptyTraveler(travelerIdRef.current)])
   }
@@ -138,6 +239,14 @@ export default function EditBooking() {
     if (!customerName.trim() || !customerPhone.trim()) return
     const amount = Number(totalAmount)
     if (Number.isNaN(amount) || amount <= 0) return
+
+    if (maxCapacity != null) {
+      const available = (remainingCapacity ?? 0) + (booking?.travelerCount || 0)
+      if (travelers.length + 1 > available) {
+        toast.error(`Package capacity is ${maxCapacity}. You can have at most ${available} people in this booking.`)
+        return
+      }
+    }
 
     const originalTravelers = booking.travelers || []
     const validTravelers = travelers
@@ -216,21 +325,112 @@ export default function EditBooking() {
 
       {booking && !loading && (
         <form onSubmit={handleSave} className="space-y-5">
+          {/* Customer section */}
+          <div className="rounded-xl border border-gray-200 bg-gray-50/80 p-4 space-y-4">
+            <span className="block text-sm font-medium text-gray-800">Customer</span>
+
+            <div className="flex flex-wrap gap-2">
+              <button type="button"
+                onClick={() => { setCustomerMode('new'); setSelectedExistingId(''); setExistingSearchQuery('') }}
+                className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold transition ${customerMode === 'new' ? 'bg-primary-600 text-white shadow-sm' : 'bg-white text-gray-700 ring-1 ring-gray-200 hover:bg-gray-50'}`}>
+                <UserPlus className="h-3.5 w-3.5" /> New / enter details
+              </button>
+              {agencyCustomers.length > 0 && (
+                <button type="button"
+                  onClick={() => { setCustomerMode('existing'); setSelectedExistingId(''); setExistingSearchQuery('') }}
+                  className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold transition ${customerMode === 'existing' ? 'bg-primary-600 text-white shadow-sm' : 'bg-white text-gray-700 ring-1 ring-gray-200 hover:bg-gray-50'}`}>
+                  <Users className="h-3.5 w-3.5" /> Choose existing
+                </button>
+              )}
+            </div>
+
+            {customerMode === 'existing' && (
+              <div className="space-y-3">
+                {selectedExistingId && selectedExistingRow ? (
+                  <div className="flex items-start justify-between gap-2 rounded-lg border border-emerald-200 bg-emerald-50/90 px-3 py-2 text-xs text-emerald-950">
+                    <div className="min-w-0">
+                      <span className="font-semibold">Selected: </span>
+                      {agencyCustomerDisplayName(selectedExistingRow)}
+                      {agencyCustomerPhone(selectedExistingRow) ? ` · ${agencyCustomerPhone(selectedExistingRow)}` : ''}
+                    </div>
+                    <button type="button" onClick={clearExistingCustomerSelection}
+                      className="shrink-0 rounded-md p-1 text-emerald-800 hover:bg-emerald-100">
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <div className="relative">
+                      <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                      <input type="search" autoComplete="off" placeholder="Type name, phone, or email…"
+                        className={`${inputCls} pl-9`} value={existingSearchQuery}
+                        onChange={(e) => setExistingSearchQuery(e.target.value)}
+                        disabled={agencyCustomers.length === 0} />
+                    </div>
+                    <ul className="max-h-56 overflow-y-auto rounded-xl border border-gray-200 bg-white shadow-sm" role="listbox">
+                      {agencyCustomers.length === 0 && !loadingCustomers && (
+                        <li className="px-3 py-4 text-center text-sm text-gray-500">No customers found.</li>
+                      )}
+                      {agencyCustomers.map((c) => {
+                        const id = String(c._id)
+                        const selected = selectedExistingId === id
+                        return (
+                          <li key={id} role="option" aria-selected={selected}>
+                            <button type="button"
+                              onClick={() => { setSelectedExistingId(id); applyExistingCustomer(c) }}
+                              className={`flex w-full flex-col items-start gap-0.5 border-b border-gray-50 px-3 py-2.5 text-left text-sm transition last:border-b-0 ${selected ? 'bg-primary-50 text-primary-950' : 'hover:bg-gray-50'}`}>
+                              <span className="font-medium text-gray-900">{agencyCustomerDisplayName(c)}</span>
+                              <span className="text-xs text-gray-600">{agencyCustomerPhone(c) || '—'}{agencyCustomerEmail(c) ? ` · ${agencyCustomerEmail(c)}` : ''}</span>
+                            </button>
+                          </li>
+                        )
+                      })}
+                      {totalPages > 1 && (
+                        <li className="sticky bottom-0 border-t border-gray-100 bg-gray-50/95 p-2 backdrop-blur-sm">
+                          <div className="flex items-center justify-between gap-2">
+                            <button type="button"
+                              onClick={() => loadCustomers(customersPage - 1, existingSearchQuery)}
+                              disabled={customersPage <= 1 || loadingCustomers}
+                              className="rounded-md border border-gray-200 bg-white px-2.5 py-1.5 text-[10px] font-semibold text-gray-700 shadow-sm hover:bg-gray-50 disabled:opacity-30">
+                              Previous
+                            </button>
+                            <span className="text-[10px] font-medium text-gray-500">
+                              Page {customersPage} of {totalPages}
+                            </span>
+                            <button type="button"
+                              onClick={() => loadCustomers(customersPage + 1, existingSearchQuery)}
+                              disabled={customersPage >= totalPages || loadingCustomers}
+                              className="rounded-md border border-gray-200 bg-white px-2.5 py-1.5 text-[10px] font-semibold text-gray-700 shadow-sm hover:bg-gray-50 disabled:opacity-30">
+                              Next
+                            </button>
+                          </div>
+                        </li>
+                      )}
+                    </ul>
+                  </>
+                )}
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="sm:col-span-2">
+                <label className="mb-1 block text-sm font-medium text-gray-700">Customer name <span className="text-red-500">*</span></label>
+                <input className={inputCls} value={customerName} onChange={(e) => setCustomerName(e.target.value)} required />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">Phone <span className="text-red-500">*</span></label>
+                <input className={inputCls} value={customerPhone}
+                  onChange={(e) => setCustomerPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                  required inputMode="numeric" maxLength={10} placeholder="10-digit mobile number" />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">Email</label>
+                <input type="email" className={inputCls} value={customerEmail} onChange={(e) => setCustomerEmail(e.target.value)} />
+              </div>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="sm:col-span-2">
-              <label className="mb-1 block text-sm font-medium text-gray-700">Customer name <span className="text-red-500">*</span></label>
-              <input className={inputCls} value={customerName} onChange={(e) => setCustomerName(e.target.value)} required />
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Phone <span className="text-red-500">*</span></label>
-              <input className={inputCls} value={customerPhone}
-                onChange={(e) => setCustomerPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                required inputMode="numeric" maxLength={10} placeholder="10-digit mobile number" />
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Email</label>
-              <input type="email" className={inputCls} value={customerEmail} onChange={(e) => setCustomerEmail(e.target.value)} />
-            </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700">Travel date <span className="text-red-500">*</span></label>
               <input type="datetime-local" className={`${inputCls} bg-gray-50 text-gray-500 cursor-default`} value={travelDate} readOnly required />
@@ -241,6 +441,7 @@ export default function EditBooking() {
               <input type="number" min={minTotalAmount} className={`${inputCls} ${Number(totalAmount) < minTotalAmount ? 'border-red-300 bg-red-50' : ''}`}
                 value={totalAmount} 
                 onChange={(e) => setTotalAmount(e.target.value)}
+                onWheel={(e) => e.target.blur()}
                 required />
               <p className={`mt-1 text-xs ${Number(totalAmount) < minTotalAmount ? 'text-red-600 font-medium' : 'text-gray-400'}`}>
                 Minimum: ₹{minTotalAmount.toLocaleString('en-IN')} (₹{basePackagePrice.toLocaleString('en-IN')} × {travelers.length + 1} traveler{travelers.length + 1 !== 1 ? 's' : ''})
@@ -285,6 +486,17 @@ export default function EditBooking() {
           <div>
             <div className="mb-2 flex items-center justify-between">
               <span className="text-sm font-medium text-gray-700">Additional travelers</span>
+              {maxCapacity != null && (
+                <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                  travelers.length + 1 >= (remainingCapacity ?? 0) + (booking?.travelerCount || 0)
+                    ? 'bg-red-100 text-red-700'
+                    : travelers.length + 1 >= (remainingCapacity ?? 0) + (booking?.travelerCount || 0) - 1
+                    ? 'bg-amber-100 text-amber-700'
+                    : 'bg-slate-100 text-slate-600'
+                }`}>
+                  {travelers.length + 1}/{(remainingCapacity ?? 0) + (booking?.travelerCount || 0)} available
+                </span>
+              )}
               <Button type="button" variant="secondary" className="py-1.5 text-xs" onClick={addTraveler}>
                 <Plus className="mr-1 inline h-3.5 w-3.5" /> Add traveler
               </Button>

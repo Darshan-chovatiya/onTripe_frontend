@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { MapPin, Clock, IndianRupee, Sparkles, Tag, Pencil, Eye, Users, CalendarDays, ShieldAlert, CheckCircle2 } from 'lucide-react'
+import { MapPin, Clock, IndianRupee, Sparkles, Tag, Pencil, Eye, Users, CalendarDays, ShieldAlert, CheckCircle2, Ticket } from 'lucide-react'
 import { packageCoverUrl } from '@/travelAgency/childAgency/components/packageMedia.js'
 import PackageDetailModal from '@/travelAgency/childAgency/components/PackageDetailModal.jsx'
 
@@ -120,14 +120,29 @@ export default function AvailablePackageCard({ pkg, existingWhitelabel, onCreate
 
       {/* Actions */}
       <div className="mt-auto space-y-2 border-t border-gray-100 p-3">
-        <button
-          type="button"
-          onClick={() => setDetailOpen(true)}
-          className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-gray-200 bg-white py-2 text-xs font-medium text-gray-700 transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-800"
-        >
-          <Eye className="h-3.5 w-3.5" strokeWidth={2} />
-          View details
-        </button>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => setDetailOpen(true)}
+            className="flex-1 items-center justify-center gap-1.5 rounded-xl border border-gray-200 bg-white py-2 text-xs font-medium text-gray-700 transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-800"
+          >
+            <Eye className="h-3.5 w-3.5 inline mr-1" strokeWidth={2} />
+            View
+          </button>
+          {/* <button
+            type="button"
+            onClick={() => {
+              const target = existingWhitelabel 
+                ? `/agency/bookings/create?whitelabelId=${existingWhitelabel._id}` 
+                : `/agency/bookings/create?packageId=${pkg._id}`;
+              navigate(target);
+            }}
+            className="flex-1 items-center justify-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 py-2 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-100"
+          >
+            <Ticket className="h-3.5 w-3.5 inline mr-1" strokeWidth={2} />
+            Book
+          </button> */}
+        </div>
 
         <button
           type="button"

@@ -40,6 +40,7 @@ export default function Bookings() {
   const [page, setPage] = useState(1)
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1, totalCount: 0 })
   const [exportLoading, setExportLoading] = useState(false)
+  const [agentType, setAgentType] = useState('all') // 'all', 'self', 'agency'
 
   const fetchBookings = useCallback(async () => {
     setLoading(true)
@@ -51,6 +52,7 @@ export default function Bookings() {
         search: search.trim(),
         status: statusFilter === 'all' ? undefined : statusFilter,
         packageId: packageFilter === 'all' ? undefined : packageFilter,
+        agentType: agentType === 'all' ? undefined : agentType,
       })
       const bookingsData = res.data?.data?.bookings || []
       const paginationData = res.data?.data?.pagination || { page: 1, totalPages: 1, totalCount: bookingsData.length }
@@ -65,11 +67,11 @@ export default function Bookings() {
     } finally {
       setLoading(false)
     }
-  }, [page, search, statusFilter, packageFilter])
+  }, [page, search, statusFilter, packageFilter, agentType])
 
   useEffect(() => { fetchBookings() }, [fetchBookings])
 
-  useEffect(() => { setPage(1) }, [search, statusFilter, packageFilter])
+  useEffect(() => { setPage(1) }, [search, statusFilter, packageFilter, agentType])
 
   useEffect(() => {
     listMyPackages()
@@ -131,6 +133,40 @@ export default function Bookings() {
             Export Excel
           </button>
         </div>
+      </div>
+
+      {/* Booking Source Tabs */}
+      <div className="flex border-b border-gray-200">
+        <button
+          onClick={() => setAgentType('all')}
+          className={`px-4 py-2 text-sm font-medium transition-colors ${
+            agentType === 'all'
+              ? 'border-b-2 border-primary-600 text-primary-600'
+              : 'text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          All Bookings
+        </button>
+        <button
+          onClick={() => setAgentType('self')}
+          className={`px-4 py-2 text-sm font-medium transition-colors ${
+            agentType === 'self'
+              ? 'border-b-2 border-primary-600 text-primary-600'
+              : 'text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          My Bookings
+        </button>
+        <button
+          onClick={() => setAgentType('agency')}
+          className={`px-4 py-2 text-sm font-medium transition-colors ${
+            agentType === 'agency'
+              ? 'border-b-2 border-primary-600 text-primary-600'
+              : 'text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          Agency Bookings
+        </button>
       </div>
 
       {/* Card */}
@@ -213,6 +249,7 @@ export default function Bookings() {
                   <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wide text-gray-400">Package</th>
                   <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wide text-gray-400">Travel Date</th>
                   <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wide text-gray-400">Amount</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wide text-gray-400">Booked By</th>
                   <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wide text-gray-400">Status</th>
                   <th className="px-4 py-3 text-right text-[11px] font-bold uppercase tracking-wide text-gray-400">Actions</th>
                 </tr>
@@ -260,6 +297,14 @@ export default function Bookings() {
                           <p className="text-sm font-bold text-gray-900">₹{Number(b.totalAmount || 0).toLocaleString('en-IN')}</p>
                           <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold capitalize ${PAYMENT_STYLES[b.paymentStatus] || PAYMENT_STYLES.pending}`}>
                             {b.paymentStatus || 'pending'}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3.5 align-middle">
+                        <div className="flex flex-col">
+                          <p className="text-sm font-medium text-gray-900">{b.bookedBy?.name || '—'}</p>
+                          <span className={`inline-flex w-fit rounded-full px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-tighter ${b.bookedBy?.role === 'parent_agent' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'}`}>
+                            {b.bookedBy?.role?.replace('_', ' ') || 'agent'}
                           </span>
                         </div>
                       </td>

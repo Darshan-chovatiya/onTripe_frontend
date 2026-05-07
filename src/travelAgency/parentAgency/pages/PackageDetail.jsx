@@ -5,7 +5,7 @@ import {
   CheckCircle2, XCircle, CalendarDays, Clock3, MapPinned,
   Layers, ImagePlus, Store, Sparkles, AlertTriangle,
   UtensilsCrossed, FileText, BadgeCheck, PauseCircle,
-  Link2, Video, MessageSquare
+  Link2, Video, MessageSquare, Mail, Phone
 } from 'lucide-react'
 import { AGENCY_PANEL_BASE } from '@/travelAgency/agency/constants.js'
 import { getPackageById } from '@/travelAgency/parentAgency/services/parentAgencyApi.js'
@@ -82,17 +82,25 @@ function VendorBlock({ vendor }) {
         <p className="flex items-center gap-1.5 font-semibold text-gray-900">
           <Store className="h-3.5 w-3.5 shrink-0 text-gray-500" />{v.name}
         </p>
-        <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-gray-500">
+        <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1.5 text-gray-500">
           {typeLabel && <span className="capitalize">{typeLabel}</span>}
-          {v.phone && <span>{v.phone}</span>}
+          {v.phone && (
+            <a href={`tel:${v.phone}`} className="flex items-center gap-1 text-primary-600 hover:underline">
+              <Phone size={10} /> {v.phone}
+            </a>
+          )}
+          {v.email && (
+            <a href={`mailto:${v.email}`} className="flex items-center gap-1 text-primary-600 hover:underline">
+              <Mail size={10} /> {v.email}
+            </a>
+          )}
           {v.contactPerson && <span>Contact: {v.contactPerson}</span>}
           {place && <span className="[overflow-wrap:anywhere]">{place}</span>}
         </div>
       </div>
     )
   }
-  const id = String(vendor)
-  return <p className="mt-1 text-xs text-gray-400">Vendor ref{id.length >= 8 ? ` · ${id.slice(0, 8)}…` : ''}</p>
+  return null
 }
 
 function MealsDetail({ meals }) {

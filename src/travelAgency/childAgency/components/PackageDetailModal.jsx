@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import {
   MapPin, Clock, Users, IndianRupee, CheckCircle2, XCircle,
-  CalendarDays, Image, AlertTriangle, X, ChevronLeft, ChevronRight
+  CalendarDays, Image, AlertTriangle, X, ChevronLeft, ChevronRight, Phone, Mail, Building2
 } from 'lucide-react'
 import Modal from '@/shared/components/Modal.jsx'
 
@@ -227,14 +227,36 @@ export default function PackageDetailModal({ isOpen, onClose, pkg, isWhitelabel 
                         <div className="flex flex-wrap gap-3 mt-1 text-xs text-gray-400">
                           {exp.startTime && <span>{exp.startTime}{exp.endTime ? ` – ${exp.endTime}` : ''}</span>}
                           {exp.location && <span className="flex items-center gap-0.5"><MapPin className="h-3 w-3" />{exp.location}</span>}
-                          <span className={`inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium ring-1 ${
-                            exp.includedInPrice !== false 
-                              ? 'bg-emerald-50 text-emerald-700 ring-emerald-100' 
+                          <span className={`inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium ring-1 ${exp.includedInPrice !== false
+                              ? 'bg-emerald-50 text-emerald-700 ring-emerald-100'
                               : 'bg-amber-50 text-amber-700 ring-amber-100'
-                          }`}>
+                            }`}>
                             {exp.includedInPrice !== false ? 'Included' : 'Extra Chargeable'}
                           </span>
                         </div>
+
+                        {exp.vendor && typeof exp.vendor === 'object' && exp.vendor.name && (
+                          <div className="mt-3 border-t border-gray-100 pt-2.5">
+                            <p className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-gray-400">
+                              <Building2 size={10} /> Vendor Details
+                            </p>
+                            <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1.5 text-[11px]">
+                              <span className="font-semibold text-gray-700">
+                                {exp.vendor.name}
+                              </span>
+                              {exp.vendor.phone && (
+                                <a href={`tel:${exp.vendor.phone}`} className="flex items-center gap-1 text-primary-600 hover:underline">
+                                  <Phone size={10} /> {exp.vendor.phone}
+                                </a>
+                              )}
+                              {exp.vendor.email && (
+                                <a href={`mailto:${exp.vendor.email}`} className="flex items-center gap-1 text-primary-600 hover:underline">
+                                  <Mail size={10} /> {exp.vendor.email}
+                                </a>
+                              )}
+                            </div>
+                          </div>
+                        )}
                       </li>
                     ))}
                   </ul>

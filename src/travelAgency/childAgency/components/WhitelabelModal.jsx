@@ -257,6 +257,7 @@ export default function WhitelabelModal({
               className="input-field w-full disabled:bg-gray-50 disabled:text-gray-400"
               value={form.commissionValue}
               onChange={(e) => setForm((f) => ({ ...f, commissionValue: e.target.value }))}
+              onWheel={(e) => e.target.blur()}
               required
               disabled={form.isPriceLocked}
             />

@@ -19,6 +19,7 @@ import {
   CheckCircle2,
   Video,
   Play,
+  Settings,
 } from 'lucide-react'
 import { io } from 'socket.io-client'
 import axiosInstance from '@/shared/services/axiosInstance.js'
@@ -102,6 +103,16 @@ export default function CommunityChat({
   const [isSearchingFace, setIsSearchingFace] = useState(false)
   const [selectedImages, setSelectedImages] = useState([])
   const [isSelectionMode, setIsSelectionMode] = useState(false)
+
+  // Settings
+  const [isSocketEnabled, setIsSocketEnabled] = useState(() => {
+    const saved = localStorage.getItem('chat_socket_enabled')
+    return saved !== 'false'
+  })
+  const [isMuted, setIsMuted] = useState(() => {
+    const saved = localStorage.getItem('chat_muted')
+    return saved === 'true'
+  })
 
   const scrollRef = useRef(null)
   const socketRef = useRef(null)
@@ -200,7 +211,12 @@ export default function CommunityChat({
   }
 
   const setupSocket = (communityId) => {
-    if (socketRef.current) socketRef.current.disconnect()
+    if (socketRef.current) {
+      socketRef.current.disconnect()
+      socketRef.current = null
+    }
+
+    if (!isSocketEnabled) return
 
     socketRef.current = io(SOCKET_URL)
     socketRef.current.emit('join_community', communityId)
@@ -209,6 +225,18 @@ export default function CommunityChat({
       setMessages((prev) => {
         const mid = msg?._id != null ? String(msg._id) : ''
         if (mid && prev.some((p) => String(p._id) === mid)) return prev
+        
+        // Play sound if not muted and not from self
+        const msgMe = selfId && (msg.sender?._id === selfId || (typeof msg.sender === 'string' && msg.sender === selfId))
+        if (!msgMe) {
+          const savedMuted = localStorage.getItem('chat_muted') === 'true'
+          if (!savedMuted) {
+            const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3')
+            audio.volume = 0.5
+            audio.play().catch(() => {}) // Browser might block autoplay without interaction
+          }
+        }
+
         return [...prev, msg]
       })
     })
@@ -241,7 +269,7 @@ export default function CommunityChat({
     return () => {
       if (socketRef.current) socketRef.current.disconnect()
     }
-  }, [packageId])
+  }, [packageId, isSocketEnabled])
 
   useEffect(() => {
     pendingImagesRef.current = pendingImages
@@ -875,6 +903,15 @@ export default function CommunityChat({
               >
                 <ImageIcon className="h-5 w-5" strokeWidth={2} />
               </button>
+              <button
+                type="button"
+                onClick={() => setSubScreen('settings')}
+                className="flex h-10 w-10 items-center justify-center rounded-full text-gray-600 hover:bg-black/5 dark:text-gray-300 dark:hover:bg-white/10"
+                title="Settings"
+                aria-label="Settings"
+              >
+                <Settings className="h-5 w-5" strokeWidth={2} />
+              </button>
             </div>
           </>
         )}
@@ -995,6 +1032,81 @@ export default function CommunityChat({
                 )
               })}
             </ul>
+          </div>
+        </div>
+      ) : subScreen === 'settings' ? (
+        <div className="min-h-0 flex-1 overflow-y-auto bg-white dark:bg-gray-950">
+          <div className="p-4 space-y-6">
+            <section>
+              <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3 px-1">Connectivity</h4>
+              <div className="space-y-2">
+                <label className="flex items-center justify-between p-3 rounded-xl border border-gray-100 bg-gray-50/50 dark:border-white/5 dark:bg-white/5">
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900 dark:text-white">Online Status</p>
+                    <p className="text-xs text-gray-500">Enable real-time message updates</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const next = !isSocketEnabled
+                      setIsSocketEnabled(next)
+                      localStorage.setItem('chat_socket_enabled', String(next))
+                    }}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                      isSocketEnabled ? 'bg-primary-600' : 'bg-gray-200 dark:bg-gray-700'
+                    }`}
+                  >
+                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isSocketEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
+                  </button>
+                </label>
+              </div>
+            </section>
+
+            <section>
+              <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3 px-1">Notifications</h4>
+              <div className="space-y-2">
+                <label className="flex items-center justify-between p-3 rounded-xl border border-gray-100 bg-gray-50/50 dark:border-white/5 dark:bg-white/5">
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900 dark:text-white">Message Sounds</p>
+                    <p className="text-xs text-gray-500">Play a sound for incoming messages</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const next = !isMuted
+                      setIsMuted(next)
+                      localStorage.setItem('chat_muted', String(next))
+                    }}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                      !isMuted ? 'bg-primary-600' : 'bg-gray-200 dark:bg-gray-700'
+                    }`}
+                  >
+                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${!isMuted ? 'translate-x-6' : 'translate-x-1'}`} />
+                  </button>
+                </label>
+
+                <label className="flex items-center justify-between p-3 rounded-xl border border-gray-100 bg-gray-50/50 dark:border-white/5 dark:bg-white/5">
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900 dark:text-white">Push Notifications</p>
+                    <p className="text-xs text-gray-500">Server-side notification preference</p>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={notifToggling}
+                    onClick={handleNotificationToggle}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                      notificationsEnabled ? 'bg-primary-600' : 'bg-gray-200 dark:bg-gray-700'
+                    }`}
+                  >
+                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${notificationsEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
+                  </button>
+                </label>
+              </div>
+            </section>
+
+            <div className="pt-4 border-t border-gray-100 dark:border-white/5 text-center">
+              <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Package Chat Settings</p>
+            </div>
           </div>
         </div>
       ) : subScreen === 'gallery' ? (

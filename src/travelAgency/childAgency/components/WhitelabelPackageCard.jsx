@@ -162,14 +162,22 @@ export default function WhitelabelPackageCard({ item, onEdit, onToggleActive, on
 
       {/* Actions */}
       <div className="mt-auto space-y-2 border-t border-gray-100 p-3">
-        <button
-          type="button"
-          onClick={() => setDetailOpen(true)}
-          className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-gray-200 bg-white py-2.5 text-xs font-semibold text-gray-700 transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-800"
-        >
-          <Eye className="h-4 w-4" strokeWidth={2} />
-          View details
-        </button>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => setDetailOpen(true)}
+            className="flex-1 rounded-xl bg-primary-600 py-2 text-xs font-semibold text-white transition hover:bg-primary-700 active:scale-[0.98]"
+          >
+            View details
+          </button>
+          <button
+            type="button"
+            onClick={() => navigate(`/agency/bookings/create?whitelabelId=${item._id}`)}
+            className="flex-1 rounded-xl bg-emerald-600 py-2 text-xs font-semibold text-white transition hover:bg-emerald-700 active:scale-[0.98]"
+          >
+            Book Now
+          </button>
+        </div>
 
         <div className="flex flex-col gap-2">
           <div className="flex gap-2">

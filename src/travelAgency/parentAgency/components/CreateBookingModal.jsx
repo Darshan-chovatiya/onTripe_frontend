@@ -24,7 +24,13 @@ export default function CreateBookingModal({ isOpen, onClose, onSubmit, loading 
     }
   }, [isOpen])
 
-  const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
+  const set = (k, v) => {
+    let finalValue = v
+    if (k === 'customerPhone') {
+      finalValue = v.replace(/\D/g, '').slice(0, 10)
+    }
+    setForm(f => ({ ...f, [k]: finalValue }))
+  }
 
   const addTraveler = () => setForm(f => ({ ...f, travelers: [...f.travelers, emptyTraveler()] }))
   const removeTraveler = (i) => setForm(f => ({ ...f, travelers: f.travelers.filter((_, idx) => idx !== i) }))
@@ -36,6 +42,10 @@ export default function CreateBookingModal({ isOpen, onClose, onSubmit, loading 
 
   const handleSubmit = (e) => {
     e.preventDefault()
+    if (form.customerPhone.length !== 10) {
+      alert('Please provide a valid 10-digit phone number')
+      return
+    }
     onSubmit({
       packageId: form.packageId,
       customerName: form.customerName,
@@ -76,7 +86,15 @@ export default function CreateBookingModal({ isOpen, onClose, onSubmit, loading 
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Phone *</label>
-            <input required className="input-field" value={form.customerPhone} onChange={e => set('customerPhone', e.target.value)} placeholder="Phone number" />
+            <input
+              required
+              type="tel"
+              maxLength={10}
+              className="input-field"
+              value={form.customerPhone}
+              onChange={e => set('customerPhone', e.target.value)}
+              placeholder="10-digit mobile number"
+            />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>

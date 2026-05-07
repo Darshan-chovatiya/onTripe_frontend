@@ -88,13 +88,13 @@ export default function PackageFormModal({ isOpen, onClose, onSubmit, initialDat
       const next = f.itinerary.length + 1
       const arr = [...f.itinerary, emptyDay(next)]
       setExpandedDays(e => ({ ...e, [f.itinerary.length]: true }))
-      return { ...f, itinerary: arr }
+      return { ...f, itinerary: arr, totalDays: String(arr.length) }
     })
   }
   const removeDay = (di) => {
     setForm(f => {
       const arr = f.itinerary.filter((_, i) => i !== di).map((d, i) => ({ ...d, day: i + 1 }))
-      return { ...f, itinerary: arr }
+      return { ...f, itinerary: arr, totalDays: String(arr.length) }
     })
   }
 
@@ -235,11 +235,11 @@ export default function PackageFormModal({ isOpen, onClose, onSubmit, initialDat
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Total Days *</label>
-            <input required type="number" min="1" className="input-field" value={form.totalDays} onChange={e => set('totalDays', e.target.value)} />
+            <input required type="number" min="1" className="input-field" value={form.totalDays} onChange={e => set('totalDays', e.target.value)} onWheel={(e) => e.target.blur()} />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Max Capacity</label>
-            <input type="number" min="1" className="input-field" value={form.maxCapacity} onChange={e => set('maxCapacity', e.target.value)} />
+            <input type="number" min="1" className="input-field" value={form.maxCapacity} onChange={e => set('maxCapacity', e.target.value)} onWheel={(e) => e.target.blur()} />
           </div>
           <div className="sm:col-span-2">
             <label className="block text-sm font-medium text-gray-700 mb-1">Base Price Incl GST *</label>
@@ -247,7 +247,7 @@ export default function PackageFormModal({ isOpen, onClose, onSubmit, initialDat
               <select className="input-field w-24" value={form.currency} onChange={e => set('currency', e.target.value)}>
                 <option>INR</option><option>USD</option><option>EUR</option>
               </select>
-              <input required type="number" min="0" className="input-field flex-1" value={form.basePrice} onChange={e => set('basePrice', e.target.value)} placeholder="0" />
+              <input required type="number" min="0" className="input-field flex-1" value={form.basePrice} onChange={e => set('basePrice', e.target.value)} placeholder="0" onWheel={(e) => e.target.blur()} />
             </div>
           </div>
         </div>

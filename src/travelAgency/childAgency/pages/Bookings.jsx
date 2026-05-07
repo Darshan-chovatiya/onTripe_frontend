@@ -50,6 +50,7 @@ export default function Bookings() {
   const [whitelabels, setWhitelabels] = useState([])
   const [page, setPage] = useState(1)
   const [exportLoading, setExportLoading] = useState(false)
+  const [agentType, setAgentType] = useState('all') // 'all', 'self', 'agency'
 
   // Fetch whitelabels for filter
   useEffect(() => {
@@ -61,7 +62,7 @@ export default function Bookings() {
   // Reset page when filters change
   useEffect(() => {
     setPage(1)
-  }, [search, statusFilter, whitelabelFilter])
+  }, [search, statusFilter, whitelabelFilter, agentType])
 
   // Fetch bookings with pagination
   useEffect(() => {
@@ -71,9 +72,10 @@ export default function Bookings() {
       search: search.trim(),
       status: statusFilter === 'all' ? undefined : statusFilter,
       packageId,
-      whitelabelId: whitelabelFilter === 'all' ? undefined : whitelabelFilter
+      whitelabelId: whitelabelFilter === 'all' ? undefined : whitelabelFilter,
+      agentType: agentType === 'all' ? undefined : agentType
     })
-  }, [fetchBookings, page, search, statusFilter, packageId, whitelabelFilter])
+  }, [fetchBookings, page, search, statusFilter, packageId, whitelabelFilter, agentType])
 
   const handleExport = async () => {
     setExportLoading(true)
@@ -133,6 +135,40 @@ export default function Bookings() {
           </Button>
         </div>
       </header>
+
+      {/* Booking Source Tabs */}
+      <div className="flex border-b border-gray-200">
+        <button
+          onClick={() => setAgentType('all')}
+          className={`px-4 py-2 text-sm font-medium transition-colors ${
+            agentType === 'all'
+              ? 'border-b-2 border-primary-600 text-primary-600'
+              : 'text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          All Bookings
+        </button>
+        <button
+          onClick={() => setAgentType('self')}
+          className={`px-4 py-2 text-sm font-medium transition-colors ${
+            agentType === 'self'
+              ? 'border-b-2 border-primary-600 text-primary-600'
+              : 'text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          My Bookings
+        </button>
+        <button
+          onClick={() => setAgentType('agency')}
+          className={`px-4 py-2 text-sm font-medium transition-colors ${
+            agentType === 'agency'
+              ? 'border-b-2 border-primary-600 text-primary-600'
+              : 'text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          Sub-Agency Bookings
+        </button>
+      </div>
 
       <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
         {/* Filters */}
@@ -219,8 +255,12 @@ export default function Bookings() {
                   {/* <th className="px-4 py-2.5 text-left align-middle text-xs font-medium text-gray-600">Package / offer</th> */}
                   <th className="px-4 py-2.5 text-left align-middle text-xs font-medium text-gray-600">Customer</th>
                   <th className="px-4 py-2.5 text-left align-middle text-xs font-medium text-gray-600">Travel date</th>
-                  <th className="px-4 py-2.5 text-left align-middle text-xs font-medium text-gray-600">Amount</th>
+                  <th className="px-4 py-2.5 text-left align-middle text-xs font-medium text-gray-600">Total Amount</th>
+                  <th className="px-4 py-2.5 text-left align-middle text-xs font-medium text-gray-600">Parent Price</th>
+                  <th className="px-4 py-2.5 text-left align-middle text-xs font-medium text-gray-600">WL Price</th>
                   <th className="px-4 py-2.5 text-left align-middle text-xs font-medium text-gray-600">Commission</th>
+                  <th className="px-4 py-2.5 text-left align-middle text-xs font-medium text-gray-600">Extra Income</th>
+                  <th className="px-4 py-2.5 text-left align-middle text-xs font-medium text-gray-600">Total Income</th>
                   <th className="px-4 py-2.5 text-left align-middle text-xs font-medium text-gray-600">Booked by</th>
                   <th className="px-4 py-2.5 text-left align-middle text-xs font-medium text-gray-600">Status</th>
                   <th className="px-4 py-2.5 text-right align-middle text-xs font-medium text-gray-600">Actions</th>
@@ -273,30 +313,48 @@ export default function Bookings() {
                       </td>
                       <td className="whitespace-nowrap px-4 py-2.5 align-middle text-gray-800">
                         <span className="inline-flex items-center gap-0.5">
-                          <IndianRupee className="h-3.5 w-3.5" />
+                          <IndianRupee className="h-3 w-3" />
                           {b.totalAmount != null ? Number(b.totalAmount).toLocaleString('en-IN') : '—'}
                         </span>
                       </td>
-                      <td className="px-4 py-2.5 align-middle text-gray-600">
-                        {b.whitelabelPackage ? (
-                          <div className="flex flex-col">
-                            <span className="text-xs font-medium capitalize text-gray-900">
-                              {b.whitelabelPackage.commissionType || '—'}
+                      <td className="whitespace-nowrap px-4 py-2.5 align-middle text-gray-600">
+                        <span className="inline-flex items-center gap-0.5">
+                          <IndianRupee className="h-3 w-3" />
+                          {(b.financials?.parentPrice || b.parentPriceAtBooking || 0).toLocaleString('en-IN')}
+                        </span>
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-2.5 align-middle text-gray-600 font-medium">
+                        <span className="inline-flex items-center gap-0.5">
+                          <IndianRupee className="h-3 w-3" />
+                          {(b.financials?.whitelabelPrice || b.whitelabelPriceAtBooking || 0).toLocaleString('en-IN')}
+                        </span>
+                      </td>
+                      <td className="px-4 py-2.5 align-middle">
+                        <div className="flex flex-col">
+                          <span className="inline-flex items-center gap-0.5 text-emerald-600 font-bold">
+                            <IndianRupee className="h-3 w-3" />
+                            {(b.financials?.commission || 0).toLocaleString('en-IN')}
+                          </span>
+                          {b.whitelabelPackage && (
+                            <span className="text-[10px] text-gray-400">
+                              {b.whitelabelPackage.commissionType === 'flat' 
+                                ? `Flat ₹${b.whitelabelPackage.commissionValue}` 
+                                : `${b.whitelabelPackage.commissionValue}%`}
                             </span>
-                            <span className="text-[10px] text-gray-500">
-                              {b.whitelabelPackage.commissionType === 'flat' ? (
-                                <span className="inline-flex items-center">
-                                  <IndianRupee className="h-2.5 w-2.5" />
-                                  {b.whitelabelPackage.commissionValue?.toLocaleString('en-IN')}
-                                </span>
-                              ) : (
-                                `${b.whitelabelPackage.commissionValue || 0}%`
-                              )}
-                            </span>
-                          </div>
-                        ) : (
-                          <span className="text-xs text-gray-400 italic">Base Price</span>
-                        )}
+                          )}
+                        </div>
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-2.5 align-middle text-blue-600 font-medium">
+                        <span className="inline-flex items-center gap-0.5">
+                          <IndianRupee className="h-3 w-3" />
+                          {(b.financials?.extraIncome || 0).toLocaleString('en-IN')}
+                        </span>
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-2.5 align-middle text-slate-900 font-black">
+                        <span className="inline-flex items-center gap-0.5">
+                          <IndianRupee className="h-3 w-3" />
+                          {(b.financials?.totalIncome || 0).toLocaleString('en-IN')}
+                        </span>
                       </td>
                       <td className="px-4 py-2.5 align-middle text-gray-600">
                         {typeof bookedBy === 'object' && bookedBy?.name ? (

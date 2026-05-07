@@ -1,10 +1,10 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Plus, Search, MapPin, Clock, Users, IndianRupee,
   Edit2, ImageIcon, ImagePlus, MessageSquare, LayoutGrid,
   List, TrendingUp, Package, CheckCircle2, XCircle,
-  Calendar, Star, Eye, Copy, Trash2, ShieldAlert
+  Calendar, Star, Eye, Copy, Trash2, ShieldAlert, MoreVertical
 } from 'lucide-react'
 import { usePackages } from '@/travelAgency/parentAgency/hooks/usePackages.js'
 import PackageFormModal from '@/travelAgency/parentAgency/components/PackageFormModal.jsx'
@@ -12,6 +12,7 @@ import PackageImageModal from '@/travelAgency/parentAgency/components/PackageIma
 import ConfirmDialog from '@/shared/components/ConfirmDialog.jsx'
 import Loader from '@/shared/components/Loader.jsx'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
+import { getAnalytics, getPackageById } from '@/travelAgency/parentAgency/services/parentAgencyApi.js'
 import { getApiErrorMessage } from '@/shared/services/apiHelpers.js'
 import { AGENCY_PANEL_BASE } from '@/travelAgency/agency/constants.js'
 import WhitelabelAgentsModal from '@/shared/components/WhitelabelAgentsModal.jsx'
@@ -45,10 +46,12 @@ function StatusPill({ isActive, onClick }) {
 }
 
 function PackageGridCard({ pkg, onEdit, onClone, onCover, onGallery, onToggle, onDelete, onShowAgents, onShowCommissions, navigate }) {
+  const [menuOpen, setMenuOpen] = useState(false)
   const cover = imgUrl(pkg.coverImage)
+
   return (
-    <article className="group relative flex flex-col overflow-hidden rounded-2xl bg-white ring-1 ring-gray-200 shadow-sm transition-all duration-300 hover:shadow-xl hover:shadow-gray-200/60 hover:-translate-y-0.5">
-      {/* Cover image */}
+    <article className="group relative flex flex-col overflow-hidden rounded-xl bg-white ring-1 ring-gray-200 shadow-sm transition-all duration-300 hover:shadow-xl hover:shadow-gray-200/60 hover:-translate-y-0.5">
+      {/* Cover image container */}
       <div className="relative h-44 overflow-hidden bg-gray-100">
         <img
           src={cover || PLACEHOLDER}
@@ -58,33 +61,20 @@ function PackageGridCard({ pkg, onEdit, onClone, onCover, onGallery, onToggle, o
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
 
-        {/* Status pill top-right */}
-        <div className="absolute right-3 top-3">
-          <button type="button" onClick={() => onToggle(pkg)}
-            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide shadow-sm backdrop-blur-sm transition active:scale-95 ${pkg.isActive
-              ? 'bg-emerald-500/90 text-white hover:bg-emerald-600'
-              : 'bg-black/50 text-white/80 hover:bg-black/70'
-              }`}>
-            <span className={`h-1.5 w-1.5 rounded-full ${pkg.isActive ? 'bg-white animate-pulse' : 'bg-white/50'}`} />
-            {pkg.isActive ? 'Live' : 'Paused'}
-          </button>
-        </div>
-        {pkg.isSuspended && (
-          <div className="absolute left-3 top-3">
+        {/* Suspension & WL badges (top-left) */}
+        <div className="absolute left-3 top-3 flex flex-col gap-2">
+          {pkg.isSuspended && (
             <div className="inline-flex items-center gap-1.5 rounded-full bg-red-600 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white shadow-sm backdrop-blur-sm">
               <ShieldAlert className="h-3 w-3" />
               Suspended
             </div>
-          </div>
-        )}
-
-        {pkg.whitelabelCount > 0 && (
-          <div className="absolute left-3 top-3 _translate-y-8">
+          )}
+          {pkg.whitelabelCount > 0 && (
             <div className="inline-flex items-center gap-1 rounded-full bg-violet-600/90 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white shadow-sm backdrop-blur-sm ring-1 ring-white/20">
               Whitelabeled
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Price bottom-left */}
         <div className="absolute bottom-3 left-3">
@@ -95,6 +85,65 @@ function PackageGridCard({ pkg, onEdit, onClone, onCover, onGallery, onToggle, o
             </span>
             <span className="ml-1 text-[10px] text-gray-500">{pkg.currency || 'INR'}</span>
           </div>
+        </div>
+      </div>
+
+      {/* Actions & Status (top-right) — OUTSIDE overflow-hidden container to prevent menu clipping */}
+      <div className="absolute right-3 top-3 z-30 flex items-center gap-2">
+        <button type="button"
+          onClick={(e) => { e.stopPropagation(); onToggle(pkg) }}
+          className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide shadow-sm backdrop-blur-sm transition active:scale-95 ${pkg.isActive
+            ? 'bg-emerald-500/90 text-white hover:bg-emerald-600'
+            : 'bg-black/50 text-white/80 hover:bg-black/70'
+            }`}>
+          <span className={`h-1.5 w-1.5 rounded-full ${pkg.isActive ? 'bg-white animate-pulse' : 'bg-white/50'}`} />
+          {pkg.isActive ? 'Live' : 'Paused'}
+        </button>
+
+        <div className="relative">
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); setMenuOpen(!menuOpen) }}
+            className="flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-gray-700 shadow-sm backdrop-blur-sm transition hover:bg-white hover:text-gray-900"
+          >
+            <MoreVertical className="h-4 w-4" />
+          </button>
+
+          {menuOpen && (
+            <>
+              <div className="fixed inset-0 z-10" onClick={(e) => { e.stopPropagation(); setMenuOpen(false) }} />
+              <div className="absolute right-0 top-full z-20 mt-1 w-48 origin-top-right overflow-hidden rounded-xl border border-gray-100 bg-white shadow-xl ring-1 ring-black/5 animate-in fade-in zoom-in duration-150">
+                <div className="py-1">
+                  <button onClick={(e) => { e.stopPropagation(); onEdit(pkg); setMenuOpen(false) }} className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-xs font-semibold text-gray-700 hover:bg-gray-50">
+                    <Edit2 className="h-4 w-4 text-gray-400" /> Edit Package
+                  </button>
+                  <button onClick={(e) => { e.stopPropagation(); onClone(pkg); setMenuOpen(false) }} className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-xs font-semibold text-gray-700 hover:bg-gray-50">
+                    <Copy className="h-4 w-4 text-gray-400" /> Clone Package
+                  </button>
+                  <button onClick={(e) => { e.stopPropagation(); onCover(pkg); setMenuOpen(false) }} className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-xs font-semibold text-gray-700 hover:bg-gray-50">
+                    <ImageIcon className="h-4 w-4 text-gray-400" /> Change Cover
+                  </button>
+                  <button onClick={(e) => { e.stopPropagation(); onGallery(pkg); setMenuOpen(false) }} className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-xs font-semibold text-gray-700 hover:bg-gray-50">
+                    <ImagePlus className="h-4 w-4 text-gray-400" /> Photo Gallery
+                  </button>
+                  <button onClick={(e) => { e.stopPropagation(); navigate(`${AGENCY_PANEL_BASE}/packages/${pkg._id}/community?title=${encodeURIComponent(pkg.title || '')}`); setMenuOpen(false) }} className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-xs font-semibold text-gray-700 hover:bg-gray-50">
+                    <MessageSquare className="h-4 w-4 text-gray-400" /> Community Chat
+                  </button>
+                  <div className="my-1 border-t border-gray-50" />
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onDelete(pkg); setMenuOpen(false) }}
+                    disabled={pkg.whitelabelCount > 0 || pkg.bookingCount > 0}
+                    className={`flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-xs font-semibold ${pkg.whitelabelCount > 0 || pkg.bookingCount > 0
+                      ? 'text-gray-300 cursor-not-allowed'
+                      : 'text-red-600 hover:bg-red-50'
+                      }`}
+                  >
+                    <Trash2 className="h-4 w-4" /> Delete Package
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
@@ -147,58 +196,33 @@ function PackageGridCard({ pkg, onEdit, onClone, onCover, onGallery, onToggle, o
             <button type="button"
               onClick={() => navigate(`${AGENCY_PANEL_BASE}/bookings?packageId=${pkg._id}`)}
               className="mt-0.5 block w-full text-xs font-bold tabular-nums text-primary-600 hover:underline">
-              {(Number(pkg.bookingCount) || 0) + (Number(pkg.totalAdditionalTravelers) || 0)}
+              {Number(pkg.bookingCount) || 0}
             </button>
           </div>
           <div className="px-2 py-2.5 text-center">
             <p className="text-[9px] font-semibold uppercase tracking-wide text-gray-400">WL</p>
-            <button type="button" disabled={!pkg.whitelabelCount} onClick={() => onShowAgents?.(pkg)}
+            <button type="button"
+              disabled={!pkg.whitelabelCount}
+              onClick={() => onShowAgents?.({ ...pkg, whitelabelAgents: pkg.whitelabelAgents })}
               className={`mt-0.5 block w-full text-xs font-bold tabular-nums transition ${pkg.whitelabelCount ? 'text-violet-600 hover:underline' : 'text-gray-400'}`}>
-              {Number(pkg.whitelabelCount) || 0}
+              {pkg.whitelabelCount || 0}
             </button>
           </div>
         </div>
 
         {/* Actions */}
-        <div className="mt-auto space-y-2">
+        <div className="mt-auto pt-2">
           {/* Primary CTA */}
-          <button type="button"
-            onClick={() => navigate(`${AGENCY_PANEL_BASE}/packages/${pkg._id}`)}
-            className="w-full rounded-xl bg-primary-600 py-2 text-xs font-semibold text-white transition hover:bg-primary-700 active:scale-[0.98]">
-            View details
-          </button>
-
-          {/* Secondary actions — icon buttons only */}
-          <div className="flex items-center gap-2">
+          <div className="flex gap-2">
             <button type="button"
-              onClick={() => onEdit(pkg)}
-              title="Edit"
-              className="flex-1 flex items-center justify-center gap-1.5 rounded-lg border border-gray-200 bg-white py-2 text-xs font-medium text-gray-600 transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-700">
-              <Edit2 className="h-4 w-4" strokeWidth={2} />
-              Edit
-            </button>
-            <button type="button" onClick={() => onClone(pkg)} title="Clone"
-              className="flex-1 flex items-center justify-center gap-1.5 rounded-lg border border-gray-200 bg-white py-2 text-xs font-medium text-gray-600 transition hover:border-gray-300 hover:bg-gray-50 hover:text-gray-700">
-              <Copy className="h-4 w-4" strokeWidth={2} />
-              Clone
-            </button>
-            <button type="button" onClick={() => onCover(pkg)} title="Cover"
-              className="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 transition hover:border-sky-200 hover:bg-sky-50 hover:text-sky-700">
-              <ImageIcon className="h-4 w-4" strokeWidth={2} />
-            </button>
-            <button type="button" onClick={() => onGallery(pkg)} title="Gallery"
-              className="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 transition hover:border-violet-200 hover:bg-violet-50 hover:text-violet-700">
-              <ImagePlus className="h-4 w-4" strokeWidth={2} />
+              onClick={() => navigate(`${AGENCY_PANEL_BASE}/packages/${pkg._id}`)}
+              className="flex-1 rounded-xl bg-primary-600 py-2.5 text-xs font-bold text-white transition hover:bg-gray-800 active:scale-[0.98]">
+              View Details
             </button>
             <button type="button"
-              onClick={() => navigate(`${AGENCY_PANEL_BASE}/packages/${pkg._id}/community?title=${encodeURIComponent(pkg.title || '')}`)}
-              title="Chat"
-              className="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700">
-              <MessageSquare className="h-4 w-4" strokeWidth={2} />
-            </button>
-            <button type="button" onClick={() => onDelete(pkg)} title="Delete"
-              className="flex h-10 w-10 items-center justify-center rounded-lg border border-red-100 bg-white text-red-400 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600">
-              <Trash2 className="h-4 w-4" strokeWidth={2} />
+              onClick={() => navigate(`${AGENCY_PANEL_BASE}/bookings/create?packageId=${pkg._id}`)}
+              className="flex-1 rounded-xl bg-emerald-600 py-2.5 text-xs font-bold text-white transition hover:bg-emerald-700 active:scale-[0.98]">
+              Book Now
             </button>
           </div>
         </div>
@@ -208,6 +232,7 @@ function PackageGridCard({ pkg, onEdit, onClone, onCover, onGallery, onToggle, o
 }
 
 function PackageListRow({ pkg, onEdit, onClone, onCover, onGallery, onToggle, onDelete, onShowAgents, onShowCommissions, navigate }) {
+  const [menuOpen, setMenuOpen] = useState(false)
   const cover = imgUrl(pkg.coverImage)
   return (
     <div className="group flex items-center gap-4 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm transition hover:border-primary-100 hover:shadow-md">
@@ -271,7 +296,7 @@ function PackageListRow({ pkg, onEdit, onClone, onCover, onGallery, onToggle, on
             onClick={() => navigate(`${AGENCY_PANEL_BASE}/bookings?packageId=${pkg._id}`)}
             className="mt-0.5 inline-block text-xs font-bold tabular-nums text-primary-600 hover:text-primary-800 hover:underline"
           >
-            {(Number(pkg.bookingCount) || 0) + (Number(pkg.totalAdditionalTravelers) || 0)}
+            {Number(pkg.bookingCount) || 0}
           </button>
         </div>
         <div className="text-center">
@@ -279,70 +304,74 @@ function PackageListRow({ pkg, onEdit, onClone, onCover, onGallery, onToggle, on
           <button
             type="button"
             disabled={!pkg.whitelabelCount}
-            onClick={() => onShowAgents?.(pkg)}
+            onClick={() => onShowAgents?.({ ...pkg, whitelabelAgents: pkg.whitelabelAgents })}
             className={`mt-0.5 inline-block text-xs font-bold tabular-nums transition ${pkg.whitelabelCount ? 'text-violet-600 hover:text-violet-800 hover:underline' : 'text-gray-400'}`}
           >
-            {Number(pkg.whitelabelCount) || 0}
+            {pkg.whitelabelCount || 0}
           </button>
         </div>
       </div>
 
       {/* Actions — single row */}
-      <div className="flex shrink-0 items-center gap-1" style={{ minWidth: '280px', justifyContent: 'flex-end' }}>
-        <button type="button" title="View details"
-          onClick={() => navigate(`${AGENCY_PANEL_BASE}/packages/${pkg._id}`)}
-          className="flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-700">
-          <Eye className="h-3.5 w-3.5" strokeWidth={2} />
-        </button>
+      <div className="flex shrink-0 items-center gap-3" style={{ minWidth: '150px', justifyContent: 'flex-end' }}>
         <button type="button"
-          title={pkg.isSuspended ? 'Suspended packages cannot be edited' : 'Edit'}
-          disabled={pkg.isSuspended}
-          onClick={() => onEdit(pkg)}
-          className={`flex h-7 w-7 items-center justify-center rounded-lg border transition ${pkg.isSuspended
-            ? 'border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed'
-            : 'border-gray-200 bg-white text-gray-500 hover:border-primary-200 hover:bg-primary-50 hover:text-primary-700'
-            }`}>
-          <Edit2 className="h-3.5 w-3.5" strokeWidth={2} />
+          onClick={() => navigate(`${AGENCY_PANEL_BASE}/bookings/create?packageId=${pkg._id}`)}
+          className="flex h-9 items-center gap-2 rounded-xl bg-emerald-600 px-4 text-xs font-bold text-white transition hover:bg-emerald-700 active:scale-95 shadow-sm">
+          <Calendar className="h-3.5 w-3.5" />
+          Book
         </button>
-        <button type="button"
-          title={pkg.isSuspended ? 'Suspended packages cannot be cloned' : 'Clone'}
-          disabled={pkg.isSuspended}
-          onClick={() => onClone(pkg)}
-          className={`flex h-7 w-7 items-center justify-center rounded-lg border transition ${pkg.isSuspended
-            ? 'border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed'
-            : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300 hover:bg-gray-50 hover:text-gray-700'
-            }`}>
-          <Copy className="h-3.5 w-3.5" strokeWidth={2} />
-        </button>
-        <button type="button" title="Update cover"
-          onClick={() => onCover(pkg)}
-          className="flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 transition hover:border-sky-200 hover:bg-sky-50 hover:text-sky-700">
-          <ImageIcon className="h-3.5 w-3.5" strokeWidth={2} />
-        </button>
-        <button type="button" title="Update gallery"
-          onClick={() => onGallery(pkg)}
-          className="flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 transition hover:border-violet-200 hover:bg-violet-50 hover:text-violet-700">
-          <ImagePlus className="h-3.5 w-3.5" strokeWidth={2} />
-        </button>
-        <button type="button" title="Community chat"
-          onClick={() => navigate(`${AGENCY_PANEL_BASE}/packages/${pkg._id}/community?title=${encodeURIComponent(pkg.title || '')}`)}
-          className="flex h-7 w-7 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-500 transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700">
-          <MessageSquare className="h-3.5 w-3.5" strokeWidth={2} />
-        </button>
-        <button type="button" onClick={() => onToggle(pkg)}
-          title={pkg.isActive ? 'Pause package' : 'Activate package'}
-          className={`flex h-7 items-center gap-1 rounded-lg border px-2 text-[10px] font-bold transition ${pkg.isActive
-            ? 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
-            : 'border-red-200 bg-red-50 text-red-700 hover:bg-red-100'
-            }`}>
-          <span className={`h-1.5 w-1.5 rounded-full ${pkg.isActive ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}`} />
-          {pkg.isActive ? 'Live' : 'Paused'}
-        </button>
-        <button type="button" title="Delete"
-          onClick={() => onDelete(pkg)}
-          className="flex h-7 w-7 items-center justify-center rounded-lg border border-red-100 bg-white text-red-400 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600">
-          <Trash2 className="h-3.5 w-3.5" strokeWidth={2} />
-        </button>
+
+        <div className="relative">
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); setMenuOpen(!menuOpen) }}
+            className="flex h-9 w-9 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-500 transition hover:border-gray-400 hover:text-gray-900"
+          >
+            <MoreVertical className="h-4 w-4" />
+          </button>
+
+          {menuOpen && (
+            <>
+              <div className="fixed inset-0 z-10" onClick={(e) => { e.stopPropagation(); setMenuOpen(false) }} />
+              <div className="absolute right-0 top-full z-20 mt-1 w-48 origin-top-right overflow-hidden rounded-xl border border-gray-100 bg-white shadow-xl ring-1 ring-black/5 animate-in fade-in zoom-in duration-150">
+                <div className="py-1">
+                  <button onClick={(e) => { e.stopPropagation(); navigate(`${AGENCY_PANEL_BASE}/packages/${pkg._id}`); setMenuOpen(false) }} className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-xs font-semibold text-gray-700 hover:bg-gray-50">
+                    <Eye className="h-4 w-4 text-gray-400" /> View Package
+                  </button>
+                  <button onClick={(e) => { e.stopPropagation(); onEdit(pkg); setMenuOpen(false) }} className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-xs font-semibold text-gray-700 hover:bg-gray-50">
+                    <Edit2 className="h-4 w-4 text-gray-400" /> Edit Package
+                  </button>
+                  <button onClick={(e) => { e.stopPropagation(); onClone(pkg); setMenuOpen(false) }} className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-xs font-semibold text-gray-700 hover:bg-gray-50">
+                    <Copy className="h-4 w-4 text-gray-400" /> Clone Package
+                  </button>
+                  <button onClick={(e) => { e.stopPropagation(); onCover(pkg); setMenuOpen(false) }} className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-xs font-semibold text-gray-700 hover:bg-gray-50">
+                    <ImageIcon className="h-4 w-4 text-gray-400" /> Change Cover
+                  </button>
+                  <button onClick={(e) => { e.stopPropagation(); onGallery(pkg); setMenuOpen(false) }} className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-xs font-semibold text-gray-700 hover:bg-gray-50">
+                    <ImagePlus className="h-4 w-4 text-gray-400" /> Photo Gallery
+                  </button>
+                  <button onClick={(e) => { e.stopPropagation(); navigate(`${AGENCY_PANEL_BASE}/packages/${pkg._id}/community?title=${encodeURIComponent(pkg.title || '')}`); setMenuOpen(false) }} className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-xs font-semibold text-gray-700 hover:bg-gray-50">
+                    <MessageSquare className="h-4 w-4 text-gray-400" /> Community Chat
+                  </button>
+                  <button onClick={(e) => { e.stopPropagation(); onToggle(pkg); setMenuOpen(false) }} className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-xs font-semibold text-gray-700 hover:bg-gray-50">
+                    <div className={`h-2 w-2 rounded-full ${pkg.isActive ? 'bg-red-500' : 'bg-emerald-500'}`} /> {pkg.isActive ? 'Pause Package' : 'Activate Package'}
+                  </button>
+                  <div className="my-1 border-t border-gray-50" />
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onDelete(pkg); setMenuOpen(false) }}
+                    disabled={pkg.whitelabelCount > 0 || pkg.bookingCount > 0}
+                    className={`flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-xs font-semibold ${pkg.whitelabelCount > 0 || pkg.bookingCount > 0
+                      ? 'text-gray-300 cursor-not-allowed'
+                      : 'text-red-600 hover:bg-red-50'
+                      }`}
+                  >
+                    <Trash2 className="h-4 w-4" /> Delete Package
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
       </div>
     </div>
   )
@@ -376,12 +405,20 @@ export default function Packages() {
     return list
   }, [packages, search, statusFilter])
 
+  const [analytics, setAnalytics] = useState(null)
+  useEffect(() => {
+    getAnalytics().then(res => setAnalytics(res.data?.data)).catch(() => { })
+  }, [])
+
   const stats = useMemo(() => ({
     total: packages.length,
     live: packages.filter((p) => p.isActive).length,
-    revenue: packages.reduce((s, p) => s + (Number(p.totalRevenue) || 0), 0),
-    bookings: packages.reduce((s, p) => s + (Number(p.bookingCount) || 0) + (Number(p.totalAdditionalTravelers) || 0), 0),
-  }), [packages])
+    revenue: analytics?.totalRevenue ?? packages.reduce((s, p) => s + (Number(p.revenue) || 0), 0),
+    bookings: analytics?.totalBookings ?? packages.reduce((s, p) => s + (Number(p.bookings) || 0), 0),
+    earnings: packages.reduce((s, p) => s + (Number(p.earnings) || 0), 0),
+    child: packages.reduce((s, p) => s + (Number(p.revenue || 0) - Number(p.earnings || 0)), 0),
+    wl: packages.reduce((s, p) => s + (p.whitelabels?.length || 0), 0),
+  }), [packages, analytics])
 
   const handleFormSubmit = async (formData) => {
     setSubmitting(true)
@@ -411,6 +448,36 @@ export default function Packages() {
       else { await activate(pkg._id); toast.success('Package activated') }
     } catch (err) { toast.error(getApiErrorMessage(err)) }
     finally { setConfirmToggle({ open: false, pkg: null }) }
+  }
+
+  const handleShowCommissions = async (pkg) => {
+    try {
+      const res = await getPackageById(pkg._id)
+      const fullPkg = res.data?.data?.package || pkg
+      console.log("fullPkg", fullPkg, pkg)
+      setCommissionsModal({
+        open: true,
+        data: pkg.agentEarningsBreakdown || [],
+        individualBookings: pkg.individualBookings || [],
+        whitelabelAgents: pkg.whitelabels || [],
+        title: `Financial Breakdown: ${fullPkg.title}`,
+        basePrice: fullPkg.basePrice,
+        revenue: fullPkg.totalRevenue,
+        earnings: fullPkg.totalParentEarnings
+      })
+    } catch (err) {
+      console.error('Failed to fetch package details:', err)
+      setCommissionsModal({
+        open: true,
+        data: pkg.agentEarningsBreakdown || [],
+        individualBookings: pkg.individualBookings || [],
+        whitelabelAgents: pkg.whitelabels || [],
+        title: `Financial Breakdown: ${pkg.title}`,
+        basePrice: pkg.basePrice,
+        revenue: pkg.totalRevenue,
+        earnings: pkg.totalParentEarnings
+      })
+    }
   }
 
   const handleDelete = async () => {
@@ -560,7 +627,7 @@ export default function Packages() {
               onToggle={(p) => setConfirmToggle({ open: true, pkg: p })}
               onDelete={(p) => setConfirmDelete({ open: true, pkg: p })}
               onShowAgents={(p) => setAgentsModal({ open: true, agents: p.whitelabelAgents || [], title: `Agents who whitelabeled "${p.title}"` })}
-              onShowCommissions={(p) => setCommissionsModal({ open: true, data: p.agentEarningsBreakdown || [], individualBookings: p.individualBookings || [], whitelabelAgents: p.whitelabelAgents || [], title: `Financial Breakdown: ${p.title}`, basePrice: p.basePrice })}
+              onShowCommissions={handleShowCommissions}
             />
           ))}
         </div>
@@ -578,7 +645,7 @@ export default function Packages() {
               onToggle={(p) => setConfirmToggle({ open: true, pkg: p })}
               onDelete={(p) => setConfirmDelete({ open: true, pkg: p })}
               onShowAgents={(p) => setAgentsModal({ open: true, agents: p.whitelabelAgents || [], title: `Agents who whitelabeled "${p.title}"` })}
-              onShowCommissions={(p) => setCommissionsModal({ open: true, data: p.agentEarningsBreakdown || [], individualBookings: p.individualBookings || [], whitelabelAgents: p.whitelabelAgents || [], title: `Financial Breakdown: ${p.title}`, basePrice: p.basePrice })}
+              onShowCommissions={handleShowCommissions}
             />
           ))}
         </div>
@@ -629,11 +696,13 @@ export default function Packages() {
 
       <AgentCommissionsModal
         isOpen={commissionsModal.open}
-        onClose={() => setCommissionsModal({ open: false, data: [], individualBookings: [], title: '' })}
+        onClose={() => setCommissionsModal({ open: false, data: [], individualBookings: [], title: '', revenue: 0, earnings: 0 })}
         data={commissionsModal.data}
         individualBookings={commissionsModal.individualBookings}
         whitelabelAgents={commissionsModal.whitelabelAgents}
         basePrice={commissionsModal.basePrice}
+        revenue={commissionsModal.revenue}
+        earnings={commissionsModal.earnings}
         title={commissionsModal.title}
       />
     </div>

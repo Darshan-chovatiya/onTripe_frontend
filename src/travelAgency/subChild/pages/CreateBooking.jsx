@@ -82,6 +82,9 @@ export default function CreateBooking() {
     passport: null, visaDoc: null, otherDocs: [],
   })
 
+  const [maxCapacity, setMaxCapacity] = useState(null)
+  const [remainingCapacity, setRemainingCapacity] = useState(null)
+
   const [lookupLoading, setLookupLoading] = useState(false)
   const [lookupMeta, setLookupMeta] = useState(null)
   const skipNextLookupRef = useRef(false)
@@ -95,25 +98,59 @@ export default function CreateBooking() {
   }, [activeWhitelabels.length, availablePackages?.length])
 
   useEffect(() => {
-    if (offerType === 'whitelabel' && activeWhitelabels.length && !whitelabelId)
-      setWhitelabelId(String(activeWhitelabels[0]._id))
-    if (offerType === 'package' && availablePackages?.length && !packageId)
-      setPackageId(String(availablePackages[0]._id))
+    if (offerType === 'whitelabel' && activeWhitelabels.length && !whitelabelId) {
+      const first = activeWhitelabels[0]
+      setWhitelabelId(String(first._id))
+      const cap = first.originalPackage?.maxCapacity ?? first.maxCapacity ?? null
+      const rem = first.remainingCapacity ?? cap
+      setMaxCapacity(cap)
+      setRemainingCapacity(rem)
+    }
+    if (offerType === 'package' && availablePackages?.length && !packageId) {
+      const first = availablePackages[0]
+      setPackageId(String(first._id))
+      const cap = first.maxCapacity ?? null
+      const rem = first.remainingCapacity ?? cap
+      setMaxCapacity(cap)
+      setRemainingCapacity(rem)
+    }
   }, [offerType, activeWhitelabels, availablePackages, whitelabelId, packageId])
 
-  useEffect(() => {
-    let cancelled = false
-    listCustomers()
-      .then((res) => { if (!cancelled) setAgencyCustomers(res.data?.data?.customers ?? []) })
-      .catch(() => { if (!cancelled) setAgencyCustomers([]) })
-    return () => { cancelled = true }
+  const [customersPage, setCustomersPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [loadingCustomers, setLoadingCustomers] = useState(false)
+  const isFetchingCustomersRef = useRef(false)
+
+  const loadCustomers = useCallback(async (p, q, append = false) => {
+    if (isFetchingCustomersRef.current) return
+    isFetchingCustomersRef.current = true
+    setLoadingCustomers(true)
+    try {
+      const res = await listCustomers({ page: p, limit: 10, search: q })
+      const data = res.data?.data
+      const newCustomers = data?.customers ?? []
+      setAgencyCustomers((prev) => (append ? [...prev, ...newCustomers] : newCustomers))
+      setTotalPages(data?.pagination?.totalPages ?? 1)
+      setCustomersPage(p)
+    } catch (err) {
+      console.error('Failed to load customers:', err)
+    } finally {
+      isFetchingCustomersRef.current = false
+      setLoadingCustomers(false)
+    }
   }, [])
 
-  const filteredAgencyCustomers = useMemo(() => {
-    const q = existingSearchQuery.trim().toLowerCase()
-    if (!q) return agencyCustomers
-    return agencyCustomers.filter((c) => agencyCustomerSearchHaystack(c).includes(q))
-  }, [agencyCustomers, existingSearchQuery])
+  useEffect(() => {
+    loadCustomers(1, '')
+  }, []) // Initial load
+
+  useEffect(() => {
+    if (customerMode !== 'existing') return
+    const t = setTimeout(() => {
+      loadCustomers(1, existingSearchQuery)
+    }, 400)
+    return () => clearTimeout(t)
+  }, [existingSearchQuery, customerMode, loadCustomers])
 
   const selectedExistingRow = useMemo(
     () => selectedExistingId ? agencyCustomers.find((c) => String(c._id) === selectedExistingId) ?? null : null,
@@ -150,7 +187,15 @@ export default function CreateBooking() {
     return () => clearTimeout(t)
   }, [customerPhone, customerMode, runPhoneLookup])
 
-  const addTraveler = () => setTravelers((t) => [...t, emptyTraveler()])
+  const addTraveler = () => {
+    const currentCap = remainingCapacity != null ? remainingCapacity : maxCapacity
+    const maxAdditional = currentCap != null ? currentCap - 1 : Infinity
+    if (travelers.length >= maxAdditional) {
+      toast.error(`Remaining capacity is ${currentCap}. Primary customer + ${currentCap - 1} additional traveler(s) allowed.`)
+      return
+    }
+    setTravelers((t) => [...t, emptyTraveler()])
+  }
   const removeTraveler = (i) => setTravelers((t) => t.filter((_, idx) => idx !== i))
   const setTravelerField = (i, field, value) =>
     setTravelers((t) => t.map((row, idx) => idx === i ? { ...row, [field]: value } : row))
@@ -173,6 +218,12 @@ export default function CreateBooking() {
     e.preventDefault()
     const amount = Number(totalAmount)
     if (Number.isNaN(amount) || amount <= 0) return
+
+    const currentCap = remainingCapacity != null ? remainingCapacity : maxCapacity
+    if (currentCap != null && (travelers.length + 1) > currentCap) {
+      toast.error(`Remaining capacity is ${currentCap}. Remove some travelers or increase the package capacity.`)
+      return
+    }
 
     const fd = new FormData()
     fd.append('customerName', customerName.trim())
@@ -297,14 +348,7 @@ export default function CreateBooking() {
 
           {customerMode === 'existing' && (
             <div className="space-y-3">
-              <div className="relative">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                <input type="search" autoComplete="off" placeholder="Type name, phone, or email…"
-                  className={`${inputCls} pl-9`} value={existingSearchQuery}
-                  onChange={(e) => setExistingSearchQuery(e.target.value)}
-                  disabled={agencyCustomers.length === 0} />
-              </div>
-              {selectedExistingId && selectedExistingRow && (
+              {selectedExistingId && selectedExistingRow ? (
                 <div className="flex items-start justify-between gap-2 rounded-lg border border-emerald-200 bg-emerald-50/90 px-3 py-2 text-xs text-emerald-950">
                   <div className="min-w-0">
                     <span className="font-semibold">Selected: </span>
@@ -316,23 +360,57 @@ export default function CreateBooking() {
                     <X className="h-4 w-4" />
                   </button>
                 </div>
+              ) : (
+                <>
+                  <div className="relative">
+                    <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                    <input type="search" autoComplete="off" placeholder="Type name, phone, or email…"
+                      className={`${inputCls} pl-9`} value={existingSearchQuery}
+                      onChange={(e) => setExistingSearchQuery(e.target.value)}
+                      disabled={agencyCustomers.length === 0} />
+                  </div>
+                  <ul className="max-h-56 overflow-y-auto rounded-xl border border-gray-200 bg-white shadow-sm" role="listbox">
+                    {agencyCustomers.length === 0 && !loadingCustomers && (
+                      <li className="px-3 py-4 text-center text-sm text-gray-500">No customers found.</li>
+                    )}
+                    {agencyCustomers.map((c) => {
+                      const id = String(c._id)
+                      const selected = selectedExistingId === id
+                      return (
+                        <li key={id} role="option" aria-selected={selected}>
+                          <button type="button"
+                            onClick={() => { setSelectedExistingId(id); applyExistingCustomer(c) }}
+                            className={`flex w-full flex-col items-start gap-0.5 border-b border-gray-50 px-3 py-2.5 text-left text-sm transition last:border-b-0 ${selected ? 'bg-primary-50 text-primary-950' : 'hover:bg-gray-50'}`}>
+                            <span className="font-medium text-gray-900">{agencyCustomerDisplayName(c)}</span>
+                            <span className="text-xs text-gray-600">{agencyCustomerPhone(c) || '—'}{agencyCustomerEmail(c) ? ` · ${agencyCustomerEmail(c)}` : ''}</span>
+                          </button>
+                        </li>
+                      )
+                    })}
+                    {totalPages > 1 && (
+                      <li className="sticky bottom-0 border-t border-gray-100 bg-gray-50/95 p-2 backdrop-blur-sm">
+                        <div className="flex items-center justify-between gap-2">
+                          <button type="button"
+                            onClick={() => loadCustomers(customersPage - 1, existingSearchQuery)}
+                            disabled={customersPage <= 1 || loadingCustomers}
+                            className="rounded-md border border-gray-200 bg-white px-2.5 py-1.5 text-[10px] font-semibold text-gray-700 shadow-sm hover:bg-gray-50 disabled:opacity-30">
+                            Previous
+                          </button>
+                          <span className="text-[10px] font-medium text-gray-500">
+                            Page {customersPage} of {totalPages}
+                          </span>
+                          <button type="button"
+                            onClick={() => loadCustomers(customersPage + 1, existingSearchQuery)}
+                            disabled={customersPage >= totalPages || loadingCustomers}
+                            className="rounded-md border border-gray-200 bg-white px-2.5 py-1.5 text-[10px] font-semibold text-gray-700 shadow-sm hover:bg-gray-50 disabled:opacity-30">
+                            Next
+                          </button>
+                        </div>
+                      </li>
+                    )}
+                  </ul>
+                </>
               )}
-              <ul className="max-h-48 overflow-y-auto rounded-xl border border-gray-200 bg-white shadow-sm" role="listbox">
-                {filteredAgencyCustomers.map((c) => {
-                  const id = String(c._id)
-                  const selected = selectedExistingId === id
-                  return (
-                    <li key={id} role="option" aria-selected={selected}>
-                      <button type="button"
-                        onClick={() => { setSelectedExistingId(id); applyExistingCustomer(c) }}
-                        className={`flex w-full flex-col items-start gap-0.5 border-b border-gray-50 px-3 py-2.5 text-left text-sm transition last:border-b-0 ${selected ? 'bg-primary-50 text-primary-950' : 'hover:bg-gray-50'}`}>
-                        <span className="font-medium text-gray-900">{agencyCustomerDisplayName(c)}</span>
-                        <span className="text-xs text-gray-600">{agencyCustomerPhone(c) || '—'}{agencyCustomerEmail(c) ? ` · ${agencyCustomerEmail(c)}` : ''}</span>
-                      </button>
-                    </li>
-                  )
-                })}
-              </ul>
             </div>
           )}
 
@@ -386,8 +464,22 @@ export default function CreateBooking() {
         {/* Additional travelers */}
         <div>
           <div className="mb-2 flex items-center justify-between">
-            <span className="text-sm font-medium text-gray-700">Additional travelers</span>
-            <Button type="button" variant="secondary" className="py-1.5 text-xs" onClick={addTraveler}>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-gray-700">Additional travelers</span>
+              {(remainingCapacity ?? maxCapacity) != null && (
+                <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${travelers.length + 1 >= (remainingCapacity ?? maxCapacity)
+                    ? 'bg-red-100 text-red-700'
+                    : travelers.length + 1 >= (remainingCapacity ?? maxCapacity) - 1
+                      ? 'bg-amber-100 text-amber-700'
+                      : 'bg-slate-100 text-slate-600'
+                  }`}>
+                  {travelers.length + 1}/{(remainingCapacity ?? maxCapacity)} seats used
+                </span>
+              )}
+            </div>
+            <Button type="button" variant="secondary" className="py-1.5 text-xs"
+              onClick={addTraveler}
+              disabled={(remainingCapacity ?? maxCapacity) != null && travelers.length >= (remainingCapacity ?? maxCapacity) - 1}>
               <Plus className="mr-1 inline h-3.5 w-3.5" /> Add traveler
             </Button>
           </div>

@@ -2,20 +2,32 @@ import { useState, useMemo } from 'react'
 import { X, User, Ticket, IndianRupee, Mail, Hash, Users, Calendar, ArrowRight, Zap, ChevronRight, Info, BarChart3, PieChart, TrendingUp } from 'lucide-react'
 import Modal from '@/shared/components/Modal.jsx'
 
-export default function AgentCommissionsModal({ isOpen, onClose, data = [], individualBookings = [], whitelabelAgents = [], basePrice = 0, title = 'Financial Breakdown' }) {
+export default function AgentCommissionsModal({ isOpen, onClose, data = [], individualBookings = [], whitelabelAgents = [], basePrice = 0, revenue = 0, earnings = 0, title = 'Financial Breakdown' }) {
   const [activeTab, setActiveTab] = useState('agents')
 
-  const totalPackageRevenue = individualBookings.reduce((sum, b) => sum + (Number(b.parentEarned) || 0) + (Number(b.childEarned) || 0), 0)
-  const totalParentEarnings = individualBookings.reduce((sum, b) => sum + (Number(b.parentEarned) || 0), 0)
-  const totalChildCommissions = individualBookings.reduce((sum, b) => sum + (Number(b.childEarned) || 0), 0)
+  const totalPackageRevenue = useMemo(() => {
+    const calc = individualBookings.reduce((sum, b) => sum + (Number(b.parentEarned) || 0) + (Number(b.childEarned) || 0), 0)
+    return calc || Number(revenue) || 0
+  }, [individualBookings, revenue])
+
+  const totalParentEarnings = useMemo(() => {
+    const calc = individualBookings.reduce((sum, b) => sum + (Number(b.parentEarned) || 0), 0)
+    return calc || Number(earnings) || 0
+  }, [individualBookings, earnings])
+
+  const totalChildCommissions = useMemo(() => {
+    const calc = individualBookings.reduce((sum, b) => sum + (Number(b.childEarned) || 0), 0)
+    return calc || (Number(revenue || 0) - Number(earnings || 0)) || 0
+  }, [individualBookings, revenue, earnings])
 
   const treeData = useMemo(() => {
     // 1. Collect all agents from both sources (whitelabels and actual sales)
     const agentMap = new Map()
 
     // Add potential agents from whitelabels
-    whitelabelAgents.forEach(wa => {
-      const aid = String(wa._id || wa.id || wa.agentCode) // Use a reliable ID
+    whitelabelAgents.forEach(item => {
+      const wa = item.createdBy || item
+      const aid = String(item.id || item._id || wa.id || wa._id || wa.agentCode)
       if (!agentMap.has(aid)) {
         agentMap.set(aid, {
           id: aid,
@@ -28,7 +40,7 @@ export default function AgentCommissionsModal({ isOpen, onClose, data = [], indi
           baseEarnings: 0,
           extraIncome: 0,
           bookings: 0,
-          potentialCommission: (Number(wa.finalPrice) || 0) - (Number(basePrice) || 0),
+          potentialCommission: (Number(item.finalPrice) || 0) - (Number(basePrice) || 0),
           children: [],
           customers: []
         })
@@ -37,7 +49,7 @@ export default function AgentCommissionsModal({ isOpen, onClose, data = [], indi
 
     // Add/Update agents from actual sales data
     data.forEach(sd => {
-      const aid = String(sd.agentId || sd.agentCode)
+      const aid = String(sd.agentId || sd.id || sd.agentCode)
       if (!agentMap.has(aid)) {
         agentMap.set(aid, {
           id: aid,
@@ -73,10 +85,12 @@ export default function AgentCommissionsModal({ isOpen, onClose, data = [], indi
     // 2. Add customers to their respective agents
     individualBookings.forEach(b => {
       const aid = String(b.agentId || b.agentCode)
-      if (agentMap.has(aid)) {
+      // Check if this booking belongs to the parent agent (root)
+      if (b.agentRole === 'parent_agent' || !b.agentParentRef) {
+        root.customers.push(b)
+      } else if (agentMap.has(aid)) {
         agentMap.get(aid).customers.push(b)
       } else {
-        // If not in agentMap, it belongs to the root (Parent Agent)
         root.customers.push(b)
       }
     })
@@ -103,8 +117,6 @@ export default function AgentCommissionsModal({ isOpen, onClose, data = [], indi
         totalEarnings += totals.earnings
       })
 
-      // For agents, node.bookings is their individual sales.
-      // We'll show aggregated values for the tree view to make it meaningful.
       node.displayBookings = (node.bookings || 0) + totalBookings
       node.displayEarnings = (node.earnings || 0) + totalEarnings
       
@@ -136,7 +148,7 @@ export default function AgentCommissionsModal({ isOpen, onClose, data = [], indi
             <User className="h-3 w-3 text-gray-400" />
             <div className="min-w-0">
               <div className="flex items-center gap-1.5">
-                <p className="truncate text-[11px] font-bold text-gray-700">{cust.customerName}</p>
+                <p className="truncate text-[11px] font-bold text-gray-700">{cust.customerName || 'Guest'}</p>
                 {cust.bookingId && (
                   <span className="flex items-center gap-0.5 font-mono text-[9px] font-semibold text-gray-400">
                     <Hash size={9} />{cust.bookingId}
@@ -149,16 +161,6 @@ export default function AgentCommissionsModal({ isOpen, onClose, data = [], indi
                 )}
               </div>
               <p className="text-[9px] text-gray-400">{new Date(cust.date).toLocaleDateString('en-IN')}</p>
-              
-              {cust.travelers?.length > 0 && (
-                <div className="mt-1 flex flex-wrap gap-1">
-                  {cust.travelers.map((t, ti) => (
-                    <span key={ti} className="text-[8px] text-gray-400">
-                      • {t.name}{ti < cust.travelers.length - 1 ? ',' : ''}
-                    </span>
-                  ))}
-                </div>
-              )}
             </div>
           </div>
         </td>
@@ -166,7 +168,7 @@ export default function AgentCommissionsModal({ isOpen, onClose, data = [], indi
         <td className="px-4 py-2 text-center">—</td>
         <td className="px-4 py-2 text-right text-[10px] text-gray-500 font-medium">₹{(Number(cust.parentEarned) || 0).toLocaleString('en-IN')}</td>
         <td className="px-4 py-2 text-right text-[10px] text-emerald-600 font-bold">₹{(Number(cust.childEarned) || 0).toLocaleString('en-IN')}</td>
-        <td className="px-4 py-2 text-right text-[10px] text-slate-900 font-black">₹{(Number(cust.parentEarned) + Number(cust.childEarned)).toLocaleString('en-IN')}</td>
+        <td className="px-4 py-2 text-right text-[10px] text-slate-900 font-black">₹{(Number(cust.parentEarned || 0) + Number(cust.childEarned || 0)).toLocaleString('en-IN')}</td>
       </tr>
     )
   }
@@ -176,7 +178,8 @@ export default function AgentCommissionsModal({ isOpen, onClose, data = [], indi
     const hasChildren = node.children?.length > 0 || node.customers?.length > 0
     const paddingLeft = depth * 24
 
-    if (node.displayBookings === 0 && !node.isRoot) return null
+    // Show all agents even if they have 0 bookings
+    // if (node.displayBookings === 0 && !node.isRoot) return null
 
     return (
       <>
@@ -402,22 +405,10 @@ export default function AgentCommissionsModal({ isOpen, onClose, data = [], indi
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex flex-col gap-1 text-[10px]">
-                            {(Number(b.providerEarned) || 0) > 0 && (
-                              <div className="flex items-center justify-between gap-4 text-violet-600">
-                                <span className="font-medium">Provider Comm.</span>
-                                <span className="font-bold tabular-nums">₹{(Number(b.providerEarned) || 0).toLocaleString('en-IN')}</span>
-                              </div>
-                            )}
                             <div className="flex items-center justify-between gap-4 text-blue-600">
-                              <span className="font-medium">Seller ({b.agentName})</span>
-                              <span className="font-bold tabular-nums">₹{(Number(b.sellerEarned) || 0).toLocaleString('en-IN')}</span>
+                              <span className="font-medium">Seller ({b.agentName || 'Direct'})</span>
+                              <span className="font-bold tabular-nums">₹{(Number(b.childEarned) || 0).toLocaleString('en-IN')}</span>
                             </div>
-                            {(Number(b.extraIncome) || 0) > 0 && (
-                              <div className="flex items-center justify-between gap-4 text-blue-600">
-                                <span className="flex items-center gap-1 font-medium italic">{/* <TrendingUp className="h-2.5 w-2.5" />Extra Income*/}</span>
-                                <span className="font-bold tabular-nums">₹{(Number(b.extraIncome) || 0).toLocaleString('en-IN')}</span>
-                              </div>
-                            )}
                           </div>
                         </td>
                         <td className="px-4 py-3 text-right font-bold text-primary-600 tabular-nums">

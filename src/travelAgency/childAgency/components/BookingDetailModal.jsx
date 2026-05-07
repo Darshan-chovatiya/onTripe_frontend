@@ -597,6 +597,7 @@ export default function BookingDetailModal({ isOpen, onClose, bookingId, fetchBo
                   className="input-field w-full"
                   value={totalAmount}
                   onChange={(e) => setTotalAmount(e.target.value)}
+                  onWheel={(e) => e.target.blur()}
                 />
               </div>
               <div>

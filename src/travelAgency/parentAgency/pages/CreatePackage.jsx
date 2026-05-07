@@ -201,7 +201,7 @@ export default function CreatePackage() {
 
   const updateDay = (di, key, value) => setForm(f => { const arr = [...f.itinerary]; arr[di] = { ...arr[di], [key]: value }; return { ...f, itinerary: arr } })
   const addDay = () => setForm(f => {
-    // If dates are set, don't allow manual add
+    // If dates are set, we don't allow manual add because the itinerary is driven by dates
     if (f.startDate && f.endDate) return f
     const newDayIndex = f.itinerary.length
     let dateSuffix = ''
@@ -212,9 +212,42 @@ export default function CreatePackage() {
     }
     const arr = [...f.itinerary, { ...emptyDay(f.itinerary.length + 1), dateSuffix }]
     setExpandedDays(e => ({ ...e, [f.itinerary.length]: true }))
-    return { ...f, itinerary: arr }
+    
+    // Update endDate if startDate exists
+    let endDate = f.endDate
+    if (f.startDate) {
+      const date = new Date(f.startDate)
+      date.setDate(date.getDate() + (arr.length - 1))
+      endDate = date.toISOString().split('T')[0]
+    }
+
+    return { ...f, itinerary: arr, totalDays: String(arr.length), endDate }
   })
-  const removeDay = (di) => setForm(f => { const arr = f.itinerary.filter((_, i) => i !== di).map((d, i) => ({ ...d, day: i + 1 })); return { ...f, itinerary: arr } })
+
+  const removeDay = (di) => setForm(f => {
+    const newItinerary = f.itinerary.filter((_, i) => i !== di)
+    const finalItinerary = newItinerary.map((d, i) => {
+      let dateSuffix = d.dateSuffix
+      if (f.startDate) {
+        const date = new Date(f.startDate)
+        date.setDate(date.getDate() + i)
+        dateSuffix = date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })
+      }
+      return { ...d, day: i + 1, dateSuffix }
+    })
+    
+    const totalDays = String(finalItinerary.length)
+    let endDate = f.endDate
+    if (f.startDate && finalItinerary.length > 0) {
+      const date = new Date(f.startDate)
+      date.setDate(date.getDate() + (finalItinerary.length - 1))
+      endDate = date.toISOString().split('T')[0]
+    } else if (f.startDate && finalItinerary.length === 0) {
+      endDate = f.startDate
+    }
+
+    return { ...f, itinerary: finalItinerary, totalDays, endDate }
+  })
 
   const addEvent = (di) => setForm(f => { const arr = [...f.itinerary]; arr[di] = { ...arr[di], events: [...(arr[di].events || []), emptyEvent()] }; return { ...f, itinerary: arr } })
   const updateEvent = (di, ei, key, value) => setForm(f => { const arr = [...f.itinerary]; const evs = [...(arr[di].events || [])]; evs[ei] = { ...evs[ei], [key]: value }; arr[di] = { ...arr[di], events: evs }; return { ...f, itinerary: arr } })
@@ -392,7 +425,7 @@ export default function CreatePackage() {
 
             <div>
               <label className="mb-1 block text-xs font-medium text-gray-600">Max capacity</label>
-              <input type="number" min="1" className={inputCls(false)} value={form.maxCapacity} onChange={e => set('maxCapacity', e.target.value)} />
+              <input type="number" min="1" className={inputCls(false)} value={form.maxCapacity} onChange={e => set('maxCapacity', e.target.value)} onWheel={(e) => e.target.blur()} />
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-gray-600">Base price incl. GST <span className="text-red-500">*</span></label>
@@ -408,6 +441,7 @@ export default function CreatePackage() {
                     onChange={e => { set('basePrice', e.target.value); clearErr('basePrice') }}
                     placeholder="0"
                     data-error={!!errors.basePrice}
+                    onWheel={(e) => e.target.blur()}
                   />
                 </div>
               </div>

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { ArrowLeft, Plus, Trash2, Users, UserPlus, Loader2, Search, X, FileUp } from 'lucide-react'
 import { useChildBookings } from '@/travelAgency/childAgency/hooks/useChildBookings.js'
 import { useChildPackages } from '@/travelAgency/childAgency/hooks/useChildPackages.js'
@@ -57,6 +57,9 @@ function FileField({ label, name, value, onChange, multiple = false }) {
 
 export default function CreateBooking() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const urlWhitelabelId = searchParams.get('whitelabelId')
+  const urlPackageId = searchParams.get('packageId')
   const { create } = useChildBookings()
   const { availablePackages, whitelabels } = useChildPackages()
   const { toast } = useToast()
@@ -87,6 +90,7 @@ export default function CreateBooking() {
   const skipNextLookupRef = useRef(false)
   const [basePackagePrice, setBasePackagePrice] = useState(0)
   const [maxCapacity, setMaxCapacity] = useState(null)
+  const [remainingCapacity, setRemainingCapacity] = useState(null)
   const [minTotalAmount, setMinTotalAmount] = useState(0)
 
   const activeWhitelabels = (whitelabels ?? []).filter((w) => w.isActive !== false && w.originalPackage?.isSuspended !== true)
@@ -94,8 +98,10 @@ export default function CreateBooking() {
   useEffect(() => {
     const hasWl = activeWhitelabels.length > 0
     const hasPkg = (availablePackages ?? []).filter(p => !p.isSuspended).length > 0
-    setOfferType(hasWl ? 'whitelabel' : hasPkg ? 'package' : 'whitelabel')
-  }, [activeWhitelabels.length, (availablePackages ?? []).filter(p => !p.isSuspended).length])
+    if (urlWhitelabelId) setOfferType('whitelabel')
+    else if (urlPackageId) setOfferType('package')
+    else setOfferType(hasWl ? 'whitelabel' : hasPkg ? 'package' : 'whitelabel')
+  }, [activeWhitelabels.length, (availablePackages ?? []).filter(p => !p.isSuspended).length, urlWhitelabelId, urlPackageId])
 
   const toDateOnly = (dateStr) => {
     if (!dateStr) return ''
@@ -107,20 +113,30 @@ export default function CreateBooking() {
 
   useEffect(() => {
     if (offerType === 'whitelabel' && activeWhitelabels.length && !whitelabelId) {
-      const first = activeWhitelabels[0]
-      setWhitelabelId(String(first._id))
-      setBasePackagePrice(first.finalPrice || 0)
-      setMaxCapacity(first.originalPackage?.maxCapacity ?? first.maxCapacity ?? null)
-      setTravelDate(toDateOnly(first.originalPackage?.startDate))
+      const targetId = urlWhitelabelId || (activeWhitelabels[0] ? String(activeWhitelabels[0]._id) : '')
+      const found = activeWhitelabels.find(w => String(w._id) === targetId) || activeWhitelabels[0]
+      if (found) {
+        setWhitelabelId(String(found._id))
+        setBasePackagePrice(found.finalPrice || 0)
+        const cap = found.originalPackage?.maxCapacity ?? found.maxCapacity ?? null
+        const rem = found.remainingCapacity ?? cap
+        setMaxCapacity(cap)
+        setRemainingCapacity(rem)
+        setTravelDate(toDateOnly(found.originalPackage?.startDate))
+      }
     }
     if (offerType === 'package' && availablePackages?.length && !packageId) {
-      const first = availablePackages[0]
-      setPackageId(String(first._id))
-      setBasePackagePrice(first.basePrice || 0)
-      setMaxCapacity(first.maxCapacity ?? null)
-      setTravelDate(toDateOnly(first.startDate))
+      const targetId = urlPackageId || (availablePackages[0] ? String(availablePackages[0]._id) : '')
+      const found = availablePackages.find(p => String(p._id) === targetId) || availablePackages[0]
+      if (found) {
+        setPackageId(String(found._id))
+        setBasePackagePrice(found.basePrice || 0)
+        setMaxCapacity(found.maxCapacity ?? null)
+        setRemainingCapacity(found.remainingCapacity ?? found.maxCapacity ?? null)
+        setTravelDate(toDateOnly(found.startDate))
+      }
     }
-  }, [offerType, activeWhitelabels, availablePackages, whitelabelId, packageId])
+  }, [offerType, activeWhitelabels, availablePackages, whitelabelId, packageId, urlWhitelabelId, urlPackageId])
 
   useEffect(() => {
     const total = basePackagePrice * (travelers.length + 1)
@@ -134,8 +150,10 @@ export default function CreateBooking() {
     const wl = activeWhitelabels.find(w => String(w._id) === id)
     setBasePackagePrice(wl?.finalPrice || 0)
     const cap = wl?.originalPackage?.maxCapacity ?? wl?.maxCapacity ?? null
+    const rem = wl?.remainingCapacity ?? cap
     setMaxCapacity(cap)
-    if (cap) setTravelers(t => t.slice(0, Math.max(0, cap - 1)))
+    setRemainingCapacity(rem)
+    if (rem) setTravelers(t => t.slice(0, Math.max(0, rem - 1)))
     setTravelDate(toDateOnly(wl?.originalPackage?.startDate))
   }
 
@@ -145,24 +163,48 @@ export default function CreateBooking() {
     const pkg = availablePackages.find(p => String(p._id) === id)
     setBasePackagePrice(pkg?.basePrice || 0)
     const cap = pkg?.maxCapacity ?? null
+    const rem = pkg?.remainingCapacity ?? cap
     setMaxCapacity(cap)
-    if (cap) setTravelers(t => t.slice(0, Math.max(0, cap - 1)))
+    setRemainingCapacity(rem)
+    if (rem) setTravelers(t => t.slice(0, Math.max(0, rem - 1)))
     setTravelDate(toDateOnly(pkg?.startDate))
   }
 
-  useEffect(() => {
-    let cancelled = false
-    listCustomers()
-      .then((res) => { if (!cancelled) setAgencyCustomers(res.data?.data?.customers ?? []) })
-      .catch(() => { if (!cancelled) setAgencyCustomers([]) })
-    return () => { cancelled = true }
+  const [customersPage, setCustomersPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [loadingCustomers, setLoadingCustomers] = useState(false)
+  const isFetchingCustomersRef = useRef(false)
+
+  const loadCustomers = useCallback(async (p, q, append = false) => {
+    if (isFetchingCustomersRef.current) return
+    isFetchingCustomersRef.current = true
+    setLoadingCustomers(true)
+    try {
+      const res = await listCustomers({ page: p, limit: 10, search: q })
+      const data = res.data?.data
+      const newCustomers = data?.customers ?? []
+      setAgencyCustomers((prev) => (append ? [...prev, ...newCustomers] : newCustomers))
+      setTotalPages(data?.pagination?.totalPages ?? 1)
+      setCustomersPage(p)
+    } catch (err) {
+      console.error('Failed to load customers:', err)
+    } finally {
+      isFetchingCustomersRef.current = false
+      setLoadingCustomers(false)
+    }
   }, [])
 
-  const filteredAgencyCustomers = useMemo(() => {
-    const q = existingSearchQuery.trim().toLowerCase()
-    if (!q) return agencyCustomers
-    return agencyCustomers.filter((c) => agencyCustomerSearchHaystack(c).includes(q))
-  }, [agencyCustomers, existingSearchQuery])
+  useEffect(() => {
+    loadCustomers(1, '')
+  }, []) // Load only once on mount
+
+  useEffect(() => {
+    if (customerMode !== 'existing') return
+    const t = setTimeout(() => {
+      loadCustomers(1, existingSearchQuery)
+    }, 400)
+    return () => clearTimeout(t)
+  }, [existingSearchQuery, customerMode, loadCustomers])
 
   const selectedExistingRow = useMemo(
     () => selectedExistingId ? agencyCustomers.find((c) => String(c._id) === selectedExistingId) ?? null : null,
@@ -200,9 +242,10 @@ export default function CreateBooking() {
   }, [customerPhone, customerMode, runPhoneLookup])
 
   const addTraveler = () => {
-    const maxAdditional = maxCapacity != null ? maxCapacity - 1 : Infinity
+    const currentCap = remainingCapacity != null ? remainingCapacity : maxCapacity
+    const maxAdditional = currentCap != null ? currentCap - 1 : Infinity
     if (travelers.length >= maxAdditional) {
-      toast.error(`Max capacity is ${maxCapacity}. Primary customer + ${maxCapacity - 1} additional traveler(s) allowed.`)
+      toast.error(`Remaining capacity is ${currentCap}. Primary customer + ${currentCap - 1} additional traveler(s) allowed.`)
       return
     }
     setTravelers((t) => [...t, emptyTraveler()])
@@ -230,8 +273,9 @@ export default function CreateBooking() {
     const amount = Number(totalAmount)
     if (Number.isNaN(amount) || amount <= 0) return
 
-    if (maxCapacity != null && travelers.length + 1 > maxCapacity) {
-      toast.error(`Max capacity is ${maxCapacity}. Remove some travelers.`)
+    const currentCap = remainingCapacity != null ? remainingCapacity : maxCapacity
+    if (currentCap != null && travelers.length + 1 > currentCap) {
+      toast.error(`Remaining capacity is ${currentCap}. Remove some travelers or increase the package capacity.`)
       return
     }
 
@@ -366,14 +410,7 @@ export default function CreateBooking() {
 
           {customerMode === 'existing' && (
             <div className="space-y-3">
-              <div className="relative">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                <input type="search" autoComplete="off" placeholder="Type name, phone, or email…"
-                  className={`${inputCls} pl-9`} value={existingSearchQuery}
-                  onChange={(e) => setExistingSearchQuery(e.target.value)}
-                  disabled={agencyCustomers.length === 0} />
-              </div>
-              {selectedExistingId && selectedExistingRow && (
+              {selectedExistingId && selectedExistingRow ? (
                 <div className="flex items-start justify-between gap-2 rounded-lg border border-emerald-200 bg-emerald-50/90 px-3 py-2 text-xs text-emerald-950">
                   <div className="min-w-0">
                     <span className="font-semibold">Selected: </span>
@@ -385,23 +422,57 @@ export default function CreateBooking() {
                     <X className="h-4 w-4" />
                   </button>
                 </div>
+              ) : (
+                <>
+                  <div className="relative">
+                    <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                    <input type="search" autoComplete="off" placeholder="Type name, phone, or email…"
+                      className={`${inputCls} pl-9`} value={existingSearchQuery}
+                      onChange={(e) => setExistingSearchQuery(e.target.value)}
+                      disabled={agencyCustomers.length === 0} />
+                  </div>
+                  <ul className="max-h-56 overflow-y-auto rounded-xl border border-gray-200 bg-white shadow-sm" role="listbox">
+                    {agencyCustomers.length === 0 && !loadingCustomers && (
+                      <li className="px-3 py-4 text-center text-sm text-gray-500">No customers found.</li>
+                    )}
+                    {agencyCustomers.map((c) => {
+                      const id = String(c._id)
+                      const selected = selectedExistingId === id
+                      return (
+                        <li key={id} role="option" aria-selected={selected}>
+                          <button type="button"
+                            onClick={() => { setSelectedExistingId(id); applyExistingCustomer(c) }}
+                            className={`flex w-full flex-col items-start gap-0.5 border-b border-gray-50 px-3 py-2.5 text-left text-sm transition last:border-b-0 ${selected ? 'bg-primary-50 text-primary-950' : 'hover:bg-gray-50'}`}>
+                            <span className="font-medium text-gray-900">{agencyCustomerDisplayName(c)}</span>
+                            <span className="text-xs text-gray-600">{agencyCustomerPhone(c) || '—'}{agencyCustomerEmail(c) ? ` · ${agencyCustomerEmail(c)}` : ''}</span>
+                          </button>
+                        </li>
+                      )
+                    })}
+                    {totalPages > 1 && (
+                      <li className="sticky bottom-0 border-t border-gray-100 bg-gray-50/95 p-2 backdrop-blur-sm">
+                        <div className="flex items-center justify-between gap-2">
+                          <button type="button"
+                            onClick={() => loadCustomers(customersPage - 1, existingSearchQuery)}
+                            disabled={customersPage <= 1 || loadingCustomers}
+                            className="rounded-md border border-gray-200 bg-white px-2.5 py-1.5 text-[10px] font-semibold text-gray-700 shadow-sm hover:bg-gray-50 disabled:opacity-30">
+                            Previous
+                          </button>
+                          <span className="text-[10px] font-medium text-gray-500">
+                            Page {customersPage} of {totalPages}
+                          </span>
+                          <button type="button"
+                            onClick={() => loadCustomers(customersPage + 1, existingSearchQuery)}
+                            disabled={customersPage >= totalPages || loadingCustomers}
+                            className="rounded-md border border-gray-200 bg-white px-2.5 py-1.5 text-[10px] font-semibold text-gray-700 shadow-sm hover:bg-gray-50 disabled:opacity-30">
+                            Next
+                          </button>
+                        </div>
+                      </li>
+                    )}
+                  </ul>
+                </>
               )}
-              <ul className="max-h-48 overflow-y-auto rounded-xl border border-gray-200 bg-white shadow-sm" role="listbox">
-                {filteredAgencyCustomers.map((c) => {
-                  const id = String(c._id)
-                  const selected = selectedExistingId === id
-                  return (
-                    <li key={id} role="option" aria-selected={selected}>
-                      <button type="button"
-                        onClick={() => { setSelectedExistingId(id); applyExistingCustomer(c) }}
-                        className={`flex w-full flex-col items-start gap-0.5 border-b border-gray-50 px-3 py-2.5 text-left text-sm transition last:border-b-0 ${selected ? 'bg-primary-50 text-primary-950' : 'hover:bg-gray-50'}`}>
-                        <span className="font-medium text-gray-900">{agencyCustomerDisplayName(c)}</span>
-                        <span className="text-xs text-gray-600">{agencyCustomerPhone(c) || '—'}{agencyCustomerEmail(c) ? ` · ${agencyCustomerEmail(c)}` : ''}</span>
-                      </button>
-                    </li>
-                  )
-                })}
-              </ul>
             </div>
           )}
 
@@ -460,20 +531,20 @@ export default function CreateBooking() {
               <span className="text-sm font-medium text-gray-700">Additional travelers</span>
               {maxCapacity != null && (
                 <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                  travelers.length + 1 >= maxCapacity
+                  (remainingCapacity ?? maxCapacity) != null && travelers.length + 1 >= (remainingCapacity ?? maxCapacity)
                     ? 'bg-red-100 text-red-700'
-                    : travelers.length + 1 >= maxCapacity - 1
+                    : (remainingCapacity ?? maxCapacity) != null && travelers.length + 1 >= (remainingCapacity ?? maxCapacity) - 1
                     ? 'bg-amber-100 text-amber-700'
                     : 'bg-slate-100 text-slate-600'
                 }`}>
-                  {travelers.length + 1}/{maxCapacity} seats used
+                  {travelers.length + 1}/{(remainingCapacity ?? maxCapacity)} seats used
                 </span>
               )}
             </div>
             <Button
               type="button" variant="secondary" className="py-1.5 text-xs"
               onClick={addTraveler}
-              disabled={maxCapacity != null && travelers.length >= maxCapacity - 1}
+              disabled={(remainingCapacity ?? maxCapacity) != null && travelers.length >= (remainingCapacity ?? maxCapacity) - 1}
             >
               <Plus className="mr-1 inline h-3.5 w-3.5" /> Add traveler
             </Button>
@@ -533,6 +604,7 @@ export default function CreateBooking() {
             <input id="bk-amount" type="number" min={minTotalAmount} className={`${inputCls} ${Number(totalAmount) < minTotalAmount ? 'border-red-300 bg-red-50' : ''}`}
               value={totalAmount} 
               onChange={(e) => setTotalAmount(e.target.value)}
+              onWheel={(e) => e.target.blur()}
               required />
             <p className={`mt-1 text-xs ${Number(totalAmount) < minTotalAmount ? 'text-red-600 font-medium' : 'text-gray-400'}`}>
               Minimum: ₹{minTotalAmount.toLocaleString('en-IN')} (₹{basePackagePrice.toLocaleString('en-IN')} × {travelers.length + 1} traveler{travelers.length + 1 !== 1 ? 's' : ''})

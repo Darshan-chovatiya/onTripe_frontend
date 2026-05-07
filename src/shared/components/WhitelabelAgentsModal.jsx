@@ -21,27 +21,37 @@ export default function WhitelabelAgentsModal({ isOpen, onClose, agents = [], ti
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {agents.map((agent, i) => (
-                  <tr key={i} className="hover:bg-gray-50/50">
-                    <td className="px-4 py-3">
-                      <div className="font-semibold text-gray-900">{agent.name}</div>
-                      <div className="text-xs text-gray-500">{agent.email}</div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="rounded-md bg-gray-100 px-2 py-0.5 font-mono text-xs text-gray-700">
-                        {agent.agentCode}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <div className="flex flex-col items-end gap-0.5 text-xs text-gray-500">
-                        <span className="flex items-center gap-1">
-                          <Calendar className="h-3 w-3" />
-                          {new Date(agent.whitelabeledAt).toLocaleDateString()}
+                {agents.map((agent, index) => {
+                  const user = agent.createdBy || agent;
+                  const dateStr = agent.whitelabeledAt || agent.createdAt || user.createdAt;
+                  
+                  return (
+                    <tr key={agent._id || index} className="group transition hover:bg-gray-50/50">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-100 text-violet-700 font-bold">
+                            {(user.name || 'A').charAt(0).toUpperCase()}
+                          </div>
+                          <div>
+                            <p className="text-sm font-bold text-gray-900">{user.name}</p>
+                            <p className="text-xs text-gray-500">{user.email}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="inline-flex items-center gap-1.5 rounded-lg bg-gray-100 px-2.5 py-1 text-xs font-bold font-mono text-gray-700 ring-1 ring-inset ring-gray-200">
+                          {user.agentCode}
                         </span>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                          <Calendar className="h-3.5 w-3.5" />
+                          {dateStr ? new Date(dateStr).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : 'N/A'}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

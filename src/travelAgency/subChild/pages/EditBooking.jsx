@@ -59,6 +59,8 @@ export default function EditBooking() {
   const [bookingStatus, setBookingStatus] = useState('confirmed')
   const [travelers, setTravelers] = useState([])
   const travelerIdRef = useRef(0)
+  const [maxCapacity, setMaxCapacity] = useState(null)
+  const [remainingCapacity, setRemainingCapacity] = useState(null)
   const [custDocs, setCustDocs] = useState({
     aadharFront: null, aadharBack: null, panCard: null,
     passport: null, visaDoc: null, otherDocs: [],
@@ -78,8 +80,9 @@ export default function EditBooking() {
           setCustomerEmail(data.customer?.email || '')
           setTravelDate(toDatetimeLocal(data.travelDate))
           setTotalAmount(data.totalAmount != null ? String(data.totalAmount) : '')
-          setPaymentStatus(data.paymentStatus || 'pending')
           setBookingStatus(data.bookingStatus || 'confirmed')
+          setMaxCapacity(data.package?.maxCapacity ?? null)
+          setRemainingCapacity(data.package?.remainingCapacity ?? null)
           setTravelers(
             (data.travelers || []).map((t) => {
               travelerIdRef.current += 1
@@ -106,6 +109,13 @@ export default function EditBooking() {
   }, [id, fetchBooking])
 
   const addTraveler = () => {
+    if (maxCapacity != null) {
+      const available = (remainingCapacity ?? 0) + (booking?.travelerCount || 0)
+      if (travelers.length + 2 > available) {
+        toast.error(`Package capacity is ${maxCapacity}. You can have at most ${available} people in this booking.`)
+        return
+      }
+    }
     travelerIdRef.current += 1
     setTravelers((t) => [...t, emptyTraveler(travelerIdRef.current)])
   }
@@ -119,6 +129,14 @@ export default function EditBooking() {
     if (!customerName.trim() || !customerPhone.trim()) return
     const amount = Number(totalAmount)
     if (Number.isNaN(amount) || amount <= 0) return
+
+    if (maxCapacity != null) {
+      const available = (remainingCapacity ?? 0) + (booking?.travelerCount || 0)
+      if (travelers.length + 1 > available) {
+        toast.error(`Package capacity is ${maxCapacity}. You can have at most ${available} people in this booking.`)
+        return
+      }
+    }
 
     const originalTravelers = booking.travelers || []
     const validTravelers = travelers
@@ -260,8 +278,23 @@ export default function EditBooking() {
           {/* Additional travelers */}
           <div>
             <div className="mb-2 flex items-center justify-between">
-              <span className="text-sm font-medium text-gray-700">Additional travelers</span>
-              <Button type="button" variant="secondary" className="py-1.5 text-xs" onClick={addTraveler}>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-gray-700">Additional travelers</span>
+                {maxCapacity != null && (
+                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                    travelers.length + 1 >= (remainingCapacity ?? 0) + (booking?.travelerCount || 0)
+                      ? 'bg-red-100 text-red-700'
+                      : travelers.length + 1 >= (remainingCapacity ?? 0) + (booking?.travelerCount || 0) - 1
+                      ? 'bg-amber-100 text-amber-700'
+                      : 'bg-slate-100 text-slate-600'
+                  }`}>
+                    {travelers.length + 1}/{(remainingCapacity ?? 0) + (booking?.travelerCount || 0)} available
+                  </span>
+                )}
+              </div>
+              <Button type="button" variant="secondary" className="py-1.5 text-xs" 
+                onClick={addTraveler}
+                disabled={maxCapacity != null && travelers.length + 1 >= (remainingCapacity ?? 0) + (booking?.travelerCount || 0)}>
                 <Plus className="mr-1 inline h-3.5 w-3.5" /> Add traveler
               </Button>
             </div>

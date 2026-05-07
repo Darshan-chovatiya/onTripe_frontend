@@ -145,8 +145,8 @@ export default function ChildDashboard() {
                 <button key={p.label} type="button"
                   onClick={() => { setDateRange(r); fetchAll(r) }}
                   className={`rounded-full border px-3 py-1 text-xs font-semibold transition-all ${active
-                      ? 'border-gray-900 bg-gray-900 text-white'
-                      : 'border-gray-200 bg-white text-gray-500 hover:border-gray-400 hover:text-gray-700'
+                    ? 'border-gray-900 bg-gray-900 text-white'
+                    : 'border-gray-200 bg-white text-gray-500 hover:border-gray-400 hover:text-gray-700'
                     }`}>
                   {p.label}
                 </button>
@@ -175,11 +175,13 @@ export default function ChildDashboard() {
       {err && <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">{err}</div>}
 
       {/* ── Stat cards ── */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
         <StatCard label="Bookings" value={loading ? null : analytics?.totalBookings ?? 0}
           icon={BookOpen} accent="bg-sky-50 text-sky-600" loading={loading} />
-        <StatCard label="Available Whitelabels Packages" value={loading ? null : analytics?.totalAvailableToWhitelabel ?? 0}
+        <StatCard label="Available Packages" value={loading ? null : analytics?.totalAvailableToWhitelabel ?? 0}
           icon={Package} accent="bg-violet-50 text-violet-600" loading={loading} />
+        <StatCard label="Whitelabeled" value={loading ? null : analytics?.totalPackages ?? 0}
+          icon={Layers} accent="bg-indigo-50 text-indigo-600" loading={loading} />
         <StatCard label="Customers" value={loading ? null : analytics?.totalCustomers ?? 0}
           icon={ContactRound} accent="bg-amber-50 text-amber-600" loading={loading} />
         <StatCard label="Earnings" value={loading ? null : fmt(totalEarnings ?? totalRevenue ?? 0)}
@@ -296,8 +298,8 @@ export default function ChildDashboard() {
                   <p className="mt-1 text-[11px] text-gray-400">Auto-fills your code for new sub-agents signing up.</p>
                   <button type="button" onClick={handleCopyLink}
                     className={`mt-3 flex w-full items-center justify-center gap-2 rounded-xl border py-2.5 text-xs font-bold transition-all ${linkCopied
-                        ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                        : 'border-gray-900 bg-gray-900 text-white hover:bg-gray-800'
+                      ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                      : 'border-gray-900 bg-gray-900 text-white hover:bg-gray-800'
                       }`}>
                     {linkCopied
                       ? <><Check className="h-3.5 w-3.5" strokeWidth={2.5} /> Copied!</>

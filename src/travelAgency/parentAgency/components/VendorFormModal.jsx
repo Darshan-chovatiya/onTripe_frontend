@@ -268,7 +268,11 @@ export default function VendorFormModal({ isOpen, onClose, onSubmit, initialData
   }, [docs])
 
   const set = (k, v) => {
-    setForm(f => ({ ...f, [k]: v }))
+    let finalValue = v
+    if (k === 'phone') {
+      finalValue = v.replace(/\D/g, '').slice(0, 10)
+    }
+    setForm(f => ({ ...f, [k]: finalValue }))
     setErrors(e => { const n = { ...e }; delete n[k]; return n })
   }
 
@@ -280,8 +284,11 @@ export default function VendorFormModal({ isOpen, onClose, onSubmit, initialData
 
     // Contact
     if (!form.contactPerson.trim()) e.contactPerson = 'Contact person name is required'
-    if (!form.phone.trim()) e.phone = 'Phone number is required'
-    else if (!/^[\d\s+\-()]{7,15}$/.test(form.phone.trim())) e.phone = 'Enter a valid phone number (7–15 digits)'
+    if (!form.phone.trim()) {
+      e.phone = 'Phone number is required'
+    } else if (form.phone.replace(/\D/g, '').length !== 10) {
+      e.phone = 'Please provide a valid 10-digit phone number'
+    }
 
     // Email
     if (!isEdit) {
@@ -412,10 +419,12 @@ export default function VendorFormModal({ isOpen, onClose, onSubmit, initialData
                   <div className="relative">
                     <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" strokeWidth={2} />
                     <input
+                      type="tel"
+                      maxLength={10}
                       className={`${ic(!!errors.phone)} pl-9`}
                       value={form.phone}
                       onChange={e => set('phone', e.target.value)}
-                      placeholder="+91 XXXXX XXXXX"
+                      placeholder="10-digit mobile number"
                       data-verr={!!errors.phone}
                     />
                   </div>
