@@ -247,8 +247,11 @@ export default function Bookings() {
                   {/* <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wide text-gray-400">Booking</th> */}
                   <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wide text-gray-400">Customer</th>
                   <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wide text-gray-400">Package</th>
-                  <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wide text-gray-400">Travel Date</th>
-                  <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wide text-gray-400">Amount</th>
+                   <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wide text-gray-400">Travel Date</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wide text-gray-400">Total Amount</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wide text-gray-400">Parent Price</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wide text-gray-400">WL Price</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wide text-gray-400">Extra Income</th>
                   <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wide text-gray-400">Booked By</th>
                   <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wide text-gray-400">Status</th>
                   <th className="px-4 py-3 text-right text-[11px] font-bold uppercase tracking-wide text-gray-400">Actions</th>
@@ -299,6 +302,15 @@ export default function Bookings() {
                             {b.paymentStatus || 'pending'}
                           </span>
                         </div>
+                      </td>
+                      <td className="px-4 py-3.5 align-middle">
+                        <span className="text-sm font-medium text-gray-600">₹{Number(b.parentPriceAtBooking || 0).toLocaleString('en-IN')}</span>
+                      </td>
+                      <td className="px-4 py-3.5 align-middle">
+                        <span className="text-sm font-medium text-gray-600">₹{Number(b.whitelabelPriceAtBooking || 0).toLocaleString('en-IN')}</span>
+                      </td>
+                      <td className="px-4 py-3.5 align-middle">
+                        <span className="text-sm font-bold text-blue-600">₹{Number((b.totalAmount || 0) - (b.whitelabelPriceAtBooking || 0)).toLocaleString('en-IN')}</span>
                       </td>
                       <td className="px-4 py-3.5 align-middle">
                         <div className="flex flex-col">
