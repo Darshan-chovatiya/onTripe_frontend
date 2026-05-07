@@ -17,7 +17,7 @@ export default function WhitelabelAgentsModal({ isOpen, onClose, agents = [], ti
                 <tr>
                   <th className="px-4 py-3">Agent</th>
                   <th className="px-4 py-3">Code</th>
-                  <th className="px-4 py-3 text-right">Date</th>
+                  <th className="px-4 py-3 _text-right">Date</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
