@@ -72,6 +72,7 @@ export default function Notifications() {
   const handleFcmToggle = (checked) => {
     setSendFcm(checked)
     if (checked) {
+      setFiles([]) // Push notifications don't support attachments
       setActiveTab('customers')
       // Remove any non-customer selections
       const customerIds = new Set((recipients.customers || []).map(c => c._id))
@@ -401,34 +402,36 @@ export default function Notifications() {
               </div>
 
               {/* ── Attachments ── */}
-              <div>
-                <input ref={fileInputRef} type="file" multiple accept="image/jpeg,image/png,image/jpg,application/pdf"
-                  className="hidden" onChange={handleFileChange} />
-                <button type="button" onClick={() => fileInputRef.current?.click()} disabled={files.length >= 5}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-gray-300 bg-gray-50 py-2.5 text-xs font-semibold text-gray-500 transition hover:border-primary-300 hover:bg-primary-50 hover:text-primary-600 disabled:opacity-40">
-                  <Paperclip className="h-3.5 w-3.5" strokeWidth={2} />
-                  Attach files ({files.length}/5)
-                </button>
-                {files.length > 0 && (
-                  <ul className="mt-2 space-y-1.5">
-                    {files.map((f, i) => (
-                      <li key={i} className="flex items-center gap-2 rounded-xl border border-gray-100 bg-gray-50 px-3 py-2">
-                        {f.type.startsWith('image/')
-                          ? <ImageIcon className="h-4 w-4 shrink-0 text-sky-500" strokeWidth={1.75} />
-                          : <FileText className="h-4 w-4 shrink-0 text-rose-400" strokeWidth={1.75} />}
-                        <span className="min-w-0 flex-1 truncate text-xs font-medium text-gray-700">{f.name}</span>
-                        <span className="shrink-0 text-[10px] text-gray-400">
-                          {f.size < 1024 * 1024 ? `${(f.size / 1024).toFixed(0)}KB` : `${(f.size / (1024 * 1024)).toFixed(1)}MB`}
-                        </span>
-                        <button type="button" onClick={() => setFiles(p => p.filter((_, j) => j !== i))}
-                          className="shrink-0 rounded-md p-0.5 text-gray-400 hover:bg-red-50 hover:text-red-500">
-                          <X className="h-3.5 w-3.5" strokeWidth={2} />
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
+              {!sendFcm && (
+                <div>
+                  <input ref={fileInputRef} type="file" multiple accept="image/jpeg,image/png,image/jpg,application/pdf"
+                    className="hidden" onChange={handleFileChange} />
+                  <button type="button" onClick={() => fileInputRef.current?.click()} disabled={files.length >= 5}
+                    className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-gray-300 bg-gray-50 py-2.5 text-xs font-semibold text-gray-500 transition hover:border-primary-300 hover:bg-primary-50 hover:text-primary-600 disabled:opacity-40">
+                    <Paperclip className="h-3.5 w-3.5" strokeWidth={2} />
+                    Attach files ({files.length}/5)
+                  </button>
+                  {files.length > 0 && (
+                    <ul className="mt-2 space-y-1.5">
+                      {files.map((f, i) => (
+                        <li key={i} className="flex items-center gap-2 rounded-xl border border-gray-100 bg-gray-50 px-3 py-2">
+                          {f.type.startsWith('image/')
+                            ? <ImageIcon className="h-4 w-4 shrink-0 text-sky-500" strokeWidth={1.75} />
+                            : <FileText className="h-4 w-4 shrink-0 text-rose-400" strokeWidth={1.75} />}
+                          <span className="min-w-0 flex-1 truncate text-xs font-medium text-gray-700">{f.name}</span>
+                          <span className="shrink-0 text-[10px] text-gray-400">
+                            {f.size < 1024 * 1024 ? `${(f.size / 1024).toFixed(0)}KB` : `${(f.size / (1024 * 1024)).toFixed(1)}MB`}
+                          </span>
+                          <button type="button" onClick={() => setFiles(p => p.filter((_, j) => j !== i))}
+                            className="shrink-0 rounded-md p-0.5 text-gray-400 hover:bg-red-50 hover:text-red-500">
+                            <X className="h-3.5 w-3.5" strokeWidth={2} />
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
 
               {/* ── Send button ── */}
               <button type="button" onClick={handleSend}

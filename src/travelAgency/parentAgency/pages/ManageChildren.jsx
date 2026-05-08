@@ -82,6 +82,10 @@ export default function ManageChildren() {
 
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [editingAgent, setEditingAgent] = useState(null)
+  
+  const [rejectTarget, setRejectTarget] = useState(null)
+  const [rejectReason, setRejectReason] = useState('')
+  const [rejectBusy, setRejectBusy] = useState(false)
 
   const fetchChildren = useCallback(async () => {
     setLoading(true)
@@ -145,6 +149,22 @@ export default function ManageChildren() {
     }
   }
 
+  const handleRejectKyc = async () => {
+    if (!rejectTarget || !rejectReason.trim()) return
+    setRejectBusy(true)
+    try {
+      await rejectChildKyc(rejectTarget._id, rejectReason)
+      toast.success(`KYC rejected for ${rejectTarget.name}`)
+      await fetchChildren()
+      setRejectTarget(null)
+      setRejectReason('')
+    } catch (err) {
+      toast.error(getApiErrorMessage(err))
+    } finally {
+      setRejectBusy(false)
+    }
+  }
+
   const handleExport = async () => {
     setExportLoading(true)
     try {
@@ -162,6 +182,7 @@ export default function ManageChildren() {
           'Email': c.email || '',
           'Phone': c.phone || '',
           'KYC Status': c.kyc?.status || 'pending',
+          'KYC Remark': c.kyc?.rejectionReason || '',
           'Account Status': c.isActive ? 'Active' : 'Deactivated',
           'Link Status': c.linkStatus || '',
         })),
@@ -388,6 +409,7 @@ export default function ManageChildren() {
                   <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-gray-400">Agent</th>
                   <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-gray-400">Contact</th>
                   <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-gray-400">KYC</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-gray-400">Remarks</th>
                   <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-gray-400">Status</th>
                   <th className="px-4 py-3 text-right text-[11px] font-bold uppercase tracking-wider text-gray-400">Actions</th>
                 </tr>
@@ -434,15 +456,19 @@ export default function ManageChildren() {
                             <span className="h-1.5 w-1.5 rounded-full bg-red-500" />Not verified
                           </span>
                         ) : (
-                          <div>
-                            <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold capitalize ${KYC_STYLES[kycStatus]}`}>
-                              <span className="h-1.5 w-1.5 rounded-full bg-current opacity-60" />
-                              {kycStatus}
-                            </span>
-                            {kycStatus === 'rejected' && child.kyc?.rejectionReason && (
-                              <p className="mt-1.5 text-[11px] text-red-600 font-bold">{child.kyc.rejectionReason}</p>
-                            )}
-                          </div>
+                          <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold capitalize ${KYC_STYLES[kycStatus]}`}>
+                            <span className="h-1.5 w-1.5 rounded-full bg-current opacity-60" />
+                            {kycStatus}
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3.5 align-middle">
+                        {kycStatus === 'rejected' && child.kyc?.rejectionReason ? (
+                          <p className="max-w-[180px] truncate text-[11px] font-bold text-red-600" title={child.kyc.rejectionReason}>
+                            {child.kyc.rejectionReason}
+                          </p>
+                        ) : (
+                          <span className="text-[11px] text-gray-300">—</span>
                         )}
                       </td>
                       <td className="px-4 py-3.5 align-middle">
@@ -460,6 +486,18 @@ export default function ManageChildren() {
                       </td>
                       <td className="px-4 py-3.5 align-middle text-right">
                         <div className="inline-flex items-center gap-1">
+                          {kycStatus === 'pending' && (
+                            <>
+                              <button onClick={() => setKycTarget(child)} title="Approve KYC"
+                                className="flex h-8 w-8 items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-600 shadow-sm transition hover:bg-emerald-100">
+                                <CheckCircle size={13} />
+                              </button>
+                              <button onClick={() => setRejectTarget(child)} title="Reject KYC"
+                                className="flex h-8 w-8 items-center justify-center rounded-lg border border-red-200 bg-red-50 text-red-600 shadow-sm transition hover:bg-red-100">
+                                <XCircle size={13} />
+                              </button>
+                            </>
+                          )}
                           <button onClick={() => setViewId(child._id)} title="View"
                             className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-400 shadow-sm transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-600">
                             <Eye size={13} />
@@ -608,6 +646,30 @@ export default function ManageChildren() {
         cancelText="Cancel"
         variant="primary"
       />
+
+      <Modal isOpen={!!rejectTarget} onClose={() => !rejectBusy && setRejectTarget(null)} title="Reject KYC" size="md">
+        <div className="space-y-4">
+          <p className="text-sm text-gray-500">Provide a reason for rejecting the KYC for <span className="font-bold text-gray-900">{rejectTarget?.name}</span>.</p>
+          <textarea
+            value={rejectReason}
+            onChange={(e) => setRejectReason(e.target.value)}
+            rows={4}
+            placeholder="E.g. Aadhar card image is blurry or documents don't match."
+            className="w-full resize-none rounded-xl border border-gray-200 px-4 py-3 text-sm focus:border-red-400 focus:outline-none focus:ring-4 focus:ring-red-400/5"
+          />
+          <div className="flex items-center justify-end gap-2">
+            <button onClick={() => setRejectTarget(null)} disabled={rejectBusy}
+              className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50">
+              Cancel
+            </button>
+            <button onClick={handleRejectKyc} disabled={rejectBusy || !rejectReason.trim()}
+              className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-700 disabled:opacity-50">
+              {rejectBusy && <RefreshCw size={14} className="animate-spin" />}
+              Reject KYC
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   )
 }

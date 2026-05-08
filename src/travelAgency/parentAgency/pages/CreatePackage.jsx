@@ -80,7 +80,7 @@ export default function CreatePackage() {
     if (!form.destination.trim()) e.destination = 'Destination is required'
     if (!form.startDate) e.startDate = 'Start date is required'
     if (!form.endDate) e.endDate = 'End date is required'
-    else if (form.startDate && form.endDate <= form.startDate) e.endDate = 'End date must be after start date'
+    else if (form.startDate && form.endDate < form.startDate) e.endDate = 'End date must be on or after start date'
     if (!form.basePrice || Number(form.basePrice) <= 0) e.basePrice = 'Price must be greater than ₹0'
     if (!coverFile) e.coverImage = 'Cover image is required'
     if (galleryFiles.length < 1) e.gallery = 'At least 1 gallery photo is required'
@@ -290,7 +290,8 @@ export default function CreatePackage() {
         }
       })
       setExpandedDays(newExpanded)
-      toast.error('Please fix the errors before submitting')
+      const firstError = Object.values(errs)[0]
+      toast.error(firstError || 'Please fix the errors before submitting')
       // Scroll to first error
       setTimeout(() => {
         const el = document.querySelector('[data-error="true"]')
@@ -411,7 +412,7 @@ export default function CreatePackage() {
                 type="date"
                 className={inputCls(!!errors.endDate)}
                 value={form.endDate}
-                min={form.startDate ? (() => { const d = new Date(form.startDate); d.setDate(d.getDate() + 1); return d.toISOString().split('T')[0] })() : todayStr}
+                min={form.startDate || todayStr}
                 onChange={e => { handleEndDateChange(e.target.value); clearErr('endDate') }}
                 data-error={!!errors.endDate}
               />

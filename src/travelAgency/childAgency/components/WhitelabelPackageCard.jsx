@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { MapPin, Clock, IndianRupee, Pencil, Power, MessageSquare, Eye, Star, Users, TrendingUp, CheckCircle2, XCircle, Ticket, ShieldAlert, Layers } from 'lucide-react'
+import { MapPin, Clock, IndianRupee, Pencil, Power, MessageSquare, Eye, Star, Users, TrendingUp, CheckCircle2, XCircle, Ticket, ShieldAlert, Layers, MoreVertical } from 'lucide-react'
+import { useRef, useEffect } from 'react'
 import { packageCoverUrl } from '@/travelAgency/childAgency/components/packageMedia.js'
 import PackageDetailModal from '@/travelAgency/childAgency/components/PackageDetailModal.jsx'
 
@@ -14,6 +15,16 @@ export default function WhitelabelPackageCard({ item, onEdit, onToggleActive, on
   const finalPrice = Number(item.finalPrice ?? orig?.basePrice ?? 0)
   const basePrice = Number(orig?.basePrice ?? 0)
   const [detailOpen, setDetailOpen] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const menuRef = useRef(null)
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false)
+    }
+    if (menuOpen) document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [menuOpen])
 
   const sourcePrice = item.parentWhitelabel ? Number(item.parentWhitelabel.finalPrice || 0) : basePrice
   const myCommission = finalPrice - sourcePrice
@@ -23,7 +34,7 @@ export default function WhitelabelPackageCard({ item, onEdit, onToggleActive, on
     : `+₹${Number(item.commissionValue).toLocaleString('en-IN')}`
 
   return (
-    <article className={`group flex flex-col overflow-hidden rounded-2xl bg-white ring-1 shadow-sm transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 ${disabled ? 'opacity-60 ring-gray-200' : item.isActive ? 'ring-gray-200 hover:ring-primary-200' : 'ring-gray-200 opacity-75'
+    <article className={`group relative flex flex-col rounded-2xl bg-white ring-1 shadow-sm transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 ${disabled ? 'opacity-60 ring-gray-200' : item.isActive ? 'ring-gray-200 hover:ring-primary-200' : 'ring-gray-200 opacity-75'
       }`}>
       {/* Cover */}
       <div className="relative h-44 overflow-hidden bg-gray-100">
@@ -35,8 +46,8 @@ export default function WhitelabelPackageCard({ item, onEdit, onToggleActive, on
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
 
-        {/* Status badge */}
-        <div className="absolute right-2 top-2">
+        {/* Status badge & Kebab */}
+        <div className="absolute right-2 top-2 flex items-center gap-1.5">
           {disabled || orig?.isSuspended ? (
             <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-semibold text-white backdrop-blur-sm ${orig?.isSuspended ? 'bg-red-600' : 'bg-gray-900/70'}`}>
               {orig?.isSuspended ? <span className="flex items-center gap-1"><ShieldAlert size={10} /> Suspended</span> : 'Parent inactive'}
@@ -47,6 +58,59 @@ export default function WhitelabelPackageCard({ item, onEdit, onToggleActive, on
               {item.isActive ? <><CheckCircle2 className="h-2.5 w-2.5" />Live</> : <><XCircle className="h-2.5 w-2.5" />Off</>}
             </span>
           )}
+
+          {/* Kebab Menu */}
+          <div className="relative" ref={menuRef}>
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); setMenuOpen(!menuOpen) }}
+              className={`flex h-7 w-7 items-center justify-center rounded-full transition shadow-sm backdrop-blur-sm border ${menuOpen ? 'bg-primary-600 border-primary-500 text-white' : 'bg-white/90 border-white/20 text-gray-700 hover:bg-white'}`}
+            >
+              <MoreVertical size={14} strokeWidth={2.5} />
+            </button>
+
+            {menuOpen && (
+              <div className="absolute top-full right-0 mt-2 z-[60] w-48 overflow-hidden rounded-xl border border-gray-200 bg-white py-1 shadow-xl animate-in fade-in slide-in-from-top-2 duration-200">
+                <button
+                  type="button"
+                  disabled={disabled || orig?.isSuspended}
+                  onClick={() => { setMenuOpen(false); onEdit(item) }}
+                  className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                >
+                  <Pencil size={14} className="text-gray-400" />
+                  Edit Offer
+                </button>
+                <button
+                  type="button"
+                  disabled={disabled || orig?.isSuspended}
+                  onClick={() => { setMenuOpen(false); onToggleActive(item) }}
+                  className={`flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-xs font-medium hover:bg-gray-50 disabled:opacity-50 ${item.isActive ? 'text-red-600' : 'text-emerald-700'}`}
+                >
+                  <Power size={14} />
+                  {item.isActive ? 'Pause Offer' : 'Activate Offer'}
+                </button>
+                <div className="my-1 border-t border-gray-100" />
+                <button
+                  type="button"
+                  onClick={() => { setMenuOpen(false); onRating(item) }}
+                  className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-xs font-medium text-gray-700 hover:bg-gray-50"
+                >
+                  <Star size={14} className="text-amber-500" />
+                  Reviews
+                </button>
+                {hasBooking && (
+                  <button
+                    type="button"
+                    onClick={() => { setMenuOpen(false); onChat() }}
+                    className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-xs font-medium text-gray-700 hover:bg-gray-50"
+                  >
+                    <MessageSquare size={14} className="text-primary-500" />
+                    Community Chat
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
         </div>
         {item.whitelabelCount > 0 && (
           <div className="absolute left-2 top-2">
@@ -166,86 +230,24 @@ export default function WhitelabelPackageCard({ item, onEdit, onToggleActive, on
           <button
             type="button"
             onClick={() => setDetailOpen(true)}
-            className="flex-1 rounded-xl bg-primary-600 py-2 text-xs font-semibold text-white transition hover:bg-primary-700 active:scale-[0.98]"
+            className="flex-1 rounded-xl bg-primary-600 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-primary-700 active:scale-[0.98]"
           >
             View details
           </button>
           <button
             type="button"
             onClick={() => navigate(`/agency/bookings/create?whitelabelId=${item._id}`)}
-            className="flex-1 rounded-xl bg-emerald-600 py-2 text-xs font-semibold text-white transition hover:bg-emerald-700 active:scale-[0.98]"
+            className="flex-1 rounded-xl bg-emerald-600 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-emerald-700 active:scale-[0.98]"
           >
             Book Now
           </button>
         </div>
 
-        <div className="flex flex-col gap-2">
-          <div className="flex gap-2">
-            <button
-              type="button"
-              disabled={disabled || orig?.isSuspended}
-              onClick={() => onEdit(item)}
-              className={`flex-1 flex items-center justify-center gap-1.5 rounded-lg border py-2 text-xs font-medium transition ${
-                (disabled || orig?.isSuspended)
-                  ? 'border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed'
-                  : 'border-gray-200 bg-white text-gray-700 hover:border-primary-200 hover:bg-primary-50 hover:text-primary-800'
-              }`}
-            >
-              <Pencil className="h-4 w-4" strokeWidth={2} />
-              Edit
-            </button>
-            <button
-              type="button"
-              disabled={disabled || orig?.isSuspended}
-              onClick={() => onToggleActive(item)}
-              className={`flex-1 flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-medium transition ${
-                (disabled || orig?.isSuspended)
-                  ? 'border border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed'
-                  : item.isActive
-                    ? 'border border-red-100 bg-white text-red-600 hover:bg-red-50'
-                    : 'border border-emerald-200 bg-white text-emerald-700 hover:bg-emerald-50'
-              }`}
-            >
-              <Power className="h-4 w-4" strokeWidth={2} />
-              {item.isActive ? 'Pause' : 'Activate'}
-            </button>
-          </div>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              disabled={disabled || orig?.isSuspended}
-              onClick={() => onRating(item)}
-              className={`flex-1 flex items-center justify-center gap-1.5 rounded-lg border py-2 text-xs font-medium transition ${
-                (disabled || orig?.isSuspended)
-                  ? 'border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed'
-                  : 'border-amber-100 bg-amber-50 text-amber-700 hover:bg-amber-100'
-              }`}
-            >
-              <Star className="h-4 w-4" strokeWidth={2} />
-              Reviews
-            </button>
-            {hasBooking && (
-              <button
-                type="button"
-                disabled={disabled || orig?.isSuspended}
-                onClick={onChat}
-                className={`flex-1 flex items-center justify-center gap-1.5 rounded-lg border py-2 text-xs font-medium transition ${
-                  (disabled || orig?.isSuspended)
-                    ? 'border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed'
-                    : 'border-primary-100 bg-primary-50 text-primary-700 hover:bg-primary-100'
-                }`}
-              >
-                <MessageSquare className="h-4 w-4" strokeWidth={2} />
-                Chat
-              </button>
-            )}
-          </div>
-          {(disabled || orig?.isSuspended) && (
-            <p className="text-center text-[10px] font-medium text-red-500/80">
-              {orig?.isSuspended ? 'Original package suspended' : 'Parent inactive'}
-            </p>
-          )}
-        </div>
+        {(disabled || orig?.isSuspended) && (
+          <p className="text-center text-[10px] font-medium text-red-500/80">
+            {orig?.isSuspended ? 'Original package suspended' : 'Parent inactive'}
+          </p>
+        )}
       </div>
 
       <PackageDetailModal isOpen={detailOpen} onClose={() => setDetailOpen(false)} pkg={item} isWhitelabel />

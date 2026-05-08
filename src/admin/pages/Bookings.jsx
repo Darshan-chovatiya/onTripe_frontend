@@ -38,7 +38,9 @@ export default function Bookings() {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [packageFilter, setPackageFilter] = useState('all')
+  const [bookedByFilter, setBookedByFilter] = useState('all')
   const [packages, setPackages] = useState([])
+  const [agents, setAgents] = useState([])
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1, totalCount: 0 })
   const [exportLoading, setExportLoading] = useState(false)
 
@@ -47,6 +49,10 @@ export default function Bookings() {
     adminApi.listPackages({ limit: 1000 })
       .then(res => setPackages(res.data?.data?.packages || []))
       .catch(err => console.error('Failed to fetch packages', err))
+
+    adminApi.listAgents({ limit: 1000 })
+      .then(res => setAgents(res.data?.data?.agents || []))
+      .catch(err => console.error('Failed to fetch agents', err))
   }, [])
 
   const fetchBookings = async (page = 1) => {
@@ -58,7 +64,8 @@ export default function Bookings() {
         limit: PAGE_SIZE,
         search: search.trim(),
         status: statusFilter === 'all' ? undefined : statusFilter,
-        packageId: packageFilter === 'all' ? undefined : packageFilter
+        packageId: packageFilter === 'all' ? undefined : packageFilter,
+        bookedBy: bookedByFilter === 'all' ? undefined : bookedByFilter
       })
       const { bookings, totalPages, totalCount, currentPage } = res.data?.data || {}
       setBookings(bookings || [])
@@ -75,7 +82,7 @@ export default function Bookings() {
       fetchBookings(1)
     }, 400)
     return () => clearTimeout(timer)
-  }, [search, statusFilter, packageFilter])
+  }, [search, statusFilter, packageFilter, bookedByFilter])
 
   const handlePageChange = (newPage) => {
     fetchBookings(newPage)
@@ -88,7 +95,9 @@ export default function Bookings() {
         page: 1,
         limit: 10000,
         search: search.trim(),
-        status: statusFilter === 'all' ? undefined : statusFilter
+        status: statusFilter === 'all' ? undefined : statusFilter,
+        packageId: packageFilter === 'all' ? undefined : packageFilter,
+        bookedBy: bookedByFilter === 'all' ? undefined : bookedByFilter
       })
       const rows = data?.data?.bookings || []
       await exportToExcel(
@@ -100,7 +109,10 @@ export default function Bookings() {
           'Customer Phone': b.customer?.phone || '',
           'Booked By': `${b.bookedBy?.name} (${b.bookedBy?.role})` || '—',
           'Travel Date': b.travelDate ? new Date(b.travelDate).toLocaleDateString() : '—',
-          'Amount': b.totalAmount || 0,
+          'Parent Price': b.parentPriceAtBooking || 0,
+          'WL Price': b.bookedBy?.role === 'parent_agent' ? '—' : (b.whitelabelPriceAtBooking || 0),
+          'Extra Income': (b.totalAmount - b.whitelabelPriceAtBooking) || 0,
+          'Total Amount': b.totalAmount || 0,
           'Status': b.bookingStatus || '—',
           'Created At': new Date(b.createdAt).toLocaleString()
         })),
@@ -172,6 +184,19 @@ export default function Bookings() {
               </option>
             ))}
           </select>
+
+          <select
+            className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:border-primary-500 focus:outline-none focus:ring-4 focus:ring-primary-500/10 sm:w-64"
+            value={bookedByFilter}
+            onChange={(e) => setBookedByFilter(e.target.value)}
+          >
+            <option value="all">All Agents</option>
+            {agents.map(agent => (
+              <option key={agent._id} value={agent._id}>
+                {agent.name} ({agent.agentCode})
+              </option>
+            ))}
+          </select>
         </div>
 
         {error && <div className="m-4 rounded-lg bg-red-50 p-4 text-sm text-red-700">{error}</div>}
@@ -180,12 +205,15 @@ export default function Bookings() {
           <table className="w-full min-w-[1000px] text-sm text-left">
             <thead className="border-b border-gray-200 bg-gray-50/50 text-[11px] font-bold uppercase tracking-wider text-gray-500">
               <tr>
-                {/* <th className="px-6 py-4">Booking / ID</th> */}
-                {/* <th className="px-6 py-4">Package</th> */}
+                <th className="px-6 py-4">Booking / ID</th>
+                <th className="px-6 py-4">Package</th>
                 <th className="px-6 py-4">Customer</th>
                 <th className="px-6 py-4">Booked By</th>
                 <th className="px-6 py-4">Travel Date</th>
-                <th className="px-6 py-4 text-right">Amount</th>
+                <th className="px-6 py-4 text-right">Parent Price</th>
+                <th className="px-6 py-4 text-right">WL Price</th>
+                <th className="px-6 py-4 text-right">Extra Income</th>
+                <th className="px-6 py-4 text-right">Total Amount</th>
                 <th className="px-6 py-4">Status</th>
                 <th className="px-6 py-4 text-right">Actions</th>
               </tr>
@@ -194,12 +222,12 @@ export default function Bookings() {
               {loading && bookings.length === 0 ? (
                 [1, 2, 3, 4, 5].map(i => (
                   <tr key={i} className="animate-pulse">
-                    <td colSpan={8} className="px-6 py-4"><div className="h-4 w-full rounded bg-gray-100" /></td>
+                    <td colSpan={12} className="px-6 py-4"><div className="h-4 w-full rounded bg-gray-100" /></td>
                   </tr>
                 ))
               ) : bookings.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-6 py-12 text-center text-gray-500">
+                  <td colSpan={12} className="px-6 py-12 text-center text-gray-500">
                     <Ticket className="mx-auto mb-3 h-10 w-10 text-gray-300" />
                     No bookings found matching your filters.
                   </td>
@@ -207,27 +235,27 @@ export default function Bookings() {
               ) : (
                 bookings.map(b => (
                   <tr key={b._id} className="transition-colors hover:bg-gray-50/50">
-                    {/* <td className="px-6 py-4">
+                    <td className="px-6 py-4">
                       <div className="flex flex-col">
                         <span className="font-mono text-xs font-bold text-gray-900">{b.bookingId}</span>
                         <span className="mt-0.5 text-[10px] text-gray-400">Created {new Date(b.createdAt).toLocaleDateString()}</span>
                       </div>
-                    </td> */}
-                    {/* <td className="px-6 py-4">
+                    </td>
+                    <td className="px-6 py-4">
                       <div className="flex flex-col max-w-[200px]">
                         <span className="truncate font-medium text-gray-900" title={b.whitelabelPackage?.customTitle || b.package?.title}>
                           {b.whitelabelPackage?.customTitle || b.package?.title || '—'}
                         </span>
                         {b.whitelabelPackage && (
-                          <span className="inline-flex items-center gap-1 text-[10px] text-primary-600">
-                            <Tag size={10} /> Whitelabel offer
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-primary-600">
+                            <Tag size={10} /> White-label
                           </span>
                         )}
                         <span className="mt-0.5 flex items-center gap-1 text-[10px] text-gray-400">
                           <MapPin size={10} /> {b.package?.destination || 'N/A'}
                         </span>
                       </div>
-                    </td> */}
+                    </td>
                     <td className="px-6 py-4 text-gray-700">
                       <div className="flex flex-col">
                         <span className="font-medium text-gray-900">{b.customer?.name || '—'}</span>
@@ -251,7 +279,37 @@ export default function Bookings() {
                         {b.travelDate ? new Date(b.travelDate).toLocaleDateString(undefined, { dateStyle: 'medium' }) : '—'}
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-right font-bold text-gray-900">
+                    <td className="px-6 py-4 text-right font-medium text-gray-500">
+                      <div className="flex items-center justify-end gap-0.5">
+                        <IndianRupee size={12} />
+                        {(b.parentPriceAtBooking || 0).toLocaleString('en-IN')}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-right font-medium text-gray-600">
+                      <div className="flex items-center justify-end gap-0.5">
+                        {b.bookedBy?.role === 'parent_agent' ? (
+                          <span className="text-gray-300">—</span>
+                        ) : (
+                          <>
+                            <IndianRupee size={12} />
+                            {(b.whitelabelPriceAtBooking || 0).toLocaleString('en-IN')}
+                          </>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-right font-bold text-emerald-600">
+                      <div className="flex items-center justify-end gap-0.5">
+                        {(b.totalAmount - b.whitelabelPriceAtBooking) > 0 ? (
+                          <>
+                            <IndianRupee size={12} />
+                            {(b.totalAmount - b.whitelabelPriceAtBooking).toLocaleString('en-IN')}
+                          </>
+                        ) : (
+                          <span className="text-gray-300">—</span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-right font-black text-gray-900">
                       <div className="flex items-center justify-end gap-0.5">
                         <IndianRupee size={12} />
                         {(b.totalAmount || 0).toLocaleString('en-IN')}

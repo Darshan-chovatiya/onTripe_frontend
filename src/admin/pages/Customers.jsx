@@ -211,6 +211,8 @@ export default function Customers() {
   toastRef.current = toast
   const [exportLoading, setExportLoading] = useState(false)
   const [editTarget, setEditTarget] = useState(null) // customer being edited
+  const [agencyFilter, setAgencyFilter] = useState('all')
+  const [agents, setAgents] = useState([])
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(searchInput.trim()), 400)
@@ -225,6 +227,7 @@ export default function Customers() {
       const { data } = await adminApi.listCustomers({
         page,
         limit: 10,
+        agencyId: agencyFilter === 'all' ? undefined : agencyFilter,
         ...(debouncedSearch ? { search: debouncedSearch } : {}),
       })
       const payload = data?.data
@@ -246,16 +249,27 @@ export default function Customers() {
     } finally {
       setLoading(false)
     }
-  }, [page, debouncedSearch])
+  }, [page, debouncedSearch, agencyFilter])
 
   useEffect(() => { fetchCustomers() }, [fetchCustomers])
+
+  useEffect(() => {
+    adminApi.listAgents({ limit: 1000 })
+      .then(res => setAgents(res.data?.data?.agents || []))
+      .catch(err => console.error('Failed to fetch agents', err))
+  }, [])
 
   const profileCount = (c) => (Array.isArray(c.agencyProfiles) ? c.agencyProfiles.length : 0)
 
   const handleExport = async () => {
     setExportLoading(true)
     try {
-      const { data } = await adminApi.listCustomers({ page: 1, limit: 10000, ...(debouncedSearch ? { search: debouncedSearch } : {}) })
+      const { data } = await adminApi.listCustomers({ 
+        page: 1, 
+        limit: 10000, 
+        agencyId: agencyFilter === 'all' ? undefined : agencyFilter,
+        ...(debouncedSearch ? { search: debouncedSearch } : {}) 
+      })
       await exportToExcel(
         (data?.data?.customers ?? []).map((c) => ({
           Name: c.name || '', Email: c.email || '', Phone: c.phone || '',
@@ -304,6 +318,22 @@ export default function Customers() {
               onChange={(e) => setSearchInput(e.target.value)}
             />
           </div>
+
+          <div className="w-full sm:w-64">
+            <select
+              value={agencyFilter}
+              onChange={(e) => {
+                setAgencyFilter(e.target.value)
+                setPage(1)
+              }}
+              className="w-full rounded-xl border border-gray-200 bg-gray-50 py-2 px-3 text-sm text-gray-900 focus:border-primary-300 focus:bg-white focus:outline-none focus:ring-1 focus:ring-primary-200"
+            >
+              <option value="all">All Agencies</option>
+              {agents.map(a => (
+                <option key={a._id} value={a._id}>{a.name} ({a.agentCode})</option>
+              ))}
+            </select>
+          </div>
         </div>
 
         {loading ? (
@@ -324,6 +354,7 @@ export default function Customers() {
                 <thead className="border-b border-gray-100 bg-gray-50/60">
                   <tr>
                     <th className="px-5 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-gray-400">Customer</th>
+                    <th className="px-5 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-gray-400">Agencies</th>
                     <th className="px-5 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-gray-400">Email</th>
                     <th className="px-5 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-gray-400">Mobile</th>
                     <th className="px-5 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-gray-400">Joined</th>
@@ -349,6 +380,20 @@ export default function Customers() {
                             <div className="min-w-0">
                               <p className="truncate text-sm font-semibold text-gray-900">{c.name || 'Unnamed'}</p>
                             </div>
+                          </div>
+                        </td>
+                        {/* Agencies */}
+                        <td className="px-5 py-3.5">
+                          <div className="flex flex-wrap gap-1 max-w-[180px]">
+                            {Array.isArray(c.agencyProfiles) && c.agencyProfiles.length > 0 ? (
+                              c.agencyProfiles.map((p, idx) => (
+                                <span key={idx} className="inline-flex rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-600">
+                                  {p.managedBy?.name || '—'}
+                                </span>
+                              ))
+                            ) : (
+                              <span className="text-xs text-gray-400 italic">No linked agencies</span>
+                            )}
                           </div>
                         </td>
                         {/* Email */}

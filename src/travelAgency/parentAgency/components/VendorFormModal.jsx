@@ -509,8 +509,12 @@ export default function VendorFormModal({ isOpen, onClose, onSubmit, initialData
             </section>
 
             {/* ── Documents ── */}
-            <section className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-              <SectionHeader icon={FileText} title="Documents" subtitle="At least 1 document required (PDF or image)" />
+            <section className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
+              <SectionHeader
+                icon={FileText}
+                title={<>Documents <span className="text-red-500">*</span></>}
+                subtitle="At least 1 document required (PDF or image)"
+              />
 
               {/* Existing docs */}
               {isEdit && existingDocs.length > 0 && (

@@ -113,6 +113,10 @@ export function getNotificationPreview(id) {
   return axiosInstance.get(`/notifications/${id}/preview`)
 }
 
+export function getReports(params) {
+  return axiosInstance.get('/admin/reports', { params })
+}
+
 const adminApi = {
   listAgents,
   listPendingKyc,
@@ -146,6 +150,7 @@ const adminApi = {
   sendNotification,
   getSentNotifications,
   getNotificationPreview,
+  getReports,
   syncBookingStatus: () => axiosInstance.post('/admin/bookings/sync-status'),
   listAllBookings: (params) => axiosInstance.get('/admin/bookings', { params }),
   getBookingDetail: (id) => axiosInstance.get(`/admin/bookings/${id}`),

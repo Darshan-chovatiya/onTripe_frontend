@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { getSubChild, listSubChildren, updateSubChild } from '@/travelAgency/childAgency/services/childAgencyApi.js'
+import { getSubChild, listSubChildren, updateSubChild, approveSubChildKyc, rejectSubChildKyc } from '@/travelAgency/childAgency/services/childAgencyApi.js'
 import { getApiErrorMessage } from '@/shared/services/apiHelpers.js'
 
 export function useManageSubChildren() {
@@ -41,5 +41,15 @@ export function useManageSubChildren() {
     [fetchSubChildren]
   )
 
-  return { subChildren, loading, error, pagination, fetchSubChildren, fetchOne, setActive }
+  const approveKyc = useCallback(async (id) => {
+    await approveSubChildKyc(id)
+    await fetchSubChildren()
+  }, [fetchSubChildren])
+
+  const rejectKyc = useCallback(async (id, reason) => {
+    await rejectSubChildKyc(id, reason)
+    await fetchSubChildren()
+  }, [fetchSubChildren])
+
+  return { subChildren, loading, error, pagination, fetchSubChildren, fetchOne, setActive, approveKyc, rejectKyc }
 }

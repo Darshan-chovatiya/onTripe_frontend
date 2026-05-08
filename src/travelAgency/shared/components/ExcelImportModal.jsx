@@ -8,7 +8,7 @@ const CRM_FIELDS = [
   { id: 'phone', label: 'Phone', required: true },
   { id: 'email', label: 'Email', required: false },
   { id: 'notes', label: 'Notes', required: false },
-  { id: 'address', label: 'Address', required: false },
+  // { id: 'address', label: 'Address', required: false },
 ]
 
 export default function ExcelImportModal({ isOpen, onClose, onImport, file }) {

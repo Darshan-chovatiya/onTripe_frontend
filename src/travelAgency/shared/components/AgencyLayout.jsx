@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
-import { Menu, User, ChevronDown, Settings, LogOut, Bell } from 'lucide-react'
+import { Menu, User, ChevronDown, Settings, LogOut, Bell, Clock, AlertTriangle } from 'lucide-react'
 import { useAuth } from '@/shared/context/AuthContext.jsx'
 import ConfirmDialog from '@/shared/components/ConfirmDialog.jsx'
 import { useAgencyPermissions } from '@/travelAgency/agency/hooks/useAgencyPermissions.js'
@@ -122,7 +122,66 @@ function AgencyHeader({ onMenuClick }) {
   )
 }
 
+function KycPendingNotice({ user }) {
+  const navigate = useNavigate()
+  const status = user?.kyc?.status || 'pending'
+  if (status === 'approved') return null
+
+  const isRejected = status === 'rejected'
+
+  return (
+    <div className={`mb-6 overflow-hidden rounded-2xl border ${isRejected ? 'border-red-100 bg-red-50/50' : 'border-amber-100 bg-amber-50/50'} p-0 shadow-sm transition-all duration-300`}>
+      <div className="flex flex-col sm:flex-row sm:items-stretch">
+        <div className={`flex w-full items-center justify-center p-6 sm:w-20 ${isRejected ? 'bg-red-100 text-red-600' : 'bg-amber-100 text-amber-600'}`}>
+          {isRejected ? <AlertTriangle className="h-8 w-8" /> : <Clock className="h-8 w-8" />}
+        </div>
+        <div className="flex-1 p-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="space-y-1">
+              <h3 className={`text-lg font-bold ${isRejected ? 'text-red-900' : 'text-amber-900'}`}>
+                {isRejected ? 'KYC Action Required' : 'KYC Verification Pending'}
+              </h3>
+              <p className={`text-sm leading-relaxed ${isRejected ? 'text-red-800/80' : 'text-amber-800/80'}`}>
+                {isRejected
+                  ? "Your KYC documents were rejected. Please update your details in settings to regain full access to the platform."
+                  : "Your account is currently under review. Once our team approves your KYC documents, you will be able to access all platform features like bookings, packages, and network management."
+                }
+              </p>
+            </div>
+            {/* <button 
+              type="button"
+              onClick={() => navigate('/agency/settings')}
+              className={`inline-flex shrink-0 items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold shadow-sm transition-all active:scale-95 ${
+                isRejected 
+                  ? 'bg-red-600 text-white hover:bg-red-700 hover:shadow-red-200' 
+                  : 'bg-amber-600 text-white hover:bg-amber-700 hover:shadow-amber-200'
+              }`}
+            >
+              <Settings className="h-4 w-4" />
+              Complete Profile
+            </button> */}
+          </div>
+
+          <div className="mt-4 flex items-center gap-3 border-t border-black/5 pt-4">
+            <div className="flex items-center gap-1.5">
+              <span className={`flex h-2 w-2 rounded-full ${isRejected ? 'bg-red-500' : 'bg-amber-500 animate-pulse'}`} />
+              <span className={`text-[10px] font-bold uppercase tracking-wider ${isRejected ? 'text-red-700' : 'text-amber-700'}`}>
+                {isRejected ? 'Status: Rejected' : 'Status: Under Review'}
+              </span>
+            </div>
+            <span className="h-1 w-1 rounded-full bg-gray-300" />
+            <span className="text-[10px] font-medium text-gray-500 uppercase tracking-wider">
+              {isRejected ? 'Please check your email for details' : 'Estimated review time: 24-48 Hours'}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function AgencyLayout({ sidebar: Sidebar }) {
+  const { user } = useAuth()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   useSocketNotifications()
 
@@ -133,6 +192,7 @@ export default function AgencyLayout({ sidebar: Sidebar }) {
         <AgencyHeader onMenuClick={() => setSidebarOpen(true)} />
         <main className="flex-1 overflow-y-auto">
           <div className="mx-auto max-w-7xl p-4 sm:p-6">
+            <KycPendingNotice user={user} />
             <Outlet />
           </div>
         </main>

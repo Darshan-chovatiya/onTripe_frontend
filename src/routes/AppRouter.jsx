@@ -39,6 +39,7 @@ import AdminAgentParents from '@/admin/pages/AgentParents.jsx'
 import AdminNotifications from '@/admin/pages/Notifications.jsx'
 import AdminNotificationHistory from '@/admin/pages/NotificationHistory.jsx'
 import AdminOtpLogs from '@/admin/pages/OtpLogs.jsx'
+import AdminReports from '@/admin/pages/Reports.jsx'
 
 import AgencyLayout from '@/travelAgency/shared/components/AgencyLayout.jsx'
 import AgencyPanelSidebar from '@/travelAgency/agency/components/AgencyPanelSidebar.jsx'
@@ -141,6 +142,7 @@ export default function AppRouter() {
         <Route path="notifications" element={<AdminNotifications />} />
         <Route path="notifications/history" element={<AdminNotificationHistory />} />
         <Route path="otp-logs" element={<AdminOtpLogs />} />
+        <Route path="reports" element={<AdminReports />} />
         <Route path="settings" element={<AdminSettings />} />
       </Route>
 

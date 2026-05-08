@@ -196,13 +196,21 @@ export default function EditBooking() {
   }, [id, fetchBooking])
 
   useEffect(() => {
+    const total = basePackagePrice * (travelers.length + 1)
+    const prevMin = minTotalAmount
+    setMinTotalAmount(total)
+
     if (isFirstRender.current) {
       if (basePackagePrice > 0) isFirstRender.current = false
       return
     }
-    const total = basePackagePrice * (travelers.length + 1)
-    setMinTotalAmount(total)
-    setTotalAmount(String(total))
+    
+    // Only auto-update totalAmount if it's currently empty or matches the previous minimum
+    // (Meaning the user hasn't manually overridden it yet)
+    setTotalAmount(prev => {
+      if (!prev || Number(prev) === prevMin) return String(total)
+      return prev
+    })
   }, [basePackagePrice, travelers.length])
 
   const addTraveler = () => {

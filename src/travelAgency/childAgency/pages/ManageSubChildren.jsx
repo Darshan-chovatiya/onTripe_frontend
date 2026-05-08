@@ -17,7 +17,7 @@ const PAGE_SIZE = 10
 
 export default function ManageSubChildren() {
   const navigate = useNavigate()
-  const { subChildren, loading, error, fetchSubChildren, fetchOne, setActive, pagination } = useManageSubChildren()
+  const { subChildren, loading, error, fetchSubChildren, fetchOne, setActive, pagination, approveKyc, rejectKyc } = useManageSubChildren()
   const { toast } = useToast()
   const [detailId, setDetailId] = useState(null)
   const [busyId, setBusyId] = useState(null)
@@ -32,6 +32,11 @@ export default function ManageSubChildren() {
   const [exportLoading, setExportLoading] = useState(false)
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [editingAgent, setEditingAgent] = useState(null)
+  
+  const [kycTarget, setKycTarget] = useState(null)
+  const [rejectTarget, setRejectTarget] = useState(null)
+  const [rejectReason, setRejectReason] = useState('')
+  const [rejectBusy, setRejectBusy] = useState(false)
 
   const attachmentUrl = (attachment) => attachment?.url || ''
 
@@ -100,6 +105,33 @@ export default function ManageSubChildren() {
     }
   }
 
+  const handleApproveKyc = async () => {
+    if (!kycTarget) return
+    try {
+      await approveKyc(kycTarget._id)
+      toast.success(`KYC approved for ${kycTarget.name}`)
+    } catch (err) {
+      toast.error(getApiErrorMessage(err))
+    } finally {
+      setKycTarget(null)
+    }
+  }
+
+  const handleRejectKyc = async () => {
+    if (!rejectTarget || !rejectReason.trim()) return
+    setRejectBusy(true)
+    try {
+      await rejectKyc(rejectTarget._id, rejectReason)
+      toast.success(`KYC rejected for ${rejectTarget.name}`)
+      setRejectTarget(null)
+      setRejectReason('')
+    } catch (err) {
+      toast.error(getApiErrorMessage(err))
+    } finally {
+      setRejectBusy(false)
+    }
+  }
+
   const filtered = subChildren
   const selectedCount = selectedIds.size
   const allSelected = useMemo(() => {
@@ -143,6 +175,7 @@ export default function ManageSubChildren() {
           'Email': s.email || '',
           'Phone': s.phone || '',
           'KYC Status': s.kyc?.status || 'pending',
+          'KYC Remark': s.kyc?.rejectionReason || '',
           'Status': s.isActive ? 'Active' : 'Inactive',
           'Link Status': s.linkStatus || 'approved'
         })),
@@ -330,6 +363,7 @@ export default function ManageSubChildren() {
                   <th className="px-4 py-3 font-semibold text-gray-700">Email</th>
                   <th className="px-4 py-3 font-semibold text-gray-700">Phone</th>
                   <th className="px-4 py-3 font-semibold text-gray-700">KYC</th>
+                  <th className="px-4 py-3 font-semibold text-gray-700">Remarks</th>
                   <th className="px-4 py-3 font-semibold text-gray-700">Status</th>
                   <th className="px-4 py-3 font-semibold text-gray-700 text-right">Actions</th>
                 </tr>
@@ -357,13 +391,12 @@ export default function ManageSubChildren() {
                     </td>
                     <td className="px-4 py-3 text-gray-600">{sub.email || '—'}</td>
                     <td className="px-4 py-3 text-gray-600">{sub.phone || '—'}</td>
-                    <td className="px-4 py-3">
-                      {sub.linkStatus === 'rejected' ? (
-                        <span className="rounded-full bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700">
-                          Not verified
-                        </span>
-                      ) : (
-                        <div>
+                       <td className="px-4 py-3">
+                        {sub.linkStatus === 'rejected' ? (
+                          <span className="rounded-full bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700">
+                            Not verified
+                          </span>
+                        ) : (
                           <span className={`rounded-full px-2 py-0.5 text-xs font-medium capitalize ${
                             sub.kyc?.status === 'approved' ? 'bg-green-50 text-green-700' :
                             sub.kyc?.status === 'rejected' ? 'bg-red-50 text-red-700' :
@@ -371,12 +404,17 @@ export default function ManageSubChildren() {
                           }`}>
                             {sub.kyc?.status || 'pending'}
                           </span>
-                          {sub.kyc?.status === 'rejected' && sub.kyc?.rejectionReason && (
-                            <p className="mt-1.5 text-xs text-red-600 font-medium">{sub.kyc.rejectionReason}</p>
-                          )}
-                        </div>
-                      )}
-                    </td>
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        {sub.kyc?.status === 'rejected' && sub.kyc?.rejectionReason ? (
+                          <p className="max-w-[150px] truncate text-xs font-medium text-red-600" title={sub.kyc.rejectionReason}>
+                            {sub.kyc.rejectionReason}
+                          </p>
+                        ) : (
+                          <span className="text-xs text-gray-400">—</span>
+                        )}
+                      </td>
                     <td className="px-4 py-3">
                       {sub.linkStatus === 'rejected' ? (
                         <span className="inline-flex items-center gap-1 text-xs font-semibold text-red-500">
@@ -412,6 +450,26 @@ export default function ManageSubChildren() {
                           <Eye className="h-3.5 w-3.5" />
                           View
                         </button>
+                        {sub.kyc?.status === 'pending' && (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => setKycTarget(sub)}
+                              className="inline-flex items-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1.5 text-xs font-medium text-emerald-700 hover:bg-emerald-100"
+                            >
+                              <Check className="h-3.5 w-3.5" strokeWidth={3} />
+                              Approve
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setRejectTarget(sub)}
+                              className="inline-flex items-center gap-1 rounded-lg border border-red-200 bg-red-50 px-2.5 py-1.5 text-xs font-medium text-red-700 hover:bg-red-100"
+                            >
+                              <UserX className="h-3.5 w-3.5" />
+                              Reject
+                            </button>
+                          </>
+                        )}
                         <button
                           type="button"
                           onClick={() => { setEditingAgent(sub); setIsFormOpen(true) }}
@@ -562,6 +620,41 @@ export default function ManageSubChildren() {
         agent={editingAgent}
         onSave={handleSaveSubAgent}
       />
+
+      <ConfirmDialog
+        isOpen={!!kycTarget}
+        onClose={() => setKycTarget(null)}
+        onConfirm={handleApproveKyc}
+        title="Approve KYC"
+        message={`Approve KYC for "${kycTarget?.name}"? They will gain full access to the platform.`}
+        confirmText="Approve"
+        cancelText="Cancel"
+        variant="primary"
+      />
+
+      <Modal isOpen={!!rejectTarget} onClose={() => !rejectBusy && setRejectTarget(null)} title="Reject KYC" size="md">
+        <div className="space-y-4">
+          <p className="text-sm text-gray-500">Provide a reason for rejecting the KYC for <span className="font-bold text-gray-900">{rejectTarget?.name}</span>.</p>
+          <textarea
+            value={rejectReason}
+            onChange={(e) => setRejectReason(e.target.value)}
+            rows={4}
+            placeholder="E.g. Document image is not clear or information mismatch."
+            className="w-full resize-none rounded-xl border border-gray-200 px-4 py-3 text-sm focus:border-red-400 focus:outline-none focus:ring-4 focus:ring-red-400/5"
+          />
+          <div className="flex items-center justify-end gap-2">
+            <button onClick={() => setRejectTarget(null)} disabled={rejectBusy}
+              className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50">
+              Cancel
+            </button>
+            <button onClick={handleRejectKyc} disabled={rejectBusy || !rejectReason.trim()}
+              className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-700 disabled:opacity-50">
+              {rejectBusy && <RefreshCw size={14} className="animate-spin" />}
+              Reject KYC
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   )
 }

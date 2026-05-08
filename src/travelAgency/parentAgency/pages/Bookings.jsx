@@ -307,7 +307,9 @@ export default function Bookings() {
                         <span className="text-sm font-medium text-gray-600">₹{Number(b.parentPriceAtBooking || 0).toLocaleString('en-IN')}</span>
                       </td>
                       <td className="px-4 py-3.5 align-middle">
-                        <span className="text-sm font-medium text-gray-600">₹{Number(b.whitelabelPriceAtBooking || 0).toLocaleString('en-IN')}</span>
+                        <span className="text-sm font-medium text-gray-600">
+                          {b.bookedBy?.role === 'parent_agent' ? '—' : `₹${Number(b.whitelabelPriceAtBooking || 0).toLocaleString('en-IN')}`}
+                        </span>
                       </td>
                       <td className="px-4 py-3.5 align-middle">
                         <span className="text-sm font-bold text-blue-600">₹{Number((b.totalAmount || 0) - (b.whitelabelPriceAtBooking || 0)).toLocaleString('en-IN')}</span>

@@ -86,8 +86,11 @@ export default function EditPackage() {
     if (!f.destination.trim()) e.destination = 'Destination is required'
     if (!f.startDate) e.startDate = 'Start date is required'
     if (!f.endDate) e.endDate = 'End date is required'
-    else if (f.startDate && f.endDate <= f.startDate) e.endDate = 'End date must be after start date'
+    else if (f.startDate && f.endDate < f.startDate) e.endDate = 'End date must be on or after start date'
     if (!f.basePrice || Number(f.basePrice) <= 0) e.basePrice = 'Price must be greater than ₹0'
+    if (f.maxCapacity && Number(f.maxCapacity) < (f.totalBooked || 0)) {
+      e.maxCapacity = `Cannot reduce capacity below the number of booked travelers (${f.totalBooked})`
+    }
     if (!existingCover && !coverFile) e.coverImage = 'Cover image is required'
     if (!existingGallery.length && galleryFiles.length < 1) e.gallery = 'At least 1 gallery photo is required'
     const totalImages = existingGallery.length + galleryFiles.length
@@ -158,6 +161,7 @@ export default function EditPackage() {
           importantNotes: pkg.importantNotes?.length ? pkg.importantNotes : [''],
           itinerary: apiItineraryToForm(pkg.itinerary || []),
           isPriceLocked: pkg.isPriceLocked || false,
+          totalBooked: pkg.totalBooked || 0,
         })
       } catch (err) {
         toast.error(getApiErrorMessage(err))
@@ -316,7 +320,8 @@ export default function EditPackage() {
         }
       })
       setExpandedDays(newExpanded)
-      toast.error('Please fix the errors before saving')
+      const firstError = Object.values(errs)[0]
+      toast.error(firstError || 'Please fix the errors before saving')
       setTimeout(() => {
         const el = document.querySelector('[data-error="true"]')
         if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
@@ -451,6 +456,7 @@ export default function EditPackage() {
                 value={form.startDate}
                 onChange={e => { handleStartDateChange(e.target.value); clearErr('startDate'); clearErr('endDate') }}
                 data-error={!!errors.startDate}
+                disabled={form.isPriceLocked}
               />
               <FieldError msg={errors.startDate} />
             </div>
@@ -462,9 +468,10 @@ export default function EditPackage() {
                 type="date"
                 className={inputCls(!!errors.endDate)}
                 value={form.endDate}
-                min={form.startDate ? (() => { const d = new Date(form.startDate); d.setDate(d.getDate() + 1); return d.toISOString().split('T')[0] })() : todayStr}
+                min={form.startDate || todayStr}
                 onChange={e => { handleEndDateChange(e.target.value); clearErr('endDate') }}
                 data-error={!!errors.endDate}
+                disabled={form.isPriceLocked}
               />
               <FieldError msg={errors.endDate} />
               {form.startDate && form.endDate && !errors.endDate && form.totalDays && (
@@ -476,7 +483,8 @@ export default function EditPackage() {
 
             <div>
               <label className="mb-1 block text-xs font-medium text-gray-600">Max capacity</label>
-              <input type="number" min="1" className={inputCls(false)} value={form.maxCapacity} onChange={e => set('maxCapacity', e.target.value)} onWheel={(e) => e.target.blur()} />
+              <input type="number" min="1" className={inputCls(!!errors.maxCapacity)} value={form.maxCapacity} onChange={e => { set('maxCapacity', e.target.value); clearErr('maxCapacity') }} onWheel={(e) => e.target.blur()} />
+              <FieldError msg={errors.maxCapacity} />
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-gray-600">Base price incl. GST <span className="text-red-500">*</span></label>
@@ -673,12 +681,12 @@ export default function EditPackage() {
                       <span className="ml-2 text-[10px] font-semibold text-red-400">· missing info</span>
                     )}
                   </span>
-                  <div className="flex items-center gap-2">
-                    {form.itinerary.length > 1 && (
-                      <button type="button" onClick={e => { e.stopPropagation(); removeDay(di) }} className="text-red-400 hover:text-red-600"><Trash2 size={14} /></button>
-                    )}
-                    {expandedDays[di] ? <ChevronUp size={16} className="text-gray-400" /> : <ChevronDown size={16} className="text-gray-400" />}
-                  </div>
+                    <div className="flex items-center gap-2">
+                      {form.itinerary.length > 1 && !form.isPriceLocked && (
+                        <button type="button" onClick={e => { e.stopPropagation(); removeDay(di) }} className="text-red-400 hover:text-red-600"><Trash2 size={14} /></button>
+                      )}
+                      {expandedDays[di] ? <ChevronUp size={16} className="text-gray-400" /> : <ChevronDown size={16} className="text-gray-400" />}
+                    </div>
                 </div>
 
                 {expandedDays[di] && (
@@ -692,6 +700,7 @@ export default function EditPackage() {
                           onChange={e => { updateDay(di, 'title', e.target.value); clearErr(`day_${di}_title`) }}
                           placeholder="e.g. Arrival & City Tour"
                           data-error={!!errors[`day_${di}_title`]}
+                          disabled={form.isPriceLocked}
                         />
                         <FieldError msg={errors[`day_${di}_title`]} />
                       </div>
@@ -711,6 +720,7 @@ export default function EditPackage() {
                               if (!e.target.value) { updateDay(di, 'dateSuffix', ''); return }
                               updateDay(di, 'dateSuffix', new Date(e.target.value).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }))
                             }}
+                            disabled={form.isPriceLocked}
                           />
                         )}
                         {day.dateSuffix && !form.startDate && <p className="mt-1 text-xs text-gray-400">{day.dateSuffix}</p>}
@@ -725,6 +735,7 @@ export default function EditPackage() {
                         onChange={e => { updateDay(di, 'description', e.target.value); clearErr(`day_${di}_desc`) }}
                         placeholder="Overview of the day…"
                         data-error={!!errors[`day_${di}_desc`]}
+                        disabled={form.isPriceLocked}
                       />
                       <FieldError msg={errors[`day_${di}_desc`]} />
                     </div>
@@ -733,7 +744,7 @@ export default function EditPackage() {
                       <div key={ei} className="space-y-2 rounded-lg border border-gray-100 bg-gray-50 p-3">
                         <div className="flex items-center justify-between">
                           <span className="text-xs font-semibold text-gray-600">Event {ei + 1}</span>
-                          <button type="button" onClick={() => removeEvent(di, ei)} className="text-red-400 hover:text-red-600"><Trash2 size={13} /></button>
+                          {!form.isPriceLocked && <button type="button" onClick={() => removeEvent(di, ei)} className="text-red-400 hover:text-red-600"><Trash2 size={13} /></button>}
                         </div>
                         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                           <div>
@@ -744,12 +755,13 @@ export default function EditPackage() {
                               onChange={e => { updateEvent(di, ei, 'title', e.target.value); clearErr(`ev_${di}_${ei}_title`) }}
                               placeholder="Event title"
                               data-error={!!errors[`ev_${di}_${ei}_title`]}
+                              disabled={form.isPriceLocked}
                             />
                             <FieldError msg={errors[`ev_${di}_${ei}_title`]} />
                           </div>
                           <div>
                             <label className="mb-1 block text-xs text-gray-500">Type</label>
-                            <select className={inputCls(false)} value={ev.type} onChange={e => updateEvent(di, ei, 'type', e.target.value)}>
+                            <select className={inputCls(false)} value={ev.type} onChange={e => updateEvent(di, ei, 'type', e.target.value)} disabled={form.isPriceLocked}>
                               {EVENT_TYPES.map(t => <option key={t}>{t}</option>)}
                             </select>
                           </div>
@@ -761,6 +773,7 @@ export default function EditPackage() {
                               value={ev.startTime}
                               onChange={e => { updateEvent(di, ei, 'startTime', e.target.value); clearErr(`ev_${di}_${ei}_startTime`); clearErr(`ev_${di}_${ei}_endTime`) }}
                               data-error={!!errors[`ev_${di}_${ei}_startTime`]}
+                              disabled={form.isPriceLocked}
                             />
                             <FieldError msg={errors[`ev_${di}_${ei}_startTime`]} />
                           </div>
@@ -772,21 +785,22 @@ export default function EditPackage() {
                               value={ev.endTime}
                               onChange={e => { updateEvent(di, ei, 'endTime', e.target.value); clearErr(`ev_${di}_${ei}_endTime`) }}
                               data-error={!!errors[`ev_${di}_${ei}_endTime`]}
+                              disabled={form.isPriceLocked}
                             />
                             <FieldError msg={errors[`ev_${di}_${ei}_endTime`]} />
                           </div>
                           <div>
                             <label className="mb-1 block text-xs text-gray-500">Location</label>
-                            <input className={inputCls(false)} value={ev.location} onChange={e => updateEvent(di, ei, 'location', e.target.value)} placeholder="Location" />
+                            <input className={inputCls(false)} value={ev.location} onChange={e => updateEvent(di, ei, 'location', e.target.value)} placeholder="Location" disabled={form.isPriceLocked} />
                           </div>
                           <div>
                             <label className="mb-1 block text-xs text-gray-500">Vendor</label>
                             <div className="flex gap-1">
-                              <select className={`${inputCls(false)} flex-1`} value={ev.vendor?._id || ev.vendor || ''} onChange={e => updateEvent(di, ei, 'vendor', e.target.value)}>
+                              <select className={`${inputCls(false)} flex-1`} value={ev.vendor?._id || ev.vendor || ''} onChange={e => updateEvent(di, ei, 'vendor', e.target.value)} disabled={form.isPriceLocked}>
                                 <option value="">None</option>
                                 {vendors.map(v => <option key={v._id} value={v._id}>{v.name}</option>)}
                               </select>
-                              <button type="button" onClick={() => setIsVendorModalOpen(true)} className="rounded-lg border border-gray-200 bg-white px-2 text-xs text-primary-600 hover:bg-primary-50">+</button>
+                              {!form.isPriceLocked && <button type="button" onClick={() => setIsVendorModalOpen(true)} className="rounded-lg border border-gray-200 bg-white px-2 text-xs text-primary-600 hover:bg-primary-50">+</button>}
                             </div>
                           </div>
                           <div className="sm:col-span-2">
@@ -798,6 +812,7 @@ export default function EditPackage() {
                               onChange={e => { updateEvent(di, ei, 'description', e.target.value); clearErr(`ev_${di}_${ei}_desc`) }}
                               placeholder="Event details…"
                               data-error={!!errors[`ev_${di}_${ei}_desc`]}
+                              disabled={form.isPriceLocked}
                             />
                             <FieldError msg={errors[`ev_${di}_${ei}_desc`]} />
                           </div>
@@ -811,6 +826,7 @@ export default function EditPackage() {
                                 checked={ev.extraChargeable || false}
                                 onChange={e => updateEvent(di, ei, 'extraChargeable', e.target.checked)}
                                 className="h-4 w-4 rounded border-gray-300 text-primary-600"
+                                disabled={form.isPriceLocked}
                               />
                               <label htmlFor={`chargeable-${di}-${ei}`} className="text-xs text-gray-600">Extra chargeable</label>
                             </div>
@@ -834,6 +850,7 @@ export default function EditPackage() {
                               <input
                                 type="file" accept="image/*" className="hidden"
                                 onChange={e => handleEventImageSelect(di, ei, e.target.files[0])}
+                                disabled={form.isPriceLocked}
                               />
                               {ev.image ? 'Image selected — click to change' : 'Click to upload event image'}
                             </label>
@@ -856,16 +873,20 @@ export default function EditPackage() {
                       </div>
                     ))}
 
-                    <button type="button" onClick={() => addEvent(di)} className="flex items-center gap-1 text-sm text-primary-600 hover:text-primary-700">
-                      <Plus size={14} /> Add event
-                    </button>
+                    {!form.isPriceLocked && (
+                      <button type="button" onClick={() => addEvent(di)} className="flex items-center gap-1 text-sm text-primary-600 hover:text-primary-700">
+                        <Plus size={14} /> Add event
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
             ))}
-            <button type="button" onClick={addDay} className="flex items-center gap-1 text-sm text-primary-600 hover:text-primary-700">
-              <Plus size={14} /> Add day
-            </button>
+            {!form.isPriceLocked && (
+              <button type="button" onClick={addDay} className="flex items-center gap-1 text-sm text-primary-600 hover:text-primary-700">
+                <Plus size={14} /> Add day
+              </button>
+            )}
           </div>
         </section>
 

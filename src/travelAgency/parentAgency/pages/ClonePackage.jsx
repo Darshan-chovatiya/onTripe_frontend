@@ -334,7 +334,7 @@ export default function ClonePackage() {
                 type="date"
                 className={inputCls}
                 value={form.endDate}
-                min={form.startDate ? (() => { const d = new Date(form.startDate); d.setDate(d.getDate() + 1); return d.toISOString().split('T')[0] })() : new Date().toISOString().split('T')[0]}
+                min={form.startDate || new Date().toISOString().split('T')[0]}
                 onChange={e => handleEndDateChange(e.target.value)}
               />
               {form.startDate && form.endDate && form.totalDays && (

@@ -6,6 +6,7 @@ const BASE =
 /** @param {string | null | undefined} path */
 export function filePublicUrl(path) {
   if (!path || typeof path !== 'string') return null
+  if (path.startsWith('http://') || path.startsWith('https://')) return path
   const p = path.replace(/\\/g, '/')
   return `${BASE}/${p.replace(/^\//, '')}`
 }

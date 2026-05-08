@@ -139,9 +139,21 @@ export default function CreateBooking() {
   }, [offerType, activeWhitelabels, availablePackages, whitelabelId, packageId, urlWhitelabelId, urlPackageId])
 
   useEffect(() => {
+    if (!basePackagePrice) {
+      setMinTotalAmount(0)
+      setTotalAmount('')
+      return
+    }
     const total = basePackagePrice * (travelers.length + 1)
+    const prevMin = minTotalAmount
     setMinTotalAmount(total)
-    setTotalAmount(String(total))
+    
+    // Only auto-update totalAmount if it's currently empty or matches the previous minimum
+    // (Meaning the user hasn't manually overridden it yet)
+    setTotalAmount(prev => {
+      if (!prev || Number(prev) === prevMin) return String(total)
+      return prev
+    })
   }, [basePackagePrice, travelers.length])
 
   const handleWhitelabelChange = (id) => {
@@ -149,6 +161,7 @@ export default function CreateBooking() {
     setOfferType('whitelabel')
     const wl = activeWhitelabels.find(w => String(w._id) === id)
     setBasePackagePrice(wl?.finalPrice || 0)
+    setTotalAmount('') // Reset to allow auto-fill for new selection
     const cap = wl?.originalPackage?.maxCapacity ?? wl?.maxCapacity ?? null
     const rem = wl?.remainingCapacity ?? cap
     setMaxCapacity(cap)
@@ -162,6 +175,7 @@ export default function CreateBooking() {
     setOfferType('package')
     const pkg = availablePackages.find(p => String(p._id) === id)
     setBasePackagePrice(pkg?.basePrice || 0)
+    setTotalAmount('') // Reset to allow auto-fill for new selection
     const cap = pkg?.maxCapacity ?? null
     const rem = pkg?.remainingCapacity ?? cap
     setMaxCapacity(cap)

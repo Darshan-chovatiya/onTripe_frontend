@@ -138,7 +138,7 @@ export default function ChildRegister() {
       {step === 1 && (
         <form onSubmit={handleStep1} className="rform-grid">
           <div className="rform-field">
-            <label className="rform-label">Full Name</label>
+            <label className="rform-label">Full Name <span style={{ color: '#ef4444' }}>*</span></label>
             <div className="rform-input-wrap">
               <span className="rform-input-icon"><User size={15} /></span>
               <input
@@ -150,7 +150,7 @@ export default function ChildRegister() {
           </div>
 
           <div className="rform-field">
-            <label className="rform-label">Email</label>
+            <label className="rform-label">Email <span style={{ color: '#ef4444' }}>*</span></label>
             <div className="rform-input-wrap">
               <span className="rform-input-icon"><Mail size={15} /></span>
               <input
@@ -162,7 +162,7 @@ export default function ChildRegister() {
           </div>
 
           <div className="rform-field">
-            <label className="rform-label">Phone</label>
+            <label className="rform-label">Phone <span style={{ color: '#ef4444' }}>*</span></label>
             <div className="rform-input-wrap">
               <span className="rform-input-icon"><Phone size={15} /></span>
               <input
@@ -175,7 +175,7 @@ export default function ChildRegister() {
           </div>
 
           <div className="rform-field">
-            <label className="rform-label">Password</label>
+            <label className="rform-label">Password <span style={{ color: '#ef4444' }}>*</span></label>
             <div className="rform-input-wrap">
               <span className="rform-input-icon"><Lock size={15} /></span>
               <input
@@ -190,7 +190,7 @@ export default function ChildRegister() {
           </div>
 
           <div className="rform-field">
-            <label className="rform-label">Invitation Code</label>
+            <label className="rform-label">Invitation Code <span style={{ color: '#ef4444' }}>*</span></label>
             <div className="rform-input-wrap">
               <span className="rform-input-icon"><Key size={15} /></span>
               <input
@@ -266,7 +266,7 @@ export default function ChildRegister() {
             
             <div className="rform-grid">
               <div className="rform-field">
-                <label className="rform-label">GST Number</label>
+                <label className="rform-label">GST Number <span style={{ color: '#ef4444' }}>*</span></label>
                 <div className="rform-input-wrap">
                   <span className="rform-input-icon">
                     <svg size={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-file-text"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/><line x1="10" x2="8" y1="9" y2="9"/></svg>
@@ -274,13 +274,13 @@ export default function ChildRegister() {
                   <input
                     type="text" name="gstNumber" className="rform-input"
                     value={formData.gstNumber} onChange={handleChange}
-                    placeholder="22AAAAA0000A1Z5"
+                    placeholder="22AAAAA0000A1Z5" required
                   />
                 </div>
               </div>
 
               <div className="rform-field">
-                <label className="rform-label">Business Name</label>
+                <label className="rform-label">Business Name <span style={{ color: '#ef4444' }}>*</span></label>
                 <div className="rform-input-wrap">
                   <span className="rform-input-icon">
                     <svg size={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-user-check"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/></svg>
@@ -294,7 +294,7 @@ export default function ChildRegister() {
               </div>
 
               <div className="rform-field rform-field-full">
-                <label className="rform-label">Business Address</label>
+                <label className="rform-label">Business Address <span style={{ color: '#ef4444' }}>*</span></label>
                 <div className="rform-input-wrap">
                   <span className="rform-input-icon">
                     <svg size={15} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-building"><rect width="16" height="20" x="4" y="2" rx="2" ry="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01"/><path d="M16 6h.01"/><path d="M8 10h.01"/><path d="M16 10h.01"/><path d="M8 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M16 18h.01"/></svg>

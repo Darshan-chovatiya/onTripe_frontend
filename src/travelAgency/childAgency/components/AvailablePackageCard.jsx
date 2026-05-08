@@ -124,34 +124,21 @@ export default function AvailablePackageCard({ pkg, existingWhitelabel, onCreate
           <button
             type="button"
             onClick={() => setDetailOpen(true)}
-            className="flex-1 items-center justify-center gap-1.5 rounded-xl border border-gray-200 bg-white py-2 text-xs font-medium text-gray-700 transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-800"
+            className="flex-1 items-center justify-center gap-1.5 rounded-xl border border-gray-200 bg-white py-2.5 text-xs font-bold text-gray-700 transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-800 shadow-sm"
           >
-            <Eye className="h-3.5 w-3.5 inline mr-1" strokeWidth={2} />
+            <Eye className="h-3.5 w-3.5 inline mr-1" strokeWidth={2.5} />
             View
           </button>
-          {/* <button
-            type="button"
-            onClick={() => {
-              const target = existingWhitelabel 
-                ? `/agency/bookings/create?whitelabelId=${existingWhitelabel._id}` 
-                : `/agency/bookings/create?packageId=${pkg._id}`;
-              navigate(target);
-            }}
-            className="flex-1 items-center justify-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 py-2 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-100"
-          >
-            <Ticket className="h-3.5 w-3.5 inline mr-1" strokeWidth={2} />
-            Book
-          </button> */}
         </div>
 
         <button
           type="button"
           disabled={disabled || pkg.isSuspended}
           onClick={() => existingWhitelabel ? onEditWhiteLabel(existingWhitelabel) : onCreateWhiteLabel(pkg)}
-          className={`flex w-full items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-semibold transition ${
+          className={`flex w-full items-center justify-center gap-1.5 rounded-xl py-2.5 text-xs font-bold transition shadow-sm active:scale-[0.98] ${
             (disabled || pkg.isSuspended)
               ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-              : 'bg-primary-600 text-white hover:bg-primary-700 shadow-sm active:scale-[0.98]'
+              : 'bg-primary-600 text-white hover:bg-primary-700'
           }`}
         >
           {existingWhitelabel ? <Pencil className="h-3.5 w-3.5" /> : <Tag className="h-3.5 w-3.5" />}

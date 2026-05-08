@@ -106,22 +106,35 @@ export default function CreateBooking() {
         if (found.startDate) {
           const d = new Date(found.startDate)
           const pad = (n) => String(n).padStart(2, '0')
-          setTravelDate(`${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`)
+          setTravelDate(`${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`)
         }
       }
     }
   }, [activePackages, packageId, urlPackageId])
 
   useEffect(() => {
+    if (!basePackagePrice) {
+      setMinTotalAmount(0)
+      setTotalAmount('')
+      return
+    }
     const total = basePackagePrice * (travelers.length + 1)
+    const prevMin = minTotalAmount
     setMinTotalAmount(total)
-    setTotalAmount(String(total))
+    
+    // Only auto-update totalAmount if it's currently empty or matches the previous minimum
+    // (Meaning the user hasn't manually overridden it yet)
+    setTotalAmount(prev => {
+      if (!prev || Number(prev) === prevMin) return String(total)
+      return prev
+    })
   }, [basePackagePrice, travelers.length])
 
   const handlePackageChange = (id) => {
     setPackageId(id)
     const pkg = activePackages.find(p => String(p._id) === id)
     setBasePackagePrice(pkg?.basePrice || 0)
+    setTotalAmount('') // Reset to allow auto-fill for new package
     setMaxCapacity(pkg?.maxCapacity ?? null)
     setRemainingCapacity(pkg?.remainingCapacity ?? pkg?.maxCapacity ?? null)
     // auto-fill travel date from package startDate (date only, no time)

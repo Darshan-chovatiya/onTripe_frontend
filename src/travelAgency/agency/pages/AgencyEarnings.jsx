@@ -74,11 +74,11 @@ export default function AgencyEarnings() {
   const handleExport = () => {
     if (!rows.length) return
     const headers = isParent
-      ? ['Booking ID', 'Date', 'Travel Date', 'Package', 'Customer', 'Booked By', 'Role', 'Travelers', 'My Earning (Base)', 'Child Earned (Markup)', 'Total Sold', 'Status']
+      ? ['Booking ID', 'Date', 'Travel Date', 'Package', 'Customer', 'Booked By', 'Role', 'Travelers', 'My Earning (Base)', 'Child Markup', 'Extra Income', 'Total Sold', 'Status']
       : ['Booking ID', 'Date', 'Travel Date', 'Offer', 'Customer', 'Booked By', 'Role', 'Travelers', 'Provider Cost', 'My Selling Price', 'My Earning', 'Total Sold', 'Status']
 
     const csvRows = rows.map(r => isParent
-      ? [r.bookingId, fmtDate(r.date), fmtDate(r.travelDate), r.packageTitle, r.customerName, r.bookedByName, r.bookedByRole, r.travelerCount, r.myEarning, r.childEarning, r.totalSold, r.status]
+      ? [r.bookingId, fmtDate(r.date), fmtDate(r.travelDate), r.packageTitle, r.customerName, r.bookedByName, r.bookedByRole, r.travelerCount, r.myEarning, r.bookedByRole === 'parent_agent' ? 0 : r.childMarkup, r.extraIncome, r.totalSold, r.status]
       : [r.bookingId, fmtDate(r.date), fmtDate(r.travelDate), r.offerTitle, r.customerName, r.bookedByName, r.bookedByRole, r.travelerCount, r.providerCost, r.mySellingPrice, r.myEarning, r.totalSold, r.status]
     )
 
@@ -118,7 +118,7 @@ export default function AgencyEarnings() {
         <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-700">
           <Filter className="h-4 w-4" /> Filters
         </div>
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap gap-1">
           {isParent && packages.length > 0 && (
             <select className="rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-300"
               value={packageFilter} onChange={e => setPackageFilter(e.target.value)}>
@@ -168,9 +168,7 @@ export default function AgencyEarnings() {
             className="rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-500 hover:bg-gray-50">
             Clear
           </button>
-          <button onClick={fetchEarnings} className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50">
-            <RefreshCw className="h-3.5 w-3.5" /> Refresh
-          </button>
+          {/* x */}
           <button onClick={handleExport} disabled={!rows.length}
             className="ml-auto flex items-center gap-1.5 rounded-lg bg-primary-600 px-3 py-2 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-50">
             <Download className="h-3.5 w-3.5" /> Export CSV
@@ -196,7 +194,8 @@ export default function AgencyEarnings() {
                   <th className="px-4 py-3">Booked By</th>
                   <th className="px-4 py-3 text-right">{isParent ? 'Base Price (My Earning)' : 'Provider Cost'}</th>
                   <th className="px-4 py-3 text-right">{isParent ? 'Child Markup' : 'My Selling Price'}</th>
-                  <th className="px-4 py-3 text-right">{isParent ? 'Total Sold' : 'My Earning'}</th>
+                  <th className="px-4 py-3 text-right">{isParent ? 'Extra Income' : 'My Earning'}</th>
+                  <th className="px-4 py-3 text-right">Total Sold</th>
                   <th className="px-4 py-3 text-center">Status</th>
                 </tr>
               </thead>
@@ -224,8 +223,11 @@ export default function AgencyEarnings() {
                         </td>
                         <td className="px-4 py-3 text-right">
                           <span className="flex items-center justify-end gap-1 text-violet-600">
-                            <ArrowUpRight className="h-3.5 w-3.5" />{fmt(r.childEarning)}
+                            {r.bookedByRole === 'parent_agent' ? '—' : <><ArrowUpRight className="h-3.5 w-3.5" />{fmt(r.childMarkup)}</>}
                           </span>
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <span className="font-bold text-blue-600">{fmt(r.extraIncome)}</span>
                         </td>
                         <td className="px-4 py-3 text-right font-bold text-gray-900">{fmt(r.totalSold)}</td>
                       </>
@@ -240,6 +242,7 @@ export default function AgencyEarnings() {
                         <td className="px-4 py-3 text-right">
                           <span className="font-bold text-emerald-700">{fmt(r.myEarning)}</span>
                         </td>
+                        <td className="px-4 py-3 text-right font-bold text-gray-900">{fmt(r.totalSold)}</td>
                       </>
                     )}
                     <td className="px-4 py-3 text-center">
