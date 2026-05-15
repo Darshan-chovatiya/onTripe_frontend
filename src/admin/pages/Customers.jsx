@@ -6,6 +6,7 @@ import { useToast } from '@/shared/components/ToastContainer.jsx'
 import Loader from '@/shared/components/Loader.jsx'
 import Pagination from '@/admin/components/Pagination.jsx'
 import { exportToExcel } from '@/admin/utils/exportExcel.js'
+import CustomDropdown from '@/shared/components/CustomDropdown.jsx'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL?.replace('/api', '').replace(/\/$/, '') || 'http://localhost:5001'
 const getFileUrl = (path) => {
@@ -319,20 +320,21 @@ export default function Customers() {
             />
           </div>
 
-          <div className="w-full sm:w-64">
-            <select
+          <div className="w-full sm:w-72">
+            <CustomDropdown
               value={agencyFilter}
-              onChange={(e) => {
-                setAgencyFilter(e.target.value)
+              onChange={(val) => {
+                setAgencyFilter(val)
                 setPage(1)
               }}
-              className="w-full rounded-xl border border-gray-200 bg-gray-50 py-2 px-3 text-sm text-gray-900 focus:border-primary-300 focus:bg-white focus:outline-none focus:ring-1 focus:ring-primary-200"
-            >
-              <option value="all">All Agencies</option>
-              {agents.map(a => (
-                <option key={a._id} value={a._id}>{a.name} ({a.agentCode})</option>
-              ))}
-            </select>
+              options={[
+                { value: 'all', label: 'All Agencies' },
+                ...agents.map(a => ({ value: a._id, label: `${a.name} (${a.agentCode})` }))
+              ]}
+              searchable={true}
+              placeholder="Filter by Agency"
+              truncateLength={40}
+            />
           </div>
         </div>
 

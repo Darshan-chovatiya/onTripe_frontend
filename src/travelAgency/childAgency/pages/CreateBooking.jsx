@@ -344,7 +344,6 @@ export default function CreateBooking() {
     Number(totalAmount) >= minTotalAmount &&
     (whitelabelId || packageId) &&
     normalizePhone(customerPhone).length === 10 &&
-    /^[6-9]/.test(normalizePhone(customerPhone)) &&
     travelers.every(t => t.name.trim() && /^\d{10}$/.test(t.phone.replace(/\D/g, '')))
   )
 

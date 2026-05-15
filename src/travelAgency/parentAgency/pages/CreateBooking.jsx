@@ -262,10 +262,6 @@ export default function CreateBooking() {
       toast.error('Enter a valid 10-digit mobile number')
       return
     }
-    if (!/^[6-9]/.test(phone)) {
-      toast.error('Enter a valid Indian mobile number (starts with 6-9)')
-      return
-    }
 
     const currentCap = remainingCapacity != null ? remainingCapacity : maxCapacity
     if (currentCap != null && travelers.length + 1 > currentCap) {
@@ -320,7 +316,6 @@ export default function CreateBooking() {
   const canSubmit = Boolean(
     customerName.trim() &&
     normalizePhone(customerPhone).length === 10 &&
-    /^[6-9]/.test(normalizePhone(customerPhone)) &&
     travelDate &&
     totalAmount &&
     Number(totalAmount) >= minTotalAmount &&

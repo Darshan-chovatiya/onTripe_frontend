@@ -10,12 +10,15 @@ import {
   RefreshCw,
   User,
   MapPin,
-  Tag
+  Tag,
+  Package as PackageIcon,
+  Users as UsersIcon
 } from 'lucide-react'
 import adminApi from '@/admin/services/adminApi.js'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
 import Pagination from '@/admin/components/Pagination.jsx'
 import { exportToExcel } from '@/admin/utils/exportExcel.js'
+import CustomDropdown from '@/shared/components/CustomDropdown.jsx'
 
 const PAGE_SIZE = 10
 
@@ -165,38 +168,40 @@ export default function Bookings() {
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
           >
-            <option value="all">All statuses</option>
+            <option value="all">All status</option>
             <option value="confirmed">Confirmed</option>
             <option value="ongoing">Ongoing</option>
             <option value="completed">Completed</option>
             <option value="cancelled">Cancelled</option>
           </select>
 
-          <select
-            className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:border-primary-500 focus:outline-none focus:ring-4 focus:ring-primary-500/10 sm:w-64"
+          <CustomDropdown
             value={packageFilter}
-            onChange={(e) => setPackageFilter(e.target.value)}
-          >
-            <option value="all">All Packages</option>
-            {packages.map(pkg => (
-              <option key={pkg._id} value={pkg._id}>
-                {pkg.title}
-              </option>
-            ))}
-          </select>
+            onChange={setPackageFilter}
+            options={[
+              { value: 'all', label: 'All Packages' },
+              ...packages.map(pkg => ({ value: pkg._id, label: pkg.title }))
+            ]}
+            searchable={true}
+            placeholder="Select Package"
+            className="w-full sm:w-64"
+            buttonClassName="!py-2 !h-9.5"
+            truncateLength={40}
+          />
 
-          <select
-            className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:border-primary-500 focus:outline-none focus:ring-4 focus:ring-primary-500/10 sm:w-64"
+          <CustomDropdown
             value={bookedByFilter}
-            onChange={(e) => setBookedByFilter(e.target.value)}
-          >
-            <option value="all">All Agents</option>
-            {agents.map(agent => (
-              <option key={agent._id} value={agent._id}>
-                {agent.name} ({agent.agentCode})
-              </option>
-            ))}
-          </select>
+            onChange={setBookedByFilter}
+            options={[
+              { value: 'all', label: 'All Agents' },
+              ...agents.map(agent => ({ value: agent._id, label: `${agent.name} (${agent.agentCode})` }))
+            ]}
+            searchable={true}
+            placeholder="Select Agent"
+            className="w-full sm:w-64"
+            buttonClassName="!py-2 !h-9.5"
+            truncateLength={40}
+          />
         </div>
 
         {error && <div className="m-4 rounded-lg bg-red-50 p-4 text-sm text-red-700">{error}</div>}

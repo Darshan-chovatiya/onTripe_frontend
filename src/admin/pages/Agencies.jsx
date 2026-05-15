@@ -516,8 +516,13 @@ const AddAgencyModal = ({ isOpen, onClose, onRefresh }) => {
     } catch (error) {
       const msg = error.response?.data?.message || 'Enrollment failed'
       if (msg.toLowerCase().includes('email')) setErrors({ email: msg })
-      else if (msg.toLowerCase().includes('phone')) setErrors({ phone: msg })
-      toast.error(msg)
+      else if (msg.toLowerCase().includes('phone') || msg.toLowerCase().includes('mobile')) setErrors({ phone: msg })
+      
+      if (msg.includes('E11000')) {
+        toast.error('Identity already exists (email or phone)')
+      } else {
+        toast.error(msg)
+      }
     } finally {
       setLoading(false)
     }
@@ -1374,8 +1379,16 @@ export default function Agencies() {
                   <tr key={agent._id} className="group transition-colors hover:bg-gray-50/80">
                     <td className="px-4 py-2.5">
                       <div className="flex items-start gap-2.5">
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-gray-200 bg-gray-50 text-gray-500 transition-transform group-hover:scale-[1.02]">
-                          <Building2 className="h-4 w-4" strokeWidth={2} />
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-gray-200 bg-gray-50 text-gray-500 transition-transform group-hover:scale-[1.02]">
+                          {agent.agencyLogo ? (
+                            <img
+                              src={getFileUrl(agent.agencyLogo)}
+                              alt={agent.name}
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <Building2 className="h-4 w-4" strokeWidth={2} />
+                          )}
                         </div>
                         <div className="min-w-0">
                           <div className="truncate text-sm font-semibold text-gray-900">{agent.name}</div>
@@ -1547,9 +1560,17 @@ export default function Agencies() {
             <div className="flex items-start gap-2 px-6 py-4">
               {/* Left: avatar + name + email + badges */}
               <div className="flex min-w-0 flex-1 items-start gap-3">
-                {/* <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-gray-200 bg-gray-50 text-gray-500">
-                  <Building2 className="h-6 w-6" strokeWidth={1.5} />
-                </div> */}
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-gray-200 bg-gray-50 text-gray-500">
+                  {selectedAgent.agencyLogo ? (
+                    <img
+                      src={getFileUrl(selectedAgent.agencyLogo)}
+                      alt={selectedAgent.name}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <Building2 className="h-6 w-6" strokeWidth={1.5} />
+                  )}
+                </div>
                 <div className="min-w-0">
                   <p className="truncate text-base font-semibold text-gray-900">{selectedAgent.name}</p>
                   <p className="mt-0.5 truncate text-xs text-gray-500">{selectedAgent.email}</p>
@@ -1652,6 +1673,27 @@ export default function Agencies() {
                   </div>
                 ))}
               </div>
+              
+              {Array.isArray(selectedAgent.kyc?.otherDocs) && selectedAgent.kyc.otherDocs.length > 0 && (
+                <div className="mt-4">
+                  <p className="mb-2 text-[11px] font-semibold uppercase tracking-tight text-gray-400">Other documents</p>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedAgent.kyc.otherDocs.map((path, i) => (
+                      <a
+                        key={i}
+                        href={getFileUrl(path)}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-600 transition-colors hover:border-primary-200 hover:bg-primary-50 hover:text-primary-700"
+                      >
+                        {isPdfPath(path) ? <FileText size={14} /> : <Eye size={14} />}
+                        <span>Document {i + 1}</span>
+                        <ExternalLink size={12} className="opacity-40" />
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* ── KYC history ── */}
@@ -1679,6 +1721,12 @@ export default function Agencies() {
                             <FileText className="h-3 w-3" /> {lbl}
                           </a>
                         ) : null)}
+                        {Array.isArray(h.otherDocs) && h.otherDocs.map((path, i) => (
+                          <a key={i} href={getFileUrl(path)} target="_blank" rel="noreferrer"
+                            className="inline-flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-2 py-1 text-[11px] font-medium text-gray-600 hover:text-primary-700">
+                            <FileText className="h-3 w-3" /> Doc {i + 1}
+                          </a>
+                        ))}
                       </div>
                     </div>
                   ))}

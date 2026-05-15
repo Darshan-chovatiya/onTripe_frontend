@@ -177,21 +177,27 @@ function PackageGridCard({ pkg, onEdit, onClone, onCover, onGallery, onToggle, o
         </div>
 
         {/* Stats row — 4 numbers inline */}
-        <div className="grid grid-cols-4 divide-x divide-gray-100 rounded-xl border border-gray-100 bg-gray-50/60">
-          <div className="px-2 py-2.5 text-center">
+        <div className="grid grid-cols-5 divide-x divide-gray-100 rounded-xl border border-gray-100 bg-gray-50/60">
+          <div className="px-1 py-2.5 text-center">
+            <p className="text-[9px] font-semibold uppercase tracking-wide text-gray-400">Revenue</p>
+            <p className="mt-0.5 text-xs font-bold tabular-nums text-sky-700">
+              ₹{(Number(pkg.totalRevenue) || 0).toLocaleString('en-IN')}
+            </p>
+          </div>
+          <div className="px-1 py-2.5 text-center">
             <p className="text-[9px] font-semibold uppercase tracking-wide text-gray-400">Earnings</p>
             <p className="mt-0.5 text-xs font-bold tabular-nums text-primary-700">
               ₹{(Number(pkg.totalParentEarnings) || 0).toLocaleString('en-IN')}
             </p>
           </div>
-          <div className="px-2 py-2.5 text-center">
+          <div className="px-1 py-2.5 text-center">
             <p className="text-[9px] font-semibold uppercase tracking-wide text-gray-400">Child</p>
             <button type="button" onClick={() => onShowCommissions?.(pkg)}
               className="mt-0.5 block w-full text-xs font-bold tabular-nums text-emerald-700 hover:underline">
               ₹{(Number(pkg.totalChildEarnings) || 0).toLocaleString('en-IN')}
             </button>
           </div>
-          <div className="px-2 py-2.5 text-center">
+          <div className="px-1 py-2.5 text-center">
             <p className="text-[9px] font-semibold uppercase tracking-wide text-gray-400">Bookings</p>
             <button type="button"
               onClick={() => navigate(`${AGENCY_PANEL_BASE}/bookings?packageId=${pkg._id}`)}
@@ -199,7 +205,7 @@ function PackageGridCard({ pkg, onEdit, onClone, onCover, onGallery, onToggle, o
               {Number(pkg.bookingCount) || 0}
             </button>
           </div>
-          <div className="px-2 py-2.5 text-center">
+          <div className="px-1 py-2.5 text-center">
             <p className="text-[9px] font-semibold uppercase tracking-wide text-gray-400">WL</p>
             <button type="button"
               disabled={!pkg.whitelabelCount}
@@ -273,6 +279,12 @@ function PackageListRow({ pkg, onEdit, onClone, onCover, onGallery, onToggle, on
 
       {/* Stats */}
       <div className="hidden items-center gap-4 lg:flex">
+        <div className="text-center">
+          <p className="text-[9px] font-medium uppercase tracking-wide text-gray-400">Revenue</p>
+          <p className="mt-0.5 text-xs font-bold tabular-nums text-sky-700">
+            ₹{(Number(pkg.totalRevenue) || 0).toLocaleString('en-IN')}
+          </p>
+        </div>
         <div className="text-center">
           <p className="text-[9px] font-medium uppercase tracking-wide text-gray-400">My Earnings</p>
           <p className="mt-0.5 text-xs font-bold tabular-nums text-primary-700">
@@ -413,12 +425,12 @@ export default function Packages() {
   const stats = useMemo(() => ({
     total: packages.length,
     live: packages.filter((p) => p.isActive).length,
-    revenue: analytics?.totalRevenue ?? packages.reduce((s, p) => s + (Number(p.revenue) || 0), 0),
-    bookings: analytics?.totalBookings ?? packages.reduce((s, p) => s + (Number(p.bookings) || 0), 0),
-    earnings: packages.reduce((s, p) => s + (Number(p.earnings) || 0), 0),
-    child: packages.reduce((s, p) => s + (Number(p.revenue || 0) - Number(p.earnings || 0)), 0),
-    wl: packages.reduce((s, p) => s + (p.whitelabels?.length || 0), 0),
-  }), [packages, analytics])
+    revenue: packages.reduce((s, p) => s + (Number(p.totalRevenue) || 0), 0),
+    bookings: packages.reduce((s, p) => s + (Number(p.bookingCount) || 0), 0),
+    earnings: packages.reduce((s, p) => s + (Number(p.totalParentEarnings) || 0), 0),
+    child: packages.reduce((s, p) => s + (Number(p.totalChildEarnings) || 0), 0),
+    wl: packages.reduce((s, p) => s + (Number(p.whitelabelCount) || 0), 0),
+  }), [packages])
 
   const handleFormSubmit = async (formData) => {
     setSubmitting(true)

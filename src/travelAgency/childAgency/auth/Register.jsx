@@ -183,7 +183,7 @@ export default function ChildRegister() {
                 value={formData.password} onChange={handleChange}
                 placeholder="Min. 8 chars" minLength={8} autoComplete="new-password" required
               />
-              <button type="button" className="rform-eye-btn" onClick={() => setShowPassword((v) => !v)}>
+              <button type="button" onClick={() => setShowPassword((v) => !v)}>
                 {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
               </button>
             </div>

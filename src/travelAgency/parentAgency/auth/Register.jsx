@@ -172,9 +172,9 @@ export default function ParentRegister() {
               <input
                 type={showPassword ? 'text' : 'password'} name="password" className="rform-input"
                 value={formData.password} onChange={handleChange}
-                placeholder="Min. 8 chars, 1 uppercase, 1 number" minLength={8} autoComplete="new-password" required
+                placeholder="Min. 8 chars" minLength={8} autoComplete="new-password" required
               />
-              <button type="button" className="rform-eye-btn" onClick={() => setShowPassword((v) => !v)}>
+              <button type="button" onClick={() => setShowPassword((v) => !v)}>
                 {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
               </button>
             </div>

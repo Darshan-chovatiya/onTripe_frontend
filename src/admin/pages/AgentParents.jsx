@@ -11,6 +11,12 @@ import {
 } from 'lucide-react'
 import adminApi from '@/admin/services/adminApi'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
+const getFileUrl = (path) => {
+  if (!path) return '#'
+  const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001'
+  const cleanBase = baseUrl.trim().replace(/\/api$/, '')
+  return `${cleanBase}/${path.replace(/\\/g, '/')}`
+}
 
 export default function AgentParents() {
   const { agentId } = useParams()
@@ -145,8 +151,16 @@ export default function AgentParents() {
           </div>
           <div className="p-4">
             <div className="flex flex-wrap items-start gap-3">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-gray-200 bg-gray-50 text-gray-500">
-                <Building2 className="h-6 w-6" strokeWidth={2} />
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full border border-gray-200 bg-gray-50 text-gray-500">
+                {agent.agencyLogo ? (
+                  <img
+                    src={getFileUrl(agent.agencyLogo)}
+                    alt={agent.name}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <Building2 className="h-6 w-6" strokeWidth={2} />
+                )}
               </div>
               <div className="min-w-0 flex-1 space-y-1">
                 <h3 className="text-base font-semibold text-gray-900">{agent.name || '—'}</h3>
@@ -215,8 +229,16 @@ export default function AgentParents() {
                     <tr key={p._id} className="transition-colors hover:bg-gray-50/80">
                       <td className="px-4 py-2.5">
                         <div className="flex items-center gap-2.5">
-                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-gray-200 bg-gray-50 text-gray-500">
-                            <Building2 className="h-4 w-4" strokeWidth={2} />
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-gray-200 bg-gray-50 text-gray-500">
+                            {p.agencyLogo ? (
+                              <img
+                                src={getFileUrl(p.agencyLogo)}
+                                alt={p.name}
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              <Building2 className="h-4 w-4" strokeWidth={2} />
+                            )}
                           </div>
                           <div className="min-w-0">
                             <div className="truncate text-sm font-semibold text-gray-900">{p.name}</div>

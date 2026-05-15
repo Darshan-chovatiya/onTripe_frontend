@@ -559,7 +559,6 @@ export default function EditBooking() {
               saving ||
               !customerName.trim() ||
               customerPhone.replace(/\D/g, '').length !== 10 ||
-              !/^[6-9]/.test(customerPhone.replace(/\D/g, '')) ||
               !travelDate ||
               !totalAmount ||
               Number(totalAmount) < minTotalAmount ||

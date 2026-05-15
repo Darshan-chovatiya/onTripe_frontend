@@ -177,7 +177,7 @@ export default function Settings() {
               )}
             </div>
             {/* Upload button */}
-            <button
+            {/* <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
               disabled={uploadingImage}
@@ -188,7 +188,7 @@ export default function Settings() {
                 ? <div className="h-3 w-3 animate-spin rounded-full border border-gray-400 border-t-gray-700" />
                 : <Camera className="h-3 w-3 text-gray-700" strokeWidth={2.5} />
               }
-            </button>
+            </button> */}
             {/* Remove button */}
             {previewUrl && !uploadingImage && (
               <button
@@ -212,14 +212,14 @@ export default function Settings() {
             <p className="text-[11px] font-bold uppercase tracking-widest text-white/50">Administrator</p>
             <h1 className="text-xl font-black text-white">{profileData.name || 'Admin'}</h1>
             <p className="mt-0.5 text-sm text-white/60">{profileData.email}</p>
-            <button
+            {/* <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
               className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-[11px] font-semibold text-white/80 transition hover:bg-white/25"
             >
               <Camera className="h-3 w-3" strokeWidth={2.5} />
               {previewUrl ? 'Change photo' : 'Add photo'}
-            </button>
+            </button> */}
           </div>
         </div>
       </div>

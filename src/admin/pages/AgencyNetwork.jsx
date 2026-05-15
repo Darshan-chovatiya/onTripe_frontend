@@ -24,6 +24,12 @@ import Modal from '@/shared/components/Modal.jsx'
 import CustomDropdown from '@/shared/components/CustomDropdown.jsx'
 import Pagination from '@/admin/components/Pagination.jsx'
 import HierarchyFlowchart from '@/admin/components/HierarchyFlowchart.jsx'
+const getFileUrl = (path) => {
+  if (!path) return '#'
+  const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001'
+  const cleanBase = baseUrl.trim().replace(/\/api$/, '')
+  return `${cleanBase}/${path.replace(/\\/g, '/')}`
+}
 
 // Internal component for Sub-Child Agency Listing inside nested Modal
 const SubChildAgenciesModal = ({ isOpen, onClose, parentAgency, onToggleStatus, getStatusBadge }) => {
@@ -488,7 +494,17 @@ const AgencyNetwork = () => {
                      <tr key={child._id} className="hover:bg-slate-50/50 transition-colors group">
                         <td className="px-6 py-4">
                            <div className="flex items-center gap-3">
-                              <div className="h-9 w-9 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-400 shadow-sm group-hover:scale-105 transition-transform"><Building2 size={16} /></div>
+                               <div className="h-9 w-9 overflow-hidden rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-400 shadow-sm group-hover:scale-105 transition-transform">
+                                 {child.agencyLogo ? (
+                                   <img
+                                     src={getFileUrl(child.agencyLogo)}
+                                     alt={child.name}
+                                     className="h-full w-full object-cover"
+                                   />
+                                 ) : (
+                                   <Building2 size={16} />
+                                 )}
+                               </div>
                               <div>
                                  <div className="text-[13px] font-black text-slate-900 leading-none mb-1.5">{child.name}</div>
                                  <div className="text-[9px] font-bold text-slate-400 uppercase tracking-tight italic">ID: {child._id.slice(-6).toUpperCase()}</div>

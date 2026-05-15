@@ -43,10 +43,6 @@ export default function Login() {
       toast.error('Enter a valid 10-digit mobile number')
       return false
     }
-    if (!/^[6-9]/.test(cleanedMobile)) {
-      toast.error('Enter a valid Indian mobile number (starts with 6-9)')
-      return false
-    }
     const res = await requestCustomerOtp(cleanedMobile)
     if (res.success) {
       toast.success(res.message || 'OTP sent successfully')
