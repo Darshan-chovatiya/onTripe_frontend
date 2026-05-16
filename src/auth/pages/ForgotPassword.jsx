@@ -72,7 +72,7 @@ export default function ForgotPassword() {
       {step === 1 && (
         <form onSubmit={handleRequestOtp} className="rform-grid">
           <div className="rform-field rform-field-full">
-            <label className="rform-label">Email Address</label>
+            <label className="rform-label">Email Address <span style={{ color: '#ef4444' }}>*</span></label>
             <div className="rform-input-wrap">
               <span className="rform-input-icon"><Mail size={15} /></span>
               <input
@@ -104,7 +104,7 @@ export default function ForgotPassword() {
       {step === 2 && (
         <form onSubmit={handleVerifyOtp} className="rform-grid">
           <div className="rform-field rform-field-full">
-            <label className="rform-label">Verification OTP</label>
+            <label className="rform-label">Verification OTP <span style={{ color: '#ef4444' }}>*</span></label>
             <div className="rform-input-wrap">
               <span className="rform-input-icon"><ShieldCheck size={15} /></span>
               <input
@@ -134,7 +134,7 @@ export default function ForgotPassword() {
       {step === 3 && (
         <form onSubmit={handleResetPassword} className="rform-grid">
           <div className="rform-field rform-field-full">
-            <label className="rform-label">New Password</label>
+            <label className="rform-label">New Password <span style={{ color: '#ef4444' }}>*</span></label>
             <div className="rform-input-wrap">
               <span className="rform-input-icon"><Lock size={15} /></span>
               <input
@@ -150,7 +150,7 @@ export default function ForgotPassword() {
           </div>
 
           <div className="rform-field rform-field-full">
-            <label className="rform-label">Confirm Password</label>
+            <label className="rform-label">Confirm Password <span style={{ color: '#ef4444' }}>*</span></label>
             <div className="rform-input-wrap">
               <span className="rform-input-icon"><Lock size={15} /></span>
               <input

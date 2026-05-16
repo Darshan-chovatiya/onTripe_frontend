@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { Plus, Trash2, ChevronDown, ChevronUp, ArrowLeft, X } from 'lucide-react'
+import { Plus, Trash2, ChevronDown, ChevronUp, ArrowLeft, X, AlertCircle } from 'lucide-react'
 import {
   getPackageById,
   createPackage,
@@ -26,7 +26,22 @@ const emptyEvent = () => ({
 })
 const emptyDay = (day) => ({ day, dateSuffix: '', title: '', description: '', events: [] })
 
-const inputCls = 'w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-primary-400 focus:outline-none focus:ring-1 focus:ring-primary-200'
+const inputCls = (hasErr) =>
+  `w-full rounded-lg border px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-1 bg-white transition ${
+    hasErr
+      ? 'border-red-400 focus:border-red-400 focus:ring-red-100'
+      : 'border-gray-200 focus:border-primary-400 focus:ring-primary-200'
+  }`
+
+function FieldError({ msg }) {
+  if (!msg) return null
+  return (
+    <p className="mt-1 flex items-center gap-1 text-[11px] font-medium text-red-500">
+      <AlertCircle className="h-3 w-3 shrink-0" strokeWidth={2.5} />
+      {msg}
+    </p>
+  )
+}
 
 const fullImgUrl = (p) => {
   if (!p) return null
@@ -53,6 +68,35 @@ export default function ClonePackage() {
   const [vendors, setVendors] = useState([])
   const [isVendorModalOpen, setIsVendorModalOpen] = useState(false)
   const [creatingVendor, setCreatingVendor] = useState(false)
+  const [errors, setErrors] = useState({})
+  const [submitted, setSubmitted] = useState(false)
+
+  const clearErr = (key) => setErrors(e => { const n = { ...e }; delete n[key]; return n })
+
+  const validate = () => {
+    const e = {}
+    if (!form?.title?.trim()) e.title = 'Package title is required'
+    if (!form?.destination?.trim()) e.destination = 'Destination is required'
+    if (!form?.startDate) e.startDate = 'Start date is required'
+    if (!form?.endDate) e.endDate = 'End date is required'
+    else if (form?.startDate && form?.endDate < form?.startDate) e.endDate = 'End date must be on or after start date'
+    if (!form?.basePrice || Number(form?.basePrice) <= 0) e.basePrice = 'Price must be greater than ₹0'
+    
+    // Itinerary days + events
+    form?.itinerary?.forEach((day, i) => {
+      if (!day.title?.trim()) e[`day_${i}_title`] = `Day ${day.day} title is required`
+      if (!day.description?.trim()) e[`day_${i}_desc`] = `Day ${day.day} description is required`
+      ;(day.events || []).forEach((ev, ei) => {
+        if (!ev.title?.trim()) e[`ev_${i}_${ei}_title`] = 'Event title is required'
+        if (!ev.startTime) e[`ev_${i}_${ei}_startTime`] = 'Start time is required'
+        if (!ev.endTime) e[`ev_${i}_${ei}_endTime`] = 'End time is required'
+        else if (ev.startTime && ev.endTime && ev.endTime <= ev.startTime) e[`ev_${i}_${ei}_endTime`] = 'End time must be after start time'
+        if (!ev.description?.trim()) e[`ev_${i}_${ei}_desc`] = 'Event description is required'
+        if (!ev.image) e[`ev_${i}_${ei}_image`] = 'Event image is required'
+      })
+    })
+    return e
+  }
 
   useEffect(() => {
     const load = async () => {
@@ -234,7 +278,33 @@ export default function ClonePackage() {
   const toggleDay = (di) => setExpandedDays(e => ({ ...e, [di]: !e[di] }))
 
   const handleSubmit = async (e) => {
-    e.preventDefault(); setSubmitting(true)
+    e.preventDefault();
+    setSubmitted(true)
+
+    const errs = validate()
+    if (Object.keys(errs).length > 0) {
+      setErrors(errs)
+      // Auto-expand days that have errors
+      const newExpanded = { ...expandedDays }
+      form.itinerary.forEach((_, i) => {
+        if (errs[`day_${i}_title`] || errs[`day_${i}_desc`] ||
+            Object.keys(errs).some(k => k.startsWith(`ev_${i}_`))) {
+          newExpanded[i] = true
+        }
+      })
+      setExpandedDays(newExpanded)
+      const firstError = Object.values(errs)[0]
+      toast.error(firstError || 'Please fix the errors before submitting')
+      // Scroll to first error
+      setTimeout(() => {
+        const el = document.querySelector('[data-error="true"]')
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      }, 100)
+      return
+    }
+
+    setErrors({})
+    setSubmitting(true)
     try {
       const payload = {
         title: form.title, description: form.description, destination: form.destination,
@@ -299,44 +369,60 @@ export default function ClonePackage() {
           <p className="mb-4 text-sm font-semibold text-gray-900">Basic info</p>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <label className="mb-1 block text-xs font-medium text-gray-600">Title *</label>
-              <input required className={inputCls} value={form.title} onChange={e => set('title', e.target.value)} placeholder="Package title" />
+              <label className="mb-1 block text-xs font-medium text-gray-600">Title <span className="text-red-500">*</span></label>
+              <input
+                className={inputCls(!!errors.title)} value={form.title}
+                onChange={e => { set('title', e.target.value); clearErr('title') }}
+                placeholder="Package title"
+                data-error={!!errors.title}
+              />
+              <FieldError msg={errors.title} />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-gray-600">Destination *</label>
-              <input required className={inputCls} value={form.destination} onChange={e => set('destination', e.target.value)} placeholder="e.g. Goa, India" />
+              <label className="mb-1 block text-xs font-medium text-gray-600">Destination <span className="text-red-500">*</span></label>
+              <input
+                className={inputCls(!!errors.destination)} value={form.destination}
+                onChange={e => { set('destination', e.target.value); clearErr('destination') }}
+                placeholder="e.g. Goa, India"
+                data-error={!!errors.destination}
+              />
+              <FieldError msg={errors.destination} />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-gray-600">Total days *</label>
-              <input required type="number" min="1" className={inputCls} value={form.totalDays} onChange={e => set('totalDays', e.target.value)} onWheel={(e) => e.target.blur()} />
+              <label className="mb-1 block text-xs font-medium text-gray-600">Total days <span className="text-red-500">*</span></label>
+              <input required type="number" min="1" className={inputCls(false)} value={form.totalDays} onChange={e => set('totalDays', e.target.value)} onWheel={(e) => e.target.blur()} />
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-gray-600">Max capacity</label>
-              <input type="number" min="1" className={inputCls} value={form.maxCapacity} onChange={e => set('maxCapacity', e.target.value)} onWheel={(e) => e.target.blur()} />
+              <input type="number" min="1" className={inputCls(false)} value={form.maxCapacity} onChange={e => set('maxCapacity', e.target.value)} onWheel={(e) => e.target.blur()} />
             </div>
 
             {/* Start date */}
             <div>
-              <label className="mb-1 block text-xs font-medium text-gray-600">Start date *</label>
+              <label className="mb-1 block text-xs font-medium text-gray-600">Start date <span className="text-red-500">*</span></label>
               <input
                 type="date"
-                className={inputCls}
+                className={inputCls(!!errors.startDate)}
                 value={form.startDate}
                 min={new Date().toISOString().split('T')[0]}
-                onChange={e => handleStartDateChange(e.target.value)}
+                onChange={e => { handleStartDateChange(e.target.value); clearErr('startDate'); clearErr('endDate') }}
+                data-error={!!errors.startDate}
               />
+              <FieldError msg={errors.startDate} />
             </div>
 
             {/* End date */}
             <div>
-              <label className="mb-1 block text-xs font-medium text-gray-600">End date *</label>
+              <label className="mb-1 block text-xs font-medium text-gray-600">End date <span className="text-red-500">*</span></label>
               <input
                 type="date"
-                className={inputCls}
+                className={inputCls(!!errors.endDate)}
                 value={form.endDate}
                 min={form.startDate || new Date().toISOString().split('T')[0]}
-                onChange={e => handleEndDateChange(e.target.value)}
+                onChange={e => { handleEndDateChange(e.target.value); clearErr('endDate') }}
+                data-error={!!errors.endDate}
               />
+              <FieldError msg={errors.endDate} />
               {form.startDate && form.endDate && form.totalDays && (
                 <p className="mt-1 text-xs text-primary-600 font-medium">
                   {form.totalDays} day{Number(form.totalDays) > 1 ? 's' : ''} · {new Date(form.startDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })} – {new Date(form.endDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
@@ -344,17 +430,28 @@ export default function ClonePackage() {
               )}
             </div>
             <div className="sm:col-span-2">
-              <label className="mb-1 block text-xs font-medium text-gray-600">Base price incl. GST *</label>
+              <label className="mb-1 block text-xs font-medium text-gray-600">Base price incl. GST <span className="text-red-500">*</span></label>
               <div className="flex gap-2">
-                <select className={`${inputCls} !w-24`} value={form.currency} onChange={e => set('currency', e.target.value)}>
+                <select className={`${inputCls(false)} !w-24`} value={form.currency} onChange={e => set('currency', e.target.value)}>
                   <option>INR</option><option>USD</option><option>EUR</option>
                 </select>
-                <input required type="number" min="0" className={`${inputCls} flex-1`} value={form.basePrice} onChange={e => set('basePrice', e.target.value)} placeholder="0" onWheel={(e) => e.target.blur()} />
+                <div className="flex-1">
+                  <input
+                    type="number" min="0"
+                    className={inputCls(!!errors.basePrice)}
+                    value={form.basePrice}
+                    onChange={e => { set('basePrice', e.target.value); clearErr('basePrice') }}
+                    placeholder="0"
+                    data-error={!!errors.basePrice}
+                    onWheel={(e) => e.target.blur()}
+                  />
+                </div>
               </div>
+              <FieldError msg={errors.basePrice} />
             </div>
             <div className="sm:col-span-2">
               <label className="mb-1 block text-xs font-medium text-gray-600">Description</label>
-              <textarea rows={3} className={`${inputCls} resize-none`} value={form.description} onChange={e => set('description', e.target.value)} placeholder="Describe the package…" />
+              <textarea rows={3} className={`${inputCls(false)} resize-none`} value={form.description} onChange={e => set('description', e.target.value)} placeholder="Describe the package…" />
             </div>
           </div>
         </section>
@@ -365,7 +462,7 @@ export default function ClonePackage() {
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
             <div>
               <label className="mb-1 block text-xs font-medium text-gray-600">Cover image</label>
-              <input type="file" accept="image/*" className={inputCls} onChange={handleCoverChange} />
+              <input type="file" accept="image/*" className={inputCls(false)} onChange={handleCoverChange} />
               {coverPreview ? (
                 <div className="relative mt-2 overflow-hidden rounded-lg border border-gray-200">
                   <img src={coverPreview} alt="Cover preview" className="h-36 w-full object-cover" />
@@ -387,7 +484,7 @@ export default function ClonePackage() {
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-gray-600">Gallery (up to 10)</label>
-              <input type="file" accept="image/*" multiple className={inputCls} onChange={handleGalleryChange} />
+              <input type="file" accept="image/*" multiple className={inputCls(false)} onChange={handleGalleryChange} />
               {galleryPreviews.length > 0 ? (
                 <div className="mt-2 grid grid-cols-3 gap-1.5">
                   {galleryPreviews.map((src, idx) => (
@@ -423,7 +520,7 @@ export default function ClonePackage() {
           <div className="space-y-2">
             {form.inclusions.map((inc, i) => (
               <div key={i} className="flex gap-2">
-                <input className={`${inputCls} flex-1`} value={inc} onChange={e => handleListChange('inclusions', i, e.target.value)} placeholder="e.g. Breakfast included" />
+                <input className={`${inputCls(false)} flex-1`} value={inc} onChange={e => handleListChange('inclusions', i, e.target.value)} placeholder="e.g. Breakfast included" />
                 {form.inclusions.length > 1 && <button type="button" onClick={() => removeListItem('inclusions', i)} className="p-2 text-red-400 hover:text-red-600"><Trash2 size={15} /></button>}
               </div>
             ))}
@@ -437,7 +534,7 @@ export default function ClonePackage() {
           <div className="space-y-2">
             {form.exclusions.map((exc, i) => (
               <div key={i} className="flex gap-2">
-                <input className={`${inputCls} flex-1`} value={exc} onChange={e => handleListChange('exclusions', i, e.target.value)} placeholder="e.g. Flights not included" />
+                <input className={`${inputCls(false)} flex-1`} value={exc} onChange={e => handleListChange('exclusions', i, e.target.value)} placeholder="e.g. Flights not included" />
                 {form.exclusions.length > 1 && <button type="button" onClick={() => removeListItem('exclusions', i)} className="p-2 text-red-400 hover:text-red-600"><Trash2 size={15} /></button>}
               </div>
             ))}
@@ -452,7 +549,7 @@ export default function ClonePackage() {
           <div className="space-y-2">
             {form.importantNotes.map((note, i) => (
               <div key={i} className="flex gap-2">
-                <input className={`${inputCls} flex-1`} value={note} onChange={e => handleListChange('importantNotes', i, e.target.value)} placeholder="e.g. Valid passport required" />
+                <input className={`${inputCls(false)} flex-1`} value={note} onChange={e => handleListChange('importantNotes', i, e.target.value)} placeholder="e.g. Valid passport required" />
                 {form.importantNotes.length > 1 && <button type="button" onClick={() => removeListItem('importantNotes', i)} className="p-2 text-red-400 hover:text-red-600"><Trash2 size={15} /></button>}
               </div>
             ))}
@@ -470,6 +567,9 @@ export default function ClonePackage() {
                   <span className="text-sm font-semibold text-gray-700">
                     Day {day.day}{day.title ? ` — ${day.title}` : ''}
                     {day.events?.length > 0 && <span className="ml-2 text-xs font-normal text-gray-400">{day.events.length} event(s)</span>}
+                    {(!!errors[`day_${di}_title`] || !!errors[`day_${di}_desc`] || Object.keys(errors).some(k => k.startsWith(`ev_${di}_`))) && (
+                      <span className="ml-2 text-[10px] font-semibold text-red-400">missing info</span>
+                    )}
                   </span>
                   <div className="flex items-center gap-2">
                     {form.itinerary.length > 1 && (
@@ -483,12 +583,19 @@ export default function ClonePackage() {
                   <div className="space-y-3 p-4">
                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                       <div>
-                        <label className="mb-1 block text-xs font-medium text-gray-600">Day title</label>
-                        <input className={inputCls} value={day.title} onChange={e => updateDay(di, 'title', e.target.value)} placeholder="e.g. Arrival & City Tour" />
+                        <label className="mb-1 block text-xs font-medium text-gray-600">Day title <span className="text-red-500">*</span></label>
+                        <input
+                          className={inputCls(!!errors[`day_${di}_title`])}
+                          value={day.title}
+                          onChange={e => { updateDay(di, 'title', e.target.value); clearErr(`day_${di}_title`) }}
+                          placeholder="e.g. Arrival & City Tour"
+                          data-error={!!errors[`day_${di}_title`]}
+                        />
+                        <FieldError msg={errors[`day_${di}_title`]} />
                       </div>
                       <div>
                         <label className="mb-1 block text-xs font-medium text-gray-600">Date</label>
-                        <input type="date" className={inputCls}
+                        <input type="date" className={inputCls(false)}
                           value={day.dateSuffix ? (() => { const d = new Date(`${day.dateSuffix} ${new Date().getFullYear()}`); return isNaN(d) ? '' : d.toISOString().split('T')[0] })() : ''}
                           onChange={e => {
                             if (!e.target.value) { updateDay(di, 'dateSuffix', ''); return }
@@ -499,8 +606,16 @@ export default function ClonePackage() {
                       </div>
                     </div>
                     <div>
-                      <label className="mb-1 block text-xs font-medium text-gray-600">Day description</label>
-                      <textarea rows={2} className={`${inputCls} resize-none`} value={day.description} onChange={e => updateDay(di, 'description', e.target.value)} placeholder="Overview of the day…" />
+                      <label className="mb-1 block text-xs font-medium text-gray-600">Day description <span className="text-red-500">*</span></label>
+                      <textarea
+                        rows={2}
+                        className={`${inputCls(!!errors[`day_${di}_desc`])} resize-none`}
+                        value={day.description}
+                        onChange={e => { updateDay(di, 'description', e.target.value); clearErr(`day_${di}_desc`) }}
+                        placeholder="Overview of the day…"
+                        data-error={!!errors[`day_${di}_desc`]}
+                      />
+                      <FieldError msg={errors[`day_${di}_desc`]} />
                     </div>
 
                     {day.events?.map((ev, ei) => (
@@ -511,31 +626,52 @@ export default function ClonePackage() {
                         </div>
                         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                           <div>
-                            <label className="mb-1 block text-xs text-gray-500">Title</label>
-                            <input className={inputCls} value={ev.title} onChange={e => updateEvent(di, ei, 'title', e.target.value)} placeholder="Event title" />
+                            <label className="mb-1 block text-xs text-gray-500">Title <span className="text-red-500">*</span></label>
+                            <input
+                              className={inputCls(!!errors[`ev_${di}_${ei}_title`])}
+                              value={ev.title}
+                              onChange={e => { updateEvent(di, ei, 'title', e.target.value); clearErr(`ev_${di}_${ei}_title`) }}
+                              placeholder="Event title"
+                              data-error={!!errors[`ev_${di}_${ei}_title`]}
+                            />
+                            <FieldError msg={errors[`ev_${di}_${ei}_title`]} />
                           </div>
                           <div>
                             <label className="mb-1 block text-xs text-gray-500">Type</label>
-                            <select className={inputCls} value={ev.type} onChange={e => updateEvent(di, ei, 'type', e.target.value)}>
+                            <select className={inputCls(false)} value={ev.type} onChange={e => updateEvent(di, ei, 'type', e.target.value)}>
                               {EVENT_TYPES.map(t => <option key={t}>{t}</option>)}
                             </select>
                           </div>
                           <div>
-                            <label className="mb-1 block text-xs text-gray-500">Start time</label>
-                            <input type="time" className={inputCls} value={ev.startTime} onChange={e => updateEvent(di, ei, 'startTime', e.target.value)} />
+                            <label className="mb-1 block text-xs text-gray-500">Start time <span className="text-red-500">*</span></label>
+                            <input
+                              type="time"
+                              className={inputCls(!!errors[`ev_${di}_${ei}_startTime`])}
+                              value={ev.startTime}
+                              onChange={e => { updateEvent(di, ei, 'startTime', e.target.value); clearErr(`ev_${di}_${ei}_startTime`); clearErr(`ev_${di}_${ei}_endTime`) }}
+                              data-error={!!errors[`ev_${di}_${ei}_startTime`]}
+                            />
+                            <FieldError msg={errors[`ev_${di}_${ei}_startTime`]} />
                           </div>
                           <div>
-                            <label className="mb-1 block text-xs text-gray-500">End time</label>
-                            <input type="time" className={inputCls} value={ev.endTime} onChange={e => updateEvent(di, ei, 'endTime', e.target.value)} />
+                            <label className="mb-1 block text-xs text-gray-500">End time <span className="text-red-500">*</span></label>
+                            <input
+                              type="time"
+                              className={inputCls(!!errors[`ev_${di}_${ei}_endTime`])}
+                              value={ev.endTime}
+                              onChange={e => { updateEvent(di, ei, 'endTime', e.target.value); clearErr(`ev_${di}_${ei}_endTime`) }}
+                              data-error={!!errors[`ev_${di}_${ei}_endTime`]}
+                            />
+                            <FieldError msg={errors[`ev_${di}_${ei}_endTime`]} />
                           </div>
                           <div>
                             <label className="mb-1 block text-xs text-gray-500">Location</label>
-                            <input className={inputCls} value={ev.location} onChange={e => updateEvent(di, ei, 'location', e.target.value)} placeholder="Location" />
+                            <input className={inputCls(false)} value={ev.location} onChange={e => updateEvent(di, ei, 'location', e.target.value)} placeholder="Location" />
                           </div>
                           <div>
                             <label className="mb-1 block text-xs text-gray-500">Vendor</label>
                             <div className="flex gap-1">
-                              <select className={`${inputCls} flex-1`} value={ev.vendor?._id || ev.vendor || ''} onChange={e => updateEvent(di, ei, 'vendor', e.target.value)}>
+                              <select className={`${inputCls(false)} flex-1`} value={ev.vendor?._id || ev.vendor || ''} onChange={e => updateEvent(di, ei, 'vendor', e.target.value)}>
                                 <option value="">None</option>
                                 {vendors.map(v => <option key={v._id} value={v._id}>{v.name}</option>)}
                               </select>
@@ -543,8 +679,16 @@ export default function ClonePackage() {
                             </div>
                           </div>
                           <div className="sm:col-span-2">
-                            <label className="mb-1 block text-xs text-gray-500">Description</label>
-                            <textarea rows={2} className={`${inputCls} resize-none`} value={ev.description} onChange={e => updateEvent(di, ei, 'description', e.target.value)} placeholder="Event details…" />
+                            <label className="mb-1 block text-xs text-gray-500">Description <span className="text-red-500">*</span></label>
+                            <textarea
+                              rows={2}
+                              className={`${inputCls(!!errors[`ev_${di}_${ei}_desc`])} resize-none`}
+                              value={ev.description}
+                              onChange={e => { updateEvent(di, ei, 'description', e.target.value); clearErr(`ev_${di}_${ei}_desc`) }}
+                              placeholder="Event details…"
+                              data-error={!!errors[`ev_${di}_${ei}_desc`]}
+                            />
+                            <FieldError msg={errors[`ev_${di}_${ei}_desc`]} />
                           </div>
 
                           {ev.type === 'Activity' && (
@@ -557,14 +701,29 @@ export default function ClonePackage() {
                           )}
 
                           <div className="sm:col-span-2">
-                            <label className="mb-1 block text-xs text-gray-500">Event image</label>
-                            <input type="file" accept="image/*" className={inputCls}
-                              onChange={e => handleEventImageUpload(di, ei, e.target.files[0])} />
-                            {uploadingEvent === `${di}-${ei}` && <p className="mt-1 text-xs text-gray-400">Uploading…</p>}
+                            <label className="mb-1 block text-xs text-gray-500">
+                              Event image <span className="text-red-500">*</span>
+                            </label>
+                            <label
+                              data-error={!!errors[`ev_${di}_${ei}_image`]}
+                              className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm transition ${
+                                errors[`ev_${di}_${ei}_image`]
+                                  ? 'border-red-400 bg-red-50 text-red-500'
+                                  : ev.image
+                                  ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
+                                  : 'border-dashed border-gray-300 bg-gray-50 text-gray-500 hover:border-gray-400 hover:bg-white'
+                              }`}
+                            >
+                              <input type="file" accept="image/*" className="hidden"
+                                onChange={e => handleEventImageUpload(di, ei, e.target.files[0])} />
+                              {ev.image ? 'Image selected — click to change' : 'Click to upload event image'}
+                            </label>
+                            <FieldError msg={errors[`ev_${di}_${ei}_image`]} />
+                            {uploadingEvent === `${di}-${ei}` && <p className="mt-1 text-xs text-primary-500">Uploading image…</p>}
                             {ev.image && (
                               <div className="relative mt-2 overflow-hidden rounded-lg border border-gray-200">
                                 <img src={fullImgUrl(ev.image)} alt="Event" className="h-28 w-full object-cover" />
-                                <button type="button" onClick={() => updateEvent(di, ei, 'image', '')}
+                                <button type="button" onClick={() => { updateEvent(di, ei, 'image', ''); clearErr(`ev_${di}_${ei}_image`) }}
                                   className="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-black/50 text-white hover:bg-black/70">
                                   <X size={12} />
                                 </button>

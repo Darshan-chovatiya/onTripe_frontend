@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import Modal from '@/shared/components/Modal.jsx'
 import Button from '@/shared/components/Button.jsx'
+import { useToast } from '@/shared/components/ToastContainer.jsx'
+import { AlertCircle } from 'lucide-react'
 
 const emptyCreate = (pkg) => {
   const isWl = pkg?.sourceType === 'whitelabel'
@@ -33,6 +35,16 @@ const emptyEdit = (item) => ({
   isPriceLocked: item?.isPriceLocked || false,
 })
 
+function FieldError({ msg }) {
+  if (!msg) return null
+  return (
+    <p className="mt-1 flex items-center gap-1 text-[11px] font-medium text-red-500">
+      <AlertCircle className="h-3 w-3 shrink-0" strokeWidth={2.5} />
+      {msg}
+    </p>
+  )
+}
+
 export default function WhitelabelModal({
   isOpen,
   onClose,
@@ -43,10 +55,15 @@ export default function WhitelabelModal({
   onSubmit,
   loading,
 }) {
+  const { toast } = useToast()
   const [form, setForm] = useState(() => emptyCreate(null))
+  const [errors, setErrors] = useState({})
+
+  const clearErr = (key) => setErrors(e => { const n = { ...e }; delete n[key]; return n })
 
   useEffect(() => {
     if (!isOpen) return
+    setErrors({})
     if (mode === 'edit' && whitelabel) {
       setForm(emptyEdit(whitelabel))
     } else {
@@ -56,8 +73,28 @@ export default function WhitelabelModal({
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    
+    // Validation
+    const errs = {}
+    if (mode === 'create' && !sourcePackage && !form.packageId) {
+      errs.packageId = 'Please select a parent package'
+    }
+    if (!form.customTitle?.trim()) {
+      errs.customTitle = 'Please enter a display title'
+    }
     const commissionValue = Number(form.commissionValue)
-    if (Number.isNaN(commissionValue) || commissionValue < 0) return
+    if (form.commissionValue === '' || Number.isNaN(commissionValue) || commissionValue < 0) {
+      errs.commissionValue = 'Please enter a valid markup value (0 or higher)'
+    }
+
+    if (Object.keys(errs).length > 0) {
+      setErrors(errs)
+      const firstError = Object.values(errs)[0]
+      toast.error(firstError)
+      return
+    }
+
+    setErrors({})
 
     if (mode === 'create') {
       const payload = {
@@ -77,7 +114,10 @@ export default function WhitelabelModal({
       } else {
         // If selecting from dropdown
         const selected = eligiblePackages.find(p => String(p._id) === String(form.packageId))
-        if (!selected) return
+        if (!selected) {
+          toast.error('Selected package not found')
+          return
+        }
         
         if (selected.sourceType === 'whitelabel') {
           payload.parentWhitelabelId = selected._id
@@ -86,7 +126,10 @@ export default function WhitelabelModal({
         }
       }
 
-      if (!payload.packageId && !payload.parentWhitelabelId) return
+      if (!payload.packageId && !payload.parentWhitelabelId) {
+        toast.error('Invalid package selection')
+        return
+      }
       await onSubmit(payload)
     } else if (whitelabel?._id) {
       await onSubmit(whitelabel._id, {
@@ -126,7 +169,7 @@ export default function WhitelabelModal({
         {mode === 'create' && !sourcePackage && (
           <div>
             <label htmlFor="wl-package" className="mb-1 block text-sm font-medium text-gray-700">
-              Parent package
+              Parent package <span className="text-red-500">*</span>
             </label>
             {eligiblePackages.length === 0 ? (
               <p className="rounded-lg border border-amber-100 bg-amber-50 px-3 py-2 text-sm text-amber-900">
@@ -134,44 +177,48 @@ export default function WhitelabelModal({
                 the package card.
               </p>
             ) : (
-              <select
-                id="wl-package"
-                className="input-field w-full"
-                value={form.packageId}
-                onChange={(e) => {
-                  const id = e.target.value
-                  const selected = eligiblePackages.find(p => String(p._id) === String(id))
-                  if (selected) {
-                    const isWl = selected.sourceType === 'whitelabel'
-                    let title = isWl ? (selected.customTitle || selected.originalPackage?.title) : (selected.title || '')
-                    if (title) {
-                      title = title.replace(/\s*[—|-]\s*your\s*offer$/i, '').trim()
+              <>
+                <select
+                  id="wl-package"
+                  className={`input-field w-full ${errors.packageId ? '!border-red-400 !focus:border-red-400 !focus:ring-red-100' : ''}`}
+                  value={form.packageId}
+                  onChange={(e) => {
+                    clearErr('packageId')
+                    const id = e.target.value
+                    const selected = eligiblePackages.find(p => String(p._id) === String(id))
+                    if (selected) {
+                      const isWl = selected.sourceType === 'whitelabel'
+                      let title = isWl ? (selected.customTitle || selected.originalPackage?.title) : (selected.title || '')
+                      if (title) {
+                        title = title.replace(/\s*[—|-]\s*your\s*offer$/i, '').trim()
+                      }
+                      const desc = isWl ? (selected.customDescription || selected.originalPackage?.description) : (selected.description || '')
+                      setForm(f => ({
+                        ...f,
+                        packageId: id,
+                        customTitle: title ? `${title} — your offer` : '',
+                        customDescription: desc || ''
+                      }))
+                    } else {
+                      setForm(f => ({ ...f, packageId: id }))
                     }
-                    const desc = isWl ? (selected.customDescription || selected.originalPackage?.description) : (selected.description || '')
-                    setForm(f => ({
-                      ...f,
-                      packageId: id,
-                      customTitle: title ? `${title} — your offer` : '',
-                      customDescription: desc || ''
-                    }))
-                  } else {
-                    setForm(f => ({ ...f, packageId: id }))
-                  }
-                }}
-                required
-              >
-                <option value="">Select a package…</option>
-                {eligiblePackages.map((p) => {
-                  const isWl = p.sourceType === 'whitelabel'
-                  const pTitle = isWl ? (p.customTitle || p.originalPackage?.title) : p.title
-                  return (
-                    <option key={p._id} value={p._id}>
-                      {isWl ? '[WL] ' : ''}{pTitle}
-                      {p.destination ? ` — ${p.destination}` : ''}
-                    </option>
-                  )
-                })}
-              </select>
+                  }}
+                  required
+                >
+                  <option value="">Select a package…</option>
+                  {eligiblePackages.map((p) => {
+                    const isWl = p.sourceType === 'whitelabel'
+                    const pTitle = isWl ? (p.customTitle || p.originalPackage?.title) : p.title
+                    return (
+                      <option key={p._id} value={p._id}>
+                        {isWl ? '[WL] ' : ''}{pTitle}
+                        {p.destination ? ` — ${p.destination}` : ''}
+                      </option>
+                    )
+                  })}
+                </select>
+                <FieldError msg={errors.packageId} />
+              </>
             )}
           </div>
         )}
@@ -194,16 +241,17 @@ export default function WhitelabelModal({
 
         <div>
           <label htmlFor="wl-title" className="mb-1 block text-sm font-medium text-gray-700">
-            Display title
+            Display title <span className="text-red-500">*</span>
           </label>
           <input
             id="wl-title"
-            className="input-field w-full"
+            className={`input-field w-full ${errors.customTitle ? '!border-red-400 !focus:border-red-400 !focus:ring-red-100' : ''}`}
             value={form.customTitle}
-            onChange={(e) => setForm((f) => ({ ...f, customTitle: e.target.value }))}
+            onChange={(e) => { setForm((f) => ({ ...f, customTitle: e.target.value })); clearErr('customTitle') }}
             required
             maxLength={200}
           />
+          <FieldError msg={errors.customTitle} />
         </div>
 
         <div>
@@ -247,20 +295,21 @@ export default function WhitelabelModal({
           </div>
           <div>
             <label htmlFor="wl-commission" className="mb-1 block text-sm font-medium text-gray-700">
-              Markup value
+              Markup value <span className="text-red-500">*</span>
             </label>
             <input
               id="wl-commission"
               type="number"
               min={0}
               step="0.01"
-              className="input-field w-full disabled:bg-gray-50 disabled:text-gray-400"
+              className={`input-field w-full disabled:bg-gray-50 disabled:text-gray-400 ${errors.commissionValue ? '!border-red-400 !focus:border-red-400 !focus:ring-red-100' : ''}`}
               value={form.commissionValue}
-              onChange={(e) => setForm((f) => ({ ...f, commissionValue: e.target.value }))}
+              onChange={(e) => { setForm((f) => ({ ...f, commissionValue: e.target.value })); clearErr('commissionValue') }}
               onWheel={(e) => e.target.blur()}
               required
               disabled={form.isPriceLocked}
             />
+            <FieldError msg={errors.commissionValue} />
           </div>
         </div>
         {form.isPriceLocked && (

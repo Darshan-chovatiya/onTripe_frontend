@@ -120,7 +120,7 @@ export default function AgentAdminLogin() {
             )}
 
             <div className="alogin-field">
-              <label className="alogin-label">Email</label>
+              <label className="alogin-label">Email <span style={{ color: '#ef4444' }}>*</span></label>
               <div className="alogin-input-wrap">
                 <span className="alogin-input-icon"><Mail size={15} /></span>
                 <input
@@ -137,7 +137,7 @@ export default function AgentAdminLogin() {
 
             <div className="alogin-field">
               <div className="alogin-label-row">
-                <label className="alogin-label">Password</label>
+                <label className="alogin-label">Password <span style={{ color: '#ef4444' }}>*</span></label>
                 <Link to="/forgot-password" className="alogin-forgot">Forgot password?</Link>
               </div>
               <div className="alogin-input-wrap">
