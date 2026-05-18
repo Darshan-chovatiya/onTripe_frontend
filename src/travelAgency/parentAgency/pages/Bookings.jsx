@@ -8,6 +8,7 @@ import { useAuth } from '@/shared/context/AuthContext.jsx'
 import BookingTicketsModal from '@/travelAgency/parentAgency/components/BookingTicketsModal.jsx'
 import Pagination from '@/admin/components/Pagination.jsx'
 import { exportToExcel } from '@/admin/utils/exportExcel.js'
+import CustomDropdown from '@/shared/components/CustomDropdown.jsx'
 
 const STATUS_STYLES = {
   confirmed: 'bg-blue-50 text-blue-700',
@@ -74,10 +75,21 @@ export default function Bookings() {
   useEffect(() => { setPage(1) }, [search, statusFilter, packageFilter, agentType])
 
   useEffect(() => {
-    listMyPackages()
-      .then(res => setPackages(res.data?.data?.packages || []))
+    listBookings({ page: 1, limit: 5000, agentType: agentType === 'all' ? undefined : agentType })
+      .then(res => {
+        const allB = res.data?.data?.bookings || []
+        const pkgMap = new Map()
+        allB.forEach(b => {
+          const id = b.whitelabelPackage?._id || b.package?._id
+          const title = b.whitelabelPackage?.customTitle || b.package?.title
+          if (id && title && !pkgMap.has(id)) {
+            pkgMap.set(id, { _id: id, title })
+          }
+        })
+        setPackages(Array.from(pkgMap.values()))
+      })
       .catch(console.error)
-  }, [])
+  }, [agentType])
 
   const handleExport = async () => {
     setExportLoading(true)
@@ -138,7 +150,7 @@ export default function Bookings() {
       {/* Booking Source Tabs */}
       <div className="flex border-b border-gray-200">
         <button
-          onClick={() => setAgentType('all')}
+          onClick={() => { setAgentType('all'); setPackageFilter('all'); }}
           className={`px-4 py-2 text-sm font-medium transition-colors ${
             agentType === 'all'
               ? 'border-b-2 border-primary-600 text-primary-600'
@@ -148,7 +160,7 @@ export default function Bookings() {
           All Bookings
         </button>
         <button
-          onClick={() => setAgentType('self')}
+          onClick={() => { setAgentType('self'); setPackageFilter('all'); }}
           className={`px-4 py-2 text-sm font-medium transition-colors ${
             agentType === 'self'
               ? 'border-b-2 border-primary-600 text-primary-600'
@@ -158,7 +170,7 @@ export default function Bookings() {
           My Bookings
         </button>
         <button
-          onClick={() => setAgentType('agency')}
+          onClick={() => { setAgentType('agency'); setPackageFilter('all'); }}
           className={`px-4 py-2 text-sm font-medium transition-colors ${
             agentType === 'agency'
               ? 'border-b-2 border-primary-600 text-primary-600'
@@ -172,37 +184,53 @@ export default function Bookings() {
       {/* Card */}
       <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
         {/* Filters */}
-        <div className="flex flex-col gap-3 border-b border-gray-200 px-4 py-3 sm:flex-row sm:items-center">
-          <div className="relative min-w-0 flex-1">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" strokeWidth={2} />
+        <div className="flex gap-3 border-b border-gray-200 px-4 py-3 sm:flex-row sm:flex-wrap sm:items-center">
+          <div className="relative w-full min-w-0 flex-1">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" strokeWidth={2} />
             <input
-              className="w-full rounded-md border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-gray-300 focus:outline-none focus:ring-1 focus:ring-gray-300"
+              type="search"
               placeholder="Search by booking ID, customer name, phone or package…"
+              autoComplete="off"
+              className="w-full rounded-md border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-gray-300 focus:outline-none focus:ring-1 focus:ring-gray-300"
               value={search}
               onChange={e => setSearch(e.target.value)}
             />
           </div>
-          <select
-            className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:border-gray-300 focus:outline-none focus:ring-1 focus:ring-gray-300 sm:w-44"
-            value={statusFilter}
-            onChange={e => setStatusFilter(e.target.value)}
-          >
-            <option value="all">All Status</option>
-            <option value="confirmed">Confirmed</option>
-            <option value="ongoing">Ongoing</option>
-            <option value="completed">Completed</option>
-            <option value="cancelled">Cancelled</option>
-          </select>
-          <select
-            className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:border-gray-300 focus:outline-none focus:ring-1 focus:ring-gray-300 sm:w-44"
-            value={packageFilter}
-            onChange={e => setPackageFilter(e.target.value)}
-          >
-            <option value="all">All Packages</option>
-            {packages.map(p => (
-              <option key={p._id} value={p._id}>{p.title}</option>
-            ))}
-          </select>
+          <div className="flex w-full gap-3 sm:w-auto">
+            <div className="min-w-0 flex-1 lg:min-w-[200px] lg:max-w-xs">
+              <CustomDropdown
+                value={packageFilter}
+                onChange={e => { setPackageFilter(e); setPage(1); }}
+                options={[
+                  { value: 'all', label: 'All Packages' },
+                  ...packages.map(p => ({
+                    value: p._id,
+                    label: p.title || 'Untitled Package'
+                  }))
+                ]}
+                searchable
+                truncateLength={42}
+                maxHeight="280px"
+                className="w-full"
+                buttonClassName="!border-gray-200 !py-2"
+              />
+            </div>
+            <div className="min-w-0 sm:min-w-[140px] lg:w-40">
+              <CustomDropdown
+                value={statusFilter}
+                onChange={e => { setStatusFilter(e); setPage(1); }}
+                options={[
+                  { value: 'all', label: 'All Status' },
+                  { value: 'confirmed', label: 'Confirmed' },
+                  { value: 'ongoing', label: 'Ongoing' },
+                  { value: 'completed', label: 'Completed' },
+                  { value: 'cancelled', label: 'Cancelled' },
+                ]}
+                className="w-full"
+                buttonClassName="!border-gray-200 !py-2"
+              />
+            </div>
+          </div>
         </div>
 
         {/* Error */}
@@ -245,16 +273,17 @@ export default function Bookings() {
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50/80">
                   {/* <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wide text-gray-400">Booking</th> */}
-                  <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wide text-gray-400">Customer</th>
-                  <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wide text-gray-400">Package</th>
-                   <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wide text-gray-400">Travel Date</th>
-                  <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wide text-gray-400">Total Amount</th>
-                  <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wide text-gray-400">Parent Price</th>
-                  <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wide text-gray-400">WL Price</th>
-                  <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wide text-gray-400">Extra Income</th>
-                  <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wide text-gray-400">Booked By</th>
-                  <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wide text-gray-400">Status</th>
-                  <th className="px-4 py-3 text-right text-[11px] font-bold uppercase tracking-wide text-gray-400">Actions</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-bold uppercase _tracking-wide text-gray-400">Customer</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-bold uppercase _tracking-wide text-gray-400">Package</th>
+                  {/* <th className="px-4 py-3 text-left text-[11px] font-bold uppercase _tracking-wide text-gray-400">Created At</th> */}
+                   <th className="px-4 py-3 text-left text-[11px] font-bold uppercase _tracking-wide text-gray-400">Travel Date</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-bold uppercase _tracking-wide text-gray-400">Total Amount</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-bold uppercase _tracking-wide text-gray-400">Parent Price</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-bold uppercase _tracking-wide text-gray-400">WL Price</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-bold uppercase _tracking-wide text-gray-400">Extra Income</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-bold uppercase _tracking-wide text-gray-400">Booked By</th>
+                  <th className="px-4 py-3 text-left text-[11px] font-bold uppercase _tracking-wide text-gray-400">Status</th>
+                  <th className="px-4 py-3 text-right text-[11px] font-bold uppercase _tracking-wide text-gray-400">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
@@ -270,12 +299,17 @@ export default function Bookings() {
                       </td> */}
                       <td className="px-4 py-3.5 align-middle">
                         <div className="flex items-center gap-2.5">
-                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary-400 to-primary-600 text-[11px] font-bold text-white shadow-sm">
+                          {/* <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary-400 to-primary-600 text-[11px] font-bold text-white shadow-sm">
                             {initials}
-                          </div>
+                          </div> */}
                           <div className="min-w-0">
                             <p className="truncate text-sm font-semibold text-gray-900">{customerName}</p>
                             {b.customer?.phone && <p className="text-[11px] text-gray-400">{b.customer.phone}</p>}
+                            {b.travelers?.length > 0 && (
+                            <span className="ml-1 inline-flex items-center rounded-full bg-primary-50 px-1.5 py-0.5 text-[10px] font-bold text-primary-600">
+                              +{b.travelers.length}
+                            </span>
+                          )}
                           </div>
                         </div>
                       </td>
@@ -283,13 +317,18 @@ export default function Bookings() {
                         <div className="min-w-0">
                           <p className="truncate text-sm font-medium text-gray-800">{pkgTitle}</p>
                           {isWl && <span className="text-[10px] font-semibold text-violet-500">Whitelabel</span>}
-                          {b.travelers?.length > 0 && (
+                          {/* {b.travelers?.length > 0 && (
                             <span className="ml-1 inline-flex items-center rounded-full bg-primary-50 px-1.5 py-0.5 text-[10px] font-bold text-primary-600">
                               +{b.travelers.length}
                             </span>
-                          )}
+                          )} */}
                         </div>
                       </td>
+                      {/* <td className="px-4 py-3.5 align-middle">
+                        <span className="text-sm text-gray-600">
+                          {b.createdAt ? new Date(b.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}
+                        </span>
+                      </td> */}
                       <td className="px-4 py-3.5 align-middle">
                         <span className="text-sm text-gray-600">
                           {b.travelDate ? new Date(b.travelDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'}

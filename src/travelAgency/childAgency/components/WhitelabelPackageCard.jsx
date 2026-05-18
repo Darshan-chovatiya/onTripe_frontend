@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { MapPin, Clock, IndianRupee, Pencil, Power, MessageSquare, Eye, Star, Users, TrendingUp, CheckCircle2, XCircle, Ticket, ShieldAlert, Layers, MoreVertical } from 'lucide-react'
 import { useRef, useEffect } from 'react'
@@ -28,6 +28,15 @@ export default function WhitelabelPackageCard({ item, onEdit, onToggleActive, on
 
   const sourcePrice = item.parentWhitelabel ? Number(item.parentWhitelabel.finalPrice || 0) : basePrice
   const myCommission = finalPrice - sourcePrice
+
+  const isExpired = useMemo(() => {
+    if (!orig?.startDate) return false
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const startDate = new Date(orig.startDate)
+    startDate.setHours(0, 0, 0, 0)
+    return startDate.getTime() < today.getTime()
+  }, [orig?.startDate])
 
   const markupLabel = item.commissionType === 'percentage'
     ? `+${item.commissionValue}%`
@@ -236,16 +245,18 @@ export default function WhitelabelPackageCard({ item, onEdit, onToggleActive, on
           </button>
           <button
             type="button"
+            disabled={isExpired}
+            title={isExpired ? "Package start date has passed" : "Book Now"}
             onClick={() => navigate(`/agency/bookings/create?whitelabelId=${item._id}`)}
-            className="flex-1 rounded-xl bg-emerald-600 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-emerald-700 active:scale-[0.98]"
+            className={`flex-1 rounded-xl py-2.5 text-xs font-bold text-white shadow-sm transition ${isExpired ? 'bg-gray-300 cursor-not-allowed text-gray-500' : 'bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98]'}`}
           >
-            Book Now
+            {isExpired ? 'Expired' : 'Book Now'}
           </button>
         </div>
 
-        {(disabled || orig?.isSuspended) && (
+        {(disabled || orig?.isSuspended || isExpired) && (
           <p className="text-center text-[10px] font-medium text-red-500/80">
-            {orig?.isSuspended ? 'Original package suspended' : 'Parent inactive'}
+            {isExpired ? 'Package start date has passed' : orig?.isSuspended ? 'Original package suspended' : 'Parent inactive'}
           </p>
         )}
       </div>

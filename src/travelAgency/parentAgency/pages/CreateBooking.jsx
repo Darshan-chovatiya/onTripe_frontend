@@ -7,6 +7,7 @@ import { listCustomers, getCustomerByPhone } from '@/travelAgency/parentAgency/s
 import Button from '@/shared/components/Button.jsx'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
 import { getApiErrorMessage } from '@/shared/services/apiHelpers.js'
+import CustomDropdown from '@/shared/components/CustomDropdown.jsx'
 
 const inputCls = 'w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-gray-300 focus:outline-none focus:ring-1 focus:ring-gray-300'
 
@@ -91,7 +92,17 @@ export default function CreateBooking() {
   const [remainingCapacity, setRemainingCapacity] = useState(null)
   const [minTotalAmount, setMinTotalAmount] = useState(0)
 
-  const activePackages = (availablePackages ?? []).filter((p) => p.isActive !== false && p.isSuspended !== true)
+  const activePackages = useMemo(() => {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    return (availablePackages ?? []).filter((p) => {
+      if (p.isActive === false || p.isSuspended === true) return false
+      if (!p.startDate) return true
+      const startDate = new Date(p.startDate)
+      startDate.setHours(0, 0, 0, 0)
+      return startDate.getTime() >= today.getTime()
+    })
+  }, [availablePackages])
 
   useEffect(() => {
     if (activePackages.length && !packageId) {
@@ -360,16 +371,21 @@ export default function CreateBooking() {
       <form onSubmit={handleSubmit} className="space-y-5">
         {/* Package Selection */}
         <div>
-          <label htmlFor="bk-pkg" className="mb-1 block text-sm font-medium text-gray-700">Select Package <span className="text-red-500">*</span></label>
-          <select id="bk-pkg" className={inputCls} value={packageId}
-            onChange={(e) => handlePackageChange(e.target.value)}>
-            <option value="" disabled>Select a package</option>
-            {activePackages.map((p) => (
-              <option key={p._id} value={p._id}>
-                {p.title} {p.basePrice != null ? ` · ₹${Number(p.basePrice).toLocaleString('en-IN')}` : ''}
-              </option>
-            ))}
-          </select>
+          <label className="mb-1 block text-sm font-medium text-gray-700">Select Package <span className="text-red-500">*</span></label>
+          <CustomDropdown
+            value={packageId || ''}
+            onChange={(val) => handlePackageChange(val)}
+            options={activePackages.map((p) => ({
+              value: p._id,
+              label: `${p.title} ${p.basePrice != null ? ` · ₹${Number(p.basePrice).toLocaleString('en-IN')}` : ''}`
+            }))}
+            searchable
+            placeholder="Select a package"
+            truncateLength={60}
+            maxHeight="280px"
+            className="w-full"
+            buttonClassName="!border-gray-200 !py-2.5"
+          />
           {!activePackages.length && (
             <p className="mt-1 text-xs text-amber-700">No active packages found. Please create or activate a package first.</p>
           )}

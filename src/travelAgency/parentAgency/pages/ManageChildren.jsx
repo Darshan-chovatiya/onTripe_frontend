@@ -442,7 +442,14 @@ export default function ManageChildren() {
                           )}
                           <div className="min-w-0">
                             <p className="truncate text-sm font-semibold text-gray-900">{child.name}</p>
-                            {child.agentCode && <p className="font-mono text-[10px] text-gray-400">{child.agentCode}</p>}
+                            <div className="flex items-center gap-1.5 mt-0.5">
+                              {child.agentCode && <span className="font-mono text-[10px] text-gray-400">{child.agentCode}</span>}
+                              {child.createdByAdmin && (
+                                <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[9px] font-bold text-blue-700 ring-1 ring-blue-200">
+                                  Created by admin
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </td>

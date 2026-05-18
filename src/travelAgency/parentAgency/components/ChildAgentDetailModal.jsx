@@ -126,10 +126,16 @@ export default function ChildAgentDetailModal({ isOpen, onClose, childId, onEdit
                     </div>
                   )}
                   <div>
-                    <p className="mb-1 flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-gray-500">
+                    <div className="mb-1 flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-gray-500">
                       <User size={14} className="text-primary-500" />
-                      Child agent
-                    </p>
+                      <span>Child agent</span>
+                      {child.agentCode && <span className="font-mono text-gray-400">({child.agentCode})</span>}
+                      {child.createdByAdmin && (
+                        <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[9px] font-bold text-blue-700 ring-1 ring-blue-200 normal-case">
+                          Created by admin
+                        </span>
+                      )}
+                    </div>
                     <p className="text-lg font-bold text-gray-900">{child.name}</p>
                   </div>
                 </div>

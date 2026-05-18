@@ -8,6 +8,7 @@ import { useToast } from '@/shared/components/ToastContainer.jsx'
 import { basePackageFromBooking } from '@/travelAgency/shared/utils/bookingDetailHelpers.js'
 import Pagination from '@/admin/components/Pagination.jsx'
 import { exportToExcel } from '@/admin/utils/exportExcel.js'
+import CustomDropdown from '@/shared/components/CustomDropdown.jsx'
 
 const PAGE_SIZE = 10
 
@@ -187,25 +188,31 @@ export default function Bookings() {
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
           >
-            <option value="all">All statuses</option>
+            <option value="all">All status</option>
             <option value="confirmed">Confirmed</option>
             <option value="ongoing">Ongoing</option>
             <option value="completed">Completed</option>
             <option value="cancelled">Cancelled</option>
           </select>
 
-          <select
-            className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:border-gray-300 focus:outline-none focus:ring-1 focus:ring-gray-300 sm:w-56"
-            value={whitelabelFilter}
-            onChange={(e) => setWhitelabelFilter(e.target.value)}
-          >
-            <option value="all">All Packages</option>
-            {whitelabels.map(wl => (
-              <option key={wl._id} value={wl._id}>
-                {wl.customTitle || wl.originalPackage?.title || 'Unnamed Package'}
-              </option>
-            ))}
-          </select>
+          <div className="w-full sm:w-64">
+            <CustomDropdown
+              value={whitelabelFilter}
+              onChange={(e) => setWhitelabelFilter(e)}
+              options={[
+                { value: 'all', label: 'All Packages' },
+                ...whitelabels.map(wl => ({
+                  value: wl._id,
+                  label: wl.customTitle || wl.originalPackage?.title || 'Unnamed Package'
+                }))
+              ]}
+              searchable
+              truncateLength={30}
+              maxHeight="280px"
+              className="w-full"
+              buttonClassName="!border-gray-200 !py-2"
+            />
+          </div>
         </div>
 
         {error ? <div className="m-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</div> : null}
@@ -251,8 +258,7 @@ export default function Bookings() {
             <table className="w-full min-w-[860px] text-sm">
               <thead className="border-b border-gray-200 bg-gray-50">
                 <tr>
-                  {/* <th className="px-4 py-2.5 text-left align-middle text-xs font-medium text-gray-600">Booking ID</th> */}
-                  {/* <th className="px-4 py-2.5 text-left align-middle text-xs font-medium text-gray-600">Package / offer</th> */}
+                  <th className="px-4 py-2.5 text-left align-middle text-xs font-medium text-gray-600">Package</th>
                   <th className="px-4 py-2.5 text-left align-middle text-xs font-medium text-gray-600">Customer</th>
                   <th className="px-4 py-2.5 text-left align-middle text-xs font-medium text-gray-600">Travel date</th>
                   <th className="px-4 py-2.5 text-left align-middle text-xs font-medium text-gray-600">Total Amount</th>
@@ -273,20 +279,14 @@ export default function Bookings() {
                   const isSelf = currentUserId && bookedBy && String(bookedBy._id || bookedBy) === String(currentUserId)
                   return (
                     <tr key={b._id} className="transition-colors hover:bg-gray-50/80">
-                      {/* <td className="px-4 py-2.5 align-middle font-mono text-xs font-semibold text-gray-900">{b.bookingId}</td> */}
-                      {/* <td className="max-w-[12rem] px-4 py-2.5 align-middle">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const tab = b.whitelabelPackage ? 'whitelabels' : 'available'
-                            const name = bookingOfferLabel(b)
-                            navigate(`/agency/packages?tab=${tab}&search=${encodeURIComponent(name)}`)
-                          }}
-                          className="line-clamp-2 cursor-pointer text-left text-primary-600 transition-colors hover:text-primary-700 hover:underline active:text-primary-800"
-                        >
+                      <td className="max-w-[14rem] px-4 py-2.5 align-middle">
+                        <div className="font-medium text-gray-900 truncate" title={bookingOfferLabel(b)}>
                           {bookingOfferLabel(b)}
-                        </button>
-                      </td> */}
+                        </div>
+                        {b.whitelabelPackage && (
+                          <div className="text-[10px] text-violet-600 font-semibold">Whitelabel</div>
+                        )}
+                      </td>
                       <td className="px-4 py-2.5 align-middle">
                         <div className="flex flex-col">
                           <div className="flex items-center gap-1.5 font-medium text-gray-900">
@@ -302,11 +302,11 @@ export default function Bookings() {
                       </td>
                       <td className="whitespace-nowrap px-4 py-2.5 align-middle text-gray-600">
                         <span className="inline-flex items-center gap-1">
-                          <CalendarDays className="h-3.5 w-3.5 text-gray-400" />
+                          {/* <CalendarDays className="h-3.5 w-3.5 text-gray-400" /> */}
                           {b.travelDate
                             ? new Date(b.travelDate).toLocaleString(undefined, {
                                 dateStyle: 'medium',
-                                timeStyle: 'short',
+                                // timeStyle: 'short',
                               })
                             : '—'}
                         </span>

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { MapPin, Clock, IndianRupee, Sparkles, Tag, Pencil, Eye, Users, CalendarDays, ShieldAlert, CheckCircle2, Ticket } from 'lucide-react'
 import { packageCoverUrl } from '@/travelAgency/childAgency/components/packageMedia.js'
 import PackageDetailModal from '@/travelAgency/childAgency/components/PackageDetailModal.jsx'
@@ -24,6 +24,16 @@ export default function AvailablePackageCard({ pkg, existingWhitelabel, onCreate
   const creatorName = isWhitelabel 
     ? (pkg.createdBy?.name || 'Sub-agent') 
     : (pkg.createdBy?.name || 'Parent agent')
+
+  const displayStartDate = isWhitelabel ? pkg.originalPackage?.startDate : pkg.startDate
+  const isExpired = useMemo(() => {
+    if (!displayStartDate) return false
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const startDate = new Date(displayStartDate)
+    startDate.setHours(0, 0, 0, 0)
+    return startDate.getTime() < today.getTime()
+  }, [displayStartDate])
 
   return (
     <article className={`group flex flex-col overflow-hidden rounded-2xl bg-white ring-1 shadow-sm transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 ${
@@ -133,21 +143,21 @@ export default function AvailablePackageCard({ pkg, existingWhitelabel, onCreate
 
         <button
           type="button"
-          disabled={disabled || pkg.isSuspended}
+          disabled={disabled || pkg.isSuspended || isExpired}
           onClick={() => existingWhitelabel ? onEditWhiteLabel(existingWhitelabel) : onCreateWhiteLabel(pkg)}
           className={`flex w-full items-center justify-center gap-1.5 rounded-xl py-2.5 text-xs font-bold transition shadow-sm active:scale-[0.98] ${
-            (disabled || pkg.isSuspended)
+            (disabled || pkg.isSuspended || isExpired)
               ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
               : 'bg-primary-600 text-white hover:bg-primary-700'
           }`}
         >
           {existingWhitelabel ? <Pencil className="h-3.5 w-3.5" /> : <Tag className="h-3.5 w-3.5" />}
-          {existingWhitelabel ? 'Edit white-label' : 'Create white-label'}
+          {isExpired ? 'Expired' : existingWhitelabel ? 'Edit white-label' : 'Create white-label'}
         </button>
 
-        {(disabled || pkg.isSuspended) && (
+        {(disabled || pkg.isSuspended || isExpired) && (
           <p className="text-center text-[10px] font-medium text-red-500/80">
-            {pkg.isSuspended ? 'Original package suspended by admin' : 'Parent agent is currently inactive'}
+            {isExpired ? 'Package start date has passed' : pkg.isSuspended ? 'Original package suspended by admin' : 'Parent agent is currently inactive'}
           </p>
         )}
       </div>

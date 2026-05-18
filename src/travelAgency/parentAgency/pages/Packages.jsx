@@ -48,6 +48,14 @@ function StatusPill({ isActive, onClick }) {
 function PackageGridCard({ pkg, onEdit, onClone, onCover, onGallery, onToggle, onDelete, onShowAgents, onShowCommissions, navigate }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const cover = imgUrl(pkg.coverImage)
+  const isExpired = useMemo(() => {
+    if (!pkg.startDate) return false
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const startDate = new Date(pkg.startDate)
+    startDate.setHours(0, 0, 0, 0)
+    return startDate.getTime() < today.getTime()
+  }, [pkg.startDate])
 
   return (
     <article className="group relative flex flex-col overflow-hidden rounded-xl bg-white ring-1 ring-gray-200 shadow-sm transition-all duration-300 hover:shadow-xl hover:shadow-gray-200/60 hover:-translate-y-0.5">
@@ -226,9 +234,11 @@ function PackageGridCard({ pkg, onEdit, onClone, onCover, onGallery, onToggle, o
               View Details
             </button>
             <button type="button"
+              disabled={isExpired}
+              title={isExpired ? "Package start date has passed" : "Book Now"}
               onClick={() => navigate(`${AGENCY_PANEL_BASE}/bookings/create?packageId=${pkg._id}`)}
-              className="flex-1 rounded-xl bg-emerald-600 py-2.5 text-xs font-bold text-white transition hover:bg-emerald-700 active:scale-[0.98]">
-              Book Now
+              className={`flex-1 rounded-xl py-2.5 text-xs font-bold text-white transition shadow-sm ${isExpired ? 'bg-gray-300 cursor-not-allowed text-gray-500' : 'bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98]'}`}>
+              {isExpired ? 'Expired' : 'Book Now'}
             </button>
           </div>
         </div>
@@ -240,6 +250,14 @@ function PackageGridCard({ pkg, onEdit, onClone, onCover, onGallery, onToggle, o
 function PackageListRow({ pkg, onEdit, onClone, onCover, onGallery, onToggle, onDelete, onShowAgents, onShowCommissions, navigate }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const cover = imgUrl(pkg.coverImage)
+  const isExpired = useMemo(() => {
+    if (!pkg.startDate) return false
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const startDate = new Date(pkg.startDate)
+    startDate.setHours(0, 0, 0, 0)
+    return startDate.getTime() < today.getTime()
+  }, [pkg.startDate])
   return (
     <div className="group flex items-center gap-4 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm transition hover:border-primary-100 hover:shadow-md">
       {/* Thumbnail */}
@@ -327,10 +345,12 @@ function PackageListRow({ pkg, onEdit, onClone, onCover, onGallery, onToggle, on
       {/* Actions — single row */}
       <div className="flex shrink-0 items-center gap-3" style={{ minWidth: '150px', justifyContent: 'flex-end' }}>
         <button type="button"
+          disabled={isExpired}
+          title={isExpired ? "Package start date has passed" : "Book Now"}
           onClick={() => navigate(`${AGENCY_PANEL_BASE}/bookings/create?packageId=${pkg._id}`)}
-          className="flex h-9 items-center gap-2 rounded-xl bg-emerald-600 px-4 text-xs font-bold text-white transition hover:bg-emerald-700 active:scale-95 shadow-sm">
+          className={`flex h-9 items-center gap-2 rounded-xl px-4 text-xs font-bold text-white transition shadow-sm ${isExpired ? 'bg-gray-300 cursor-not-allowed text-gray-500' : 'bg-emerald-600 hover:bg-emerald-700 active:scale-95'}`}>
           <Calendar className="h-3.5 w-3.5" />
-          Book
+          {isExpired ? 'Expired' : 'Book'}
         </button>
 
         <div className="relative">

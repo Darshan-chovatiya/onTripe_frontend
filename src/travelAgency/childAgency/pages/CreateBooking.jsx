@@ -7,6 +7,7 @@ import { listCustomers, getCustomerByPhone } from '@/travelAgency/childAgency/se
 import Button from '@/shared/components/Button.jsx'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
 import { getApiErrorMessage } from '@/shared/services/apiHelpers.js'
+import CustomDropdown from '@/shared/components/CustomDropdown.jsx'
 
 const inputCls = 'w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-gray-300 focus:outline-none focus:ring-1 focus:ring-gray-300'
 
@@ -93,7 +94,17 @@ export default function CreateBooking() {
   const [remainingCapacity, setRemainingCapacity] = useState(null)
   const [minTotalAmount, setMinTotalAmount] = useState(0)
 
-  const activeWhitelabels = (whitelabels ?? []).filter((w) => w.isActive !== false && w.originalPackage?.isSuspended !== true)
+  const activeWhitelabels = useMemo(() => {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    return (whitelabels ?? []).filter((w) => {
+      if (w.isActive === false || w.originalPackage?.isSuspended === true) return false
+      if (!w.originalPackage?.startDate) return true
+      const startDate = new Date(w.originalPackage.startDate)
+      startDate.setHours(0, 0, 0, 0)
+      return startDate.getTime() >= today.getTime()
+    })
+  }, [whitelabels])
 
   useEffect(() => {
     const hasWl = activeWhitelabels.length > 0
@@ -385,20 +396,25 @@ export default function CreateBooking() {
         {/* Package / Whitelabel */}
         {activeWhitelabels.length > 0 && (
           <div>
-            <label htmlFor="bk-wl" className="mb-1 block text-sm font-medium text-gray-700">White-label offer <span className="text-red-500">*</span></label>
-            <select id="bk-wl" className={inputCls} value={whitelabelId}
-              onChange={(e) => handleWhitelabelChange(e.target.value)}>
-              {activeWhitelabels.map((w) => (
-                <option key={w._id} value={w._id}>
-                  {w.customTitle || w.originalPackage?.title || 'Offer'}
-                  {w.finalPrice != null ? ` · ₹${Number(w.finalPrice).toLocaleString('en-IN')}` : ''}
-                </option>
-              ))}
-            </select>
+            <label className="mb-1 block text-sm font-medium text-gray-700">White-label offer <span className="text-red-500">*</span></label>
+            <CustomDropdown
+              value={whitelabelId || ''}
+              onChange={(val) => handleWhitelabelChange(val)}
+              options={activeWhitelabels.map((w) => ({
+                value: w._id,
+                label: `${w.customTitle || w.originalPackage?.title || 'Offer'} ${w.finalPrice != null ? ` · ₹${Number(w.finalPrice).toLocaleString('en-IN')}` : ''}`
+              }))}
+              searchable
+              placeholder="Select white-label offer"
+              truncateLength={60}
+              maxHeight="280px"
+              className="w-full"
+              buttonClassName="!border-gray-200 !py-2.5"
+            />
           </div>
         )}
 
-        {!activeWhitelabels.length && !availablePackages?.length && (
+        {!activeWhitelabels.length && (
           <p className="text-xs text-amber-700">No packages available. Create a white-label under Packages first.</p>
         )}
 

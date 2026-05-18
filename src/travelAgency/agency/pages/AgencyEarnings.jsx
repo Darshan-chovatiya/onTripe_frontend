@@ -6,6 +6,7 @@ import { getEarnings as parentGetEarnings, listMyPackages } from '@/travelAgency
 import { getEarnings as childGetEarnings, listMyWhitelabels } from '@/travelAgency/childAgency/services/childAgencyApi.js'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
 import Loader from '@/shared/components/Loader.jsx'
+import CustomDropdown from '@/shared/components/CustomDropdown.jsx'
 
 const fmt = (n) => `₹${Number(n || 0).toLocaleString('en-IN')}`
 const fmtDate = (d) => d ? new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'
@@ -75,11 +76,11 @@ export default function AgencyEarnings() {
     if (!rows.length) return
     const headers = isParent
       ? ['Booking ID', 'Date', 'Travel Date', 'Package', 'Customer', 'Booked By', 'Role', 'Travelers', 'My Earning (Base)', 'Child Markup', 'Extra Income', 'Total Sold', 'Status']
-      : ['Booking ID', 'Date', 'Travel Date', 'Offer', 'Customer', 'Booked By', 'Role', 'Travelers', 'Provider Cost', 'My Selling Price', 'My Earning', 'Total Sold', 'Status']
+      : ['Booking ID', 'Date', 'Travel Date', 'Offer', 'Customer', 'Booked By', 'Role', 'Travelers', 'Provider Cost', 'My Selling Price', 'WL Commission', 'Extra Income', 'Total Sold', 'Status']
 
     const csvRows = rows.map(r => isParent
       ? [r.bookingId, fmtDate(r.date), fmtDate(r.travelDate), r.packageTitle, r.customerName, r.bookedByName, r.bookedByRole, r.travelerCount, r.myEarning, r.bookedByRole === 'parent_agent' ? 0 : r.childMarkup, r.extraIncome, r.totalSold, r.status]
-      : [r.bookingId, fmtDate(r.date), fmtDate(r.travelDate), r.offerTitle, r.customerName, r.bookedByName, r.bookedByRole, r.travelerCount, r.providerCost, r.mySellingPrice, r.myEarning, r.totalSold, r.status]
+      : [r.bookingId, fmtDate(r.date), fmtDate(r.travelDate), r.offerTitle, r.customerName, r.bookedByName, r.bookedByRole, r.travelerCount, r.providerCost, r.mySellingPrice, r.myEarning, r.extraIncome, r.totalSold, r.status]
     )
 
     const csv = [headers, ...csvRows].map(r => r.join(',')).join('\n')
@@ -118,24 +119,50 @@ export default function AgencyEarnings() {
         <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-700">
           <Filter className="h-4 w-4" /> Filters
         </div>
-        <div className="flex flex-wrap gap-1">
+        <div className="flex flex-wrap gap-2 items-center">
           {isParent && packages.length > 0 && (
-            <select className="rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-300"
-              value={packageFilter} onChange={e => setPackageFilter(e.target.value)}>
-              <option value="all">All packages</option>
-              {packages.map(p => <option key={p._id} value={p._id}>{p.title}</option>)}
-            </select>
+            <div className="w-56">
+              <CustomDropdown
+                value={packageFilter}
+                onChange={e => setPackageFilter(e)}
+                options={[
+                  { value: 'all', label: 'All packages' },
+                  ...packages.map(p => ({
+                    value: p._id,
+                    label: p.title || 'Untitled Package'
+                  }))
+                ]}
+                searchable
+                truncateLength={30}
+                maxHeight="280px"
+                className="w-full"
+                buttonClassName="!border-gray-200 !py-2"
+              />
+            </div>
           )}
           {!isParent && whitelabels.length > 0 && (
-            <select className="rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-300"
-              value={wlFilter} onChange={e => setWlFilter(e.target.value)}>
-              <option value="all">All offers</option>
-              {whitelabels.map(w => <option key={w._id} value={w._id}>{w.customTitle || 'Whitelabel'}</option>)}
-            </select>
+            <div className="w-56">
+              <CustomDropdown
+                value={wlFilter}
+                onChange={e => setWlFilter(e)}
+                options={[
+                  { value: 'all', label: 'All offers' },
+                  ...whitelabels.map(w => ({
+                    value: w._id,
+                    label: w.customTitle || 'Whitelabel'
+                  }))
+                ]}
+                searchable
+                truncateLength={30}
+                maxHeight="280px"
+                className="w-full"
+                buttonClassName="!border-gray-200 !py-2"
+              />
+            </div>
           )}
           <select className="rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-300"
             value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
-            <option value="all">All statuses</option>
+            <option value="all">All status</option>
             <option value="confirmed">Confirmed</option>
             <option value="ongoing">Ongoing</option>
             <option value="completed">Completed</option>
@@ -185,16 +212,18 @@ export default function AgencyEarnings() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[700px] border-collapse text-left text-sm">
-              <thead className="border-b border-gray-100 bg-gray-50 text-[11px] font-bold uppercase tracking-wide text-gray-500">
+              <thead className="border-b border-gray-100 bg-gray-50 text-[11px] font-bold uppercase _tracking-wide text-gray-500">
                 <tr>
                   <th className="px-4 py-3">Booking</th>
-                  <th className="px-4 py-3">Date</th>
+                  <th className="px-4 py-3">Created Date</th>
+                  <th className="px-4 py-3">Travel Date</th>
                   <th className="px-4 py-3">{isParent ? 'Package' : 'Offer'}</th>
                   <th className="px-4 py-3">Customer</th>
                   <th className="px-4 py-3">Booked By</th>
                   <th className="px-4 py-3 text-right">{isParent ? 'Base Price (My Earning)' : 'Provider Cost'}</th>
                   <th className="px-4 py-3 text-right">{isParent ? 'Child Markup' : 'My Selling Price'}</th>
-                  <th className="px-4 py-3 text-right">{isParent ? 'Extra Income' : 'My Earning'}</th>
+                  <th className="px-4 py-3 text-right">{isParent ? 'Extra Income' : 'WL Commission'}</th>
+                  {!isParent && <th className="px-4 py-3 text-right">Extra Income</th>}
                   <th className="px-4 py-3 text-right">Total Sold</th>
                   <th className="px-4 py-3 text-center">Status</th>
                 </tr>
@@ -204,6 +233,7 @@ export default function AgencyEarnings() {
                   <tr key={r.bookingId || i} className="hover:bg-gray-50/60">
                     <td className="px-4 py-3 font-mono text-xs font-semibold text-gray-700">{r.bookingId || '—'}</td>
                     <td className="px-4 py-3 text-xs text-gray-500">{fmtDate(r.date)}</td>
+                    <td className="px-4 py-3 text-xs text-gray-500">{fmtDate(r.travelDate)}</td>
                     <td className="max-w-[160px] px-4 py-3">
                       <div className="truncate font-medium text-gray-900">{isParent ? r.packageTitle : r.offerTitle}</div>
                       {r.isWhitelabel && <div className="text-[10px] text-violet-600">Whitelabel</div>}
@@ -241,6 +271,9 @@ export default function AgencyEarnings() {
                         <td className="px-4 py-3 text-right text-gray-700">{fmt(r.mySellingPrice)}</td>
                         <td className="px-4 py-3 text-right">
                           <span className="font-bold text-emerald-700">{fmt(r.myEarning)}</span>
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <span className="font-bold text-blue-600">{fmt(r.extraIncome)}</span>
                         </td>
                         <td className="px-4 py-3 text-right font-bold text-gray-900">{fmt(r.totalSold)}</td>
                       </>
