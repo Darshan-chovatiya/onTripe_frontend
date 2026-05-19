@@ -1,6 +1,9 @@
-import { Mail, Phone, MapPin, FileText, Building2, User, Hash } from 'lucide-react'
+import { Mail, Phone, MapPin, FileText, Building2, User, Hash, MessageSquare, Users } from 'lucide-react'
 import Modal from '@/shared/components/Modal.jsx'
 import { filePublicUrl } from '@/travelAgency/shared/utils/bookingDetailHelpers.js'
+import { useState } from 'react'
+import AgentVendorChatModal from '@/travelAgency/parentAgency/components/AgentVendorChatModal.jsx'
+import VendorCustomerChatsViewerModal from '@/travelAgency/parentAgency/components/VendorCustomerChatsViewerModal.jsx'
 
 const TYPE_META = {
   hotel:             'bg-blue-50 text-blue-700 ring-blue-100',
@@ -31,6 +34,9 @@ function DetailRow({ label, children }) {
 }
 
 export default function VendorDetailModal({ isOpen, onClose, vendor }) {
+  const [showAgentChat, setShowAgentChat] = useState(false)
+  const [showCustomerChats, setShowCustomerChats] = useState(false)
+
   if (!vendor) return null
 
   const typeCls = TYPE_META[vendor.type] || TYPE_META.other
@@ -92,6 +98,23 @@ export default function VendorDetailModal({ isOpen, onClose, vendor }) {
                 <p className="mt-1 text-sm font-semibold text-gray-900">{location}</p>
               </div>
             )}
+          </div>
+          
+          <div className="mt-4 flex flex-wrap gap-2">
+            <button 
+              onClick={() => setShowAgentChat(true)}
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-gray-900 px-4 py-2 text-sm font-bold text-white shadow-md transition-all hover:bg-gray-800 active:scale-95"
+            >
+              <MessageSquare size={16} />
+              Chat with Customer
+            </button>
+            <button 
+              onClick={() => setShowCustomerChats(true)}
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-bold text-gray-900 shadow-sm transition-all hover:bg-gray-50 active:scale-95"
+            >
+              <Users size={16} />
+              View Customer Chats
+            </button>
           </div>
         </div>
 
@@ -158,6 +181,18 @@ export default function VendorDetailModal({ isOpen, onClose, vendor }) {
         )}
 
       </div>
+      
+      <AgentVendorChatModal
+        isOpen={showAgentChat}
+        onClose={() => setShowAgentChat(false)}
+        vendor={vendor}
+      />
+
+      <VendorCustomerChatsViewerModal
+        isOpen={showCustomerChats}
+        onClose={() => setShowCustomerChats(false)}
+        vendor={vendor}
+      />
     </Modal>
   )
 }

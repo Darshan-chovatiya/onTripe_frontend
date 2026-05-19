@@ -320,7 +320,7 @@ export default function Bookings() {
                       <td className="whitespace-nowrap px-4 py-2.5 align-middle text-gray-600">
                         <span className="inline-flex items-center gap-0.5">
                           <IndianRupee className="h-3 w-3" />
-                          {(b.financials?.parentPrice || b.parentPriceAtBooking || 0).toLocaleString('en-IN')}
+                          {(b.financials?.providerPrice ?? b.providerPriceAtBooking ?? b.parentPriceAtBooking ?? 0).toLocaleString('en-IN')}
                         </span>
                       </td>
                       <td className="whitespace-nowrap px-4 py-2.5 align-middle text-gray-600 font-medium">

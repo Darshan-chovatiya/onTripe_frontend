@@ -8,4 +8,16 @@ export function updateCustomerProfile(body) {
   return axiosInstance.put('/customer/profile', body)
 }
 
-export default { getCustomerProfile, updateCustomerProfile }
+export function getVendorChatMessages(bookingId, vendorId) {
+  return axiosInstance.get(`/customer/bookings/${bookingId}/chat/${vendorId}`)
+}
+
+export function sendVendorChatMessage(bookingId, vendorId, formData) {
+  return axiosInstance.post(`/customer/bookings/${bookingId}/chat/${vendorId}`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  })
+}
+
+export default { getCustomerProfile, updateCustomerProfile, getVendorChatMessages, sendVendorChatMessage }

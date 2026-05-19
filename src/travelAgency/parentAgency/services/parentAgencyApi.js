@@ -134,6 +134,25 @@ export function listCustomers(params = {}) {
   return axiosInstance.get('/parent-agent/customers', { params })
 }
 
+export function createCustomer(data) {
+  return axiosInstance.post('/parent-agent/customers', data)
+}
+
+// Chat functions
+export function getAgentVendorChat(vendorId) {
+  return axiosInstance.get(`/parent-agent/vendors/${vendorId}/chat`)
+}
+
+export function sendAgentVendorMessage(vendorId, formData) {
+  return axiosInstance.post(`/parent-agent/vendors/${vendorId}/chat`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  })
+}
+
+export function getVendorCustomerChatsForAgent(vendorId) {
+  return axiosInstance.get(`/parent-agent/vendors/${vendorId}/customer-chats`)
+}
+
 export function getCustomerByPhone(phone) {
   return axiosInstance.get('/parent-agent/customers/by-phone', { params: { phone } })
 }

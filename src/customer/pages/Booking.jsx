@@ -23,6 +23,7 @@ import { useToast } from '@/shared/components/ToastContainer.jsx'
 import axiosInstance from '@/shared/services/axiosInstance.js'
 import Loader from '@/shared/components/Loader.jsx'
 import TicketsModal from '@/customer/components/TicketsModal.jsx'
+import VendorChatModal from '@/customer/components/VendorChatModal.jsx'
 
 const BASE_IMG_URL = import.meta.env.VITE_API_BASE_URL?.replace('/api', '').replace(/\/$/, '') || 'http://localhost:5001'
 const getFullUrl = (path) => path ? `${BASE_IMG_URL}/${path.replace(/\\/g, '/')}` : null
@@ -41,6 +42,7 @@ export default function Booking() {
   const [showInclusions, setShowInclusions] = useState(false)
   const [showExclusions, setShowExclusions] = useState(false)
   const [showNotes, setShowNotes] = useState(false)
+  const [chatVendor, setChatVendor] = useState(null)
   const carouselTimer = useRef(null)
 
   useEffect(() => {
@@ -377,13 +379,22 @@ export default function Booking() {
                                   <p className="text-sm font-bold text-gray-900 dark:text-white truncate">{vendor.name}</p>
                                 </div>
                               </div>
-                              <a
-                                href={`tel:${vendor.phone}`}
-                                className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-bold text-sm hover:bg-primary-600 dark:hover:bg-primary-500 hover:text-white transition-all shadow-md active:scale-95"
-                              >
-                                <Phone size={16} />
-                                Call Vendor
-                              </a>
+                              <div className="flex items-center gap-2 mt-2">
+                                <a
+                                  href={`tel:${vendor.phone}`}
+                                  className="flex items-center justify-center gap-2 flex-1 py-3 rounded-xl bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-bold text-sm hover:bg-primary-600 dark:hover:bg-primary-500 hover:text-white transition-all shadow-md active:scale-95"
+                                >
+                                  <Phone size={16} />
+                                  Call
+                                </a>
+                                <button
+                                  onClick={() => setChatVendor(vendor)}
+                                  className="flex items-center justify-center gap-2 flex-1 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white font-bold text-sm hover:bg-primary-50 hover:text-primary-600 hover:border-primary-200 transition-all shadow-sm active:scale-95"
+                                >
+                                  <MessageSquare size={16} />
+                                  Chat
+                                </button>
+                              </div>
                             </div>
                           ) : (
                             <div className="text-xs font-bold text-gray-400 uppercase tracking-widest py-2 text-center bg-gray-50 rounded-xl">No Vendor Assigned</div>
@@ -406,6 +417,13 @@ export default function Booking() {
         isOpen={showTicketsModal}
         onClose={() => setShowTicketsModal(false)}
         tickets={booking.tickets}
+      />
+
+      <VendorChatModal
+        isOpen={!!chatVendor}
+        onClose={() => setChatVendor(null)}
+        bookingId={booking._id}
+        vendor={chatVendor}
       />
 
       {/* Inclusions Modal */}

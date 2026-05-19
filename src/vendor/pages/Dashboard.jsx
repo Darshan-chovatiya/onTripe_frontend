@@ -5,6 +5,9 @@ import { useAuth } from '@/shared/context/AuthContext.jsx'
 import { getVendorSchedule } from '@/vendor/services/vendorApi.js'
 import { getApiErrorMessage } from '@/shared/services/apiHelpers.js'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
+import VendorAgentChatModal from '@/vendor/components/VendorAgentChatModal.jsx'
+import VendorAllCustomerChatsModal from '@/vendor/components/VendorAllCustomerChatsModal.jsx'
+import { MessageSquare, MessageCircle } from 'lucide-react'
 
 export default function VendorDashboard() {
   const navigate = useNavigate()
@@ -13,6 +16,8 @@ export default function VendorDashboard() {
   const toastRef = useRef(toast)
   const [loading, setLoading] = useState(false)
   const [items, setItems] = useState([])
+  const [showAgentChat, setShowAgentChat] = useState(false)
+  const [showCustomerChats, setShowCustomerChats] = useState(false)
   const [dateFilter, setDateFilter] = useState(() => {
     const d = new Date()
     const y = d.getFullYear()
@@ -108,7 +113,7 @@ export default function VendorDashboard() {
                 {user?.name || 'Vendor'} · manage trip arrivals, services and customer handoffs
               </p>
             </div>
-            <div className="flex items-center gap-2 px-5 pb-5 sm:py-5">
+             <div className="flex flex-wrap items-center gap-2 px-5 pb-5 sm:py-5">
               <div className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700">
                 <CalendarDays className="h-4 w-4 text-gray-500" />
                 <input
@@ -118,6 +123,20 @@ export default function VendorDashboard() {
                   className="border-none bg-transparent p-0 text-sm font-medium outline-none"
                 />
               </div>
+              <button
+                type="button"
+                onClick={() => setShowCustomerChats(true)}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+              >
+                <MessageSquare className="h-4 w-4" /> Customer Chats
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowAgentChat(true)}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+              >
+                <MessageCircle className="h-4 w-4" /> Chat with Agent
+              </button>
               <button
                 type="button"
                 onClick={handleLogout}
@@ -208,6 +227,14 @@ export default function VendorDashboard() {
           </div>
         )}
       </div>
+      <VendorAgentChatModal
+        isOpen={showAgentChat}
+        onClose={() => setShowAgentChat(false)}
+      />
+      <VendorAllCustomerChatsModal
+        isOpen={showCustomerChats}
+        onClose={() => setShowCustomerChats(false)}
+      />
     </div>
   )
 }
