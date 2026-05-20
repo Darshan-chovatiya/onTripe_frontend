@@ -45,16 +45,16 @@ function fmt(n) {
 
 function StatCard({ label, value, icon: Icon, accent, loading }) {
   return (
-    <div className="group rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
-      <div className="flex items-start justify-between gap-3">
+    <div className="group rounded-2xl border border-gray-100 bg-white p-4 sm:p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+      <div className="flex items-start justify-between gap-2 sm:gap-3">
         <div className="min-w-0">
-          <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400">{label}</p>
-          <p className="mt-2 text-3xl font-black tabular-nums text-gray-900">
-            {loading ? <span className="inline-block h-8 w-14 animate-pulse rounded-lg bg-gray-100" /> : value}
+          <p className="text-[10px] sm:text-[11px] font-bold uppercase tracking-widest text-gray-400 truncate">{label}</p>
+          <p className="mt-1 sm:mt-2 text-2xl sm:text-3xl font-black tabular-nums text-gray-900 truncate">
+            {loading ? <span className="inline-block h-6 sm:h-8 w-14 animate-pulse rounded-lg bg-gray-100" /> : value}
           </p>
         </div>
-        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${accent}`}>
-          <Icon className="h-5 w-5" strokeWidth={2} />
+        <div className={`flex h-8 w-8 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-xl ${accent}`}>
+          <Icon className="h-4 w-4 sm:h-5 sm:w-5" strokeWidth={2} />
         </div>
       </div>
     </div>
@@ -135,8 +135,8 @@ export default function ChildDashboard() {
       </div>
 
       {/* ── Date filter bar ── */}
-      <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="rounded-2xl border border-gray-100 bg-white p-3 sm:p-4 shadow-sm">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-wrap gap-1.5">
             {PRESETS.map(p => {
               const r = p.getRange()
@@ -153,19 +153,19 @@ export default function ChildDashboard() {
               )
             })}
           </div>
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2">
+          <div className="flex flex-wrap items-center gap-2 sm:flex-nowrap">
+            <div className="flex w-full items-center justify-between gap-1.5 rounded-xl border border-gray-200 bg-gray-50 px-2 sm:px-3 py-2 sm:w-auto sm:justify-start">
               <CalendarDays className="h-3.5 w-3.5 shrink-0 text-gray-400" strokeWidth={2} />
               <input type="date" value={dateRange.start} max={dateRange.end || todayStr()}
                 onChange={e => { const r = { ...dateRange, start: e.target.value }; setDateRange(r); if (r.start && r.end) fetchAll(r) }}
-                className="w-[120px] bg-transparent text-xs font-medium text-gray-700 focus:outline-none" />
+                className="w-full min-w-[90px] max-w-[120px] bg-transparent text-xs font-medium text-gray-700 focus:outline-none" />
               <span className="text-gray-300">—</span>
               <input type="date" value={dateRange.end} min={dateRange.start} max={todayStr()}
                 onChange={e => { const r = { ...dateRange, end: e.target.value }; setDateRange(r); if (r.start && r.end) fetchAll(r) }}
-                className="w-[120px] bg-transparent text-xs font-medium text-gray-700 focus:outline-none" />
+                className="w-full min-w-[90px] max-w-[120px] bg-transparent text-xs font-medium text-gray-700 focus:outline-none" />
             </div>
             <button type="button" onClick={() => fetchAll(dateRange)} disabled={loading}
-              className="flex h-9 w-9 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-400 transition hover:border-gray-400 hover:text-gray-700 disabled:opacity-40">
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-400 transition hover:border-gray-400 hover:text-gray-700 disabled:opacity-40">
               <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} strokeWidth={2} />
             </button>
           </div>
@@ -175,7 +175,7 @@ export default function ChildDashboard() {
       {err && <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">{err}</div>}
 
       {/* ── Stat cards ── */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-5">
         <StatCard label="Bookings" value={loading ? null : analytics?.totalBookings ?? 0}
           icon={BookOpen} accent="bg-sky-50 text-sky-600" loading={loading} />
         <StatCard label="Available Packages" value={loading ? null : analytics?.totalAvailableToWhitelabel ?? 0}
@@ -213,10 +213,10 @@ export default function ChildDashboard() {
                 { label: 'Completed', status: 'completed', num: 'text-emerald-700', badge: 'bg-emerald-100 text-emerald-700' },
                 { label: 'Cancelled', status: 'cancelled', num: 'text-red-600', badge: 'bg-red-100 text-red-600' },
               ].map(({ label, status, num, badge }) => (
-                <div key={status} className="bg-white p-5">
+                <div key={status} className="bg-white p-4 sm:p-5">
                   <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${badge}`}>{label}</span>
-                  <p className={`mt-3 text-3xl font-black tabular-nums ${num}`}>
-                    {loading ? <span className="inline-block h-8 w-10 animate-pulse rounded bg-gray-100" /> : getStatus(status)}
+                  <p className={`mt-2 sm:mt-3 text-2xl sm:text-3xl font-black tabular-nums truncate ${num}`}>
+                    {loading ? <span className="inline-block h-6 sm:h-8 w-10 animate-pulse rounded bg-gray-100" /> : getStatus(status)}
                   </p>
                 </div>
               ))}
@@ -229,16 +229,16 @@ export default function ChildDashboard() {
               <h2 className="text-sm font-bold text-gray-900">Quick Access</h2>
               <p className="text-xs text-gray-400">Jump into your most-used areas</p>
             </div>
-            <div className="grid grid-cols-1 divide-y divide-gray-50 sm:grid-cols-2 sm:divide-x sm:divide-y-0">
-              {QUICK_LINKS.map(({ to, label, desc, icon: Icon }) => (
+            <div className="grid grid-cols-1 sm:grid-cols-2">
+              {QUICK_LINKS.map(({ to, label, desc, icon: Icon }, idx) => (
                 <Link key={to} to={to}
-                  className="group flex items-center gap-4 px-6 py-4 transition-colors hover:bg-gray-50">
+                  className={`group flex items-center gap-3 sm:gap-4 px-4 py-4 sm:px-6 transition-colors hover:bg-gray-50 border-b border-gray-50 ${idx % 2 === 0 ? 'sm:border-r' : ''} ${idx >= QUICK_LINKS.length - 2 ? 'sm:border-b-0' : ''}`}>
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-gray-100 bg-gray-50 text-gray-500 transition group-hover:border-gray-300 group-hover:bg-white group-hover:text-gray-900">
                     <Icon className="h-[18px] w-[18px]" strokeWidth={2} />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-gray-900">{label}</p>
-                    <p className="mt-0.5 text-xs text-gray-400">{desc}</p>
+                    <p className="text-sm font-semibold text-gray-900 truncate">{label}</p>
+                    <p className="mt-0.5 text-xs text-gray-400 truncate">{desc}</p>
                   </div>
                   <ArrowRight className="h-4 w-4 shrink-0 text-gray-300 transition group-hover:translate-x-0.5 group-hover:text-gray-600" strokeWidth={2} />
                 </Link>
@@ -252,20 +252,20 @@ export default function ChildDashboard() {
               <h2 className="text-sm font-bold text-gray-900">Network Summary</h2>
               <p className="text-xs text-gray-400">Your downstream hierarchy at a glance</p>
             </div>
-            <div className="grid grid-cols-3 divide-x divide-gray-100">
+            <div className="grid grid-cols-1 divide-y divide-gray-100 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
               {[
                 { label: 'Sub-agents', value: analytics?.totalSubChildAgencies ?? 0, icon: Users, to: '/agency/manage-downstream' },
                 { label: 'Customers', value: analytics?.totalCustomers ?? 0, icon: ContactRound, to: '/agency/customers' },
                 { label: 'Whitelabels', value: analytics?.totalPackages ?? 0, icon: Layers, to: '/agency/packages' },
               ].map(({ label, value, icon: Icon, to }) => (
                 <Link key={label} to={to}
-                  className="group flex flex-col items-start gap-2 p-5 transition hover:bg-gray-50">
+                  className="group flex flex-col items-center sm:items-start gap-2 p-4 sm:p-5 transition hover:bg-gray-50">
                   <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-100 bg-gray-50 text-gray-500 transition group-hover:border-gray-200 group-hover:bg-white">
                     <Icon className="h-4 w-4" strokeWidth={2} />
                   </div>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">{label}</p>
-                  <p className="text-2xl font-black tabular-nums text-gray-900">
-                    {loading ? <span className="inline-block h-7 w-10 animate-pulse rounded bg-gray-100" /> : value}
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 text-center sm:text-left">{label}</p>
+                  <p className="text-xl sm:text-2xl font-black tabular-nums text-gray-900 text-center sm:text-left">
+                    {loading ? <span className="inline-block h-6 sm:h-7 w-10 animate-pulse rounded bg-gray-100" /> : value}
                   </p>
                 </Link>
               ))}
@@ -284,8 +284,8 @@ export default function ChildDashboard() {
                 <p className="text-xs text-gray-400">Share to onboard sub-agents</p>
               </div>
               <div className="p-5">
-                <div className="flex items-center justify-between gap-2 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
-                  <span className="font-mono text-base font-black tracking-widest text-gray-900">{user.agentCode}</span>
+                <div className="flex items-center justify-between gap-2 rounded-xl border border-gray-200 bg-gray-50 px-3 sm:px-4 py-3 overflow-hidden">
+                  <span className="font-mono text-sm sm:text-base font-black tracking-widest text-gray-900 truncate">{user.agentCode}</span>
                   <button type="button" onClick={handleCopy}
                     className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-all ${copied ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
                       }`}>

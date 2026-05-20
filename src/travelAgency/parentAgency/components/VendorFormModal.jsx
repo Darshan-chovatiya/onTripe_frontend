@@ -317,6 +317,10 @@ export default function VendorFormModal({ isOpen, onClose, onSubmit, initialData
     const fd = new FormData()
     Object.entries(form).forEach(([k, v]) => { if (v) fd.append(k, v) })
     docs.forEach(f => fd.append('docs', f))
+    if (isEdit) {
+      fd.append('docsUpdated', 'true')
+      existingDocs.forEach(d => fd.append('existingDocs', d))
+    }
     onSubmit(fd)
   }
 
@@ -525,11 +529,15 @@ export default function VendorFormModal({ isOpen, onClose, onSubmit, initialData
                       const href = filePublicUrl(doc)
                       const isImg = /\.(png|jpe?g|webp|gif)$/i.test(String(doc))
                       return href ? (
-                        <a key={i} href={href} target="_blank" rel="noreferrer"
-                          className="inline-flex items-center gap-1.5 rounded-full border border-violet-200 bg-violet-50 px-3 py-1.5 text-xs font-semibold text-violet-700 transition hover:bg-violet-100">
-                          {isImg ? <File className="h-3 w-3" /> : <FileText className="h-3 w-3" />}
-                          {String(doc).split('/').pop() || `Document ${i + 1}`}
-                        </a>
+                        <div key={i} className="inline-flex items-center gap-1.5 rounded-full border border-violet-200 bg-violet-50 px-3 py-1.5 text-xs font-semibold text-violet-700 transition hover:bg-violet-100">
+                          <a href={href} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 hover:underline">
+                            {isImg ? <File className="h-3 w-3" /> : <FileText className="h-3 w-3" />}
+                            {String(doc).split(/[\\/]/).pop() || `Document ${i + 1}`}
+                          </a>
+                          <button type="button" onClick={() => setExistingDocs(prev => prev.filter((_, idx) => idx !== i))} className="ml-1 text-violet-400 hover:text-red-500">
+                            <X size={11} />
+                          </button>
+                        </div>
                       ) : (
                         <span key={i} className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs font-semibold text-gray-500">
                           <FileText className="h-3 w-3" /> Document {i + 1}

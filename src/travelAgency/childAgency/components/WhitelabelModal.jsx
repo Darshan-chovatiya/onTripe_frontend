@@ -54,6 +54,7 @@ export default function WhitelabelModal({
   eligiblePackages,
   onSubmit,
   loading,
+  hasBooking,
 }) {
   const { toast } = useToast()
   const [form, setForm] = useState(() => emptyCreate(null))
@@ -271,23 +272,23 @@ export default function WhitelabelModal({
           <div>
             <span className="mb-1 block text-sm font-medium text-gray-700">Markup type</span>
             <div className="flex gap-4 text-sm">
-              <label className={`flex items-center gap-2 ${form.isPriceLocked ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}>
+              <label className={`flex items-center gap-2 ${hasBooking ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}>
                 <input
                   type="radio"
                   name="commissionType"
                   checked={form.commissionType === 'flat'}
                   onChange={() => setForm((f) => ({ ...f, commissionType: 'flat' }))}
-                  disabled={form.isPriceLocked}
+                  disabled={hasBooking}
                 />
                 Flat (₹)
               </label>
-              <label className={`flex items-center gap-2 ${form.isPriceLocked ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}>
+              <label className={`flex items-center gap-2 ${hasBooking ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}>
                 <input
                   type="radio"
                   name="commissionType"
                   checked={form.commissionType === 'percentage'}
                   onChange={() => setForm((f) => ({ ...f, commissionType: 'percentage' }))}
-                  disabled={form.isPriceLocked}
+                  disabled={hasBooking}
                 />
                 Percent (%)
               </label>
@@ -307,15 +308,15 @@ export default function WhitelabelModal({
               onChange={(e) => { setForm((f) => ({ ...f, commissionValue: e.target.value })); clearErr('commissionValue') }}
               onWheel={(e) => e.target.blur()}
               required
-              disabled={form.isPriceLocked}
+              disabled={hasBooking}
             />
             <FieldError msg={errors.commissionValue} />
           </div>
         </div>
-        {form.isPriceLocked && (
+        {hasBooking && (
           <p className="flex items-center gap-1 text-[10px] font-medium text-amber-600">
             <span className="flex h-3.5 w-3.5 items-center justify-center rounded-full bg-amber-100 text-[10px] font-bold text-amber-600">!</span>
-            Markup is locked once the white-label offer is created.
+            Markup is locked because bookings exist for this white-label offer.
           </p>
         )}
 
