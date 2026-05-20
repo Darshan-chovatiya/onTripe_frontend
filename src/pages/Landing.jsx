@@ -35,8 +35,14 @@ const TESTIMONIALS = [
 ]
 
 export default function Landing() {
-  const { isAuthenticated, user, isCheckingAuth } = useAuth()
-  const dashboardHref = user?.role ? getRoleRedirectPath(user.role) : '/login'
+  const {
+    isAuthenticated,
+    isCustomerAuthenticated,
+    isVendorAuthenticated,
+    user,
+    isCheckingAuth,
+  } = useAuth()
+  const hasAnySession = isCustomerAuthenticated || isVendorAuthenticated || isAuthenticated
   const [scrolled, setScrolled] = useState(false)
 
   useEffect(() => {
@@ -58,8 +64,21 @@ export default function Landing() {
           </div>
           <div className="ont-nav-actions">
             <Link to="/login" className="ont-btn-ghost ont-btn-sm">Agency Login</Link>
-            {!isCheckingAuth && isAuthenticated ? (
-              <Link to={dashboardHref} className="ont-btn-primary">Dashboard <ArrowRight size={14} /></Link>
+            <Link to="/vendor/login" className="ont-btn-ghost ont-btn-sm">Vendor Login</Link>
+            {!isCheckingAuth && hasAnySession ? (
+              <div className="flex flex-wrap items-center gap-2">
+                {isCustomerAuthenticated && (
+                  <Link to="/customer/booking" className="ont-btn-primary ont-btn-sm">My Trips</Link>
+                )}
+                {isVendorAuthenticated && (
+                  <Link to="/vendor/dashboard" className="ont-btn-primary ont-btn-sm">Vendor Panel</Link>
+                )}
+                {isAuthenticated && user?.role && (
+                  <Link to={getRoleRedirectPath(user.role)} className="ont-btn-ghost ont-btn-sm">
+                    Agency <ArrowRight size={14} />
+                  </Link>
+                )}
+              </div>
             ) : (
               <Link to="/customer/login" className="ont-btn-primary">Get Started <ArrowRight size={14} /></Link>
             )}

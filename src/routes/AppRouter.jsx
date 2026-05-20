@@ -88,7 +88,10 @@ import CustomerTripHistory from '@/customer/pages/TripHistory.jsx'
 import CustomerProfile from '@/customer/pages/Profile.jsx'
 import CustomerCommunity from '@/customer/pages/Community.jsx'
 import VendorLogin from '@/vendor/auth/Login.jsx'
+import VendorLayout from '@/vendor/components/VendorLayout.jsx'
 import VendorDashboard from '@/vendor/pages/Dashboard.jsx'
+import VendorChats from '@/vendor/pages/Chats.jsx'
+import VendorProfile from '@/vendor/pages/Profile.jsx'
 import VendorPackageDetails from '@/vendor/pages/PackageDetails.jsx'
 import PackageReviewsPage from '@/shared/pages/PackageReviewsPage.jsx'
 
@@ -353,23 +356,20 @@ export default function AppRouter() {
         <Route path="settings" element={<AgencySettings />} />
       </Route>
 
-      <Route path="/vendor" element={<Navigate to="/vendor/dashboard" replace />} />
       <Route
-        path="/vendor/dashboard"
+        path="/vendor"
         element={
           <ProtectedRoute>
-            <VendorDashboard />
+            <VendorLayout />
           </ProtectedRoute>
         }
-      />
-      <Route
-        path="/vendor/package/:packageId"
-        element={
-          <ProtectedRoute>
-            <VendorPackageDetails />
-          </ProtectedRoute>
-        }
-      />
+      >
+        <Route index element={<Navigate to="dashboard" replace />} />
+        <Route path="dashboard" element={<VendorDashboard />} />
+        <Route path="chats" element={<VendorChats />} />
+        <Route path="profile" element={<VendorProfile />} />
+        <Route path="package/:packageId" element={<VendorPackageDetails />} />
+      </Route>
 
       <Route
         path="/customer"

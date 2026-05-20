@@ -13,6 +13,10 @@ import { createContext, useContext } from 'react'
  * @property {AuthUser | null} user
  * @property {string | null} token
  * @property {boolean} isAuthenticated
+ * @property {boolean} isCustomerAuthenticated
+ * @property {boolean} isVendorAuthenticated
+ * @property {AuthUser | null} customerUser
+ * @property {AuthUser | null} vendorUser
  * @property {boolean} isCheckingAuth
  * @property {boolean} isLoading
  * @property {(credentials: object) => Promise<{ success: boolean, message?: string }>} login

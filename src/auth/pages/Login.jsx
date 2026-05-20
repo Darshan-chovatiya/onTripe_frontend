@@ -13,7 +13,7 @@ const BG_IMAGE = 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w
 
 export default function Login() {
   const navigate = useNavigate()
-  const { isAuthenticated, isCheckingAuth, user, loginCustomer, requestCustomerOtp, isLoading } = useAuth()
+  const { isCustomerAuthenticated, customerUser, isCheckingAuth, loginCustomer, requestCustomerOtp, isLoading } = useAuth()
   const { toast } = useToast()
 
   const [mobile, setMobile] = useState('')
@@ -61,8 +61,8 @@ export default function Login() {
     )
   }
 
-  if (isAuthenticated && user?.role) {
-    return <Navigate to={getRoleRedirectPath(user.role)} replace />
+  if (isCustomerAuthenticated && customerUser) {
+    return <Navigate to={getRoleRedirectPath(ROLES.CUSTOMER)} replace />
   }
 
   const handleSendOtp = async (e) => {

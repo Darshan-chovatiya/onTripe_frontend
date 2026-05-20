@@ -31,6 +31,8 @@ export const routeConfig = [
   { path: '/customer/trip-history', allowedRoles: [ROLES.CUSTOMER] },
   { path: '/customer/profile', allowedRoles: [ROLES.CUSTOMER] },
   { path: '/vendor/dashboard', allowedRoles: [ROLES.VENDOR] },
+  { path: '/vendor/chats', allowedRoles: [ROLES.VENDOR] },
+  { path: '/vendor/profile', allowedRoles: [ROLES.VENDOR] },
 ]
 
 export const publicPaths = [

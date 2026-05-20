@@ -4,8 +4,16 @@ export function getVendorProfile() {
   return axiosInstance.get('/vendor/me')
 }
 
+export function updateVendorProfile(data) {
+  return axiosInstance.put('/vendor/me', data)
+}
+
 export function getVendorSchedule(params = {}) {
   return axiosInstance.get('/vendor/schedule', { params })
+}
+
+export function getAllCustomerChats() {
+  return axiosInstance.get('/vendor/customer-chats')
 }
 
 export function getCustomerChatMessages(bookingId, customerId) {
@@ -14,16 +22,27 @@ export function getCustomerChatMessages(bookingId, customerId) {
 
 export function sendCustomerChatMessage(bookingId, formData) {
   return axiosInstance.post(`/vendor/chat/${bookingId}`, formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
+    headers: { 'Content-Type': 'multipart/form-data' },
+  })
+}
+
+export function getAgentChatMessages() {
+  return axiosInstance.get('/vendor/chat-agent')
+}
+
+export function sendAgentChatMessage(formData) {
+  return axiosInstance.post('/vendor/chat-agent', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
   })
 }
 
 export default {
   getVendorProfile,
+  updateVendorProfile,
   getVendorSchedule,
+  getAllCustomerChats,
   getCustomerChatMessages,
   sendCustomerChatMessage,
+  getAgentChatMessages,
+  sendAgentChatMessage,
 }
-

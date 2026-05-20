@@ -15,13 +15,15 @@ export default function CustomerChatModal({ isOpen, onClose, bookingId, customer
   const messagesEndRef = useRef(null)
   const { toast } = useToast()
 
+  const customerId = customer?.id || customer?._id
+
   useEffect(() => {
-    if (isOpen && bookingId && customer?.id) {
+    if (isOpen && bookingId && customerId) {
       fetchMessages()
       const interval = setInterval(fetchMessages, 5000)
       return () => clearInterval(interval)
     }
-  }, [isOpen, bookingId, customer])
+  }, [isOpen, bookingId, customerId])
 
   useEffect(() => {
     if (messagesEndRef.current) {
@@ -31,7 +33,7 @@ export default function CustomerChatModal({ isOpen, onClose, bookingId, customer
 
   const fetchMessages = async () => {
     try {
-      const res = await getCustomerChatMessages(bookingId, customer.id)
+      const res = await getCustomerChatMessages(bookingId, customerId)
       if (res.data?.success) {
         setMessages(res.data.data.messages)
       }
@@ -57,7 +59,7 @@ export default function CustomerChatModal({ isOpen, onClose, bookingId, customer
     setSending(true)
     try {
       const formData = new FormData()
-      formData.append('customerId', customer.id)
+      formData.append('customerId', customerId)
       if (newMessage.trim()) formData.append('message', newMessage)
       if (imageFile) formData.append('image', imageFile)
 

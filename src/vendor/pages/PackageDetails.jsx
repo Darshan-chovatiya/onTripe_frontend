@@ -25,8 +25,7 @@ export default function VendorPackageDetails() {
 
   if (!pkg) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
+      <div className="max-w-5xl mx-auto px-4 py-8 sm:px-6">
           <div className="rounded-xl border border-gray-100 bg-white p-8 text-center text-sm text-gray-600 shadow-sm">
             Package details are unavailable for this view. Please open from vendor dashboard card.
             <div className="mt-4">
@@ -39,14 +38,12 @@ export default function VendorPackageDetails() {
               </button>
             </div>
           </div>
-        </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:py-10">
+    <div className="max-w-5xl mx-auto px-4 py-8 sm:px-6 lg:py-10 pb-16">
         <div className="mb-5 overflow-hidden rounded-2xl border border-primary-100 bg-white shadow-sm">
           <div className="h-1.5 bg-linear-to-r from-primary-500 via-indigo-500 to-violet-500" />
           <div className="p-5">
@@ -157,14 +154,16 @@ export default function VendorPackageDetails() {
                   <Mail className="h-3.5 w-3.5 text-gray-500" />
                   <span>{c.email || '—'}</span>
                 </div>
-                {c.id && (
+                {(c.id || c._id) && (
                   <div className="mt-3">
                     <button
+                      type="button"
                       onClick={() => {
-                        const row = rows.find(r => r.customer?.id === c.id)
-                        if (row && row._id) {
+                        const cid = c.id || c._id
+                        const row = rows.find((r) => r.customer?.id === cid)
+                        if (row?._id) {
                           setChatBookingId(row._id)
-                          setChatCustomer(c)
+                          setChatCustomer({ ...c, id: cid })
                         }
                       }}
                       className="inline-flex items-center gap-2 rounded-lg bg-primary-50 px-3 py-1.5 text-xs font-semibold text-primary-700 hover:bg-primary-100"
@@ -178,7 +177,6 @@ export default function VendorPackageDetails() {
             ))}
           </div>
         </div>
-      </div>
 
       <CustomerChatModal
         isOpen={!!chatCustomer}

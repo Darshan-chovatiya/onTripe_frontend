@@ -1,11 +1,19 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import { AuthContext } from '@/shared/context/AuthContext.jsx'
 import axiosInstance from '@/shared/services/axiosInstance.js'
-import { AUTH_STORAGE_KEY, ROLES } from '@/shared/utils/constants.js'
+import { ROLES } from '@/shared/utils/constants.js'
+import {
+  AUTH_SCOPES,
+  clearStoredSession,
+  getScopeFromPathname,
+  loadStoredSession,
+  persistStoredSession,
+} from '@/shared/utils/authStorage.js'
 
 /**
  * @param {Record<string, unknown>} raw
- * @param {string} [loginRoleHint] — used when API returns generic "organizer"
+ * @param {string} [loginRoleHint]
  */
 function normalizeUser(raw, loginRoleHint) {
   if (!raw || typeof raw !== 'object') return null
@@ -45,101 +53,111 @@ function normalizeUser(raw, loginRoleHint) {
   }
 }
 
-function loadStored() {
-  try {
-    const raw = localStorage.getItem(AUTH_STORAGE_KEY)
-    if (!raw) return null
-    const parsed = JSON.parse(raw)
-    if (parsed?.token && parsed?.user) {
-      return { token: parsed.token, user: normalizeUser(parsed.user) }
-    }
-  } catch {
-    /* ignore */
-  }
-  return null
-}
+/** @typedef {{ user: object, token: string } | null} Session */
 
-function persist(token, user) {
-  localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({ token, user }))
+const EMPTY_SESSIONS = {
+  [AUTH_SCOPES.CUSTOMER]: null,
+  [AUTH_SCOPES.VENDOR]: null,
+  [AUTH_SCOPES.APP]: null,
 }
 
 export function AuthProvider({ children }) {
-  const [user, setUserState] = useState(null)
-  const [token, setToken] = useState(null)
+  const location = useLocation()
+  const [sessions, setSessions] = useState(EMPTY_SESSIONS)
   const [isCheckingAuth, setIsCheckingAuth] = useState(true)
   const [isLoading, setIsLoading] = useState(false)
 
-  const logout = useCallback(() => {
-    setUserState(null)
-    setToken(null)
-    localStorage.removeItem(AUTH_STORAGE_KEY)
-    delete axiosInstance.defaults.headers.common.Authorization
-  }, [])
+  const activeScope = getScopeFromPathname(location.pathname)
+  const activeSession = sessions[activeScope]
+  const user = activeSession?.user ?? null
+  const token = activeSession?.token ?? null
 
-  const setUser = useCallback((partial) => {
-    setUserState((prev) => {
-      if (!prev) return prev
-      const next = { ...prev, ...partial }
-      try {
-        const raw = localStorage.getItem(AUTH_STORAGE_KEY)
-        const parsed = raw ? JSON.parse(raw) : null
-        if (parsed?.token) persist(parsed.token, next)
-      } catch {
-        /* ignore */
-      }
-      return next
-    })
-  }, [])
+  const customerSession = sessions[AUTH_SCOPES.CUSTOMER]
+  const vendorSession = sessions[AUTH_SCOPES.VENDOR]
 
-  const applySession = useCallback((nextUser, nextToken) => {
+  const applySessionForScope = useCallback((scope, nextUser, nextToken) => {
     const u = normalizeUser(nextUser)
     if (!u) return
-    setUserState(u)
-    setToken(nextToken)
-    persist(nextToken, u)
-    axiosInstance.defaults.headers.common.Authorization = `Bearer ${nextToken}`
+    const session = { user: u, token: nextToken }
+    persistStoredSession(scope, nextToken, u)
+    setSessions((prev) => ({ ...prev, [scope]: session }))
+  }, [])
+
+  const clearSessionForScope = useCallback((scope) => {
+    clearStoredSession(scope)
+    setSessions((prev) => ({ ...prev, [scope]: null }))
+  }, [])
+
+  const logout = useCallback(
+    (scope) => {
+      const target = scope || getScopeFromPathname(location.pathname)
+      clearSessionForScope(target)
+    },
+    [location.pathname, clearSessionForScope]
+  )
+
+  const setUser = useCallback(
+    (partial) => {
+      const scope = getScopeFromPathname(location.pathname)
+      setSessions((prev) => {
+        const current = prev[scope]
+        if (!current) return prev
+        const nextUser = { ...current.user, ...partial }
+        persistStoredSession(scope, current.token, nextUser)
+        return { ...prev, [scope]: { ...current, user: nextUser } }
+      })
+    },
+    [location.pathname]
+  )
+
+  const validateScope = useCallback(async (scope) => {
+    const stored = loadStoredSession(scope)
+    if (!stored?.token) return null
+
+    try {
+      const { data } = await axiosInstance.get('/auth/me', {
+        headers: { Authorization: `Bearer ${stored.token}` },
+        authScope: scope,
+      })
+      if (data?.success && data?.data?.user) {
+        const u = normalizeUser(data.data.user, stored.user?.role)
+        if (!u) {
+          clearStoredSession(scope)
+          return null
+        }
+        persistStoredSession(scope, stored.token, u)
+        return { token: stored.token, user: u }
+      }
+      clearStoredSession(scope)
+      return null
+    } catch {
+      clearStoredSession(scope)
+      return null
+    }
   }, [])
 
   const checkAuth = useCallback(async () => {
     setIsCheckingAuth(true)
-    const stored = loadStored()
-    if (!stored?.token) {
-      logout()
-      setIsCheckingAuth(false)
-      return
-    }
-    setToken(stored.token)
-    setUserState(stored.user)
-    axiosInstance.defaults.headers.common.Authorization = `Bearer ${stored.token}`
-
     try {
-      const { data } = await axiosInstance.get('/auth/me')
-      if (data?.success && data?.data?.user) {
-        const u = normalizeUser(data.data.user, stored.user?.role)
-        if (!u) {
-          logout()
-          return
-        }
-        setUserState(u)
-        persist(stored.token, u)
-      } else {
-        logout()
-      }
-    } catch {
-      logout()
+      const [customer, vendor, app] = await Promise.all([
+        validateScope(AUTH_SCOPES.CUSTOMER),
+        validateScope(AUTH_SCOPES.VENDOR),
+        validateScope(AUTH_SCOPES.APP),
+      ])
+      setSessions({
+        [AUTH_SCOPES.CUSTOMER]: customer,
+        [AUTH_SCOPES.VENDOR]: vendor,
+        [AUTH_SCOPES.APP]: app,
+      })
     } finally {
       setIsCheckingAuth(false)
     }
-  }, [logout])
+  }, [validateScope])
 
   useEffect(() => {
     checkAuth()
   }, [checkAuth])
 
-  /**
-   * @param {object} credentials
-   * @param {'password'|'customerOtp'} credentials.type
-   */
   const login = useCallback(
     async (credentials) => {
       const { email, password } = credentials
@@ -151,7 +169,7 @@ export function AuthProvider({ children }) {
         const { data } = await axiosInstance.post('/auth/login', { email, password })
         if (data?.success && data?.data?.user && data?.data?.token) {
           const u = normalizeUser(data.data.user)
-          applySession(u, data.data.token)
+          applySessionForScope(AUTH_SCOPES.APP, u, data.data.token)
           return { success: true, role: u.role, user: u, message: data.message }
         }
         return { success: false, message: data?.message || 'Login failed' }
@@ -166,73 +184,60 @@ export function AuthProvider({ children }) {
         setIsLoading(false)
       }
     },
-    [applySession]
+    [applySessionForScope]
   )
 
-  const registerAgent = useCallback(
-    async (agentData) => {
-      setIsLoading(true)
-      try {
-        const { data } = await axiosInstance.post('/auth/register/agent', agentData, {
-          headers: { 'Content-Type': 'multipart/form-data' }
-        })
-        if (data?.success) {
-          return { success: true, message: data.message }
-        }
-        return { success: false, message: data?.message || 'Registration failed' }
-      } catch (e) {
-        const responseData = e?.response?.data
-        let msg = responseData?.message || 'Registration failed'
-        if (responseData?.errors && Array.isArray(responseData.errors)) {
-          msg = responseData.errors.join(', ')
-        }
-        return { success: false, message: msg }
-      } finally {
-        setIsLoading(false)
+  const registerAgent = useCallback(async (agentData) => {
+    setIsLoading(true)
+    try {
+      const { data } = await axiosInstance.post('/auth/register/agent', agentData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+      if (data?.success) return { success: true, message: data.message }
+      return { success: false, message: data?.message || 'Registration failed' }
+    } catch (e) {
+      const responseData = e?.response?.data
+      let msg = responseData?.message || 'Registration failed'
+      if (responseData?.errors && Array.isArray(responseData.errors)) {
+        msg = responseData.errors.join(', ')
       }
-    },
-    []
-  )
+      return { success: false, message: msg }
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
 
-  const registerParent = useCallback(
-    async (formData) => {
-      setIsLoading(true);
-      try {
-        const { data } = await axiosInstance.post('/auth/register/parent', formData, {
-          headers: { 'Content-Type': 'multipart/form-data' }
-        });
-        if (data?.success) {
-          return { success: true, message: data.message };
-        }
-        return { success: false, message: data?.message || 'Registration failed' };
-      } catch (e) {
-        const responseData = e?.response?.data
-        let msg = responseData?.message || 'Registration failed'
-        if (responseData?.errors && Array.isArray(responseData.errors)) {
-          msg = responseData.errors.join(', ')
-        }
-        return { success: false, message: msg }
-      } finally {
-        setIsLoading(false)
+  const registerParent = useCallback(async (formData) => {
+    setIsLoading(true)
+    try {
+      const { data } = await axiosInstance.post('/auth/register/parent', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+      if (data?.success) return { success: true, message: data.message }
+      return { success: false, message: data?.message || 'Registration failed' }
+    } catch (e) {
+      const responseData = e?.response?.data
+      let msg = responseData?.message || 'Registration failed'
+      if (responseData?.errors && Array.isArray(responseData.errors)) {
+        msg = responseData.errors.join(', ')
       }
-    },
-    []
-  );
+      return { success: false, message: msg }
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
 
-  const requestCustomerOtp = useCallback(
-    async (phone) => {
-      setIsLoading(true)
-      try {
-        const { data } = await axiosInstance.post('/auth/otp/customer', { phone })
-        return { success: data?.success, message: data?.message }
-      } catch (e) {
-        return { success: false, message: e?.response?.data?.message || 'Failed to send OTP' }
-      } finally {
-        setIsLoading(false)
-      }
-    },
-    []
-  )
+  const requestCustomerOtp = useCallback(async (phone) => {
+    setIsLoading(true)
+    try {
+      const { data } = await axiosInstance.post('/auth/otp/customer', { phone })
+      return { success: data?.success, message: data?.message }
+    } catch (e) {
+      return { success: false, message: e?.response?.data?.message || 'Failed to send OTP' }
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
 
   const loginCustomer = useCallback(
     async (phone, otp) => {
@@ -241,7 +246,7 @@ export function AuthProvider({ children }) {
         const { data } = await axiosInstance.post('/auth/login/customer', { phone, otp })
         if (data?.success && data?.data?.token) {
           const u = normalizeUser({ role: 'customer', phone, id: data.data.customerId })
-          applySession(u, data.data.token)
+          applySessionForScope(AUTH_SCOPES.CUSTOMER, u, data.data.token)
           return { success: true, role: u.role, message: data.message }
         }
         return { success: false, message: data?.message || 'Login failed' }
@@ -251,23 +256,20 @@ export function AuthProvider({ children }) {
         setIsLoading(false)
       }
     },
-    [applySession]
+    [applySessionForScope]
   )
 
-  const requestVendorOtp = useCallback(
-    async (phone) => {
-      setIsLoading(true)
-      try {
-        const { data } = await axiosInstance.post('/auth/otp/vendor', { phone })
-        return { success: data?.success, message: data?.message }
-      } catch (e) {
-        return { success: false, message: e?.response?.data?.message || 'Failed to send OTP' }
-      } finally {
-        setIsLoading(false)
-      }
-    },
-    []
-  )
+  const requestVendorOtp = useCallback(async (phone) => {
+    setIsLoading(true)
+    try {
+      const { data } = await axiosInstance.post('/auth/otp/vendor', { phone })
+      return { success: data?.success, message: data?.message }
+    } catch (e) {
+      return { success: false, message: e?.response?.data?.message || 'Failed to send OTP' }
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
 
   const loginVendor = useCallback(
     async (phone, otp) => {
@@ -276,7 +278,7 @@ export function AuthProvider({ children }) {
         const { data } = await axiosInstance.post('/auth/login/vendor', { phone, otp })
         if (data?.success && data?.data?.token && data?.data?.user) {
           const u = normalizeUser(data.data.user)
-          applySession(u, data.data.token)
+          applySessionForScope(AUTH_SCOPES.VENDOR, u, data.data.token)
           return { success: true, role: u.role, message: data.message }
         }
         return { success: false, message: data?.message || 'Login failed' }
@@ -286,7 +288,7 @@ export function AuthProvider({ children }) {
         setIsLoading(false)
       }
     },
-    [applySession]
+    [applySessionForScope]
   )
 
   const requestPasswordReset = useCallback(async (email) => {
@@ -330,6 +332,11 @@ export function AuthProvider({ children }) {
       user,
       token,
       isAuthenticated: Boolean(user && token),
+      isCustomerAuthenticated: Boolean(customerSession?.user && customerSession?.token),
+      isVendorAuthenticated: Boolean(vendorSession?.user && vendorSession?.token),
+      customerUser: customerSession?.user ?? null,
+      vendorUser: vendorSession?.user ?? null,
+      activeScope,
       isCheckingAuth,
       isLoading,
       login,
@@ -346,7 +353,28 @@ export function AuthProvider({ children }) {
       verifyResetOtp,
       resetPassword,
     }),
-    [user, token, isCheckingAuth, isLoading, login, logout, checkAuth, setUser, registerAgent, registerParent, loginCustomer, requestCustomerOtp, loginVendor, requestVendorOtp, requestPasswordReset, verifyResetOtp, resetPassword]
+    [
+      user,
+      token,
+      customerSession,
+      vendorSession,
+      activeScope,
+      isCheckingAuth,
+      isLoading,
+      login,
+      logout,
+      checkAuth,
+      setUser,
+      registerAgent,
+      registerParent,
+      loginCustomer,
+      requestCustomerOtp,
+      loginVendor,
+      requestVendorOtp,
+      requestPasswordReset,
+      verifyResetOtp,
+      resetPassword,
+    ]
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
