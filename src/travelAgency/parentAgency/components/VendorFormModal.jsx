@@ -345,7 +345,7 @@ export default function VendorFormModal({ isOpen, onClose, onSubmit, initialData
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex shrink-0 items-center justify-between border-b border-gray-100 px-6 py-4">
+        <div className="flex shrink-0 items-center justify-between border-b border-gray-100 px-4 py-3 sm:px-6 sm:py-4">
           <div className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-100">
               <Building2 className="h-4 w-4 text-gray-600" strokeWidth={2} />
@@ -360,10 +360,10 @@ export default function VendorFormModal({ isOpen, onClose, onSubmit, initialData
 
         {/* Body */}
         <form id="vendor-form" onSubmit={handleSubmit} className="flex-1 overflow-y-auto">
-          <div className="space-y-5 p-6">
+          <div className="space-y-4 sm:space-y-5 p-4 sm:p-6">
 
             {/* ── Vendor info ── */}
-            <section className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+            <section className="rounded-2xl border border-gray-100 bg-white p-4 sm:p-5 shadow-sm">
               <SectionHeader icon={Building2} title="Vendor info" subtitle="Business name and category" />
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
@@ -400,7 +400,7 @@ export default function VendorFormModal({ isOpen, onClose, onSubmit, initialData
             </section>
 
             {/* ── Contact ── */}
-            <section className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+            <section className="rounded-2xl border border-gray-100 bg-white p-4 sm:p-5 shadow-sm">
               <SectionHeader icon={User} title="Contact details" subtitle="Person, phone and email" />
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
@@ -457,7 +457,7 @@ export default function VendorFormModal({ isOpen, onClose, onSubmit, initialData
             </section>
 
             {/* ── Location ── */}
-            <section className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+            <section className="rounded-2xl border border-gray-100 bg-white p-4 sm:p-5 shadow-sm">
               <SectionHeader icon={Globe} title="Location" subtitle="Address and region (optional)" />
               <div className="space-y-4">
                 <div>
@@ -513,7 +513,7 @@ export default function VendorFormModal({ isOpen, onClose, onSubmit, initialData
             </section>
 
             {/* ── Documents ── */}
-            <section className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
+            <section className="rounded-xl border border-gray-100 bg-white p-4 sm:p-5 shadow-sm">
               <SectionHeader
                 icon={FileText}
                 title={<>Documents <span className="text-red-500">*</span></>}
@@ -529,12 +529,12 @@ export default function VendorFormModal({ isOpen, onClose, onSubmit, initialData
                       const href = filePublicUrl(doc)
                       const isImg = /\.(png|jpe?g|webp|gif)$/i.test(String(doc))
                       return href ? (
-                        <div key={i} className="inline-flex items-center gap-1.5 rounded-full border border-violet-200 bg-violet-50 px-3 py-1.5 text-xs font-semibold text-violet-700 transition hover:bg-violet-100">
-                          <a href={href} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 hover:underline">
-                            {isImg ? <File className="h-3 w-3" /> : <FileText className="h-3 w-3" />}
-                            {String(doc).split(/[\\/]/).pop() || `Document ${i + 1}`}
+                        <div key={i} className="inline-flex items-center gap-1.5 rounded-full border border-violet-200 bg-violet-50 px-3 py-1.5 text-xs font-semibold text-violet-700 transition hover:bg-violet-100 max-w-full">
+                          <a href={href} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 hover:underline truncate max-w-[200px]">
+                            {isImg ? <File className="h-3 w-3 shrink-0" /> : <FileText className="h-3 w-3 shrink-0" />}
+                            <span className="truncate">{String(doc).split(/[\\/]/).pop() || `Document ${i + 1}`}</span>
                           </a>
-                          <button type="button" onClick={() => setExistingDocs(prev => prev.filter((_, idx) => idx !== i))} className="ml-1 text-violet-400 hover:text-red-500">
+                          <button type="button" onClick={() => setExistingDocs(prev => prev.filter((_, idx) => idx !== i))} className="ml-1 shrink-0 text-violet-400 hover:text-red-500">
                             <X size={11} />
                           </button>
                         </div>
@@ -599,13 +599,13 @@ export default function VendorFormModal({ isOpen, onClose, onSubmit, initialData
         </form>
 
         {/* Footer */}
-        <div className="flex shrink-0 items-center justify-end gap-2 border-t border-gray-100 bg-gray-50/60 px-6 py-4">
+        <div className="flex flex-col-reverse sm:flex-row shrink-0 sm:items-center sm:justify-end gap-2 border-t border-gray-100 bg-gray-50/60 px-4 py-3 sm:px-6 sm:py-4">
           <button type="button" onClick={onClose} disabled={loading}
-            className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-60">
+            className="w-full sm:w-auto flex justify-center rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-60">
             Cancel
           </button>
           <button type="submit" form="vendor-form" disabled={loading}
-            className="inline-flex items-center gap-2 rounded-lg bg-zinc-900 px-5 py-2 text-sm font-semibold text-white transition hover:bg-zinc-800 disabled:opacity-60">
+            className="w-full sm:w-auto flex justify-center items-center gap-2 rounded-lg bg-zinc-900 px-5 py-2 text-sm font-semibold text-white transition hover:bg-zinc-800 disabled:opacity-60">
             {loading
               ? <><span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/30 border-t-white" /> Saving…</>
               : isEdit ? 'Save changes' : 'Add vendor'
