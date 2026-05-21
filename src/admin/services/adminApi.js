@@ -117,6 +117,14 @@ export function getReports(params) {
   return axiosInstance.get('/admin/reports', { params })
 }
 
+export function listAllVendors(params) {
+  return axiosInstance.get('/admin/vendors', { params })
+}
+
+export function getVendorDetail(id) {
+  return axiosInstance.get(`/admin/vendors/${id}`)
+}
+
 const adminApi = {
   listAgents,
   listPendingKyc,
@@ -155,6 +163,8 @@ const adminApi = {
   listAllBookings: (params) => axiosInstance.get('/admin/bookings', { params }),
   getBookingDetail: (id) => axiosInstance.get(`/admin/bookings/${id}`),
   getOtpLogs: (params) => axiosInstance.get('/admin/otp-logs', { params }),
+  listAllVendors,
+  getVendorDetail,
 }
 
 export const getAgentHierarchy = (id) => axiosInstance.get(`/admin/agents/${id}/hierarchy`);

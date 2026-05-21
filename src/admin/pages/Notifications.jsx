@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import {
   Search, Send, Users, UserCheck, Building2, UserPlus,
   Mail, Phone, Check, History, Loader2, Paperclip, X,
-  FileText, ImageIcon, Bell, Smartphone, ChevronRight, AlertTriangle,
+  FileText, ImageIcon, Bell, Smartphone, ChevronRight, AlertTriangle, Store
 } from 'lucide-react'
 import adminApi from '@/admin/services/adminApi'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
@@ -13,6 +13,7 @@ const ALL_TABS = [
   { id: 'parents',     label: 'Parents',      icon: Building2, color: 'text-primary-700 bg-primary-50',  fcmOnly: false },
   { id: 'children',   label: 'Child agents', icon: Users,     color: 'text-violet-700 bg-violet-50',    fcmOnly: false },
   { id: 'customers',  label: 'Customers',    icon: UserCheck, color: 'text-emerald-700 bg-emerald-50',  fcmOnly: false },
+  { id: 'vendors',    label: 'Vendors',      icon: Store,     color: 'text-orange-700 bg-orange-50',    fcmOnly: false },
 ]
 
 function recipientHaystack(item, cat) {
@@ -40,7 +41,7 @@ export default function Notifications() {
 
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
-  const [recipients, setRecipients] = useState({ parents: [], children: [], subChildren: [], customers: [] })
+  const [recipients, setRecipients] = useState({ parents: [], children: [], subChildren: [], customers: [], vendors: [] })
   const [activeTab, setActiveTab] = useState('parents')
   const [search, setSearch] = useState('')
   const [selectedIds, setSelectedIds] = useState(() => new Set())
@@ -60,6 +61,7 @@ export default function Notifications() {
           children: data.data.children || [],
           subChildren: data.data.subChildren || [],
           customers: data.data.customers || [],
+          vendors: data.data.vendors || [],
         })
       }
     } catch { toastRef.current.error('Failed to load recipients') }
@@ -68,28 +70,33 @@ export default function Notifications() {
 
   useEffect(() => { fetchRecipients() }, [fetchRecipients])
 
-  // When FCM is toggled ON — force to customers tab and deselect non-customers
+  // When FCM is toggled ON — force to allowed tab and deselect non-allowed
   const handleFcmToggle = (checked) => {
     setSendFcm(checked)
     if (checked) {
       setFiles([]) // Push notifications don't support attachments
-      setActiveTab('customers')
-      // Remove any non-customer selections
-      const customerIds = new Set((recipients.customers || []).map(c => c._id))
+      if (activeTab !== 'customers' && activeTab !== 'vendors') {
+        setActiveTab('customers')
+      }
+      // Remove any non-allowed selections
+      const allowedIds = new Set([
+        ...(recipients.customers || []).map(c => c._id),
+        ...(recipients.vendors || []).map(v => v._id)
+      ])
       setSelectedIds(prev => {
         const next = new Set()
-        prev.forEach(id => { if (customerIds.has(id)) next.add(id) })
+        prev.forEach(id => { if (allowedIds.has(id)) next.add(id) })
         return next
       })
     }
   }
 
-  // Tabs visible: if FCM only, show only customers tab
-  const visibleTabs = sendFcm ? ALL_TABS.filter(t => t.id === 'customers') : ALL_TABS
+  // Tabs visible: if FCM only, show only customers and vendors tabs
+  const visibleTabs = sendFcm ? ALL_TABS.filter(t => t.id === 'customers' || t.id === 'vendors') : ALL_TABS
 
-  // If FCM on and user tries to switch to non-customer tab — block it
+  // If FCM on and user tries to switch to non-allowed tab — block it
   const handleTabChange = (tabId) => {
-    if (sendFcm && tabId !== 'customers') return
+    if (sendFcm && tabId !== 'customers' && tabId !== 'vendors') return
     setActiveTab(tabId)
     setSearch('')
   }
@@ -117,11 +124,13 @@ export default function Notifications() {
 
     setSending(true)
     try {
-      const users = [], customers = []
+      const users = [], customers = [], vendors = []
       Object.keys(recipients).forEach(cat => {
         ;(recipients[cat] || []).forEach(item => {
           if (selectedIds.has(item._id)) {
-            cat === 'customers' ? customers.push(item._id) : users.push(item._id)
+            if (cat === 'customers') customers.push(item._id)
+            else if (cat === 'vendors') vendors.push(item._id)
+            else users.push(item._id)
           }
         })
       })
@@ -135,6 +144,7 @@ export default function Notifications() {
       fd.append('message', formData.message.trim())
       fd.append('users', JSON.stringify(users))
       fd.append('customers', JSON.stringify(customers))
+      fd.append('vendors', JSON.stringify(vendors))
       fd.append('channels', JSON.stringify(channels))
       files.forEach(f => fd.append('attachments', f))
 
@@ -230,7 +240,7 @@ export default function Notifications() {
             {sendFcm && (
               <div className="ml-auto flex items-center gap-1.5 px-3 py-2 text-[11px] font-semibold text-amber-600">
                 <Smartphone className="h-3.5 w-3.5" strokeWidth={2} />
-                FCM: customers only
+                FCM: Apps only
               </div>
             )}
           </div>
@@ -368,7 +378,7 @@ export default function Notifications() {
                     </div>
                     <div className="min-w-0">
                       <p className="text-xs font-bold">Push (FCM)</p>
-                      <p className="text-[10px] font-normal text-gray-400">Customers only</p>
+                      <p className="text-[10px] font-normal text-gray-400">Apps only (Customers & Vendors)</p>
                     </div>
                     {sendFcm && <Check className="ml-auto h-4 w-4 shrink-0 text-emerald-600" strokeWidth={3} />}
                   </label>
@@ -379,7 +389,7 @@ export default function Notifications() {
                   <div className="mt-2 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5">
                     <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-600" strokeWidth={2} />
                     <p className="text-[11px] font-semibold leading-relaxed text-amber-700">
-                      FCM push only works for customers. Other recipient tabs are hidden. Non-customer selections have been cleared.
+                      FCM push only works for Mobile App users (Customers & Vendors). Other recipient tabs are hidden. Non-allowed selections have been cleared.
                     </p>
                   </div>
                 )}
