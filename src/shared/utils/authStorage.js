@@ -45,6 +45,24 @@ export function getScopeForRole(role) {
   return AUTH_SCOPES.APP
 }
 
+/** Current hash route path (e.g. `/customer/community`). */
+export function getHashPathname() {
+  if (typeof window === 'undefined') return '/'
+  const hash = window.location.hash || ''
+  return (hash.replace(/^#/, '') || '/').split('?')[0]
+}
+
+/**
+ * Auth scope for shared routes (community, auth/me) from the active panel in the URL.
+ * @returns {AuthScope}
+ */
+export function getScopeFromBrowserPath() {
+  const pathname = getHashPathname()
+  if (pathname.startsWith('/customer')) return AUTH_SCOPES.CUSTOMER
+  if (pathname.startsWith('/vendor')) return AUTH_SCOPES.VENDOR
+  return AUTH_SCOPES.APP
+}
+
 /**
  * Pick which stored token to attach based on API path.
  * @param {string} url — axios config.url (relative to /api)
@@ -65,6 +83,9 @@ export function getScopeForApiUrl(url) {
     u.includes('/auth/login/vendor')
   ) {
     return AUTH_SCOPES.VENDOR
+  }
+  if (u.startsWith('/community')) {
+    return getScopeFromBrowserPath()
   }
   return AUTH_SCOPES.APP
 }

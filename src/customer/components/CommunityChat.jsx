@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useState, useRef, useCallback, useMemo } from 'react'
+import { Link } from 'react-router-dom'
 import {
   Send,
   Image as ImageIcon,
@@ -20,6 +21,8 @@ import {
   Video,
   Play,
   Settings,
+  Lock,
+  AlertCircle,
 } from 'lucide-react'
 import { io } from 'socket.io-client'
 import axiosInstance from '@/shared/services/axiosInstance.js'
@@ -28,6 +31,7 @@ import { useAuth } from '@/shared/context/AuthContext.jsx'
 import ConfirmDialog from '@/shared/components/ConfirmDialog.jsx'
 import { ROLES } from '@/shared/utils/constants.js'
 import { getApiErrorMessage } from '@/shared/services/apiHelpers.js'
+import { AUTH_SCOPES, getScopeForRole, getScopeFromBrowserPath } from '@/shared/utils/authStorage.js'
 import ScanFaceModal from './ScanFaceModal.jsx'
 import faceRecognitionService from '@/shared/services/faceRecognitionService.js'
 
@@ -71,8 +75,19 @@ export default function CommunityChat({
   const { toast } = useToast()
   const { user } = useAuth()
   const [community, setCommunity] = useState(null)
+  const [loadError, setLoadError] = useState(null)
   const [messages, setMessages] = useState([])
   const [loading, setLoading] = useState(true)
+
+  const communityAuthScope = useMemo(() => {
+    if (user?.role) return getScopeForRole(user.role)
+    return getScopeFromBrowserPath()
+  }, [user?.role])
+
+  const communityAuthConfig = useMemo(
+    () => ({ authScope: communityAuthScope }),
+    [communityAuthScope]
+  )
   const [page, setPage] = useState(1)
   const [hasMore, setHasMore] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
@@ -165,24 +180,36 @@ export default function CommunityChat({
 
   const fetchCommunity = async () => {
     setLoading(true)
+    setLoadError(null)
+    setCommunity(null)
     try {
-      const { data } = await axiosInstance.get(`/community/package/${packageId}`)
-      if (data?.success) {
+      const { data } = await axiosInstance.get(`/community/package/${packageId}`, communityAuthConfig)
+      if (data?.success && data?.data?.community) {
         setCommunity(data.data.community)
         setMessages([])
         setPage(1)
         setHasMore(true)
         await fetchMessages(data.data.community._id, { page: 1, mode: 'replace' })
         setupSocket(data.data.community._id)
-        // Fetch notification preference for this community
-        axiosInstance.get(`/community/${data.data.community._id}/notification-preference`)
+        axiosInstance
+          .get(`/community/${data.data.community._id}/notification-preference`, communityAuthConfig)
           .then(({ data: np }) => {
             if (np?.success) setNotificationsEnabled(np.data?.notificationsEnabled !== false)
           })
           .catch(() => {})
+      } else {
+        setLoadError({
+          status: 404,
+          message: data?.message || 'Community is not available for this trip yet.',
+        })
       }
     } catch (err) {
-      toast.error('Could not join community chat')
+      const status = err?.response?.status
+      setLoadError({
+        status,
+        message: getApiErrorMessage(err),
+      })
+    } finally {
       setLoading(false)
     }
   }
@@ -190,6 +217,7 @@ export default function CommunityChat({
   const fetchMessages = async (communityId, { page: pageNum = 1, mode = 'replace' } = {}) => {
     try {
       const { data } = await axiosInstance.get(`/community/${communityId}/messages`, {
+        ...communityAuthConfig,
         params: { limit: PAGE_SIZE, page: pageNum },
       })
       if (data?.success) {
@@ -334,6 +362,7 @@ export default function CommunityChat({
 
     try {
       const { data } = await axiosInstance.get(`/community/${community._id}/images`, {
+        ...communityAuthConfig,
         params: { page: pageNum, limit: 12 },
       })
       if (data?.success) {
@@ -355,7 +384,7 @@ export default function CommunityChat({
       setGalleryLoading(false)
       setGalleryLoadingMore(false)
     }
-  }, [community?._id, toast])
+  }, [community?._id, toast, communityAuthConfig])
 
   useEffect(() => {
     if (subScreen === 'gallery' && community?._id && !galleryInitialized && !galleryLoading) {
@@ -483,7 +512,8 @@ export default function CommunityChat({
 
     try {
       const { data } = await axiosInstance.delete(`/community/${community._id}/bulk-delete-images`, {
-        data: { imageIds: idsToDelete }
+        ...communityAuthConfig,
+        data: { imageIds: idsToDelete },
       })
       if (data?.success) {
         toast.success(data.message)
@@ -501,7 +531,7 @@ export default function CommunityChat({
   const deleteSingleImage = async (imgId) => {
     if (!community?._id || !imgId) return
     try {
-      const { data } = await axiosInstance.delete(`/community/${community._id}/images/${imgId}`)
+      const { data } = await axiosInstance.delete(`/community/${community._id}/images/${imgId}`, communityAuthConfig)
       if (data?.success) {
         toast.success('Image deleted')
         setGalleryImages(prev => prev.filter(img => img._id !== imgId))
@@ -555,7 +585,7 @@ export default function CommunityChat({
     setIsSending(true)
     try {
       if (queue.length === 0) {
-        const { data } = await axiosInstance.post(`/community/${community._id}/messages`, { content: text })
+        const { data } = await axiosInstance.post(`/community/${community._id}/messages`, { content: text }, communityAuthConfig)
         if (!data?.success) toast.error('Message failed to send')
         else setInputText('')
         return
@@ -564,9 +594,11 @@ export default function CommunityChat({
       // One text bubble for the whole batch: with 2+ photos, send the line as a normal message first
       // so it is not hidden as a caption on only the first image.
       if (text && queue.length > 1) {
-        const { data: textRes } = await axiosInstance.post(`/community/${community._id}/messages`, {
-          content: text,
-        })
+        const { data: textRes } = await axiosInstance.post(
+          `/community/${community._id}/messages`,
+          { content: text },
+          communityAuthConfig
+        )
         if (!textRes?.success) {
           toast.error('Message failed to send')
           return
@@ -583,6 +615,7 @@ export default function CommunityChat({
         formData.append('caption', captionOnImage)
 
         const { data } = await axiosInstance.post(`/community/${community._id}/messages/image`, formData, {
+          ...communityAuthConfig,
           headers: { 'Content-Type': 'multipart/form-data' },
         })
         if (!data?.success) {
@@ -620,7 +653,7 @@ export default function CommunityChat({
 
     setMessages((prev) => prev.filter((m) => m._id !== msg._id))
     try {
-      const { data } = await axiosInstance.delete(`/community/${community._id}/messages/${msg._id}`)
+      const { data } = await axiosInstance.delete(`/community/${community._id}/messages/${msg._id}`, communityAuthConfig)
       if (!data?.success) {
         toast.error('Could not delete message')
         await fetchMessages(community._id, { page: 1, mode: 'replace' })
@@ -668,7 +701,7 @@ export default function CommunityChat({
       if (!cid) return
       setMessagingSaving(true)
       try {
-        const { data } = await axiosInstance.patch(`/community/${cid}/traveler-messaging`, body)
+        const { data } = await axiosInstance.patch(`/community/${cid}/traveler-messaging`, body, communityAuthConfig)
         if (data?.success && data?.data?.community) {
           setCommunity(data.data.community)
           toast.success('Messaging settings saved')
@@ -679,7 +712,7 @@ export default function CommunityChat({
         setMessagingSaving(false)
       }
     },
-    [community?._id, toast]
+    [community?._id, toast, communityAuthConfig]
   )
 
   const handleGlobalTravelerMessagingToggle = async () => {
@@ -720,7 +753,11 @@ export default function CommunityChat({
     const next = !notificationsEnabled
     setNotifToggling(true)
     try {
-      const { data } = await axiosInstance.patch(`/community/${community._id}/notification-preference`, { enabled: next })
+      const { data } = await axiosInstance.patch(
+        `/community/${community._id}/notification-preference`,
+        { enabled: next },
+        communityAuthConfig
+      )
       if (data?.success) {
         setNotificationsEnabled(next)
         toast.success(next ? 'Notifications enabled' : 'Notifications muted')
@@ -742,10 +779,64 @@ export default function CommunityChat({
   }
 
   if (!community) {
+    const isUnauthorized = loadError?.status === 401
+    const isForbidden = loadError?.status === 403
+    const isNotFound = loadError?.status === 404 || !loadError?.status
+
+    const title = isUnauthorized
+      ? 'Please sign in again'
+      : isForbidden
+        ? 'Community access restricted'
+        : isNotFound
+          ? 'Community not available'
+          : 'Unable to open community'
+
+    const description = isUnauthorized
+      ? 'Your session may have expired. Log in again to join the group chat for this trip.'
+      : isForbidden
+        ? (loadError?.message || 'You are not a member of this trip community yet.')
+        : isNotFound
+          ? (loadError?.message || 'Group chat has not been set up for this package yet. Check back after your booking is confirmed.')
+          : (loadError?.message || 'Something went wrong while loading the community. Please try again later.')
+
+    const Icon = isUnauthorized ? Lock : isForbidden ? AlertCircle : MessageSquare
+
     return (
-      <div className="flex flex-col items-center justify-center rounded-xl border border-gray-200 bg-gray-50/50 px-6 py-14 text-center">
-        <p className="text-base font-medium text-gray-900">Chat unavailable</p>
-        <p className="mt-1 max-w-sm text-sm text-gray-500">You need to be on this trip to use group chat.</p>
+      <div className={`flex flex-1 flex-col items-center justify-center gap-6 p-8 text-center ${isPage ? 'min-h-[50vh] bg-gray-50/30' : 'rounded-xl border border-gray-200 bg-gray-50/50 py-14'}`}>
+        <div className={`flex h-20 w-20 items-center justify-center rounded-3xl shadow-lg ${
+          isUnauthorized ? 'bg-amber-100 text-amber-600' : isForbidden ? 'bg-orange-100 text-orange-600' : 'bg-gradient-to-br from-primary-500 to-indigo-600 text-white shadow-primary-200'
+        }`}>
+          <Icon size={36} strokeWidth={1.5} />
+        </div>
+        <div className="max-w-sm space-y-2">
+          <h3 className="text-xl font-black text-gray-900 tracking-tight">{title}</h3>
+          <p className="text-sm text-gray-500 leading-relaxed">{description}</p>
+        </div>
+        {isUnauthorized && communityAuthScope === AUTH_SCOPES.CUSTOMER && (
+          <Link
+            to="/customer/login"
+            className="inline-flex items-center gap-2 rounded-xl bg-primary-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-700"
+          >
+            Customer Login
+          </Link>
+        )}
+        {isUnauthorized && communityAuthScope === AUTH_SCOPES.APP && (
+          <Link
+            to="/login"
+            className="inline-flex items-center gap-2 rounded-xl bg-primary-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-700"
+          >
+            Agency Login
+          </Link>
+        )}
+        {!isUnauthorized && packageId && (
+          <button
+            type="button"
+            onClick={() => fetchCommunity()}
+            className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+          >
+            Try again
+          </button>
+        )}
       </div>
     )
   }
