@@ -18,8 +18,16 @@ export function useToast() {
       success: (message, title = 'Success') => addToast({ type: 'success', message, title, autoClose: true }),
       error:   (message, title = 'Error')   => addToast({ type: 'error',   message, title, autoClose: true }),
       warning: (message, title = 'Warning') => addToast({ type: 'warning', message, title, autoClose: true }),
-      // href optional — if provided, toast becomes clickable and navigates on click
-      info:    (message, title = 'Info', href = null) => addToast({ type: 'info', message, title, autoClose: true, href }),
+      // Third arg: URL string (navigate) or function (onClick)
+      info:    (message, title = 'Info', action = null) =>
+        addToast({
+          type: 'info',
+          message,
+          title,
+          autoClose: true,
+          href: typeof action === 'string' ? action : null,
+          onClick: typeof action === 'function' ? action : null,
+        }),
     },
   }
 }

@@ -5,7 +5,7 @@ import { useAuth } from '@/shared/context/AuthContext.jsx'
 import { getVendorSchedule } from '@/vendor/services/vendorApi.js'
 import { getApiErrorMessage } from '@/shared/services/apiHelpers.js'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
-import CustomerChatModal from '@/vendor/components/CustomerChatModal.jsx'
+import { useVendorChat } from '@/vendor/context/VendorChatContext.jsx'
 
 export default function VendorDashboard() {
   const navigate = useNavigate()
@@ -14,8 +14,7 @@ export default function VendorDashboard() {
   const toastRef = useRef(toast)
   const [loading, setLoading] = useState(false)
   const [items, setItems] = useState([])
-  const [chatCustomer, setChatCustomer] = useState(null)
-  const [chatBookingId, setChatBookingId] = useState(null)
+  const { openCustomerChat } = useVendorChat()
   const [dateFilter, setDateFilter] = useState(() => {
     const d = new Date()
     const y = d.getFullYear()
@@ -87,8 +86,15 @@ export default function VendorDashboard() {
 
   const openChat = (customer, bookingMongoId) => {
     if (!customer?.id || !bookingMongoId) return
-    setChatCustomer({ id: customer.id, name: customer.name, phone: customer.phone, email: customer.email })
-    setChatBookingId(bookingMongoId)
+    openCustomerChat({
+      bookingId: bookingMongoId,
+      customer: {
+        id: customer.id,
+        name: customer.name,
+        phone: customer.phone,
+        email: customer.email,
+      },
+    })
   }
 
   return (
@@ -128,13 +134,6 @@ export default function VendorDashboard() {
               className="inline-flex items-center gap-2 rounded-xl border border-white/30 bg-white/10 px-4 py-2 text-sm font-semibold text-white hover:bg-white/20"
             >
               <Users className="h-4 w-4" /> Communities
-            </button>
-            <button
-              type="button"
-              onClick={() => navigate('/vendor/chats')}
-              className="inline-flex items-center gap-2 rounded-xl bg-primary-600 hover:bg-primary-700 px-4 py-2 text-sm font-semibold text-white shadow-lg"
-            >
-              <MessageSquare className="h-4 w-4" /> Direct Messages
             </button>
           </div>
         </div>
@@ -233,12 +232,6 @@ export default function VendorDashboard() {
         )}
       </div>
 
-      <CustomerChatModal
-        isOpen={!!chatCustomer}
-        onClose={() => { setChatCustomer(null); setChatBookingId(null) }}
-        bookingId={chatBookingId}
-        customer={chatCustomer}
-      />
     </div>
   )
 }

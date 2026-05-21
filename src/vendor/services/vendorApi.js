@@ -30,6 +30,22 @@ export function getVendorCommunities() {
   return axiosInstance.get('/vendor/communities')
 }
 
+export function getVendorNotifications(params = {}) {
+  return axiosInstance.get('/vendor/notifications', { params })
+}
+
+export function getVendorUnreadCount() {
+  return axiosInstance.get('/vendor/notifications/unread-count')
+}
+
+export function markVendorNotificationRead(id) {
+  return axiosInstance.patch(`/vendor/notifications/${id}/read`)
+}
+
+export function markAllVendorNotificationsRead() {
+  return axiosInstance.patch('/vendor/notifications/read-all')
+}
+
 export function getAgentChatMessages() {
   return axiosInstance.get('/vendor/chat-agent')
 }
@@ -48,6 +64,10 @@ export default {
   getCustomerChatMessages,
   sendCustomerChatMessage,
   getVendorCommunities,
+  getVendorNotifications,
+  getVendorUnreadCount,
+  markVendorNotificationRead,
+  markAllVendorNotificationsRead,
   getAgentChatMessages,
   sendAgentChatMessage,
 }

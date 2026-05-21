@@ -1,17 +1,14 @@
 import { useMemo } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { ChevronLeft, Home, Route, CalendarDays, Users, ClipboardList, Phone, Mail, User, MessageSquare } from 'lucide-react'
-import CustomerChatModal from '@/vendor/components/CustomerChatModal.jsx'
-import { useState } from 'react'
+import { useVendorChat } from '@/vendor/context/VendorChatContext.jsx'
 
 export default function VendorPackageDetails() {
   const navigate = useNavigate()
   const location = useLocation()
   const { packageId } = useParams()
   const pkg = location.state?.pkg || null
-
-  const [chatCustomer, setChatCustomer] = useState(null)
-  const [chatBookingId, setChatBookingId] = useState(null)
+  const { openCustomerChat } = useVendorChat()
 
   const rows = useMemo(() => {
     const r = Array.isArray(pkg?.rows) ? pkg.rows : []
@@ -170,8 +167,10 @@ export default function VendorPackageDetails() {
                         const cid = c.id || c._id
                         const row = rows.find((r) => r.customer?.id === cid)
                         if (row?._id) {
-                          setChatBookingId(row._id)
-                          setChatCustomer({ ...c, id: cid })
+                          openCustomerChat({
+                            bookingId: row._id,
+                            customer: { ...c, id: cid },
+                          })
                         }
                       }}
                       className="inline-flex items-center gap-2 rounded-lg bg-primary-50 px-3 py-1.5 text-xs font-semibold text-primary-700 hover:bg-primary-100"
@@ -186,15 +185,6 @@ export default function VendorPackageDetails() {
           </div>
         </div>
 
-      <CustomerChatModal
-        isOpen={!!chatCustomer}
-        onClose={() => {
-          setChatCustomer(null)
-          setChatBookingId(null)
-        }}
-        bookingId={chatBookingId}
-        customer={chatCustomer}
-      />
     </div>
   )
 }

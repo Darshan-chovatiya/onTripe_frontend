@@ -12,17 +12,22 @@ export default function CustomerChatModal({ isOpen, onClose, bookingId, customer
   const [imagePreview, setImagePreview] = useState(null)
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
+  const [bookingLabel, setBookingLabel] = useState(null)
   const messagesEndRef = useRef(null)
   const { toast } = useToast()
 
   const customerId = customer?.id || customer?._id
 
   useEffect(() => {
-    if (isOpen && bookingId && customerId) {
-      fetchMessages()
-      const interval = setInterval(fetchMessages, 5000)
-      return () => clearInterval(interval)
+    if (!isOpen || !bookingId || !customerId) {
+      setMessages([])
+      setLoading(true)
+      return undefined
     }
+    setLoading(true)
+    fetchMessages()
+    const interval = setInterval(fetchMessages, 5000)
+    return () => clearInterval(interval)
   }, [isOpen, bookingId, customerId])
 
   useEffect(() => {
@@ -35,7 +40,9 @@ export default function CustomerChatModal({ isOpen, onClose, bookingId, customer
     try {
       const res = await getCustomerChatMessages(bookingId, customerId)
       if (res.data?.success) {
-        setMessages(res.data.data.messages)
+        setMessages(res.data.data.messages || [])
+        const label = res.data.data.booking?.bookingId
+        if (label) setBookingLabel(label)
       }
     } catch (err) {
       console.error('Failed to fetch messages:', err)
@@ -92,7 +99,9 @@ export default function CustomerChatModal({ isOpen, onClose, bookingId, customer
             </div>
             <div>
               <h3 className="font-bold text-gray-900">{customer.name || 'Customer'}</h3>
-              <p className="text-xs text-gray-500">Customer</p>
+              <p className="text-xs text-gray-500">
+                {bookingLabel ? `Booking ${bookingLabel}` : 'Customer chat'}
+              </p>
             </div>
           </div>
           <button onClick={onClose} className="p-2 text-gray-400 hover:bg-gray-200 rounded-xl transition-colors">

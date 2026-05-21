@@ -20,4 +20,29 @@ export function sendVendorChatMessage(bookingId, vendorId, formData) {
   })
 }
 
-export default { getCustomerProfile, updateCustomerProfile, getVendorChatMessages, sendVendorChatMessage }
+export function getCustomerNotifications(params = {}) {
+  return axiosInstance.get('/customer/notifications', { params })
+}
+
+export function getCustomerUnreadCount() {
+  return axiosInstance.get('/customer/notifications/unread-count')
+}
+
+export function markCustomerNotificationRead(id) {
+  return axiosInstance.patch(`/customer/notifications/${id}/read`)
+}
+
+export function markAllCustomerNotificationsRead() {
+  return axiosInstance.patch('/customer/notifications/read-all')
+}
+
+export default {
+  getCustomerProfile,
+  updateCustomerProfile,
+  getVendorChatMessages,
+  sendVendorChatMessage,
+  getCustomerNotifications,
+  getCustomerUnreadCount,
+  markCustomerNotificationRead,
+  markAllCustomerNotificationsRead,
+}
