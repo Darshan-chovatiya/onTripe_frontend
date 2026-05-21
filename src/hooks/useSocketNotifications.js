@@ -62,6 +62,9 @@ export function useSocketNotifications() {
     const socket = io(SOCKET_URL, { transports: ['websocket'] })
 
     socket.on('new_message_notify', (msg) => {
+      const role = userRef.current?.role
+      if (role === ROLES.CUSTOMER || role === ROLES.VENDOR) return
+
       if (isOnCommunityPage(pathnameRef.current, searchRef.current, msg?.packageId)) return
 
       const sender  = msg?.sender?.name || 'Someone'

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import { findVendorChatByParams } from '@/shared/utils/vendorChatDeepLink.js'
 import { Send, Image as ImageIcon, Loader2, MessageSquare, Building2, Calendar, X } from 'lucide-react'
 import {
   getAllCustomerChats,
@@ -114,12 +115,23 @@ export default function VendorChats() {
   const [loadingMessages, setLoadingMessages] = useState(false)
   const [sending, setSending] = useState(false)
   const messagesEndRef = useRef(null)
+  const deepLinkHandledRef = useRef(false)
 
   const setTab = (t) => {
     setSearchParams(t === 'agent' ? { tab: 'agent' } : {})
     setSelectedChat(null)
     setMessages([])
+    deepLinkHandledRef.current = false
   }
+
+  const clearDeepLinkParams = useCallback(() => {
+    const next = new URLSearchParams(searchParams)
+    next.delete('booking')
+    next.delete('customer')
+    if (next.toString() !== searchParams.toString()) {
+      setSearchParams(next, { replace: true })
+    }
+  }, [searchParams, setSearchParams])
 
   const fetchChats = useCallback(async () => {
     try {
@@ -131,6 +143,67 @@ export default function VendorChats() {
       setLoadingChats(false)
     }
   }, [])
+
+  const openChatFromParams = useCallback(
+    async (bookingParam, customerParam) => {
+      try {
+        const res = await getCustomerChatMessages(bookingParam, customerParam)
+        if (!res.data?.success) return false
+        const msgs = res.data.data.messages || []
+        const bookingMeta = res.data.data.booking
+        const customerFromMsg = msgs.find((m) => m.customer)?.customer
+        setSelectedChat({
+          customer: {
+            _id: customerParam,
+            name: customerFromMsg?.name || 'Customer',
+            phone: customerFromMsg?.phone,
+          },
+          booking: bookingMeta
+            ? { _id: bookingMeta._id, bookingId: bookingMeta.bookingId }
+            : { _id: bookingParam, bookingId: bookingParam },
+          messages: msgs,
+        })
+        setMessages(msgs)
+        return true
+      } catch {
+        return false
+      }
+    },
+    []
+  )
+
+  const applyNotificationDeepLink = useCallback(async () => {
+    if (deepLinkHandledRef.current || tab !== 'customers') return
+
+    const bookingParam = searchParams.get('booking')
+    const customerParam = searchParams.get('customer')
+    if (!bookingParam || !customerParam) return
+
+    const match = findVendorChatByParams(chats, bookingParam, customerParam)
+    if (match) {
+      deepLinkHandledRef.current = true
+      setSelectedChat(match)
+      clearDeepLinkParams()
+      return
+    }
+
+    if (!loadingChats) {
+      const opened = await openChatFromParams(bookingParam, customerParam)
+      if (opened) {
+        deepLinkHandledRef.current = true
+        clearDeepLinkParams()
+        fetchChats()
+      }
+    }
+  }, [
+    tab,
+    chats,
+    loadingChats,
+    searchParams,
+    clearDeepLinkParams,
+    openChatFromParams,
+    fetchChats,
+  ])
 
   const fetchCustomerMessages = useCallback(async (customerId, bookingId, silent = false) => {
     if (!silent) setLoadingMessages(true)
@@ -164,6 +237,17 @@ export default function VendorChats() {
     }
     return undefined
   }, [tab, fetchChats])
+
+  useEffect(() => {
+    applyNotificationDeepLink()
+  }, [applyNotificationDeepLink])
+
+  const bookingDeepLink = searchParams.get('booking')
+  const customerDeepLink = searchParams.get('customer')
+
+  useEffect(() => {
+    deepLinkHandledRef.current = false
+  }, [bookingDeepLink, customerDeepLink])
 
   useEffect(() => {
     if (tab !== 'customers' || !selectedChat) return undefined

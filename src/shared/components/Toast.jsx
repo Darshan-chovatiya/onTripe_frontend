@@ -21,9 +21,14 @@ export default function Toast({ toast, onClose }) {
   }
   const Icon = icons[toast.type] || Info
   const colorClass = colors[toast.type] || colors.info
-  const isClickable = Boolean(toast.href)
+  const isClickable = Boolean(toast.href || toast.onClick)
 
   const handleClick = () => {
+    if (toast.onClick) {
+      onClose()
+      toast.onClick()
+      return
+    }
     if (!toast.href) return
     onClose()
     navigate(toast.href)

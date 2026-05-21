@@ -89,13 +89,14 @@ import BookingCommunity from '@/customer/pages/BookingCommunity.jsx'
 import CustomerTripHistory from '@/customer/pages/TripHistory.jsx'
 import CustomerProfile from '@/customer/pages/Profile.jsx'
 import CustomerCommunity from '@/customer/pages/Community.jsx'
+import CustomerNotifications from '@/customer/pages/Notifications.jsx'
 import VendorLogin from '@/vendor/auth/Login.jsx'
 import VendorLayout from '@/vendor/components/VendorLayout.jsx'
 import VendorDashboard from '@/vendor/pages/Dashboard.jsx'
-import VendorChats from '@/vendor/pages/Chats.jsx'
 import VendorCommunity from '@/vendor/pages/Community.jsx'
 import VendorProfile from '@/vendor/pages/Profile.jsx'
 import VendorPackageDetails from '@/vendor/pages/PackageDetails.jsx'
+import VendorNotifications from '@/vendor/pages/Notifications.jsx'
 import PackageReviewsPage from '@/shared/pages/PackageReviewsPage.jsx'
 
 export default function AppRouter() {
@@ -372,7 +373,8 @@ export default function AppRouter() {
         <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard" element={<VendorDashboard />} />
         <Route path="community" element={<VendorCommunity />} />
-        <Route path="chats" element={<VendorChats />} />
+        <Route path="chats" element={<Navigate to="/vendor/dashboard" replace />} />
+        <Route path="notifications" element={<VendorNotifications />} />
         <Route path="profile" element={<VendorProfile />} />
         <Route path="package/:packageId" element={<VendorPackageDetails />} />
       </Route>
@@ -391,6 +393,7 @@ export default function AppRouter() {
         <Route path="booking/:bookingId?" element={<CustomerBooking />} />
         <Route path="trip-history" element={<CustomerTripHistory />} />
         <Route path="community" element={<CustomerCommunity />} />
+        <Route path="notifications" element={<CustomerNotifications />} />
         <Route path="profile" element={<CustomerProfile />} />
       </Route>
 

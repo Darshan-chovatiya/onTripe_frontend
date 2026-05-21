@@ -2,7 +2,9 @@ import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { Calendar, History, LogOut, User, MessageSquare, Menu, X } from 'lucide-react'
 import { useAuth } from '@/shared/context/AuthContext.jsx'
 import { useState, useEffect } from 'react'
-import { useSocketNotifications } from '@/hooks/useSocketNotifications.js'
+import NotificationBell from '@/shared/components/NotificationBell.jsx'
+import { useInboxNotifications } from '@/shared/hooks/useInboxNotifications.js'
+import { getCustomerUnreadCount } from '@/customer/services/customerApi.js'
 
 export default function CustomerLayout() {
   const { logout } = useAuth()
@@ -11,7 +13,10 @@ export default function CustomerLayout() {
   const [showConfirmLogout, setShowConfirmLogout] = useState(false)
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
-  useSocketNotifications()
+  const { unreadCount } = useInboxNotifications({
+    scope: 'customer',
+    fetchUnreadCount: getCustomerUnreadCount,
+  })
 
   // Always show solid header on non-booking pages, otherwise follow scroll
   const shouldShowSolid = location.pathname !== '/customer/booking' || isScrolled
@@ -165,6 +170,11 @@ export default function CustomerLayout() {
         </nav>
 
         <div className="flex items-center gap-3">
+          <NotificationBell
+            to="/customer/notifications"
+            unreadCount={unreadCount}
+            solidHeader={shouldShowSolid}
+          />
           <button
             onClick={() => setShowConfirmLogout(true)}
             className={`hidden lg:flex items-center gap-2 px-5 py-2.5 rounded-xl transition-all duration-300 border ${

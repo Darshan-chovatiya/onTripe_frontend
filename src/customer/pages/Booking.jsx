@@ -17,7 +17,7 @@ import {
   Ticket,
   X
 } from 'lucide-react'
-import { Link, NavLink, useNavigate, useParams } from 'react-router-dom'
+import { Link, NavLink, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useAuth } from '@/shared/context/AuthContext.jsx'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
 import axiosInstance from '@/shared/services/axiosInstance.js'
@@ -31,6 +31,7 @@ const getFullUrl = (path) => path ? `${BASE_IMG_URL}/${path.replace(/\\/g, '/')}
 export default function Booking() {
   const navigate = useNavigate()
   const { bookingId: paramBookingId } = useParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const { logout } = useAuth()
   const { toast } = useToast()
 
@@ -92,6 +93,30 @@ export default function Booking() {
     fetchRequiredBooking()
     return () => { isMounted = false }
   }, [paramBookingId])
+
+  useEffect(() => {
+    const chatVendorId = searchParams.get('chatVendor')
+    if (!chatVendorId || !booking?.package?.itinerary) return
+
+    let vendor = null
+    for (const day of booking.package.itinerary) {
+      for (const exp of day.experiences || []) {
+        const v = exp.vendor
+        if (v && String(v._id || v.id) === String(chatVendorId)) {
+          vendor = v
+          break
+        }
+      }
+      if (vendor) break
+    }
+
+    if (vendor?.name) {
+      setChatVendor(vendor)
+      const next = new URLSearchParams(searchParams)
+      next.delete('chatVendor')
+      setSearchParams(next, { replace: true })
+    }
+  }, [booking, searchParams, setSearchParams])
 
   const pkg = booking?.package || {}
   const wlPkg = booking?.whitelabelPackage || {}
@@ -422,7 +447,7 @@ export default function Booking() {
       <VendorChatModal
         isOpen={!!chatVendor}
         onClose={() => setChatVendor(null)}
-        bookingId={booking._id}
+        bookingId={booking.bookingId || booking._id}
         vendor={chatVendor}
       />
 

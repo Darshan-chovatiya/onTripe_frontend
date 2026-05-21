@@ -1,17 +1,25 @@
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
-import { CalendarDays, MessageSquare, LogOut, User, Menu, X, Briefcase, Users } from 'lucide-react'
+import { CalendarDays, LogOut, User, Menu, X, Briefcase, Users } from 'lucide-react'
 import { useAuth } from '@/shared/context/AuthContext.jsx'
 import { useState, useEffect } from 'react'
-import { useSocketNotifications } from '@/hooks/useSocketNotifications.js'
+import NotificationBell from '@/shared/components/NotificationBell.jsx'
+import { useInboxNotifications } from '@/shared/hooks/useInboxNotifications.js'
+import { getVendorUnreadCount } from '@/vendor/services/vendorApi.js'
+import { VendorChatProvider, useVendorChat } from '@/vendor/context/VendorChatContext.jsx'
 
-export default function VendorLayout() {
+function VendorLayoutInner() {
   const { logout } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
+  const { handleVendorNotification } = useVendorChat()
   const [showConfirmLogout, setShowConfirmLogout] = useState(false)
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
-  useSocketNotifications()
+  const { unreadCount } = useInboxNotifications({
+    scope: 'vendor',
+    fetchUnreadCount: getVendorUnreadCount,
+    onNotificationOpen: handleVendorNotification,
+  })
 
   const isDashboard = location.pathname === '/vendor/dashboard' || location.pathname === '/vendor'
   const shouldShowSolid = !isDashboard || isScrolled
@@ -30,7 +38,6 @@ export default function VendorLayout() {
   const navItems = [
     { to: '/vendor/dashboard', icon: CalendarDays, label: 'Schedule' },
     { to: '/vendor/community', icon: Users, label: 'Community' },
-    { to: '/vendor/chats', icon: MessageSquare, label: 'Messages' },
     { to: '/vendor/profile', icon: User, label: 'Profile' },
   ]
 
@@ -157,6 +164,11 @@ export default function VendorLayout() {
         </nav>
 
         <div className="flex items-center gap-3">
+          <NotificationBell
+            to="/vendor/notifications"
+            unreadCount={unreadCount}
+            solidHeader={shouldShowSolid}
+          />
           <button
             onClick={() => setShowConfirmLogout(true)}
             className={`hidden lg:flex items-center gap-2 px-5 py-2.5 rounded-xl transition-all duration-300 border ${
@@ -188,5 +200,13 @@ export default function VendorLayout() {
         </div>
       </main>
     </div>
+  )
+}
+
+export default function VendorLayout() {
+  return (
+    <VendorChatProvider>
+      <VendorLayoutInner />
+    </VendorChatProvider>
   )
 }
