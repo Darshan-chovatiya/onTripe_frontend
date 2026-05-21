@@ -158,7 +158,7 @@ export default function CommunityChat({
 
   const canPostInCommunity = useMemo(() => {
     if (!community || !user) return true
-    if (AGENT_ROLES.includes(user.role)) return true
+    if (AGENT_ROLES.includes(user.role) || user.role === ROLES.VENDOR) return true
     if (user.role !== ROLES.CUSTOMER) return true
     const cid = idStr(selfId || user.id)
     if (!cid) return true
@@ -820,6 +820,14 @@ export default function CommunityChat({
             Customer Login
           </Link>
         )}
+        {isUnauthorized && communityAuthScope === AUTH_SCOPES.VENDOR && (
+          <Link
+            to="/vendor/login"
+            className="inline-flex items-center gap-2 rounded-xl bg-primary-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-700"
+          >
+            Vendor Login
+          </Link>
+        )}
         {isUnauthorized && communityAuthScope === AUTH_SCOPES.APP && (
           <Link
             to="/login"
@@ -842,7 +850,9 @@ export default function CommunityChat({
   }
 
   const memberTotal =
-    (community.agentMembers?.length || 0) + (community.customerMembers?.length || 0)
+    (community.agentMembers?.length || 0) +
+    (community.customerMembers?.length || 0) +
+    (community.vendorMembers?.length || 0)
 
   const shellClass = isFlush
     ? 'flex h-full min-h-0 flex-1 flex-col overflow-hidden border-0 bg-white dark:bg-gray-950'
@@ -1123,6 +1133,35 @@ export default function CommunityChat({
                 )
               })}
             </ul>
+            {(community.vendorMembers?.length || 0) > 0 && (
+              <>
+                <p className="mb-2 mt-4 px-1 text-xs font-medium text-gray-500">Vendors</p>
+                <ul className="space-y-1">
+                  {filterMembers(community.vendorMembers || []).map((m) => {
+                    const vendorInitial = (m.name || '?').charAt(0).toUpperCase()
+                    return (
+                      <li
+                        key={m._id}
+                        className="flex items-center justify-between gap-2 rounded-lg px-3 py-2.5 hover:bg-gray-50 dark:hover:bg-white/5"
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-orange-600 text-[10px] font-bold text-white">
+                            {vendorInitial}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-medium text-gray-900 dark:text-white">{m.name || '—'}</p>
+                            <p className="truncate text-xs text-gray-500">{m.phone || m.email || '—'}</p>
+                          </div>
+                        </div>
+                        <span className="shrink-0 text-[11px] font-medium capitalize text-amber-700 dark:text-amber-400">
+                          {(m.type || 'vendor').replace(/_/g, ' ')}
+                        </span>
+                      </li>
+                    )
+                  })}
+                </ul>
+              </>
+            )}
           </div>
         </div>
       ) : subScreen === 'settings' ? (
@@ -1420,7 +1459,12 @@ export default function CommunityChat({
                   (msg.sender?._id === selfId || (typeof msg.sender === 'string' && msg.sender === selfId))
                 
                 const senderName = msg.sender?.name || 'Member'
-                const senderInfo = msg.senderType === 'User' ? (msg.sender?.role || 'Agent') : 'Traveler'
+                const senderInfo =
+                  msg.senderType === 'User'
+                    ? (msg.sender?.role || 'Agent').replace(/_/g, ' ')
+                    : msg.senderType === 'Vendor'
+                      ? (msg.sender?.type || 'vendor').replace(/_/g, ' ')
+                      : 'Traveler'
                 
                 // Grouping Logic
                 const prevMsg = messages[idx - 1]

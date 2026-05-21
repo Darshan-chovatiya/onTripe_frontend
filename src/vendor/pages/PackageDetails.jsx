@@ -63,7 +63,15 @@ export default function VendorPackageDetails() {
                   Package ID: {packageId}
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => navigate(`/vendor/community?pkg=${packageId}`)}
+                  className="inline-flex items-center gap-1 rounded-lg border border-primary-200 bg-primary-50 px-3 py-2 text-sm font-semibold text-primary-700 hover:bg-primary-100"
+                >
+                  <MessageSquare className="h-4 w-4" />
+                  Package community
+                </button>
                 <button
                   type="button"
                   onClick={() => navigate('/vendor/dashboard')}

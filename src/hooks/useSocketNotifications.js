@@ -20,6 +20,11 @@ function isOnCommunityPage(pathname, search, packageId) {
     const currentPkg = new URLSearchParams(search).get('pkg')
     return currentPkg === packageId
   }
+  if (/\/vendor\/community/.test(pathname)) {
+    if (!packageId) return true
+    const currentPkg = new URLSearchParams(search).get('pkg')
+    return currentPkg === packageId
+  }
   return false
 }
 
@@ -35,6 +40,7 @@ function getCommunityUrl(role, packageId) {
       role === ROLES.CHILD_AGENCY  ||
       role === ROLES.SUB_CHILD)     return `/agency/packages/${packageId}/community`
   if (role === ROLES.CUSTOMER)      return `/customer/community?pkg=${packageId}`
+  if (role === ROLES.VENDOR)        return `/vendor/community?pkg=${packageId}`
   return null
 }
 

@@ -1,7 +1,8 @@
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
-import { CalendarDays, MessageSquare, LogOut, User, Menu, X, Briefcase } from 'lucide-react'
+import { CalendarDays, MessageSquare, LogOut, User, Menu, X, Briefcase, Users } from 'lucide-react'
 import { useAuth } from '@/shared/context/AuthContext.jsx'
 import { useState, useEffect } from 'react'
+import { useSocketNotifications } from '@/hooks/useSocketNotifications.js'
 
 export default function VendorLayout() {
   const { logout } = useAuth()
@@ -10,6 +11,7 @@ export default function VendorLayout() {
   const [showConfirmLogout, setShowConfirmLogout] = useState(false)
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
+  useSocketNotifications()
 
   const isDashboard = location.pathname === '/vendor/dashboard' || location.pathname === '/vendor'
   const shouldShowSolid = !isDashboard || isScrolled
@@ -27,7 +29,8 @@ export default function VendorLayout() {
 
   const navItems = [
     { to: '/vendor/dashboard', icon: CalendarDays, label: 'Schedule' },
-    { to: '/vendor/chats', icon: MessageSquare, label: 'Chats' },
+    { to: '/vendor/community', icon: Users, label: 'Community' },
+    { to: '/vendor/chats', icon: MessageSquare, label: 'Messages' },
     { to: '/vendor/profile', icon: User, label: 'Profile' },
   ]
 

@@ -124,10 +124,17 @@ export default function VendorDashboard() {
             </div>
             <button
               type="button"
+              onClick={() => navigate('/vendor/community')}
+              className="inline-flex items-center gap-2 rounded-xl border border-white/30 bg-white/10 px-4 py-2 text-sm font-semibold text-white hover:bg-white/20"
+            >
+              <Users className="h-4 w-4" /> Communities
+            </button>
+            <button
+              type="button"
               onClick={() => navigate('/vendor/chats')}
               className="inline-flex items-center gap-2 rounded-xl bg-primary-600 hover:bg-primary-700 px-4 py-2 text-sm font-semibold text-white shadow-lg"
             >
-              <MessageSquare className="h-4 w-4" /> Open Messages
+              <MessageSquare className="h-4 w-4" /> Direct Messages
             </button>
           </div>
         </div>

@@ -26,6 +26,10 @@ export function sendCustomerChatMessage(bookingId, formData) {
   })
 }
 
+export function getVendorCommunities() {
+  return axiosInstance.get('/vendor/communities')
+}
+
 export function getAgentChatMessages() {
   return axiosInstance.get('/vendor/chat-agent')
 }
@@ -43,6 +47,7 @@ export default {
   getAllCustomerChats,
   getCustomerChatMessages,
   sendCustomerChatMessage,
+  getVendorCommunities,
   getAgentChatMessages,
   sendAgentChatMessage,
 }

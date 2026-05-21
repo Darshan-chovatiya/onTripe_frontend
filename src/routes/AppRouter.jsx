@@ -91,6 +91,7 @@ import VendorLogin from '@/vendor/auth/Login.jsx'
 import VendorLayout from '@/vendor/components/VendorLayout.jsx'
 import VendorDashboard from '@/vendor/pages/Dashboard.jsx'
 import VendorChats from '@/vendor/pages/Chats.jsx'
+import VendorCommunity from '@/vendor/pages/Community.jsx'
 import VendorProfile from '@/vendor/pages/Profile.jsx'
 import VendorPackageDetails from '@/vendor/pages/PackageDetails.jsx'
 import PackageReviewsPage from '@/shared/pages/PackageReviewsPage.jsx'
@@ -366,6 +367,7 @@ export default function AppRouter() {
       >
         <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard" element={<VendorDashboard />} />
+        <Route path="community" element={<VendorCommunity />} />
         <Route path="chats" element={<VendorChats />} />
         <Route path="profile" element={<VendorProfile />} />
         <Route path="package/:packageId" element={<VendorPackageDetails />} />
