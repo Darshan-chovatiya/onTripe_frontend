@@ -153,6 +153,10 @@ export function getVendorCustomerChatsForAgent(vendorId) {
   return axiosInstance.get(`/parent-agent/vendors/${vendorId}/customer-chats`)
 }
 
+export function getVendorCustomersForAgent(vendorId) {
+  return axiosInstance.get(`/parent-agent/vendors/${vendorId}/customers`)
+}
+
 export function getCustomerByPhone(phone) {
   return axiosInstance.get('/parent-agent/customers/by-phone', { params: { phone } })
 }

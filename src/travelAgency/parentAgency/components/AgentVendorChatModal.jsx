@@ -5,9 +5,9 @@ import { useToast } from '@/shared/components/ToastContainer.jsx'
 
 const BASE_IMG_URL = import.meta.env.VITE_API_BASE_URL?.replace('/api', '').replace(/\/$/, '') || 'http://localhost:5001'
 
-export default function AgentVendorChatModal({ isOpen, onClose, vendor }) {
+export default function AgentVendorChatModal({ isOpen, onClose, vendor, initialMessage = '' }) {
   const [messages, setMessages] = useState([])
-  const [newMessage, setNewMessage] = useState('')
+  const [newMessage, setNewMessage] = useState(initialMessage)
   const [imageFile, setImageFile] = useState(null)
   const [imagePreview, setImagePreview] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -17,11 +17,12 @@ export default function AgentVendorChatModal({ isOpen, onClose, vendor }) {
 
   useEffect(() => {
     if (isOpen && vendor?._id) {
+      setNewMessage(initialMessage)
       fetchMessages()
       const interval = setInterval(fetchMessages, 5000)
       return () => clearInterval(interval)
     }
-  }, [isOpen, vendor])
+  }, [isOpen, vendor, initialMessage])
 
   useEffect(() => {
     if (messagesEndRef.current) {

@@ -2,8 +2,8 @@ import { Mail, Phone, MapPin, FileText, Building2, User, Hash, MessageSquare, Us
 import Modal from '@/shared/components/Modal.jsx'
 import { filePublicUrl } from '@/travelAgency/shared/utils/bookingDetailHelpers.js'
 import { useState } from 'react'
-import AgentVendorChatModal from '@/travelAgency/parentAgency/components/AgentVendorChatModal.jsx'
 import VendorCustomerChatsViewerModal from '@/travelAgency/parentAgency/components/VendorCustomerChatsViewerModal.jsx'
+import CustomerSelectModal from '@/travelAgency/parentAgency/components/CustomerSelectModal.jsx'
 
 const TYPE_META = {
   hotel:             'bg-blue-50 text-blue-700 ring-blue-100',
@@ -34,8 +34,8 @@ function DetailRow({ label, children }) {
 }
 
 export default function VendorDetailModal({ isOpen, onClose, vendor }) {
-  const [showAgentChat, setShowAgentChat] = useState(false)
   const [showCustomerChats, setShowCustomerChats] = useState(false)
+  const [showCustomerSelect, setShowCustomerSelect] = useState(false)
 
   if (!vendor) return null
 
@@ -102,11 +102,11 @@ export default function VendorDetailModal({ isOpen, onClose, vendor }) {
           
           <div className="mt-4 flex flex-wrap gap-2">
             <button 
-              onClick={() => setShowAgentChat(true)}
+              onClick={() => setShowCustomerSelect(true)}
               className="inline-flex items-center justify-center gap-2 rounded-xl bg-gray-900 px-4 py-2 text-sm font-bold text-white shadow-md transition-all hover:bg-gray-800 active:scale-95"
             >
               <MessageSquare size={16} />
-              Chat with Customer
+              Assign Customer Chat
             </button>
             <button 
               onClick={() => setShowCustomerChats(true)}
@@ -182,9 +182,9 @@ export default function VendorDetailModal({ isOpen, onClose, vendor }) {
 
       </div>
       
-      <AgentVendorChatModal
-        isOpen={showAgentChat}
-        onClose={() => setShowAgentChat(false)}
+      <CustomerSelectModal
+        isOpen={showCustomerSelect}
+        onClose={() => setShowCustomerSelect(false)}
         vendor={vendor}
       />
 
