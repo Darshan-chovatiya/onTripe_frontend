@@ -5,7 +5,7 @@ import PackageDetailModal from '@/travelAgency/childAgency/components/PackageDet
 
 const PLACEHOLDER = 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&q=80&w=600'
 
-export default function AvailablePackageCard({ pkg, existingWhitelabel, onCreateWhiteLabel, onEditWhiteLabel, disabled = false }) {
+export default function AvailablePackageCard({ pkg, existingWhitelabel, onCreateWhiteLabel, onEditWhiteLabel, disabled = false, hasBooking = false }) {
   const isWhitelabel = pkg.sourceType === 'whitelabel'
   const displayTitle = isWhitelabel ? (pkg.customTitle || pkg.originalPackage?.title) : pkg.title
   const displayPrice = isWhitelabel ? pkg.finalPrice : pkg.basePrice
