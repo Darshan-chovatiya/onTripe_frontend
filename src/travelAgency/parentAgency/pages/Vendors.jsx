@@ -116,22 +116,23 @@ export default function Vendors() {
 
   return (
     <div className="animate-fade-in space-y-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-xl font-semibold tracking-tight text-gray-900 sm:text-2xl">Vendors</h1>
           <p className="mt-1 text-sm text-gray-500">Manage your service providers and contact details.</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex w-full sm:w-auto gap-2 sm:gap-3">
           <button
             type="button"
             onClick={handleExport}
             disabled={vendors.length === 0 || exportLoading}
-            className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-3.5 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 disabled:opacity-50"
+            className="flex-1 sm:flex-none inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-3.5 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 disabled:opacity-50"
           >
             {exportLoading ? <RefreshCw size={15} className="animate-spin" /> : <Download size={15} />}
-            Export Excel
+            <span className="hidden sm:inline">Export Excel</span>
+            <span className="sm:hidden">Export</span>
           </button>
-          <Button onClick={() => setFormModal({ open: true, data: null })} className="inline-flex cursor-pointer items-center">
+          <Button onClick={() => setFormModal({ open: true, data: null })} className="flex-1 sm:flex-none inline-flex cursor-pointer items-center justify-center">
             <Plus size={16} className="mr-1 inline" /> Add Vendor
           </Button>
         </div>
@@ -198,8 +199,55 @@ export default function Vendors() {
         ) : null}
 
         {vendors.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[860px] text-sm">
+          <>
+            <div className="block lg:hidden divide-y divide-gray-100">
+              {vendors.map((v) => {
+                const initials = (v.name || '?').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
+                return (
+                  <div key={v._id} className="p-4 space-y-4 bg-white">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-violet-400 to-violet-600 text-xs font-bold text-white shadow-sm">
+                          {initials}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-semibold text-gray-900">{v.name}</p>
+                          {v.contactPerson && <p className="mt-0.5 truncate text-[11px] text-gray-400">{v.contactPerson}</p>}
+                        </div>
+                      </div>
+                      <span className={`shrink-0 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold capitalize ${TYPE_COLORS[v.type] || TYPE_COLORS.other}`}>
+                        <span className="h-1.5 w-1.5 rounded-full bg-current opacity-60" />
+                        {v.type?.replace(/_/g, ' ')}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4 text-xs">
+                      <div className="min-w-0">
+                        <p className="text-[10px] uppercase font-bold tracking-wider text-gray-400 mb-1">Contact</p>
+                        {v.email ? <p className="font-medium text-gray-700 truncate">{v.email}</p> : <p className="text-gray-300">—</p>}
+                        {v.phone && <p className="text-gray-500 mt-0.5 truncate">{v.phone}</p>}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-[10px] uppercase font-bold tracking-wider text-gray-400 mb-1">Location</p>
+                        <p className="text-gray-600 truncate">{[v.city, v.state, v.country].filter(Boolean).join(', ') || '—'}</p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2 pt-2 border-t border-gray-50">
+                      <button onClick={() => setDetailVendor(v)} className="flex-1 flex items-center justify-center gap-1.5 h-9 rounded-lg border border-gray-200 bg-white text-gray-600 shadow-sm transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-600 text-xs font-semibold">
+                        <Eye size={14} /> View
+                      </button>
+                      <button onClick={() => setFormModal({ open: true, data: v })} className="flex-1 flex items-center justify-center gap-1.5 h-9 rounded-lg border border-gray-200 bg-white text-gray-600 shadow-sm transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-600 text-xs font-semibold">
+                        <Edit2 size={14} /> Edit
+                      </button>
+                      <button onClick={() => setConfirmDelete({ open: true, vendor: v })} className="flex-1 flex items-center justify-center gap-1.5 h-9 rounded-lg border border-red-100 bg-red-50 text-red-600 shadow-sm transition hover:border-red-200 hover:bg-red-100 text-xs font-semibold">
+                        <Trash2 size={14} /> Delete
+                      </button>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+            <div className="hidden lg:block overflow-x-auto">
+              <table className="w-full min-w-[860px] text-sm">
               <thead>
                 <tr className="border-b border-gray-100 bg-gradient-to-r from-gray-50 to-gray-50/60">
                   <th className="px-4 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-gray-400">Vendor</th>
@@ -258,6 +306,7 @@ export default function Vendors() {
               </tbody>
             </table>
           </div>
+          </>
         ) : null}
 
         {vendors.length > 0 ? (

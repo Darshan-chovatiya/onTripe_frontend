@@ -149,20 +149,21 @@ export default function ParentDashboard() {
           </div>
 
           {/* Custom date range */}
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2">
-              <CalendarDays className="h-3.5 w-3.5 shrink-0 text-gray-400" strokeWidth={2} />
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 mt-2 sm:mt-0">
+            <div className="flex flex-1 sm:flex-none items-center justify-between sm:justify-start gap-1.5 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2">
+              <CalendarDays className="h-3.5 w-3.5 shrink-0 text-gray-400 hidden sm:block" strokeWidth={2} />
               <input type="date" value={dateRange.start} max={dateRange.end || todayStr()}
                 onChange={e => { const r = { ...dateRange, start: e.target.value }; setDateRange(r); if (r.start && r.end) fetchAll(r) }}
-                className="w-[120px] bg-transparent text-xs font-medium text-gray-700 focus:outline-none" />
+                className="w-full sm:w-[120px] bg-transparent text-xs font-medium text-gray-700 focus:outline-none" />
               <span className="text-gray-300">—</span>
               <input type="date" value={dateRange.end} min={dateRange.start} max={todayStr()}
                 onChange={e => { const r = { ...dateRange, end: e.target.value }; setDateRange(r); if (r.start && r.end) fetchAll(r) }}
-                className="w-[120px] bg-transparent text-xs font-medium text-gray-700 focus:outline-none" />
+                className="w-full sm:w-[120px] bg-transparent text-xs font-medium text-gray-700 focus:outline-none" />
             </div>
             <button type="button" onClick={() => fetchAll(dateRange)} disabled={loading}
-              className="flex h-9 w-9 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-400 transition hover:border-gray-400 hover:text-gray-700 disabled:opacity-40">
+              className="flex h-9 w-full sm:w-9 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-400 transition hover:border-gray-400 hover:text-gray-700 disabled:opacity-40">
               <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} strokeWidth={2} />
+              <span className="ml-2 text-xs font-semibold sm:hidden">Refresh</span>
             </button>
           </div>
         </div>
@@ -171,7 +172,7 @@ export default function ParentDashboard() {
       {err && <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">{err}</div>}
 
       {/* ── Stat cards ── */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:grid-cols-4">
         <StatCard label="Total Bookings"  value={loading ? null : analytics?.totalBookings ?? 0}
           icon={BookOpen} accent="bg-sky-50 text-sky-600"    loading={loading} onClick={() => navigate('/agency/bookings')} />
         <StatCard label="Packages"        value={loading ? null : analytics?.totalPackages ?? 0}
@@ -252,7 +253,7 @@ export default function ParentDashboard() {
                 Details <ChevronRight className="h-3.5 w-3.5" strokeWidth={2.5} />
               </Link>
             </div>
-            <div className="grid grid-cols-3 divide-x divide-gray-100">
+            <div className="grid grid-cols-1 divide-y sm:grid-cols-3 sm:divide-x sm:divide-y-0 divide-gray-100">
               {[
                 { label: 'Total Revenue', value: fmt(totalRevenue ?? 0),  color: 'text-emerald-700' },
                 { label: 'Net Earnings',  value: fmt(totalEarnings ?? 0), color: 'text-sky-700' },

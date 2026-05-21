@@ -45,6 +45,14 @@ function StatusPill({ isActive, onClick }) {
   )
 }
 
+const formatCompact = (num) => {
+  if (num === undefined || num === null) return '0'
+  return new Intl.NumberFormat('en-IN', {
+    notation: 'compact',
+    maximumFractionDigits: 1
+  }).format(num)
+}
+
 function PackageGridCard({ pkg, onEdit, onClone, onCover, onGallery, onToggle, onDelete, onShowAgents, onShowCommissions, navigate }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const cover = imgUrl(pkg.coverImage)
@@ -185,40 +193,40 @@ function PackageGridCard({ pkg, onEdit, onClone, onCover, onGallery, onToggle, o
         </div>
 
         {/* Stats row — 4 numbers inline */}
-        <div className="grid grid-cols-5 divide-x divide-gray-100 rounded-xl border border-gray-100 bg-gray-50/60">
-          <div className="px-1 py-2.5 text-center">
-            <p className="text-[9px] font-semibold uppercase tracking-wide text-gray-400">Revenue</p>
-            <p className="mt-0.5 text-xs font-bold tabular-nums text-sky-700">
-              ₹{(Number(pkg.totalRevenue) || 0).toLocaleString('en-IN')}
+        <div className="grid grid-cols-5 divide-x divide-gray-100 rounded-xl border border-gray-100 bg-gray-50/60 overflow-hidden">
+          <div className="px-0.5 py-2.5 text-center" title={`₹${(pkg.totalRevenue || 0).toLocaleString('en-IN')}`}>
+            <p className="text-[9px] font-semibold uppercase tracking-wide text-gray-400 truncate">Revenue</p>
+            <p className="mt-0.5 text-xs font-bold tabular-nums text-sky-700 truncate">
+              ₹{formatCompact(pkg.totalRevenue)}
             </p>
           </div>
-          <div className="px-1 py-2.5 text-center">
-            <p className="text-[9px] font-semibold uppercase tracking-wide text-gray-400">Earnings</p>
-            <p className="mt-0.5 text-xs font-bold tabular-nums text-primary-700">
-              ₹{(Number(pkg.totalParentEarnings) || 0).toLocaleString('en-IN')}
+          <div className="px-0.5 py-2.5 text-center" title={`₹${(pkg.totalParentEarnings || 0).toLocaleString('en-IN')}`}>
+            <p className="text-[9px] font-semibold uppercase tracking-wide text-gray-400 truncate">Earnings</p>
+            <p className="mt-0.5 text-xs font-bold tabular-nums text-primary-700 truncate">
+              ₹{formatCompact(pkg.totalParentEarnings)}
             </p>
           </div>
-          <div className="px-1 py-2.5 text-center">
-            <p className="text-[9px] font-semibold uppercase tracking-wide text-gray-400">Child</p>
+          <div className="px-0.5 py-2.5 text-center" title={`₹${(pkg.totalChildEarnings || 0).toLocaleString('en-IN')}`}>
+            <p className="text-[9px] font-semibold uppercase tracking-wide text-gray-400 truncate">Child</p>
             <button type="button" onClick={() => onShowCommissions?.(pkg)}
-              className="mt-0.5 block w-full text-xs font-bold tabular-nums text-emerald-700 hover:underline">
-              ₹{(Number(pkg.totalChildEarnings) || 0).toLocaleString('en-IN')}
+              className="mt-0.5 block w-full text-xs font-bold tabular-nums text-emerald-700 hover:underline truncate">
+              ₹{formatCompact(pkg.totalChildEarnings)}
             </button>
           </div>
-          <div className="px-1 py-2.5 text-center">
-            <p className="text-[9px] font-semibold uppercase tracking-wide text-gray-400">Bookings</p>
+          <div className="px-0.5 py-2.5 text-center">
+            <p className="text-[9px] font-semibold uppercase tracking-wide text-gray-400 truncate">Bookings</p>
             <button type="button"
               onClick={() => navigate(`${AGENCY_PANEL_BASE}/bookings?packageId=${pkg._id}`)}
-              className="mt-0.5 block w-full text-xs font-bold tabular-nums text-primary-600 hover:underline">
+              className="mt-0.5 block w-full text-xs font-bold tabular-nums text-primary-600 hover:underline truncate">
               {Number(pkg.bookingCount) || 0}
             </button>
           </div>
-          <div className="px-1 py-2.5 text-center">
-            <p className="text-[9px] font-semibold uppercase tracking-wide text-gray-400">WL</p>
+          <div className="px-0.5 py-2.5 text-center">
+            <p className="text-[9px] font-semibold uppercase tracking-wide text-gray-400 truncate">WL</p>
             <button type="button"
               disabled={!pkg.whitelabelCount}
               onClick={() => onShowAgents?.({ ...pkg, whitelabelAgents: pkg.whitelabelAgents })}
-              className={`mt-0.5 block w-full text-xs font-bold tabular-nums transition ${pkg.whitelabelCount ? 'text-violet-600 hover:underline' : 'text-gray-400'}`}>
+              className={`mt-0.5 block w-full text-xs font-bold tabular-nums transition truncate ${pkg.whitelabelCount ? 'text-violet-600 hover:underline' : 'text-gray-400'}`}>
               {pkg.whitelabelCount || 0}
             </button>
           </div>
@@ -259,64 +267,67 @@ function PackageListRow({ pkg, onEdit, onClone, onCover, onGallery, onToggle, on
     return startDate.getTime() < today.getTime()
   }, [pkg.startDate])
   return (
-    <div className="group flex items-center gap-4 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm transition hover:border-primary-100 hover:shadow-md">
-      {/* Thumbnail */}
-      <div className="h-16 w-24 shrink-0 overflow-hidden rounded-xl bg-gray-100">
-        <img
-          src={cover || PLACEHOLDER}
-          alt={pkg.title}
-          className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
-          onError={(e) => { e.currentTarget.src = PLACEHOLDER }}
-        />
-      </div>
-
-      {/* Info */}
-      <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-2">
-          <h3 className="truncate text-sm font-semibold text-gray-900">{pkg.title}</h3>
-          {pkg.whitelabelCount > 0 && (
-            <span className="inline-flex items-center rounded-full bg-violet-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-violet-700 ring-1 ring-inset ring-violet-200">
-              Whitelabeled
-            </span>
-          )}
+    <div className="group flex flex-col sm:flex-row sm:items-center gap-4 rounded-xl border border-gray-100 bg-white p-4 shadow-sm transition hover:border-primary-100 hover:shadow-md">
+      {/* Thumbnail + Info */}
+      <div className="flex items-center gap-4 min-w-0 flex-1 w-full">
+        {/* Thumbnail */}
+        <div className="h-16 w-24 shrink-0 overflow-hidden rounded-xl bg-gray-100">
+          <img
+            src={cover || PLACEHOLDER}
+            alt={pkg.title}
+            className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+            onError={(e) => { e.currentTarget.src = PLACEHOLDER }}
+          />
         </div>
-        <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-gray-500">
-          {pkg.destination && (
+
+        {/* Info */}
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="truncate text-sm font-semibold text-gray-900">{pkg.title}</h3>
+            {pkg.whitelabelCount > 0 && (
+              <span className="inline-flex items-center rounded-full bg-violet-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-violet-700 ring-1 ring-inset ring-violet-200">
+                Whitelabeled
+              </span>
+            )}
+          </div>
+          <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-gray-500">
+            {pkg.destination && (
+              <span className="flex items-center gap-1">
+                <MapPin className="h-3 w-3 text-gray-400" strokeWidth={2} />{pkg.destination}
+              </span>
+            )}
             <span className="flex items-center gap-1">
-              <MapPin className="h-3 w-3 text-gray-400" strokeWidth={2} />{pkg.destination}
+              <Clock className="h-3 w-3 text-gray-400" strokeWidth={2} />{pkg.totalDays} days
             </span>
-          )}
-          <span className="flex items-center gap-1">
-            <Clock className="h-3 w-3 text-gray-400" strokeWidth={2} />{pkg.totalDays} days
-          </span>
-          <span className="flex items-center gap-1">
-            <Users className="h-3 w-3 text-gray-400" strokeWidth={2} />{pkg.maxCapacity} max
-          </span>
+            <span className="flex items-center gap-1">
+              <Users className="h-3 w-3 text-gray-400" strokeWidth={2} />{pkg.maxCapacity} max
+            </span>
+          </div>
         </div>
       </div>
 
       {/* Stats */}
-      <div className="hidden items-center gap-4 lg:flex">
-        <div className="text-center">
+      <div className="hidden items-center gap-4 lg:flex px-2">
+        <div className="text-center" title={`₹${(pkg.totalRevenue || 0).toLocaleString('en-IN')}`}>
           <p className="text-[9px] font-medium uppercase tracking-wide text-gray-400">Revenue</p>
           <p className="mt-0.5 text-xs font-bold tabular-nums text-sky-700">
-            ₹{(Number(pkg.totalRevenue) || 0).toLocaleString('en-IN')}
+            ₹{formatCompact(pkg.totalRevenue)}
           </p>
         </div>
-        <div className="text-center">
+        <div className="text-center" title={`₹${(pkg.totalParentEarnings || 0).toLocaleString('en-IN')}`}>
           <p className="text-[9px] font-medium uppercase tracking-wide text-gray-400">My Earnings</p>
           <p className="mt-0.5 text-xs font-bold tabular-nums text-primary-700">
-            ₹{(Number(pkg.totalParentEarnings) || 0).toLocaleString('en-IN')}
+            ₹{formatCompact(pkg.totalParentEarnings)}
           </p>
         </div>
-        <div className="text-center">
+        <div className="text-center" title={`₹${(pkg.totalChildEarnings || 0).toLocaleString('en-IN')}`}>
           <p className="text-[9px] font-medium uppercase tracking-wide text-gray-400">Child Comm.</p>
           <button
             type="button"
             onClick={() => onShowCommissions?.(pkg)}
             className="mt-0.5 inline-block text-xs font-bold tabular-nums text-emerald-700 hover:text-emerald-800 hover:underline"
           >
-            ₹{(Number(pkg.totalChildEarnings) || 0).toLocaleString('en-IN')}
+            ₹{formatCompact(pkg.totalChildEarnings)}
           </button>
         </div>
         <div className="text-center">
@@ -342,8 +353,8 @@ function PackageListRow({ pkg, onEdit, onClone, onCover, onGallery, onToggle, on
         </div>
       </div>
 
-      {/* Actions — single row */}
-      <div className="flex shrink-0 items-center gap-3" style={{ minWidth: '150px', justifyContent: 'flex-end' }}>
+      {/* Actions */}
+      <div className="flex items-center justify-end gap-3 w-full sm:w-auto pt-3 sm:pt-0 border-t border-gray-50 sm:border-0 sm:ml-auto">
         <button type="button"
           disabled={isExpired}
           title={isExpired ? "Package start date has passed" : "Book Now"}
@@ -546,16 +557,16 @@ export default function Packages() {
           {[
             { label: 'Total packages', value: stats.total, icon: Package, color: 'text-primary-700', bg: 'bg-primary-50' },
             { label: 'Live', value: stats.live, icon: CheckCircle2, color: 'text-emerald-700', bg: 'bg-emerald-50' },
-            { label: 'Total revenue', value: `₹${stats.revenue.toLocaleString('en-IN')}`, icon: TrendingUp, color: 'text-sky-700', bg: 'bg-sky-50' },
+            { label: 'Total revenue', value: `₹${formatCompact(stats.revenue)}`, fullValue: `₹${stats.revenue.toLocaleString('en-IN')}`, icon: TrendingUp, color: 'text-sky-700', bg: 'bg-sky-50' },
             { label: 'Total bookings', value: stats.bookings, icon: Calendar, color: 'text-violet-700', bg: 'bg-violet-50' },
-          ].map(({ label, value, icon: Icon, color, bg }) => (
-            <div key={label} className="flex items-center gap-3 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+          ].map(({ label, value, fullValue, icon: Icon, color, bg }) => (
+            <div key={label} className="flex items-center gap-3 rounded-xl border border-gray-100 bg-white p-4 shadow-sm" title={fullValue || String(value)}>
               <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${bg}`}>
                 <Icon className={`h-5 w-5 ${color}`} strokeWidth={2} />
               </div>
-              <div>
-                <p className="text-[11px] font-medium text-gray-500">{label}</p>
-                <p className="mt-0.5 text-lg font-bold tabular-nums text-gray-900">{value}</p>
+              <div className="min-w-0">
+                <p className="text-[11px] font-medium text-gray-500 truncate">{label}</p>
+                <p className="mt-0.5 text-base sm:text-lg font-bold tabular-nums text-gray-900 truncate">{value}</p>
               </div>
             </div>
           ))}
@@ -578,7 +589,7 @@ export default function Packages() {
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-between sm:justify-start">
           {/* Status filter */}
           <div className="flex rounded-xl border border-gray-200 bg-white p-1 shadow-sm">
             {[['all', 'All'], ['active', 'Live'], ['inactive', 'Paused']].map(([v, l]) => (

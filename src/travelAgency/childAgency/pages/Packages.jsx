@@ -57,14 +57,7 @@ export default function Packages() {
     return Array.from(map.entries()).map(([id, name]) => ({ id, name }))
   }, [availablePackages])
 
-  const bookedWhiteLabelIds = useMemo(() => {
-    const ids = new Set()
-    bookings.forEach((b) => {
-      const wlId = b.whitelabelPackage?._id || b.whitelabelPackage
-      if (wlId) ids.add(String(wlId))
-    })
-    return ids
-  }, [bookings])
+
 
   const whitelabelBySourceId = useMemo(() => mapWhitelabelBySourceId(whitelabels), [whitelabels])
 
@@ -89,7 +82,16 @@ export default function Packages() {
   }, [whitelabels, search, wlStatusFilter])
 
   const packagesEligibleForNewWhitelabel = useMemo(
-    () => availablePackages.filter((p) => !p.isSuspended && !whitelabelBySourceId.has(String(p._id))),
+    () => availablePackages.filter((p) => {
+      if (p.isSuspended || whitelabelBySourceId.has(String(p._id))) return false
+      const displayStartDate = p.sourceType === 'whitelabel' ? p.originalPackage?.startDate : p.startDate
+      if (!displayStartDate) return true
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      const startDate = new Date(displayStartDate)
+      startDate.setHours(0, 0, 0, 0)
+      return startDate.getTime() >= today.getTime()
+    }),
     [availablePackages, whitelabelBySourceId]
   )
 
@@ -251,6 +253,7 @@ export default function Packages() {
                 onCreateWhiteLabel={(p) => setModal({ open: true, mode: 'create', sourcePackage: p, whitelabel: null })}
                 onEditWhiteLabel={(wl) => setModal({ open: true, mode: 'edit', sourcePackage: null, whitelabel: wl })}
                 disabled={inactiveParentIds.has(String(pkg.createdBy?._id || pkg.createdBy))}
+                hasBooking={(whitelabelBySourceId.get(String(pkg._id))?.bookingCount || 0) > 0}
               />
             ))}
           </div>
@@ -301,7 +304,7 @@ export default function Packages() {
                   const pid = it.originalPackage?._id || it.originalPackage
                   navigate(`/agency/packages/${pid}/reviews?readOnly=true`)
                 }}
-                hasBooking={bookedWhiteLabelIds.has(String(wl._id))}
+                hasBooking={(wl.bookingCount || 0) > 0}
                 disabled={inactiveParentIds.has(String(wl.ownedByParent?._id || wl.ownedByParent))}
               />
             ))}
@@ -318,6 +321,7 @@ export default function Packages() {
         eligiblePackages={packagesEligibleForNewWhitelabel}
         onSubmit={handleModalSubmit}
         loading={submitting}
+        hasBooking={(modal.whitelabel?.bookingCount || 0) > 0}
       />
 
       <WhitelabelAgentsModal
