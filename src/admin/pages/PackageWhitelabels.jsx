@@ -126,7 +126,7 @@ export default function PackageWhitelabels() {
         <span className="font-semibold text-gray-900">Whitelabels</span>
       </nav>
 
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-xl font-semibold tracking-tight text-gray-900 sm:text-2xl">Package whitelabels</h1>
           <p className="mt-1 text-sm text-gray-500">
@@ -136,7 +136,7 @@ export default function PackageWhitelabels() {
         <button 
            type="button"
            onClick={() => setIsHierarchyModalOpen(true)}
-           className="inline-flex items-center gap-2 bg-violet-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-violet-700 transition-all shadow-sm"
+           className="inline-flex w-full sm:w-auto items-center justify-center gap-2 bg-violet-600 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-violet-700 transition-all shadow-sm"
         >
            <Layers className="h-4 w-4" /> Package distribution map
         </button>

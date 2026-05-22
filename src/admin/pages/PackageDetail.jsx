@@ -73,10 +73,10 @@ export default function AdminPackageDetail() {
   return (
     <div className="animate-fade-in space-y-6 pb-16">
       {/* Header */}
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex items-center gap-3">
           <button type="button" onClick={() => navigate('/admin/packages')}
-            className="flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-600 transition hover:bg-gray-50" aria-label="Back">
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-600 transition hover:bg-gray-50" aria-label="Back">
             <ArrowLeft className="h-4 w-4" strokeWidth={2} />
           </button>
           <div>
@@ -88,21 +88,21 @@ export default function AdminPackageDetail() {
             )}
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
           <Link to={`/admin/packages/${packageId}/bookings`}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-700 transition hover:bg-gray-50">
+            className="flex-1 sm:flex-none justify-center inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-700 transition hover:bg-gray-50">
             <Ticket className="h-3.5 w-3.5" strokeWidth={2} /> Bookings
           </Link>
           <Link to={`/admin/packages/${packageId}/whitelabels`}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-700 transition hover:bg-gray-50">
+            className="flex-1 sm:flex-none justify-center inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-700 transition hover:bg-gray-50">
             <Layers className="h-3.5 w-3.5" strokeWidth={2} /> Whitelabels
           </Link>
           <Link to={`/admin/packages/${packageId}/community`}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-700 transition hover:bg-gray-50">
+            className="flex-1 sm:flex-none justify-center inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-700 transition hover:bg-gray-50">
             <MessageSquare className="h-3.5 w-3.5" strokeWidth={2} /> Community
           </Link>
           <Link to={`/admin/packages/${packageId}/reviews`}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-700 transition hover:bg-gray-50">
+            className="flex-1 sm:flex-none justify-center inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-700 transition hover:bg-gray-50">
             <Star className="h-3.5 w-3.5" strokeWidth={2} /> Reviews
           </Link>
         </div>

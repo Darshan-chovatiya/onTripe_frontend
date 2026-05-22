@@ -190,13 +190,13 @@ function EditCustomerModal({ customer, onClose, onSaved }) {
               {errors.email && <p className="mt-1 text-xs text-red-500">{errors.email}</p>}
             </div>
 
-            <div className="flex gap-3 pt-1">
+            <div className="flex flex-col-reverse sm:flex-row gap-3 pt-1">
               <button type="button" onClick={onClose}
-                className="flex-1 rounded-xl border border-gray-200 py-2.5 text-sm font-semibold text-gray-600 transition hover:bg-gray-50">
+                className="w-full sm:flex-1 rounded-xl border border-gray-200 py-2.5 text-sm font-semibold text-gray-600 transition hover:bg-gray-50">
                 Cancel
               </button>
               <button type="submit" disabled={saving}
-                className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-primary-600 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-primary-700 disabled:opacity-60">
+                className="flex w-full sm:flex-1 items-center justify-center gap-2 rounded-xl bg-primary-600 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-primary-700 disabled:opacity-60">
                 {saving
                   ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
                   : <Save className="h-4 w-4" strokeWidth={2.5} />
@@ -714,7 +714,7 @@ export default function CustomerDetail() {
         <button
           type="button"
           onClick={() => setEditOpen(true)}
-          className="inline-flex shrink-0 items-center gap-2 self-start rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm transition hover:border-primary-300 hover:bg-primary-50 hover:text-primary-700"
+          className="w-full sm:w-auto justify-center inline-flex shrink-0 items-center gap-2 self-start rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm transition hover:border-primary-300 hover:bg-primary-50 hover:text-primary-700"
         >
           <Pencil className="h-4 w-4" strokeWidth={2} />
           Edit
@@ -785,7 +785,7 @@ export default function CustomerDetail() {
 
       {/* ── Bookings ── */}
       <section className="space-y-4">
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2">
             <h2 className="text-base font-semibold text-gray-900">Bookings</h2>
             {!bookingsLoading && bookings.length > 0 && (
@@ -799,7 +799,7 @@ export default function CustomerDetail() {
               type="button"
               onClick={handleExport}
               disabled={exportLoading}
-              className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 disabled:opacity-50"
+              className="w-full sm:w-auto justify-center inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 disabled:opacity-50"
             >
               {exportLoading ? <Loader size="sm" /> : <Download className="h-4 w-4" strokeWidth={2} />}
               Export Excel

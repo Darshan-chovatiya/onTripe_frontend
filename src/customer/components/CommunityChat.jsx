@@ -893,7 +893,7 @@ export default function CommunityChat({
               {subScreen === 'members' ? 'Group members' : 'Media'}
             </h2>
             {subScreen === 'gallery' ? (
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 sm:gap-2 overflow-x-auto no-scrollbar">
                 {isFilteringByFace ? (
                    <button
                     type="button"

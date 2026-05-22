@@ -125,7 +125,7 @@ const SubChildAgenciesModal = ({ isOpen, onClose, parentAgency, onToggleStatus, 
                  <p className="text-xs text-slate-400 mt-1 font-medium">This agency has no registered sub-child nodes currently.</p>
                </div>
              ) : (
-               <table className="w-full text-left">
+               <table className="w-full min-w-[800px] text-left">
                   <thead className="bg-gray-50 border-b border-gray-200">
                     <tr>
                       <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest">Sub-Child Agency</th>
@@ -237,7 +237,7 @@ const AgencyCustomersModal = ({ isOpen, onClose, agency }) => {
                  <p className="text-xs text-slate-400 mt-1 font-medium italic">No customers are currently linked to this agency.</p>
                </div>
              ) : (
-               <table className="w-full text-left">
+               <table className="w-full min-w-[800px] text-left">
                   <thead className="bg-gray-50 border-b border-gray-200">
                     <tr>
                       <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest">Customer Name</th>
@@ -446,7 +446,7 @@ const AgencyNetwork = () => {
                  <input 
                    type="text" 
                    placeholder="Identity sync..."
-                   className="h-10 w-64 bg-white border border-slate-200 rounded-xl px-10 text-xs font-bold focus:outline-none focus:ring-4 focus:ring-primary-500/5 focus:border-primary-500/50 transition-all"
+                   className="h-10 w-full sm:w-64 bg-white border border-slate-200 rounded-xl px-10 text-xs font-bold focus:outline-none focus:ring-4 focus:ring-primary-500/5 focus:border-primary-500/50 transition-all"
                    value={search}
                    onChange={(e) => setSearch(e.target.value)}
                  />
@@ -461,7 +461,7 @@ const AgencyNetwork = () => {
         </div>
 
         <div className="overflow-x-auto min-h-[400px]">
-           <table className="w-full text-left">
+           <table className="w-full min-w-[1000px] text-left">
               <thead className="bg-gray-50 border-b border-gray-200">
                  <tr>
                     <th className="px-6 py-4 text-[10px] font-black text-zinc-900 uppercase tracking-widest">Child Agency</th>

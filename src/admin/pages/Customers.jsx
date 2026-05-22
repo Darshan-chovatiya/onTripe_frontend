@@ -176,13 +176,13 @@ function EditCustomerModal({ customer, onClose, onSaved }) {
               {errors.email && <p className="mt-1 text-xs text-red-500">{errors.email}</p>}
             </div>
 
-            <div className="flex gap-3 pt-1">
+            <div className="flex flex-col-reverse sm:flex-row gap-3 pt-1">
               <button type="button" onClick={onClose}
-                className="flex-1 rounded-xl border border-gray-200 py-2.5 text-sm font-semibold text-gray-600 transition hover:bg-gray-50">
+                className="w-full sm:flex-1 rounded-xl border border-gray-200 py-2.5 text-sm font-semibold text-gray-600 transition hover:bg-gray-50">
                 Cancel
               </button>
               <button type="submit" disabled={saving}
-                className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-primary-600 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-primary-700 disabled:opacity-60">
+                className="flex w-full sm:flex-1 items-center justify-center gap-2 rounded-xl bg-primary-600 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-primary-700 disabled:opacity-60">
                 {saving
                   ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
                   : <Save className="h-4 w-4" strokeWidth={2.5} />

@@ -31,8 +31,8 @@ export default function Pagination({ page, totalPages, total, limit, onPageChang
   const to = Math.min(page * limit, total)
 
   return (
-    <div className="flex items-center justify-between border-t border-gray-200 bg-gray-50 px-4 py-3">
-      <p className="text-xs text-gray-500">
+    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-gray-200 bg-gray-50 px-4 py-3">
+      <p className="text-xs text-gray-500 text-center sm:text-left">
         {total > 0 ? (
           <>
             Showing <span className="font-medium text-gray-900">{from}–{to}</span> of{' '}

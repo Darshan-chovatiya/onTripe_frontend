@@ -92,29 +92,34 @@ export default function Reports() {
           <p className="mt-1 text-sm text-gray-500 ml-13">Multidimensional analytics and financial auditing across your network</p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 ml-13 lg:ml-0">
-          <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-1.5 shadow-sm">
-            <Calendar className="h-4 w-4 text-gray-400" />
-            <input 
-              type="date" 
-              className="border-none bg-transparent p-0 text-xs font-semibold text-gray-700 focus:ring-0" 
-              value={dateRange.startDate}
-              onChange={e => setDateRange(p => ({ ...p, startDate: e.target.value }))}
-            />
-            <span className="text-gray-300">/</span>
-            <input 
-              type="date" 
-              className="border-none bg-transparent p-0 text-xs font-semibold text-gray-700 focus:ring-0" 
-              value={dateRange.endDate}
-              onChange={e => setDateRange(p => ({ ...p, endDate: e.target.value }))}
-            />
+        <div className="flex flex-col sm:flex-row flex-wrap sm:items-center gap-3 ml-0 sm:ml-13 lg:ml-0 mt-2 lg:mt-0">
+          <div className="flex flex-col sm:flex-row w-full sm:w-auto items-stretch sm:items-center gap-2 sm:gap-3 rounded-xl border border-gray-200 bg-white p-2 sm:px-3 sm:py-1.5 shadow-sm">
+            <div className="flex items-center gap-2 flex-1">
+              <Calendar className="h-4 w-4 shrink-0 text-gray-400" />
+              <input 
+                type="date" 
+                className="w-full border-none bg-transparent p-0 text-xs font-semibold text-gray-700 focus:ring-0" 
+                value={dateRange.startDate}
+                onChange={e => setDateRange(p => ({ ...p, startDate: e.target.value }))}
+              />
+            </div>
+            <span className="hidden sm:inline-block text-gray-300">/</span>
+            <div className="flex items-center gap-2 flex-1 border-t border-gray-100 pt-2 sm:border-t-0 sm:pt-0">
+              <Calendar className="h-4 w-4 shrink-0 text-gray-400 sm:hidden" />
+              <input 
+                type="date" 
+                className="w-full border-none bg-transparent p-0 text-xs font-semibold text-gray-700 focus:ring-0" 
+                value={dateRange.endDate}
+                onChange={e => setDateRange(p => ({ ...p, endDate: e.target.value }))}
+              />
+            </div>
           </div>
           <button 
             type="button"
             onClick={handleExport}
-            className="flex items-center gap-2 rounded-xl bg-gray-900 px-4 py-2 text-sm font-bold text-white shadow-lg transition hover:bg-gray-800 active:scale-95"
+            className="flex w-full sm:w-auto justify-center items-center gap-2 rounded-xl bg-gray-900 px-4 py-2 text-sm font-bold text-white shadow-lg transition hover:bg-gray-800 active:scale-95"
           >
-            <Download className="h-4 w-4" />
+            <Download className="h-4 w-4 shrink-0" />
             Export Data
           </button>
         </div>
@@ -161,17 +166,17 @@ export default function Reports() {
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
         {/* ── Package Distribution (Table Format) ── */}
         <div className="lg:col-span-12">
-          <div className="mb-4 flex items-center justify-between px-1">
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between px-1">
             <div className="flex items-center gap-2">
-              <Package className="h-4 w-4 text-primary-600" />
+              <Package className="h-4 w-4 shrink-0 text-primary-600" />
               <h2 className="text-sm font-bold uppercase tracking-widest text-gray-400">Package Distribution Activity</h2>
             </div>
-            <div className="relative">
+            <div className="relative w-full sm:w-auto">
               <Search className="absolute left-2.5 top-1/2 h-3 w-3 -translate-y-1/2 text-gray-400" />
               <input 
                 type="text" 
                 placeholder="Search packages..."
-                className="rounded-lg border border-gray-200 bg-white py-1.5 pl-8 pr-3 text-[11px] font-semibold focus:ring-1 focus:ring-primary-100 shadow-sm"
+                className="w-full rounded-lg border border-gray-200 bg-white py-1.5 pl-8 pr-3 text-[11px] font-semibold focus:ring-1 focus:ring-primary-100 shadow-sm"
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
               />
@@ -180,7 +185,7 @@ export default function Reports() {
           
           <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
+              <table className="w-full min-w-[800px] text-left text-sm">
                 <thead className="border-b border-gray-50 bg-gray-50/50 text-[10px] font-bold uppercase tracking-wider text-gray-500">
                   <tr>
                     <th className="px-6 py-4">Package Details</th>
@@ -265,9 +270,10 @@ function PackageRow({ pkg }) {
       
       {expanded && (
         <tr>
-          <td colSpan={5} className="bg-gray-50/50 p-4">
+          <td colSpan={5} className="bg-gray-50/50 p-2 sm:p-4">
             <div className="rounded-xl border border-gray-100 bg-white overflow-hidden shadow-inner">
-              <table className="w-full text-left">
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[700px] text-left">
                 <thead className="bg-gray-50 text-[9px] font-black uppercase tracking-widest text-gray-400">
                   <tr>
                     <th className="px-4 py-3">Agency Name</th>
@@ -319,6 +325,7 @@ function PackageRow({ pkg }) {
                   )}
                 </tbody>
               </table>
+              </div>
             </div>
           </td>
         </tr>

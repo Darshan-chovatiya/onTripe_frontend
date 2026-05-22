@@ -143,7 +143,7 @@ export default function Bookings() {
             type="button"
             onClick={handleExport}
             disabled={bookings.length === 0 || exportLoading}
-            className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition-colors hover:bg-gray-50 disabled:opacity-50"
+            className="w-full sm:w-auto inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition-colors hover:bg-gray-50 disabled:opacity-50"
           >
             {exportLoading ? <RefreshCw size={16} className="animate-spin" /> : <Download size={16} />}
             Export Excel
@@ -153,7 +153,7 @@ export default function Bookings() {
 
       <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
         {/* Filters */}
-        <div className="flex flex-col gap-4 border-b border-gray-200 bg-gray-50/30 px-4 py-4 sm:flex-row sm:items-center">
+        <div className="flex flex-col gap-4 border-b border-gray-200 bg-gray-50/30 px-4 py-4 sm:flex-row sm:flex-wrap sm:items-center">
           <div className="relative min-w-0 flex-1">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
             <input

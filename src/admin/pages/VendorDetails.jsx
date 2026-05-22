@@ -74,10 +74,10 @@ export default function VendorDetails() {
   return (
     <div className="animate-fade-in mx-auto space-y-6 pb-16">
       {/* Header */}
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-3">
         <div className="flex items-center gap-3">
           <button type="button" onClick={() => navigate('/admin/vendors')}
-            className="flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-600 transition hover:bg-gray-50" aria-label="Back">
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-600 transition hover:bg-gray-50" aria-label="Back">
             <ArrowLeft className="h-4 w-4" strokeWidth={2} />
           </button>
           <div>
@@ -88,7 +88,7 @@ export default function VendorDetails() {
 
       {/* Summary card */}
       <section className="rounded-xl border border-gray-200 bg-gradient-to-br from-slate-50 to-white p-5 shadow-sm">
-        <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 sm:gap-3">
           <div>
             <p className="mb-1 flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-gray-500">
               <Store size={14} className="text-primary-500" /> Vendor name
@@ -104,7 +104,7 @@ export default function VendorDetails() {
             </span>
           </div>
         </div>
-        <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {[
             { icon: User, label: 'Contact Person', value: vendor.contactPerson || '—' },
             { icon: Phone, label: 'Phone', value: vendor.phone || '—' },
@@ -112,8 +112,8 @@ export default function VendorDetails() {
             { icon: Calendar, label: 'Joined On', value: joinedDate },
           ].map(({ icon: Icon, label, value }) => (
             <div key={label} className="rounded-xl border border-white/80 bg-white/90 p-3 shadow-sm">
-              <p className="flex items-center gap-1.5 text-[11px] font-medium text-gray-500"><Icon className="h-3.5 w-3.5" /> {label}</p>
-              <p className="mt-1 text-sm font-semibold text-gray-900">{value}</p>
+              <p className="flex items-center gap-1.5 text-[11px] font-medium text-gray-500"><Icon className="h-3.5 w-3.5 shrink-0" /> {label}</p>
+              <p className="mt-1 text-sm font-semibold text-gray-900 break-all">{value}</p>
             </div>
           ))}
         </div>
