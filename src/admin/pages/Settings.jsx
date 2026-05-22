@@ -166,7 +166,7 @@ export default function Settings() {
       {/* Hero banner */}
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-gray-900 via-primary-950 to-primary-900 p-6 text-white shadow-xl">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(99,102,241,0.15),transparent_60%)]" />
-        <div className="relative flex items-center gap-5">
+        <div className="relative flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-5">
           {/* Avatar with upload overlay */}
           <div className="relative shrink-0">
             <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl bg-white/15 text-2xl font-black text-white shadow-lg backdrop-blur-sm ring-2 ring-white/20">

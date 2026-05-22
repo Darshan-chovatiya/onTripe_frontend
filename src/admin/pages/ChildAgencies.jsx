@@ -365,12 +365,12 @@ function AgentFormModal({ mode, agent, agentRole, onClose, onSaved }) {
       title={isEdit ? `Edit ${agent.name}` : `Add ${agencyLabel} agency`}
       size="lg"
       footer={
-        <div className="flex items-center justify-end gap-3 border-t border-gray-100 bg-gray-50/80 px-6 py-4">
-          <button type="button" onClick={onClose} className="rounded-lg px-4 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900">
+        <div className="flex flex-col-reverse sm:flex-row items-center justify-end gap-3 border-t border-gray-100 bg-gray-50/80 px-4 sm:px-6 py-4">
+          <button type="button" onClick={onClose} className="w-full sm:w-auto rounded-lg px-4 py-2.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900">
             Cancel
           </button>
           <button type="button" onClick={handleSubmit} disabled={saving || (form.kycStatus === 'rejected' && !form.kycRejectionReason.trim())}
-            className="inline-flex items-center gap-2 rounded-lg bg-zinc-900 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-zinc-800 disabled:opacity-50"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-lg bg-zinc-900 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-zinc-800 disabled:opacity-50"
             title={form.kycStatus === 'rejected' && !form.kycRejectionReason.trim() ? 'Rejection reason is required' : ''}>
             {saving ? <Loader size="sm" color="white" /> : isEdit ? <><Save size={16} strokeWidth={2} /> Save changes</> : <><Plus size={16} strokeWidth={2} /> Add agency</>}
           </button>
@@ -380,7 +380,7 @@ function AgentFormModal({ mode, agent, agentRole, onClose, onSaved }) {
       <div className="mx-auto w-full max-w-4xl space-y-5 px-1 py-1">
 
         {/* Agency details section */}
-        <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+        <section className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-5 shadow-sm">
           <div className="mb-4 flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-100 text-gray-600">
               <Building2 size={16} strokeWidth={2} />
@@ -449,7 +449,7 @@ function AgentFormModal({ mode, agent, agentRole, onClose, onSaved }) {
         </section>
 
         {/* Parent agency section */}
-        <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+        <section className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-5 shadow-sm">
           <div className="mb-4 flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-100 text-gray-600">
               <GitBranch size={16} strokeWidth={2} />
@@ -538,7 +538,7 @@ function AgentFormModal({ mode, agent, agentRole, onClose, onSaved }) {
         </section>
 
         {/* KYC documents section */}
-        <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+        <section className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-5 shadow-sm">
           <div className="mb-4 flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-100 text-gray-600">
               <ShieldCheck size={16} strokeWidth={2} />
@@ -785,9 +785,9 @@ export default function ChildAgencies({ agentRole = 'child_agent', pageTitle = '
           <div className="divide-y divide-gray-100">
 
             {/* â”€â”€ Header + Network side by side â”€â”€ */}
-            <div className="flex items-start gap-2 px-6 py-4">
+            <div className="flex flex-col sm:flex-row items-start gap-4 px-4 sm:px-6 py-4">
               {/* Left: avatar + name + label + status */}
-              <div className="flex min-w-0 flex-1 items-start gap-3">
+              <div className="flex w-full sm:min-w-0 sm:flex-1 items-start gap-3">
                 <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-gray-200 bg-gray-50 text-gray-500">
                   {selectedAgent.agencyLogo ? (
                     <img
@@ -810,7 +810,7 @@ export default function ChildAgencies({ agentRole = 'child_agent', pageTitle = '
               </div>
 
               {/* Right: network stats column */}
-              <div className="shrink-0 space-y-1.5 min-w-[140px]">
+              <div className="w-full sm:w-auto shrink-0 space-y-1.5 sm:min-w-[140px]">
                 <div className="flex items-center justify-between gap-4 rounded-lg border border-gray-200 bg-gray-50/60 px-3 py-2">
                   <span className="text-xs font-medium text-gray-500">Sub-agents</span>
                   <span className="text-sm font-bold tabular-nums text-gray-900">{selectedAgent.childCount ?? 0}</span>
@@ -835,7 +835,7 @@ export default function ChildAgencies({ agentRole = 'child_agent', pageTitle = '
             </div>
 
             {/* â”€â”€ Details â”€â”€ */}
-            <div className="px-6 py-5">
+            <div className="px-4 sm:px-6 py-5">
               <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-400">Details</p>
 
               {/* Row 1: agent code Â· parent/child agencies Â· KYC status */}
@@ -898,7 +898,7 @@ export default function ChildAgencies({ agentRole = 'child_agent', pageTitle = '
             </div>
 
             {/* ── KYC documents ── */}
-            <div className="px-6 py-4">
+            <div className="px-4 sm:px-6 py-4">
               <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-400">KYC documents</p>
               <div className="grid gap-3 sm:grid-cols-3">
                 {[
@@ -960,7 +960,7 @@ export default function ChildAgencies({ agentRole = 'child_agent', pageTitle = '
 
             {/* ── KYC history ── */}
             {selectedAgent.kycHistory?.length > 0 && (
-              <div className="px-6 py-4">
+              <div className="px-4 sm:px-6 py-4">
                 <p className="mb-3 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-gray-400">
                   <Clock className="h-3.5 w-3.5" strokeWidth={2} /> Previous submissions
                 </p>
@@ -1002,7 +1002,7 @@ export default function ChildAgencies({ agentRole = 'child_agent', pageTitle = '
 
             {/* â”€â”€ KYC actions (pending only) â”€â”€ */}
             {selectedAgent.kyc?.status === 'pending' && (
-              <div className="px-6 py-5">
+              <div className="px-4 sm:px-6 py-5">
                 <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-400">Review KYC</p>
                 <div className="mb-3">
                   <label className="mb-1.5 block text-xs font-medium text-gray-600" htmlFor="kyc-reject-reason-child">
@@ -1088,9 +1088,9 @@ export default function ChildAgencies({ agentRole = 'child_agent', pageTitle = '
               : 'Manage and monitor secondary distribution entities.'}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex w-full sm:w-auto items-center gap-2">
           <button type="button" onClick={() => setAgentFormModal({ open: true, mode: 'add', agent: null })}
-            className="inline-flex items-center gap-2 rounded-xl bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-700">
+            className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-700">
             <Plus className="h-4 w-4" strokeWidth={2.5} />
             Add {agentRole === 'sub_child_agent' ? 'Sub-child' : 'Child'} Agency
           </button>
@@ -1110,7 +1110,7 @@ export default function ChildAgencies({ agentRole = 'child_agent', pageTitle = '
               className="w-full rounded-md border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm text-gray-900 placeholder:text-gray-400 focus:border-gray-300 focus:outline-none focus:ring-1 focus:ring-gray-300"
               value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
           </div>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 lg:flex lg:gap-3">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-3 lg:flex lg:gap-3">
             <div className="w-full sm:min-w-[140px] lg:w-44">
               <CustomDropdown value={statusFilter} onChange={setStatusFilter}
                 options={[{ value: 'all', label: 'All accounts' }, { value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }]}
@@ -1147,8 +1147,8 @@ export default function ChildAgencies({ agentRole = 'child_agent', pageTitle = '
           </div>
         ) : (
           <>
-            <div className="overflow-x-auto">
-              <table className={`w-full text-sm ${agentRole === 'sub_child_agent' ? 'min-w-[980px]' : 'min-w-[1100px]'}`}>
+            <div className="overflow-x-auto w-full">
+              <table className={`w-full text-sm whitespace-nowrap ${agentRole === 'sub_child_agent' ? 'min-w-[980px]' : 'min-w-[1100px]'}`}>
                 <thead className="border-b border-gray-200 bg-gray-50">
                   <tr>
                     <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-600">

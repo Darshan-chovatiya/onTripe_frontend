@@ -203,49 +203,53 @@ export default function Dashboard() {
     <div className="animate-fade-in space-y-6 pb-8">
 
       {/* ── Top bar: greeting + date filter ── */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-gray-900">Dashboard</h1>
           <p className="mt-0.5 text-sm text-gray-500">Platform overview and key metrics</p>
         </div>
 
         {/* Date range pill */}
-        <div className="flex flex-wrap items-center gap-2">
-          {PRESETS.map(p => {
-            const r = p.getRange()
-            const active = dateRange.start === r.start && dateRange.end === r.end
-            return (
-              <button
-                key={p.label}
-                type="button"
-                onClick={() => { setDateRange(r); load(r) }}
-                className={`rounded-full border px-3 py-1 text-xs font-semibold transition-all ${
-                  active
-                    ? 'border-primary-500 bg-primary-500 text-white shadow-sm shadow-primary-200'
-                    : 'border-gray-200 bg-white text-gray-500 hover:border-primary-300 hover:text-primary-600'
-                }`}
-              >
-                {p.label}
-              </button>
-            )
-          })}
-          <div className="flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-3 py-1">
-            <CalendarDays className="h-3.5 w-3.5 text-gray-400" strokeWidth={2} />
+        <div className="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-3 w-full lg:w-auto">
+          {/* Scrollable preset buttons on small screens */}
+          <div className="flex items-center gap-2 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0 pr-2 snap-x">
+            {PRESETS.map(p => {
+              const r = p.getRange()
+              const active = dateRange.start === r.start && dateRange.end === r.end
+              return (
+                <button
+                  key={p.label}
+                  type="button"
+                  onClick={() => { setDateRange(r); load(r) }}
+                  className={`shrink-0 snap-start rounded-full border px-3 py-1 text-xs font-semibold transition-all ${
+                    active
+                      ? 'border-primary-500 bg-primary-500 text-white shadow-sm shadow-primary-200'
+                      : 'border-gray-200 bg-white text-gray-500 hover:border-primary-300 hover:text-primary-600'
+                  }`}
+                >
+                  {p.label}
+                </button>
+              )
+            })}
+          </div>
+          
+          <div className="flex items-center justify-between sm:justify-start gap-1.5 rounded-full border border-gray-200 bg-white px-3 py-1 w-full sm:w-auto shrink-0">
+            <CalendarDays className="h-3.5 w-3.5 text-gray-400 shrink-0" strokeWidth={2} />
             <input
               type="date"
               value={dateRange.start}
               max={dateRange.end || todayStr()}
               onChange={e => { const r = { ...dateRange, start: e.target.value }; setDateRange(r); if (r.start && r.end) load(r) }}
-              className="w-[110px] bg-transparent text-xs font-medium text-gray-600 focus:outline-none"
+              className="w-full sm:w-[110px] bg-transparent text-xs font-medium text-gray-600 focus:outline-none"
             />
-            <span className="text-gray-300">–</span>
+            <span className="text-gray-300 shrink-0">–</span>
             <input
               type="date"
               value={dateRange.end}
               min={dateRange.start}
               max={todayStr()}
               onChange={e => { const r = { ...dateRange, end: e.target.value }; setDateRange(r); if (r.start && r.end) load(r) }}
-              className="w-[110px] bg-transparent text-xs font-medium text-gray-600 focus:outline-none"
+              className="w-full sm:w-[110px] bg-transparent text-xs font-medium text-gray-600 focus:outline-none"
             />
           </div>
         </div>
@@ -257,7 +261,7 @@ export default function Dashboard() {
 
       {/* ── Stat cards ── */}
       <section aria-label="Key metrics">
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-5">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 xl:grid-cols-5">
           {stats.map((s) => {
             const Icon = s.icon
             return (
@@ -293,9 +297,9 @@ export default function Dashboard() {
               View all <ChevronRight className="h-3.5 w-3.5" strokeWidth={2.5} />
             </Link>
           </div>
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto w-full">
             {data?.recentAgents?.length ? (
-              <table className="w-full min-w-[480px] text-left text-sm">
+              <table className="w-full min-w-[500px] text-left text-sm whitespace-nowrap">
                 <thead>
                   <tr className="border-b border-gray-50 bg-gray-50/60">
                     <th className="px-6 py-3 text-[10px] font-bold uppercase tracking-widest text-gray-400">Agent</th>
@@ -394,7 +398,7 @@ export default function Dashboard() {
                 {syncMsg.text}
               </p>
             )}
-            <div className="mt-4 grid grid-cols-2 gap-2">
+            <div className="mt-4 grid grid-cols-2 gap-3 sm:gap-4">
               {[
                 { label: 'Confirmed', value: bookingConfirmed, bg: 'bg-sky-50', text: 'text-sky-700', dot: 'bg-sky-400' },
                 { label: 'Ongoing',   value: bookingOngoing,   bg: 'bg-amber-50', text: 'text-amber-700', dot: 'bg-amber-400' },

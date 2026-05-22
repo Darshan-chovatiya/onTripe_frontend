@@ -508,12 +508,12 @@ export default function BookingReviews({
                 title={isEditing ? 'Update your review' : 'Write a review'}
                 size="md"
                 footer={
-                    <div className="flex justify-end gap-3 p-4 border-t border-gray-100">
-                        <button onClick={() => setModalOpen(false)} className="px-4 py-2 text-sm text-gray-500 hover:text-gray-800 transition-colors">Cancel</button>
+                    <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 p-4 border-t border-gray-100">
+                        <button onClick={() => setModalOpen(false)} className="w-full sm:w-auto px-4 py-2 text-sm text-gray-500 hover:text-gray-800 transition-colors">Cancel</button>
                         <button
                             onClick={handleSubmit}
                             disabled={submitting}
-                            className="px-6 py-2 bg-primary-600 text-white rounded-xl text-sm font-bold hover:bg-primary-700 disabled:opacity-50 transition-colors"
+                            className="w-full sm:w-auto px-6 py-2 bg-primary-600 text-white rounded-xl text-sm font-bold hover:bg-primary-700 disabled:opacity-50 transition-colors"
                         >
                             {submitting ? 'Saving...' : isEditing ? 'Update' : 'Submit'}
                         </button>

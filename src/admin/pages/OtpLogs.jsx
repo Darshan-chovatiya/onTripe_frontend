@@ -39,7 +39,7 @@ export default function OtpLogs() {
     try {
       const { data } = await adminApi.getOtpLogs({
         page,
-        limit: 15,
+        limit: 10,
         search: debouncedSearch || undefined
       })
       if (data?.success) {
@@ -72,7 +72,7 @@ export default function OtpLogs() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-50 text-primary-600 shadow-sm">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-50 text-primary-600 shadow-sm">
               <ShieldCheck size={24} strokeWidth={2} />
             </div>
             <div>
@@ -84,7 +84,7 @@ export default function OtpLogs() {
         <button
           onClick={fetchLogs}
           disabled={loading}
-          className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm transition-all hover:bg-gray-50 active:scale-95 disabled:opacity-50"
+          className="inline-flex w-full justify-center sm:w-auto items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm transition-all hover:bg-gray-50 active:scale-95 disabled:opacity-50"
         >
           <RefreshCcw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
           Refresh
@@ -121,7 +121,7 @@ export default function OtpLogs() {
         ) : (
           <>
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
+              <table className="w-full min-w-[700px] text-left text-sm">
                 <thead>
                   <tr className="border-b border-gray-100 bg-gray-50/50">
                     <th className="px-6 py-4 font-semibold text-gray-700 uppercase tracking-wider text-[11px]">Verification Target</th>
@@ -197,7 +197,7 @@ export default function OtpLogs() {
                 page={page}
                 totalPages={totalPages}
                 total={total}
-                limit={15}
+                limit={10}
                 onPageChange={setPage}
               />
             </div>

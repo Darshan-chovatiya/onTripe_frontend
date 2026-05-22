@@ -397,7 +397,7 @@ export default function Packages() {
       </div>
 
       <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
-        <div className="flex gap-3 border-b border-gray-200 px-4 py-3 sm:flex-row sm:flex-wrap sm:items-center">
+        <div className="flex flex-col gap-3 border-b border-gray-200 px-4 py-3 sm:flex-row sm:flex-wrap sm:items-center">
           <div className="relative w-full min-w-0 flex-1">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" strokeWidth={2} />
             <input
@@ -409,7 +409,7 @@ export default function Packages() {
               onChange={(e) => setSearchInput(e.target.value)}
             />
           </div>
-          <div className="flex w-full gap-3 sm:w-auto">
+          <div className="flex w-full flex-col sm:flex-row gap-3 sm:w-auto">
             <div className="min-w-0 flex-1 lg:min-w-[200px] lg:max-w-xs">
               <CustomDropdown
                 value={parentFilter}
@@ -447,8 +447,8 @@ export default function Packages() {
           </div>
         ) : (
           <>
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[1000px] text-sm">
+            <div className="overflow-x-auto w-full">
+              <table className="w-full min-w-[1000px] text-sm whitespace-nowrap">
                 <thead className="border-b border-gray-200 bg-gray-50">
                   <tr>
                     <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-600">Package</th>
@@ -648,12 +648,12 @@ export default function Packages() {
             </div>
           </div>
 
-          <div className="mt-6 flex items-center justify-end gap-3">
+          <div className="mt-6 flex flex-col-reverse sm:flex-row items-center justify-end gap-3">
             <button
               type="button"
               disabled={toggling}
               onClick={() => setSuspensionModal({ open: false, pkg: null })}
-              className="rounded-lg px-4 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-100 disabled:opacity-50"
+              className="w-full sm:w-auto rounded-lg px-4 py-2.5 text-sm font-medium text-gray-600 transition hover:bg-gray-100 disabled:opacity-50"
             >
               Cancel
             </button>
@@ -661,7 +661,7 @@ export default function Packages() {
               type="button"
               disabled={toggling}
               onClick={confirmToggleSuspension}
-              className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white shadow-sm transition active:scale-95 disabled:opacity-50 ${
+              className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition active:scale-95 disabled:opacity-50 ${
                 suspensionModal.pkg?.isSuspended
                   ? 'bg-emerald-600 hover:bg-emerald-700'
                   : 'bg-red-600 hover:bg-red-700'

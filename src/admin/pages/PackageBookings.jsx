@@ -324,8 +324,8 @@ export default function PackageBookings() {
                 )}
               </p>
             </div>
-            <div className="flex shrink-0 items-center gap-2">
-              <div className="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
+            <div className="flex w-full flex-col sm:w-auto sm:flex-row shrink-0 gap-2">
+              <div className="flex items-center justify-between sm:justify-start gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
                 <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-500">Total</span>
                 <span className="text-sm font-semibold tabular-nums text-gray-900">{total}</span>
               </div>
@@ -333,7 +333,7 @@ export default function PackageBookings() {
                 type="button"
                 onClick={handleExport}
                 disabled={exportLoading || !pkg || total === 0}
-                className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 disabled:opacity-50"
+                className="inline-flex w-full sm:w-auto justify-center items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 disabled:opacity-50"
               >
                 {exportLoading
                   ? <Loader2 className="h-4 w-4 animate-spin" strokeWidth={2} />
@@ -356,13 +356,13 @@ export default function PackageBookings() {
             <p className="mt-1 text-sm text-gray-500">There are no bookings for this package.</p>
           </div>
         ) : (
-          <div className="relative overflow-x-auto">
+          <div className="relative overflow-x-auto w-full">
             {loading ? (
               <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/70">
                 <Loader2 className="h-8 w-8 animate-spin text-primary-600" strokeWidth={2} />
               </div>
             ) : null}
-            <table className="w-full min-w-[1000px] text-sm">
+            <table className="w-full min-w-[1000px] text-sm whitespace-nowrap">
               <thead className="border-b border-gray-200 bg-gray-50">
                 <tr>
                   <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-600">Booked by</th>

@@ -434,7 +434,7 @@ function FlowLegend({ type }) {
       <div className="mt-3 space-y-3 text-slate-600">
         {isAgent ? (
           <>
-            <p className="leading-relaxed">
+            <p className="hidden sm:block leading-relaxed">
               <strong className="text-slate-800">Top → bottom</strong> is parent → child agency. Lines show
               reporting structure;               <strong className="text-slate-800">parents can have travelers and packages</strong> too — see each
               card.
@@ -922,7 +922,7 @@ const HierarchyFlowchart = ({ type = 'agent', id }) => {
             className="!m-2 !overflow-hidden !rounded-xl !border !border-slate-200 !shadow-md"
             nodeClassName="!rounded-md !bg-primary-500"
           />
-          <Panel position="top-right" className="!m-0">
+          <Panel position="top-right" className="!m-0 hidden sm:block">
             <FlowLegend type={type} />
           </Panel>
           {!loading &&

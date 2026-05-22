@@ -607,15 +607,15 @@ const AddAgencyModal = ({ isOpen, onClose, onRefresh }) => {
       title="Add parent agency"
       size="lg"
       footer={
-        <div className="flex items-center justify-end gap-3 border-t border-gray-100 bg-gray-50/80 px-6 py-4">
-          <button onClick={onClose} type="button" className="rounded-lg px-4 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900">
+        <div className="flex flex-col-reverse sm:flex-row items-center justify-end gap-3 border-t border-gray-100 bg-gray-50/80 px-4 sm:px-6 py-4">
+          <button onClick={onClose} type="button" className="w-full sm:w-auto rounded-lg px-4 py-2.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900">
             Cancel
           </button>
           <button
             onClick={handleSubmit}
             disabled={loading}
             type="button"
-            className="inline-flex items-center gap-2 rounded-lg bg-zinc-900 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-zinc-800 disabled:opacity-50"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-lg bg-zinc-900 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-zinc-800 disabled:opacity-50"
           >
             {loading ? <Loader size="sm" color="white" /> : <><Plus size={18} strokeWidth={2} /> Add agency</>}
           </button>
@@ -623,7 +623,7 @@ const AddAgencyModal = ({ isOpen, onClose, onRefresh }) => {
       }
     >
       <div className="mx-auto w-full max-w-4xl space-y-5 px-1 py-1">
-        <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+        <section className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-5 shadow-sm">
           <div className="mb-4 flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-100 text-gray-600">
               <Building2 size={16} strokeWidth={2} />
@@ -680,7 +680,7 @@ const AddAgencyModal = ({ isOpen, onClose, onRefresh }) => {
           </div>
         </section>
 
-        <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+        <section className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-5 shadow-sm">
           <div className="mb-4 flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-100 text-gray-600">
               <ShieldCheck size={16} strokeWidth={2} />
@@ -930,15 +930,15 @@ const EditAgencyModal = ({ isOpen, onClose, agent, onRefresh }) => {
       title="Edit parent agency"
       size="lg"
       footer={
-        <div className="flex items-center justify-end gap-3 border-t border-gray-100 bg-gray-50/80 px-6 py-4">
-          <button onClick={onClose} type="button" className="rounded-lg px-4 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900">
+        <div className="flex flex-col-reverse sm:flex-row items-center justify-end gap-3 border-t border-gray-100 bg-gray-50/80 px-4 sm:px-6 py-4">
+          <button onClick={onClose} type="button" className="w-full sm:w-auto rounded-lg px-4 py-2.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900">
             Cancel
           </button>
           <button
             form="edit-agency-form"
             type="submit"
             disabled={loading || (formData.kycStatus === 'rejected' && !formData.kycRejectionReason.trim())}
-            className="inline-flex items-center gap-2 rounded-lg bg-zinc-900 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-zinc-800 disabled:opacity-50"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-lg bg-zinc-900 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-zinc-800 disabled:opacity-50"
             title={formData.kycStatus === 'rejected' && !formData.kycRejectionReason.trim() ? 'Rejection reason is required' : ''}
           >
             {loading ? <Loader size="sm" color="white" /> : 'Save changes'}
@@ -947,7 +947,7 @@ const EditAgencyModal = ({ isOpen, onClose, agent, onRefresh }) => {
       }
     >
       <form id="edit-agency-form" onSubmit={handleSubmit} className="mx-auto w-full max-w-4xl space-y-5 px-1 py-1">
-        <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+        <section className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-5 shadow-sm">
           <div className="mb-4 flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-100 text-gray-600">
               <Building2 size={16} strokeWidth={2} />
@@ -1012,7 +1012,7 @@ const EditAgencyModal = ({ isOpen, onClose, agent, onRefresh }) => {
           </div>
         </section>
 
-        <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+        <section className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-5 shadow-sm">
           <div className="mb-4 flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-100 text-gray-600">
               <ShieldCheck size={16} strokeWidth={2} />
@@ -1292,7 +1292,7 @@ export default function Agencies() {
             Manage tier-1 travel distribution entities and corporate identities
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex w-full sm:w-auto items-center gap-2">
           <button
             type="button"
             onClick={handleExport}
@@ -1326,7 +1326,7 @@ export default function Agencies() {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-3 lg:flex lg:shrink-0 lg:gap-3">
+          <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:flex lg:shrink-0 lg:gap-3">
             <div className="w-full sm:min-w-[140px] lg:w-44">
               <CustomDropdown
                 value={statusFilter}
@@ -1361,8 +1361,8 @@ export default function Agencies() {
           </div>
         ) : (
           <>
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[880px] text-sm">
+            <div className="overflow-x-auto w-full">
+              <table className="w-full min-w-[880px] text-sm whitespace-nowrap">
               <thead className="border-b border-gray-200 bg-gray-50">
                 <tr>
                   <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-600">Parent agency</th>
@@ -1557,9 +1557,9 @@ export default function Agencies() {
           <div className="divide-y divide-gray-100">
 
             {/* ── Header + Network side by side ── */}
-            <div className="flex items-start gap-2 px-6 py-4">
+            <div className="flex flex-col sm:flex-row items-start gap-4 px-4 sm:px-6 py-4">
               {/* Left: avatar + name + email + badges */}
-              <div className="flex min-w-0 flex-1 items-start gap-3">
+              <div className="flex w-full sm:min-w-0 sm:flex-1 items-start gap-3">
                 <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-gray-200 bg-gray-50 text-gray-500">
                   {selectedAgent.agencyLogo ? (
                     <img
@@ -1585,7 +1585,7 @@ export default function Agencies() {
               </div>
 
               {/* Right: network stats column */}
-              <div className="shrink-0 space-y-1.5 min-w-[140px]">
+              <div className="w-full sm:w-auto shrink-0 space-y-1.5 sm:min-w-[140px]">
                 <div className="flex items-center justify-between gap-4 rounded-lg border border-gray-200 bg-gray-50/60 px-3 py-2">
                   <span className="text-xs font-medium text-gray-500">Children</span>
                   <span className="text-sm font-bold tabular-nums text-gray-900">{selectedAgent.childCount ?? 0}</span>
@@ -1606,7 +1606,7 @@ export default function Agencies() {
             </div>
 
             {/* ── Agency details ── */}
-            <div className="px-6 py-4">
+            <div className="px-4 sm:px-6 py-4">
               <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-400">Details</p>
               <dl className="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
                 {[
@@ -1636,7 +1636,7 @@ export default function Agencies() {
             </div>
 
             {/* ── KYC documents ── */}
-            <div className="px-6 py-4">
+            <div className="px-4 sm:px-6 py-4">
               <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-400">KYC documents</p>
               <div className="grid gap-3 sm:grid-cols-3">
                 {[
@@ -1698,7 +1698,7 @@ export default function Agencies() {
 
             {/* ── KYC history ── */}
             {selectedAgent.kycHistory?.length > 0 && (
-              <div className="px-6 py-4">
+              <div className="px-4 sm:px-6 py-4">
                 <p className="mb-3 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-gray-400">
                   <Clock className="h-3.5 w-3.5" strokeWidth={2} /> Previous submissions
                 </p>
@@ -1736,7 +1736,7 @@ export default function Agencies() {
 
             {/* ── KYC actions (pending only) ── */}
             {selectedAgent.kyc?.status === 'pending' && (
-              <div className="px-6 py-4">
+              <div className="px-4 sm:px-6 py-4">
                 <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-400">Review KYC</p>
                 <div className="mb-3">
                   <label className="mb-1.5 block text-xs font-medium text-gray-600" htmlFor="kyc-reject-reason">
