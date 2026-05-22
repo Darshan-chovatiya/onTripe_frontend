@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
-import { Bell, BellOff, CheckCheck, MessageSquare, Megaphone, Users, Building2, Loader2 } from 'lucide-react'
+import { Bell, BellOff, CheckCheck, MessageSquare, Megaphone, Users, Building2, Loader2, Clock } from 'lucide-react'
 import Loader from '@/shared/components/Loader.jsx'
 import { getNotificationTypeLabel } from '@/shared/utils/notificationLinks.js'
 
@@ -13,6 +13,8 @@ function typeIcon(type) {
       return Building2
     case 'broadcast':
       return Megaphone
+    case 'event_reminder':
+      return Clock
     default:
       return Bell
   }

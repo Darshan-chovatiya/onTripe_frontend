@@ -27,6 +27,16 @@ export function getInboxNotificationLink(notification, role) {
     return null
   }
 
+  if (type === 'event_reminder') {
+    if (role === ROLES.CUSTOMER && d.bookingId) {
+      return `/customer/booking/${d.bookingId}`
+    }
+    if (role === ROLES.VENDOR) {
+      const date = d.eventDate ? `?date=${encodeURIComponent(d.eventDate)}` : ''
+      return `/vendor/dashboard${date}`
+    }
+  }
+
   if (type === 'broadcast') {
     if (role === ROLES.CUSTOMER) return '/customer/notifications'
     if (role === ROLES.VENDOR) return '/vendor/notifications'
@@ -45,6 +55,8 @@ export function getNotificationTypeLabel(type) {
       return 'Agency'
     case 'broadcast':
       return 'Announcement'
+    case 'event_reminder':
+      return 'Event reminder'
     default:
       return 'Notification'
   }

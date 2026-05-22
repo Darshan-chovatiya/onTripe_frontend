@@ -52,6 +52,10 @@ export function VendorChatProvider({ children }) {
         return true
       }
 
+      if (type === 'event_reminder') {
+        return false
+      }
+
       return false
     },
     [openCustomerChat, openAgentChat]

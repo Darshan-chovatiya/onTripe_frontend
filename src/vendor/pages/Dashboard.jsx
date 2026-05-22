@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { CalendarDays, Users, Package2, ListChecks, ChevronRight, Sparkles, MessageSquare } from 'lucide-react'
 import { useAuth } from '@/shared/context/AuthContext.jsx'
 import { getVendorSchedule } from '@/vendor/services/vendorApi.js'
@@ -9,6 +9,7 @@ import { useVendorChat } from '@/vendor/context/VendorChatContext.jsx'
 
 export default function VendorDashboard() {
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const { user } = useAuth()
   const { toast } = useToast()
   const toastRef = useRef(toast)
@@ -16,12 +17,24 @@ export default function VendorDashboard() {
   const [items, setItems] = useState([])
   const { openCustomerChat } = useVendorChat()
   const [dateFilter, setDateFilter] = useState(() => {
+    const fromUrl = searchParams.get('date')
+    if (fromUrl && /^\d{4}-\d{2}-\d{2}$/.test(fromUrl)) return fromUrl
     const d = new Date()
     const y = d.getFullYear()
     const m = String(d.getMonth() + 1).padStart(2, '0')
     const day = String(d.getDate()).padStart(2, '0')
     return `${y}-${m}-${day}`
   })
+
+  useEffect(() => {
+    const fromUrl = searchParams.get('date')
+    if (fromUrl && /^\d{4}-\d{2}-\d{2}$/.test(fromUrl) && fromUrl !== dateFilter) {
+      setDateFilter(fromUrl)
+      const next = new URLSearchParams(searchParams)
+      next.delete('date')
+      setSearchParams(next, { replace: true })
+    }
+  }, [searchParams])
 
   useEffect(() => {
     toastRef.current = toast
