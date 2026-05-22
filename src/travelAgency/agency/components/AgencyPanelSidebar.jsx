@@ -15,6 +15,7 @@ import {
   IndianRupee,
 } from 'lucide-react'
 import { useAuth } from '@/shared/context/AuthContext.jsx'
+import { ROLES } from '@/shared/utils/constants.js'
 import ConfirmDialog from '@/shared/components/ConfirmDialog.jsx'
 import logoIcon from '@/assets/Logo Icon.png'
 import { AGENCY_PANEL_BASE } from '@/travelAgency/agency/constants.js'
@@ -28,7 +29,14 @@ import { P } from '@/travelAgency/agency/rbac/agencyPermissions.js'
 export default function AgencyPanelSidebar({ isOpen, onClose }) {
   const navigate = useNavigate()
   const { logout } = useAuth()
-  const { can, roleLabel, loginPathForLogout, isKycPending } = useAgencyPermissions()
+  const { can, role, roleLabel, loginPathForLogout, isKycPending } = useAgencyPermissions()
+
+  const sidebarBg =
+    role === ROLES.PARENT_AGENCY
+      ? 'bg-blue-950'
+      : role === ROLES.CHILD_AGENCY
+        ? 'bg-slate-900'
+        : 'bg-gray-950'
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
   const [logoError, setLogoError] = useState(true)
   const panelName = `${(roleLabel || 'Agency').replace(/agency/gi, '').trim() || 'Agency'}`
@@ -75,7 +83,7 @@ export default function AgencyPanelSidebar({ isOpen, onClose }) {
   return (
     <>
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-[240px] flex-col bg-gray-950 transition-transform duration-200 ease-out lg:static lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 flex w-[240px] flex-col ${sidebarBg} transition-transform duration-200 ease-out lg:static lg:translate-x-0 ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >

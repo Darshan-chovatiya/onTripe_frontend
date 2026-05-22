@@ -1,9 +1,14 @@
 import { useState, useEffect, useRef } from 'react'
-import { X, Send, Image as ImageIcon, Loader2, Calendar, MessageSquare, User } from 'lucide-react'
+import { X, Send, Image as ImageIcon, Loader2, Calendar, MessageSquare, ChevronLeft } from 'lucide-react'
 import axiosInstance from '@/shared/services/axiosInstance.js'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
+import ChatImagePreview from '@/shared/components/ChatImagePreview.jsx'
 
 const BASE_IMG_URL = import.meta.env.VITE_API_BASE_URL?.replace('/api', '').replace(/\/$/, '') || 'http://localhost:5001'
+
+function chatImageSrc(imageUrl) {
+  return `${BASE_IMG_URL}/${String(imageUrl).replace(/\\/g, '/')}`
+}
 
 export default function VendorAllCustomerChatsModal({ isOpen, onClose }) {
   const [chats, setChats] = useState([])
@@ -15,10 +20,15 @@ export default function VendorAllCustomerChatsModal({ isOpen, onClose }) {
   const [loadingChats, setLoadingChats] = useState(true)
   const [loadingMessages, setLoadingMessages] = useState(false)
   const [sending, setSending] = useState(false)
+  const [fullPreviewSrc, setFullPreviewSrc] = useState(null)
   const messagesEndRef = useRef(null)
   const { toast } = useToast()
 
   useEffect(() => {
+    if (!isOpen) {
+      setFullPreviewSrc(null)
+      return undefined
+    }
     if (isOpen) {
       fetchChats()
       const interval = setInterval(fetchChats, 7000)
@@ -112,12 +122,13 @@ export default function VendorAllCustomerChatsModal({ isOpen, onClose }) {
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-[300] flex items-center justify-center p-4">
+    <>
+    <div className="fixed inset-0 z-[300] flex items-end justify-center p-0 sm:items-center sm:p-4">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-4xl bg-white rounded-3xl shadow-2xl overflow-hidden flex h-[600px] max-h-[90vh]">
+      <div className="relative z-10 flex h-[min(92dvh,640px)] max-h-[92dvh] w-full max-w-4xl flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl sm:h-[600px] sm:max-h-[90vh] sm:flex-row sm:rounded-3xl">
         
         {/* Sidebar / Chats List */}
-        <div className="w-1/3 border-r border-gray-200 bg-gray-50 flex flex-col">
+        <div className={`${selectedChat ? 'hidden md:flex' : 'flex'} w-full flex-col border-gray-200 bg-gray-50 md:w-80 md:shrink-0 md:border-r lg:w-96`}>
           <div className="p-4 border-b border-gray-200 bg-white flex items-center justify-between">
             <div>
               <h3 className="font-bold text-gray-900">Customer Chats</h3>
@@ -164,18 +175,28 @@ export default function VendorAllCustomerChatsModal({ isOpen, onClose }) {
         </div>
 
         {/* Chat Area */}
-        <div className="flex-1 bg-white flex flex-col">
+        <div className={`${selectedChat ? 'flex' : 'hidden md:flex'} min-h-0 min-w-0 flex-1 flex-col bg-white`}>
           {selectedChat ? (
             <>
               {/* Chat Header */}
-              <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-gray-50">
-                <div className="flex items-center gap-3">
+              <div className="flex shrink-0 items-center justify-between gap-2 border-b border-gray-100 bg-gray-50 p-3 sm:p-4">
+                <div className="flex min-w-0 items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => { setSelectedChat(null); setMessages([]) }}
+                    className="rounded-lg p-2 text-gray-500 hover:bg-gray-200 md:hidden"
+                    aria-label="Back to chats"
+                  >
+                    <ChevronLeft size={20} />
+                  </button>
+                  <div className="flex min-w-0 items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center font-bold">
                     {selectedChat.customer.name?.charAt(0) || 'C'}
                   </div>
-                  <div>
-                    <p className="font-bold text-gray-900">{selectedChat.customer.name}</p>
-                    <p className="text-xs text-gray-500">{selectedChat.customer.phone} • Booking: {selectedChat.booking?.bookingId}</p>
+                  <div className="min-w-0">
+                    <p className="truncate font-bold text-gray-900">{selectedChat.customer.name}</p>
+                    <p className="truncate text-xs text-gray-500">{selectedChat.customer.phone} • Booking: {selectedChat.booking?.bookingId}</p>
+                  </div>
                   </div>
                 </div>
                 <button onClick={onClose} className="hidden sm:block p-2 text-gray-400 hover:bg-gray-200 rounded-xl transition-colors">
@@ -198,12 +219,17 @@ export default function VendorAllCustomerChatsModal({ isOpen, onClose }) {
                           isMine ? 'bg-primary-600 text-white rounded-br-sm' : 'bg-white border border-gray-100 text-gray-800 rounded-bl-sm shadow-sm'
                         }`}>
                           {msg.imageUrl && (
-                            <img 
-                              src={`${BASE_IMG_URL}/${msg.imageUrl.replace(/\\/g, '/')}`} 
-                              alt="attachment" 
-                              className="rounded-lg mb-2 max-w-full h-auto object-cover"
-                              style={{ maxHeight: '200px' }}
-                            />
+                            <button
+                              type="button"
+                              onClick={() => setFullPreviewSrc(chatImageSrc(msg.imageUrl))}
+                              className="mb-2 block max-w-full cursor-pointer rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-400"
+                            >
+                              <img
+                                src={chatImageSrc(msg.imageUrl)}
+                                alt="attachment"
+                                className="max-h-[200px] h-auto w-full rounded-lg object-cover"
+                              />
+                            </button>
                           )}
                           {msg.message && <p className="text-sm whitespace-pre-wrap">{msg.message}</p>}
                         </div>
@@ -218,7 +244,7 @@ export default function VendorAllCustomerChatsModal({ isOpen, onClose }) {
               </div>
 
               {/* Chat Input */}
-              <form onSubmit={handleSendMessage} className="p-4 border-t border-gray-100 bg-white">
+              <form onSubmit={handleSendMessage} className="shrink-0 border-t border-gray-100 bg-white p-3 sm:p-4">
                 {imagePreview && (
                   <div className="relative inline-block mb-3">
                     <img src={imagePreview} alt="Preview" className="h-16 w-16 object-cover rounded-lg border border-gray-200" />
@@ -254,7 +280,7 @@ export default function VendorAllCustomerChatsModal({ isOpen, onClose }) {
               </form>
             </>
           ) : (
-            <div className="flex-1 flex items-center justify-center text-gray-400 text-sm flex-col gap-3">
+            <div className="hidden flex-1 flex-col items-center justify-center gap-3 text-sm text-gray-400 md:flex">
               <MessageSquare size={48} className="text-gray-200" />
               Select a conversation to view messages
             </div>
@@ -263,5 +289,7 @@ export default function VendorAllCustomerChatsModal({ isOpen, onClose }) {
 
       </div>
     </div>
+    <ChatImagePreview src={fullPreviewSrc} onClose={() => setFullPreviewSrc(null)} />
+    </>
   )
 }

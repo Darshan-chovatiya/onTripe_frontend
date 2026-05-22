@@ -91,17 +91,17 @@ export default function VendorProfile() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8 animate-fade-in pb-32 pt-6 px-4">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-100 pb-8">
-        <div>
-          <h1 className="text-3xl font-black text-gray-900 tracking-tight">Vendor Profile</h1>
-          <p className="text-gray-500 font-medium mt-1">Manage your business details and contact info.</p>
+    <div className="mx-auto max-w-4xl animate-fade-in space-y-6 px-3 pb-24 pt-4 sm:space-y-8 sm:px-4 sm:pb-32 sm:pt-6">
+      <div className="flex flex-col justify-between gap-4 border-b border-gray-100 pb-6 sm:flex-row sm:items-center sm:pb-8">
+        <div className="min-w-0">
+          <h1 className="text-2xl font-black tracking-tight text-gray-900 sm:text-3xl">Vendor Profile</h1>
+          <p className="mt-1 text-sm font-medium text-gray-500 sm:text-base">Manage your business details and contact info.</p>
         </div>
         {!isEditing && (
           <button
             type="button"
             onClick={() => setIsEditing(true)}
-            className="flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-700 text-white px-6 py-3 rounded-2xl font-bold text-sm transition-all active:scale-95 shadow-lg shadow-primary-200"
+            className="flex w-full items-center justify-center gap-2 rounded-2xl bg-primary-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-primary-200 transition-all hover:bg-primary-700 active:scale-95 sm:w-auto"
           >
             <Edit2 size={16} /> Edit Profile
           </button>
@@ -110,12 +110,13 @@ export default function VendorProfile() {
 
       <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
         <div className="h-24 bg-linear-to-r from-primary-500 via-indigo-500 to-violet-500" />
-        <div className="px-6 pb-6 -mt-12">
-          <div className="w-24 h-24 rounded-2xl bg-white border-4 border-white shadow-lg flex items-center justify-center text-primary-600">
-            <Briefcase size={40} />
+        <div className="-mt-12 px-4 pb-6 sm:px-6">
+          <div className="flex h-20 w-20 items-center justify-center rounded-2xl border-4 border-white bg-white text-primary-600 shadow-lg sm:h-24 sm:w-24">
+            <Briefcase size={36} className="sm:hidden" />
+            <Briefcase size={40} className="hidden sm:block" />
           </div>
           <div className="mt-4">
-            <h2 className="text-2xl font-bold text-gray-900">{vendor?.name || user?.name || 'Vendor'}</h2>
+            <h2 className="text-xl font-bold text-gray-900 sm:text-2xl">{vendor?.name || user?.name || 'Vendor'}</h2>
             <p className="text-sm text-gray-500 mt-1 flex items-center gap-2">
               <Building2 size={14} />
               {TYPE_LABELS[vendor?.type] || vendor?.type || 'Vendor'}
@@ -125,7 +126,7 @@ export default function VendorProfile() {
       </div>
 
       {isEditing ? (
-        <form onSubmit={handleUpdate} className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm space-y-4">
+        <form onSubmit={handleUpdate} className="space-y-4 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm sm:p-6">
           <div className="flex items-center justify-between mb-2">
             <h3 className="font-bold text-gray-900">Edit details</h3>
             <button type="button" onClick={() => setIsEditing(false)} className="p-2 text-gray-400 hover:bg-gray-100 rounded-lg">
@@ -164,7 +165,7 @@ export default function VendorProfile() {
           </div>
         </form>
       ) : (
-        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-3 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm sm:grid-cols-2 sm:gap-4 sm:p-6">
           {[
             ['Business name', vendor?.name, User],
             ['Contact person', vendor?.contactPerson, User],

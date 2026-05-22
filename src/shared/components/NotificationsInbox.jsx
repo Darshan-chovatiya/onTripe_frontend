@@ -97,10 +97,10 @@ export default function NotificationsInbox({
   }
 
   return (
-    <div className="mx-auto max-w-3xl px-4 pb-32 pt-6">
+    <div className="mx-auto max-w-3xl px-3 pb-24 pt-4 sm:px-4 sm:pb-32 sm:pt-6">
       <div className="mb-6 flex flex-col gap-4 border-b border-gray-100 pb-6 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-3xl font-black tracking-tight text-gray-900">{title}</h1>
+        <div className="min-w-0">
+          <h1 className="text-2xl font-black tracking-tight text-gray-900 sm:text-3xl">{title}</h1>
           <p className="mt-1 text-sm font-medium text-gray-500">{subtitle}</p>
         </div>
         {unreadCount > 0 && (
@@ -108,7 +108,7 @@ export default function NotificationsInbox({
             type="button"
             onClick={handleMarkAll}
             disabled={markingAll}
-            className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 disabled:opacity-50 sm:w-auto"
           >
             {markingAll ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCheck className="h-4 w-4" />}
             Mark all read
@@ -135,7 +135,7 @@ export default function NotificationsInbox({
                 <button
                   type="button"
                   onClick={() => handleClick(n)}
-                  className={`w-full rounded-2xl border p-4 text-left transition-all hover:shadow-md ${
+                  className={`w-full rounded-2xl border p-3 text-left transition-all hover:shadow-md sm:p-4 ${
                     n.isRead
                       ? 'border-gray-100 bg-white hover:border-gray-200'
                       : 'border-primary-200 bg-primary-50/50 hover:border-primary-300 shadow-sm'

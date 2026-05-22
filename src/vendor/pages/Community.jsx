@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { MessageSquare, Users, Search } from 'lucide-react'
+import { MessageSquare, Users, Search, List } from 'lucide-react'
 import { getVendorCommunities } from '@/vendor/services/vendorApi.js'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
 import Loader from '@/shared/components/Loader.jsx'
@@ -13,6 +13,15 @@ const BASE_IMG_URL =
 
 const getFullUrl = (path) =>
   path ? `${BASE_IMG_URL}/${String(path).replace(/\\/g, '/')}` : null
+
+function communityToSelected(c) {
+  return {
+    packageId: c.packageId,
+    title: c.title,
+    destination: c.destination,
+    coverImage: c.coverImage,
+  }
+}
 
 export default function VendorCommunity() {
   const { toast } = useToast()
@@ -29,6 +38,7 @@ export default function VendorCommunity() {
 
   const pickCommunity = useCallback(
     (c, replace = false) => {
+      setSelected(communityToSelected(c))
       navigate(`/vendor/community?pkg=${c.packageId}`, { replace })
       setSidebarOpen(false)
     },
@@ -43,8 +53,14 @@ export default function VendorCommunity() {
           const list = res.data.data.communities || []
           setCommunities(list)
           if (list.length > 0) {
-            const hasUrl = urlPackageId && list.some((c) => c.packageId === urlPackageId)
-            if (!hasUrl) pickCommunity(list[0], true)
+            const match = urlPackageId
+              ? list.find((c) => c.packageId === urlPackageId)
+              : null
+            const target = match || list[0]
+            setSelected(communityToSelected(target))
+            if (!match) {
+              navigate(`/vendor/community?pkg=${target.packageId}`, { replace: true })
+            }
           }
         }
       } catch {
@@ -59,19 +75,12 @@ export default function VendorCommunity() {
   useEffect(() => {
     if (!communities.length || !urlPackageId) return
     const match = communities.find((c) => c.packageId === urlPackageId)
-    if (match) {
-      setSelected({
-        packageId: match.packageId,
-        title: match.title,
-        destination: match.destination,
-        coverImage: match.coverImage,
-      })
-    }
+    if (match) setSelected(communityToSelected(match))
   }, [urlPackageId, communities])
 
   if (loading) {
     return (
-      <div className="flex min-h-[80vh] items-center justify-center">
+      <div className="flex h-full min-h-[200px] items-center justify-center px-4">
         <Loader size="lg" text="Loading communities…" />
       </div>
     )
@@ -79,7 +88,7 @@ export default function VendorCommunity() {
 
   if (communities.length === 0) {
     return (
-      <div className="flex min-h-[80vh] flex-col items-center justify-center gap-6 p-8 text-center">
+      <div className="flex h-full min-h-[200px] flex-col items-center justify-center gap-6 px-4 py-12 text-center">
         <div className="flex h-24 w-24 items-center justify-center rounded-3xl bg-gradient-to-br from-primary-500 to-indigo-600 shadow-2xl shadow-primary-200">
           <Users size={40} className="text-white" />
         </div>
@@ -100,22 +109,23 @@ export default function VendorCommunity() {
   )
 
   return (
-    <div className="flex h-[calc(100vh-7rem)] animate-fade-in overflow-hidden rounded-[2rem] bg-white shadow-2xl shadow-gray-200/50">
+    <div className="flex h-full min-h-0 w-full overflow-hidden bg-white animate-fade-in sm:rounded-2xl sm:shadow-xl sm:shadow-gray-200/50">
       {sidebarOpen && (
         <div
           className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm lg:hidden"
           onClick={() => setSidebarOpen(false)}
+          aria-hidden
         />
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-[320px] flex-col border-r border-gray-100/50 bg-white transition-all duration-300 ease-in-out lg:static lg:z-auto lg:w-[350px] ${
+        className={`fixed inset-y-0 left-0 z-50 flex w-full max-w-[min(100vw,20rem)] flex-col border-r border-gray-100/50 bg-white transition-transform duration-300 ease-in-out sm:max-w-xs lg:static lg:z-auto lg:w-80 lg:translate-x-0 xl:w-[350px] ${
           sidebarOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full lg:translate-x-0'
         }`}
       >
-        <div className="space-y-4 p-6">
-          <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-black tracking-tight text-gray-900">Communities</h1>
+        <div className="space-y-4 p-4 sm:p-6">
+          <div className="flex items-center justify-between gap-2">
+            <h1 className="text-xl font-black tracking-tight text-gray-900 sm:text-2xl">Communities</h1>
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-50 text-gray-400">
               <MessageSquare size={16} />
             </div>
@@ -184,24 +194,34 @@ export default function VendorCommunity() {
         </div>
       </aside>
 
-      <div className="relative flex min-w-0 flex-1 flex-col bg-white">
+      <div className="relative flex min-h-0 min-w-0 flex-1 flex-col bg-white">
         {selected ? (
           <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
             <CommunityChat
               key={selected.packageId}
               packageId={selected.packageId}
               currentUserId={user?.id}
+              layout="page"
+              flush
               onToggleSidebar={() => setSidebarOpen(true)}
             />
           </div>
         ) : (
-          <div className="flex flex-1 flex-col items-center justify-center gap-8 bg-gray-50/30 p-12 text-center">
-            <MessageSquare size={56} className="text-gray-200" strokeWidth={1.5} />
-            <div className="max-w-xs space-y-3">
-              <h3 className="text-2xl font-black tracking-tight text-gray-900">Package group chats</h3>
+          <div className="flex flex-1 flex-col items-center justify-center gap-6 bg-gray-50/30 p-6 text-center sm:gap-8 sm:p-12">
+            <MessageSquare size={48} className="text-gray-200 sm:hidden" strokeWidth={1.5} />
+            <MessageSquare size={56} className="hidden text-gray-200 sm:block" strokeWidth={1.5} />
+            <div className="max-w-xs space-y-3 px-4">
+              <h3 className="text-xl font-black tracking-tight text-gray-900 sm:text-2xl">Package group chats</h3>
               <p className="text-sm font-medium leading-relaxed text-gray-500">
                 Select a package to chat with agents, travelers, and other vendors on the same trip.
               </p>
+              <button
+                type="button"
+                onClick={() => setSidebarOpen(true)}
+                className="mt-2 inline-flex items-center justify-center gap-2 rounded-xl bg-primary-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-700 lg:hidden"
+              >
+                <List size={18} /> Browse packages
+              </button>
             </div>
           </div>
         )}

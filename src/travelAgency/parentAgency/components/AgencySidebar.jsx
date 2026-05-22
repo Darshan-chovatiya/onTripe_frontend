@@ -31,7 +31,7 @@ export default function AgencySidebar({ isOpen, onClose }) {
   return (
     <>
       <aside
-        className={`fixed lg:static inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-gray-800/50 bg-gray-900 transition-transform duration-300 lg:translate-x-0 ${
+        className={`fixed lg:static inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-gray-800/50 bg-blue-950 transition-transform duration-300 lg:translate-x-0 ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >

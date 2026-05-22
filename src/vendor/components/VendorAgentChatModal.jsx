@@ -80,13 +80,13 @@ export default function VendorAgentChatModal({ isOpen, onClose }) {
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-[300] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[300] flex items-end justify-center p-0 sm:items-center sm:p-4">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col h-[600px] max-h-[90vh]">
+      <div className="relative z-10 flex h-[min(92dvh,640px)] max-h-[92dvh] w-full max-w-md flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl sm:h-[600px] sm:max-h-[90vh] sm:rounded-3xl">
         
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-100 bg-gray-50">
-          <div className="flex items-center gap-3">
+        <div className="flex shrink-0 items-center justify-between gap-2 border-b border-gray-100 bg-gray-50 p-3 sm:p-4">
+          <div className="flex min-w-0 items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-primary-100 text-primary-600 flex items-center justify-center font-bold">
               A
             </div>
@@ -139,7 +139,7 @@ export default function VendorAgentChatModal({ isOpen, onClose }) {
         </div>
 
         {/* Input */}
-        <form onSubmit={handleSendMessage} className="p-4 border-t border-gray-100 bg-white">
+        <form onSubmit={handleSendMessage} className="shrink-0 border-t border-gray-100 bg-white p-3 sm:p-4">
           {imagePreview && (
             <div className="relative inline-block mb-3">
               <img src={imagePreview} alt="Preview" className="h-16 w-16 object-cover rounded-lg border border-gray-200" />

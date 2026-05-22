@@ -22,6 +22,7 @@ function VendorLayoutInner() {
   })
 
   const isDashboard = location.pathname === '/vendor/dashboard' || location.pathname === '/vendor'
+  const isCommunity = location.pathname.startsWith('/vendor/community')
   const shouldShowSolid = !isDashboard || isScrolled
 
   useEffect(() => {
@@ -44,7 +45,7 @@ function VendorLayoutInner() {
   const closeSidebar = () => setIsSidebarOpen(false)
 
   return (
-    <div className="bg-gray-50 dark:bg-gray-900 min-h-screen">
+    <div className="min-h-dvh overflow-x-hidden bg-gray-50 dark:bg-gray-900">
       {showConfirmLogout && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
           <div
@@ -124,17 +125,17 @@ function VendorLayoutInner() {
         </aside>
       </div>
 
-      <header className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-500 h-20 items-center flex px-4 sm:px-8 justify-between ${
+      <header className={`fixed top-0 left-0 right-0 z-[100] flex h-16 items-center justify-between px-3 transition-all duration-500 sm:h-20 sm:px-6 lg:px-8 ${
         shouldShowSolid
           ? 'bg-white/80 dark:bg-gray-950/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-white/10 shadow-sm'
           : 'bg-transparent border-transparent'
       }`}>
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-primary-600 rounded-2xl flex items-center justify-center shadow-xl shadow-primary-500/30 transform transition-transform hover:rotate-3">
-            <Briefcase className="text-white" size={22} strokeWidth={2.5} />
+        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary-600 shadow-lg shadow-primary-500/30 transition-transform hover:rotate-3 sm:h-10 sm:w-10 sm:rounded-2xl">
+            <Briefcase className="text-white" size={20} strokeWidth={2.5} />
           </div>
-          <div className="flex flex-col leading-tight">
-            <span className={`font-black text-xl tracking-tight transition-colors duration-300 ${shouldShowSolid ? 'text-gray-900 dark:text-white' : 'text-white'}`}>
+          <div className="min-w-0 flex-col leading-tight">
+            <span className={`truncate font-black text-base tracking-tight transition-colors duration-300 sm:text-xl ${shouldShowSolid ? 'text-gray-900 dark:text-white' : 'text-white'}`}>
               OnTrip Vendor
             </span>
           </div>
@@ -163,7 +164,7 @@ function VendorLayoutInner() {
           ))}
         </nav>
 
-        <div className="flex items-center gap-3">
+        <div className="flex shrink-0 items-center gap-2 sm:gap-3">
           <NotificationBell
             to="/vendor/notifications"
             unreadCount={unreadCount}
@@ -182,8 +183,9 @@ function VendorLayoutInner() {
           </button>
 
           <button
+            type="button"
             onClick={() => setIsSidebarOpen(true)}
-            className={`lg:hidden p-3 rounded-2xl transition-all active:scale-90 ${
+            className={`lg:hidden rounded-xl p-2.5 transition-all active:scale-90 sm:rounded-2xl sm:p-3 ${
               shouldShowSolid
                 ? 'bg-gray-100 text-gray-900 hover:bg-gray-200'
                 : 'bg-white/10 backdrop-blur-md text-white border border-white/10 hover:bg-white/20'
@@ -194,8 +196,14 @@ function VendorLayoutInner() {
         </div>
       </header>
 
-      <main className={`min-h-screen ${!isDashboard ? 'pt-24' : ''}`}>
-        <div className="w-full">
+      <main
+        className={
+          isCommunity
+            ? 'flex h-dvh min-h-0 flex-col pt-16 sm:pt-20'
+            : `min-h-[calc(100dvh-4rem)] sm:min-h-[calc(100dvh-5rem)] ${!isDashboard ? 'pt-16 sm:pt-20' : ''}`
+        }
+      >
+        <div className={`w-full max-w-[100vw] ${isCommunity ? 'flex min-h-0 flex-1 flex-col overflow-hidden' : ''}`}>
           <Outlet />
         </div>
       </main>

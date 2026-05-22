@@ -22,7 +22,7 @@ export default function VendorPackageDetails() {
 
   if (!pkg) {
     return (
-      <div className="max-w-5xl mx-auto px-4 py-8 sm:px-6">
+      <div className="mx-auto max-w-5xl px-3 py-6 sm:px-4 sm:py-8">
           <div className="rounded-xl border border-gray-100 bg-white p-8 text-center text-sm text-gray-600 shadow-sm">
             Package details are unavailable for this view. Please open from vendor dashboard card.
             <div className="mt-4">
@@ -40,31 +40,31 @@ export default function VendorPackageDetails() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8 sm:px-6 lg:py-10 pb-16">
+    <div className="mx-auto max-w-5xl px-3 py-6 pb-20 sm:px-4 sm:py-8 lg:py-10 lg:pb-16">
         <div className="mb-5 overflow-hidden rounded-2xl border border-primary-100 bg-white shadow-sm">
           <div className="h-1.5 bg-linear-to-r from-primary-500 via-indigo-500 to-violet-500" />
-          <div className="p-5">
-            <div className="mb-3 flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-gray-500">
+          <div className="p-4 sm:p-5">
+            <div className="mb-3 flex flex-wrap items-center gap-1 text-xs font-semibold uppercase tracking-wide text-gray-500">
               <Home className="h-3.5 w-3.5" />
               <span>Vendor</span>
               <span>/</span>
               <span>Package Details</span>
             </div>
 
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <h1 className="text-2xl font-bold tracking-tight text-gray-900">{pkg.packageTitle}</h1>
+            <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
+              <div className="min-w-0 flex-1">
+                <h1 className="text-xl font-bold tracking-tight text-gray-900 sm:text-2xl">{pkg.packageTitle}</h1>
                 <p className="mt-1 text-sm text-gray-600">{pkg.destination || '—'}</p>
                 <div className="mt-2 inline-flex items-center gap-2 rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-700">
                   <Route className="h-3.5 w-3.5" />
                   Package ID: {packageId}
                 </div>
               </div>
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap">
                 <button
                   type="button"
                   onClick={() => navigate(`/vendor/community?pkg=${packageId}`)}
-                  className="inline-flex items-center gap-1 rounded-lg border border-primary-200 bg-primary-50 px-3 py-2 text-sm font-semibold text-primary-700 hover:bg-primary-100"
+                  className="inline-flex w-full items-center justify-center gap-1 rounded-lg border border-primary-200 bg-primary-50 px-3 py-2.5 text-sm font-semibold text-primary-700 hover:bg-primary-100 sm:w-auto"
                 >
                   <MessageSquare className="h-4 w-4" />
                   Package community
@@ -72,7 +72,7 @@ export default function VendorPackageDetails() {
                 <button
                   type="button"
                   onClick={() => navigate('/vendor/dashboard')}
-                  className="inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                  className="inline-flex w-full items-center justify-center gap-1 rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 sm:w-auto"
                 >
                   <ChevronLeft className="h-4 w-4" />
                   Back to dashboard
@@ -111,7 +111,7 @@ export default function VendorPackageDetails() {
           </div>
           <div className="divide-y divide-gray-100">
             {rows.map((r) => (
-              <div key={`${r.bookingId}-${r.date}-${r.tripDay}-${r.roles?.join('-')}`} className="p-4 text-sm text-gray-700">
+              <div key={`${r.bookingId}-${r.date}-${r.tripDay}-${r.roles?.join('-')}`} className="p-3 text-sm text-gray-700 sm:p-4">
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                   <div><span className="font-semibold">Date:</span> {new Date(r.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</div>
                   <div><span className="font-semibold">Trip day:</span> Day {r.tripDay}</div>
@@ -146,7 +146,7 @@ export default function VendorPackageDetails() {
           </div>
           <div className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2">
             {customers.map((c, idx) => (
-              <div key={`${c.phone || c.email || c.name || 'c'}-${idx}`} className="rounded-lg border border-gray-200 bg-gray-50 px-3.5 py-3 text-sm text-gray-700">
+              <div key={`${c.phone || c.email || c.name || 'c'}-${idx}`} className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-3 text-sm text-gray-700 sm:px-3.5">
                 <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-gray-900">
                   <User className="h-4 w-4 text-gray-500" />
                   {c.name || '—'}
@@ -173,7 +173,7 @@ export default function VendorPackageDetails() {
                           })
                         }
                       }}
-                      className="inline-flex items-center gap-2 rounded-lg bg-primary-50 px-3 py-1.5 text-xs font-semibold text-primary-700 hover:bg-primary-100"
+                      className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary-50 px-3 py-2 text-xs font-semibold text-primary-700 hover:bg-primary-100 sm:w-auto sm:py-1.5"
                     >
                       <MessageSquare className="h-3.5 w-3.5" />
                       Chat with Customer

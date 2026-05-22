@@ -2,8 +2,13 @@ import { useState, useEffect, useRef } from 'react'
 import { X, Send, Image as ImageIcon, Loader2 } from 'lucide-react'
 import { getCustomerChatMessages, sendCustomerChatMessage } from '@/vendor/services/vendorApi.js'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
+import ChatImagePreview from '@/shared/components/ChatImagePreview.jsx'
 
 const BASE_IMG_URL = import.meta.env.VITE_API_BASE_URL?.replace('/api', '').replace(/\/$/, '') || 'http://localhost:5001'
+
+function chatImageSrc(imageUrl) {
+  return `${BASE_IMG_URL}/${String(imageUrl).replace(/\\/g, '/')}`
+}
 
 export default function CustomerChatModal({ isOpen, onClose, bookingId, customer }) {
   const [messages, setMessages] = useState([])
@@ -13,6 +18,7 @@ export default function CustomerChatModal({ isOpen, onClose, bookingId, customer
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
   const [bookingLabel, setBookingLabel] = useState(null)
+  const [fullPreviewSrc, setFullPreviewSrc] = useState(null)
   const messagesEndRef = useRef(null)
   const { toast } = useToast()
 
@@ -22,6 +28,7 @@ export default function CustomerChatModal({ isOpen, onClose, bookingId, customer
     if (!isOpen || !bookingId || !customerId) {
       setMessages([])
       setLoading(true)
+      setFullPreviewSrc(null)
       return undefined
     }
     setLoading(true)
@@ -87,19 +94,20 @@ export default function CustomerChatModal({ isOpen, onClose, bookingId, customer
   if (!isOpen || !customer) return null
 
   return (
-    <div className="fixed inset-0 z-[300] flex items-center justify-center p-4">
+    <>
+    <div className="fixed inset-0 z-[300] flex items-end justify-center p-0 sm:items-center sm:p-4">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col h-[600px] max-h-[90vh]">
+      <div className="relative z-10 flex h-[min(92dvh,640px)] max-h-[92dvh] w-full max-w-md flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl sm:h-[600px] sm:max-h-[90vh] sm:rounded-3xl">
         
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-100 bg-gray-50">
-          <div className="flex items-center gap-3">
+        <div className="flex shrink-0 items-center justify-between gap-2 border-b border-gray-100 bg-gray-50 p-3 sm:p-4">
+          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
             <div className="w-10 h-10 rounded-full bg-primary-100 text-primary-600 flex items-center justify-center font-bold uppercase">
               {customer.name?.charAt(0) || 'C'}
             </div>
-            <div>
-              <h3 className="font-bold text-gray-900">{customer.name || 'Customer'}</h3>
-              <p className="text-xs text-gray-500">
+            <div className="min-w-0">
+              <h3 className="truncate font-bold text-gray-900">{customer.name || 'Customer'}</h3>
+              <p className="truncate text-xs text-gray-500">
                 {bookingLabel ? `Booking ${bookingLabel}` : 'Customer chat'}
               </p>
             </div>
@@ -128,12 +136,17 @@ export default function CustomerChatModal({ isOpen, onClose, bookingId, customer
                     isMine ? 'bg-primary-600 text-white rounded-br-sm' : 'bg-white border border-gray-100 text-gray-800 rounded-bl-sm shadow-sm'
                   }`}>
                     {msg.imageUrl && (
-                      <img 
-                        src={`${BASE_IMG_URL}/${msg.imageUrl.replace(/\\/g, '/')}`} 
-                        alt="attachment" 
-                        className="rounded-lg mb-2 max-w-full h-auto object-cover"
-                        style={{ maxHeight: '200px' }}
-                      />
+                      <button
+                        type="button"
+                        onClick={() => setFullPreviewSrc(chatImageSrc(msg.imageUrl))}
+                        className="mb-2 block max-w-full cursor-pointer rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-400"
+                      >
+                        <img
+                          src={chatImageSrc(msg.imageUrl)}
+                          alt="attachment"
+                          className="max-h-[200px] h-auto w-full rounded-lg object-cover"
+                        />
+                      </button>
                     )}
                     {msg.message && <p className="text-sm whitespace-pre-wrap">{msg.message}</p>}
                   </div>
@@ -148,7 +161,7 @@ export default function CustomerChatModal({ isOpen, onClose, bookingId, customer
         </div>
 
         {/* Input */}
-        <form onSubmit={handleSendMessage} className="p-4 border-t border-gray-100 bg-white">
+        <form onSubmit={handleSendMessage} className="shrink-0 border-t border-gray-100 bg-white p-3 sm:p-4">
           {imagePreview && (
             <div className="relative inline-block mb-3">
               <img src={imagePreview} alt="Preview" className="h-16 w-16 object-cover rounded-lg border border-gray-200" />
@@ -184,5 +197,7 @@ export default function CustomerChatModal({ isOpen, onClose, bookingId, customer
         </form>
       </div>
     </div>
+    <ChatImagePreview src={fullPreviewSrc} onClose={() => setFullPreviewSrc(null)} />
+    </>
   )
 }
