@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { X, Loader2, User as UserIcon, Calendar } from 'lucide-react'
+import { X, Loader2, User as UserIcon, Calendar, ArrowLeft } from 'lucide-react'
 import { getVendorCustomerChatsForAgent } from '@/travelAgency/parentAgency/services/parentAgencyApi.js'
 import Modal from '@/shared/components/Modal.jsx'
 
@@ -34,10 +34,10 @@ export default function VendorCustomerChatsViewerModal({ isOpen, onClose, vendor
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={`Customer Chats: ${vendor.name}`} size="4xl">
-      <div className="h-[600px] max-h-[80vh] flex overflow-hidden rounded-2xl border border-gray-200">
+      <div className="h-[600px] max-h-[80vh] flex flex-col md:flex-row overflow-hidden rounded-2xl border border-gray-200">
         
         {/* Sidebar */}
-        <div className="w-1/3 border-r border-gray-200 bg-gray-50 flex flex-col">
+        <div className={`${selectedChat ? 'hidden md:flex' : 'flex'} w-full md:w-1/3 border-r md:border-b-0 border-gray-200 bg-gray-50 flex-col h-full`}>
           <div className="p-4 border-b border-gray-200 bg-white">
             <h3 className="font-bold text-gray-900">Conversations</h3>
             <p className="text-xs text-gray-500">{chats.length} active chats</p>
@@ -76,14 +76,20 @@ export default function VendorCustomerChatsViewerModal({ isOpen, onClose, vendor
         </div>
 
         {/* Chat Area */}
-        <div className="flex-1 bg-white flex flex-col">
+        <div className={`${!selectedChat ? 'hidden md:flex' : 'flex'} flex-1 bg-white flex-col h-full overflow-hidden`}>
           {selectedChat ? (
             <>
-              <div className="p-4 border-b border-gray-100 flex items-center gap-3">
-                <UserIcon className="text-gray-400" />
-                <div>
-                  <p className="font-bold text-gray-900">{selectedChat.customer.name}</p>
-                  <p className="text-xs text-gray-500">{selectedChat.customer.phone} • {selectedChat.customer.email}</p>
+              <div className="p-4 border-b border-gray-100 flex items-center gap-3 shrink-0">
+                <button 
+                  onClick={() => setSelectedChat(null)}
+                  className="md:hidden p-1 -ml-2 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <ArrowLeft size={20} />
+                </button>
+                <UserIcon className="text-gray-400 shrink-0" />
+                <div className="min-w-0">
+                  <p className="font-bold text-gray-900 truncate">{selectedChat.customer.name}</p>
+                  <p className="text-xs text-gray-500 truncate">{selectedChat.customer.phone} • {selectedChat.customer.email}</p>
                 </div>
               </div>
               

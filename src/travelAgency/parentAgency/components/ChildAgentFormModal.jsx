@@ -449,19 +449,19 @@ export default function ChildAgentFormModal({ isOpen, onClose, agent, onSave }) 
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center justify-end gap-3 border-t border-gray-100 pt-6">
+        <div className="flex flex-col-reverse sm:flex-row items-center justify-end gap-3 border-t border-gray-100 pt-6">
           <button
             type="button"
             onClick={onClose}
             disabled={loading}
-            className="rounded-lg border border-gray-200 bg-white px-6 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-60"
+            className="w-full sm:w-auto rounded-lg border border-gray-200 bg-white px-6 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-60"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={loading}
-            className="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-gray-800 disabled:opacity-60"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-lg bg-gray-900 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-gray-800 disabled:opacity-60"
           >
             {loading ? <Loader2 size={16} className="animate-spin" /> : null}
             {agent ? 'Update Agent' : 'Add agency'}

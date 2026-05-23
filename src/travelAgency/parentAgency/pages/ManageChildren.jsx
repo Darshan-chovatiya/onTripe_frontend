@@ -286,12 +286,12 @@ export default function ManageChildren() {
           <h1 className="text-xl font-semibold tracking-tight text-gray-900 sm:text-2xl">Child Agents</h1>
           <p className="mt-1 text-sm text-gray-500">Agents linked to your network.</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col w-full sm:w-auto sm:flex-row sm:items-center gap-2">
           <button
             type="button"
             onClick={handleExport}
             disabled={children.length === 0 || exportLoading}
-            className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-3.5 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 disabled:opacity-50"
+            className="w-full sm:w-auto inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-3.5 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 disabled:opacity-50"
           >
             {exportLoading ? <RefreshCw size={15} className="animate-spin" /> : <Download size={15} />}
             Export Excel
@@ -299,7 +299,7 @@ export default function ManageChildren() {
           <button
             type="button"
             onClick={() => navigate('/agency/manage-downstream/notification-history')}
-            className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
           >
             <History size={15} />
             History
@@ -308,7 +308,7 @@ export default function ManageChildren() {
             type="button"
             onClick={openNotify}
             disabled={selectedCount === 0}
-            className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-primary-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-primary-700 disabled:opacity-50"
+            className="w-full sm:w-auto inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-primary-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-primary-700 disabled:opacity-50"
             title={selectedCount === 0 ? 'Select child agents first' : 'Send notification'}
           >
             <Bell size={15} />
@@ -317,7 +317,7 @@ export default function ManageChildren() {
           <button
             type="button"
             onClick={() => { setEditingAgent(null); setIsFormOpen(true) }}
-            className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-zinc-900 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-zinc-800"
+            className="w-full sm:w-auto inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg bg-zinc-900 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-zinc-800"
           >
             <Plus size={16} />
             Add Child Agency
@@ -586,12 +586,12 @@ export default function ManageChildren() {
             )}
           </div>
 
-          <div className="flex items-center justify-end gap-2">
+          <div className="flex flex-col-reverse sm:flex-row items-center justify-end gap-2 sm:gap-3">
             <button
               type="button"
               onClick={() => setNotifyOpen(false)}
               disabled={notifyBusy}
-              className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+              className="w-full sm:w-auto rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60"
             >
               Cancel
             </button>
@@ -599,7 +599,7 @@ export default function ManageChildren() {
               type="button"
               onClick={sendNotify}
               disabled={notifyBusy}
-              className="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-60"
+              className="w-full sm:w-auto inline-flex justify-center items-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-60"
             >
               <Send size={16} />
               {notifyBusy ? 'Sending…' : 'Send'}
@@ -664,13 +664,13 @@ export default function ManageChildren() {
             placeholder="E.g. Aadhar card image is blurry or documents don't match."
             className="w-full resize-none rounded-xl border border-gray-200 px-4 py-3 text-sm focus:border-red-400 focus:outline-none focus:ring-4 focus:ring-red-400/5"
           />
-          <div className="flex items-center justify-end gap-2">
+          <div className="flex flex-col-reverse sm:flex-row items-center justify-end gap-2 sm:gap-3">
             <button onClick={() => setRejectTarget(null)} disabled={rejectBusy}
-              className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50">
+              className="w-full sm:w-auto rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50">
               Cancel
             </button>
             <button onClick={handleRejectKyc} disabled={rejectBusy || !rejectReason.trim()}
-              className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-700 disabled:opacity-50">
+              className="w-full sm:w-auto inline-flex justify-center items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-700 disabled:opacity-50">
               {rejectBusy && <RefreshCw size={14} className="animate-spin" />}
               Reject KYC
             </button>

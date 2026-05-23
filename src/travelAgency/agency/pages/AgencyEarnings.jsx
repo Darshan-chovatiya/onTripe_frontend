@@ -183,21 +183,23 @@ export default function AgencyEarnings() {
               <option value="subChild">Created by Agents</option>
             </select>
           )}
-          <div className="flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-gray-400" />
-            <input type="date" className="rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-300"
-              value={dateFrom} onChange={e => setDateFrom(e.target.value)} placeholder="From" />
-            <span className="text-gray-400">—</span>
-            <input type="date" className="rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-300"
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full lg:w-auto">
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-gray-400 shrink-0" />
+              <input type="date" className="w-full sm:w-auto rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-300"
+                value={dateFrom} onChange={e => setDateFrom(e.target.value)} placeholder="From" />
+            </div>
+            <span className="hidden sm:block text-gray-400 text-center">—</span>
+            <input type="date" className="w-full sm:w-auto rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-300 ml-1 sm:ml-0"
               value={dateTo} onChange={e => setDateTo(e.target.value)} placeholder="To" />
           </div>
           <button onClick={() => { setPackageFilter('all'); setWlFilter('all'); setStatusFilter('all'); setAgentTypeFilter('all'); setDateFrom(''); setDateTo('') }}
-            className="rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-500 hover:bg-gray-50">
+            className="w-full sm:w-auto rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-500 hover:bg-gray-50">
             Clear
           </button>
           {/* x */}
           <button onClick={handleExport} disabled={!rows.length}
-            className="ml-auto flex items-center gap-1.5 rounded-lg bg-primary-600 px-3 py-2 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-50">
+            className="w-full sm:w-auto sm:ml-auto flex justify-center items-center gap-1.5 rounded-lg bg-primary-600 px-3 py-2 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-50">
             <Download className="h-3.5 w-3.5" /> Export CSV
           </button>
         </div>

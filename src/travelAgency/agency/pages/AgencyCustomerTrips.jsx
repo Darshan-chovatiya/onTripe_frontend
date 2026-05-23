@@ -78,7 +78,7 @@ export default function AgencyCustomerTrips() {
 
   return (
     <div className="animate-fade-in space-y-6">
-      <header className="flex items-center justify-between">
+      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
           <p className="mt-1 text-sm text-gray-500">
@@ -88,7 +88,7 @@ export default function AgencyCustomerTrips() {
         <button
           type="button"
           onClick={() => navigate('/agency/customers')}
-          className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+          className="w-full sm:w-auto inline-flex justify-center items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
         >
           <ArrowLeft size={16} />
           Back to customers

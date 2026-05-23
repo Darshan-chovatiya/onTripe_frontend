@@ -220,15 +220,15 @@ export default function Vendors() {
                         {v.type?.replace(/_/g, ' ')}
                       </span>
                     </div>
-                    <div className="grid grid-cols-2 gap-4 text-xs">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-xs">
                       <div className="min-w-0">
                         <p className="text-[10px] uppercase font-bold tracking-wider text-gray-400 mb-1">Contact</p>
-                        {v.email ? <p className="font-medium text-gray-700 truncate">{v.email}</p> : <p className="text-gray-300">—</p>}
+                        {v.email ? <p className="font-medium text-gray-700 break-all">{v.email}</p> : <p className="text-gray-300">—</p>}
                         {v.phone && <p className="text-gray-500 mt-0.5 truncate">{v.phone}</p>}
                       </div>
                       <div className="min-w-0">
                         <p className="text-[10px] uppercase font-bold tracking-wider text-gray-400 mb-1">Location</p>
-                        <p className="text-gray-600 truncate">{[v.city, v.state, v.country].filter(Boolean).join(', ') || '—'}</p>
+                        <p className="text-gray-600 break-words whitespace-normal">{[v.city, v.state, v.country].filter(Boolean).join(', ') || '—'}</p>
                       </div>
                     </div>
                     <div className="flex gap-2 pt-2 border-t border-gray-50">

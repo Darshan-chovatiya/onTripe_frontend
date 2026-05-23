@@ -509,10 +509,10 @@ export default function AgencyCustomers() {
             Travelers and leads linked to your agency.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col w-full sm:w-auto sm:flex-row sm:items-center gap-2">
           {canManageCustomers && (
             <>
-              <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-gray-200 bg-white px-3.5 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 shadow-sm transition-colors">
+              <label className="w-full sm:w-auto inline-flex cursor-pointer justify-center items-center gap-2 rounded-lg border border-gray-200 bg-white px-3.5 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 shadow-sm transition-colors">
                 {importBusy ? <RefreshCw size={15} className="animate-spin" /> : <Upload size={15} />}
                 Import
                 <input type="file" className="hidden" accept=".xlsx,.xls,.csv" onChange={handleImportExcelSelect} disabled={importBusy} />
@@ -521,7 +521,7 @@ export default function AgencyCustomers() {
               <button
                 type="button"
                 onClick={() => setAddOpen(true)}
-                className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-primary-600 px-3.5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-700 transition-all active:scale-[0.98]"
+                className="w-full sm:w-auto inline-flex justify-center cursor-pointer items-center gap-2 rounded-lg bg-primary-600 px-3.5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-700 transition-all active:scale-[0.98]"
               >
                 <Plus size={15} />
                 Add Customer
@@ -532,7 +532,7 @@ export default function AgencyCustomers() {
             type="button"
             onClick={handleExport}
             disabled={rows.length === 0 || exportLoading}
-            className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+            className="w-full sm:w-auto inline-flex justify-center items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
           >
             {exportLoading ? <RefreshCw size={16} className="animate-spin" /> : <Download size={16} />}
             Export
@@ -540,7 +540,7 @@ export default function AgencyCustomers() {
           <button
             type="button"
             onClick={() => navigate('/agency/customers/notification-history')}
-            className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            className="w-full sm:w-auto inline-flex justify-center items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
           >
             <History size={16} />
             History
@@ -549,7 +549,7 @@ export default function AgencyCustomers() {
             type="button"
             onClick={openNotify}
             disabled={selectedCount === 0}
-            className="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-700 disabled:opacity-50"
+            className="w-full sm:w-auto inline-flex justify-center items-center gap-2 rounded-lg bg-primary-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-700 disabled:opacity-50"
           >
             <Bell size={16} />
             Notify
@@ -755,9 +755,9 @@ export default function AgencyCustomers() {
               placeholder="Any internal notes…"
             />
           </div>
-          <div className="flex justify-end gap-2">
-            <button type="button" onClick={() => setAddOpen(false)} disabled={addBusy} className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60">Cancel</button>
-            <button type="button" onClick={handleAddCustomer} disabled={addBusy} className="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-60">
+          <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 sm:gap-3">
+            <button type="button" onClick={() => setAddOpen(false)} disabled={addBusy} className="w-full sm:w-auto rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60">Cancel</button>
+            <button type="button" onClick={handleAddCustomer} disabled={addBusy} className="w-full sm:w-auto flex justify-center rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-60">
               {addBusy ? 'Adding…' : 'Add Customer'}
             </button>
           </div>
@@ -838,12 +838,12 @@ export default function AgencyCustomers() {
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-2">
+            <div className="flex flex-col-reverse sm:flex-row items-center justify-end gap-2 sm:gap-3 pt-2">
               <button
                 type="button"
                 onClick={() => setEditOpen(false)}
                 disabled={editBusy}
-                className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+                className="w-full sm:w-auto rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60"
               >
                 Cancel
               </button>
@@ -851,7 +851,7 @@ export default function AgencyCustomers() {
                 type="button"
                 onClick={saveEditCustomer}
                 disabled={editBusy}
-                className="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-60"
+                className="w-full sm:w-auto inline-flex justify-center items-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-60"
               >
                 {editBusy ? 'Saving…' : 'Save changes'}
               </button>
@@ -913,12 +913,12 @@ export default function AgencyCustomers() {
             )}
           </div>
 
-          <div className="flex items-center justify-end gap-2">
+          <div className="flex flex-col-reverse sm:flex-row items-center justify-end gap-2 sm:gap-3">
             <button
               type="button"
               onClick={() => setNotifyOpen(false)}
               disabled={notifyBusy}
-              className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+              className="w-full sm:w-auto rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60"
             >
               Cancel
             </button>
@@ -926,7 +926,7 @@ export default function AgencyCustomers() {
               type="button"
               onClick={sendNotify}
               disabled={notifyBusy}
-              className="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-60"
+              className="w-full sm:w-auto inline-flex justify-center items-center gap-2 rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-60"
             >
               <Send size={16} />
               {notifyBusy ? 'Sending…' : 'Send'}

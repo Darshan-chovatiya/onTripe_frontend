@@ -167,10 +167,10 @@ export default function Settings() {
     <div className="w-full space-y-6 pb-8">
 
       {/* ── Profile header ── */}
-      <div className="flex items-center gap-5 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
+      <div className="flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-5 rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
         {/* Logo / avatar */}
         <div className="relative shrink-0">
-          <div className="h-20 w-20 overflow-hidden rounded-2xl border border-gray-200 bg-gray-100">
+          <div className="h-20 w-20 overflow-hidden rounded-2xl border border-gray-200 bg-gray-100 mx-auto sm:mx-0">
             {currentLogoUrl
               ? <img src={currentLogoUrl} alt="Agency logo" className="h-full w-full object-cover" />
               : <div className="flex h-full w-full items-center justify-center text-2xl font-black text-gray-400">{initials}</div>
@@ -183,7 +183,7 @@ export default function Settings() {
           <input ref={logoInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleLogoChange} />
         </div>
 
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1 w-full">
           <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400">Parent Agency</p>
           <h1 className="mt-0.5 text-xl font-bold text-gray-900">{profile.name || 'Agency'}</h1>
           <p className="text-sm text-gray-500">{profile.email}</p>
@@ -200,7 +200,7 @@ export default function Settings() {
             rejected: { label: 'KYC Rejected', cls: 'bg-red-50 text-red-700 border-red-200' },
           }
           const { label, cls } = map[s] || map.pending
-          return <span className={`shrink-0 inline-flex items-center rounded-full border px-3 py-1 text-xs font-bold ${cls}`}>{label}</span>
+          return <span className={`shrink-0 inline-flex items-center justify-center w-full sm:w-auto rounded-full border px-3 py-1 text-xs font-bold ${cls}`}>{label}</span>
         })()}
       </div>
 
