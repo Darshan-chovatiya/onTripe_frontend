@@ -240,7 +240,7 @@ export default function Customers() {
           <h1 className="text-xl font-semibold tracking-tight text-gray-900 sm:text-2xl">Customers</h1>
           <p className="mt-1 text-sm text-gray-500">Travelers and leads linked to your agency.</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-gray-200 bg-white px-3.5 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50">
             {importBusy ? <RefreshCw size={15} className="animate-spin" /> : <Upload size={15} />}
             Import
@@ -581,7 +581,7 @@ export default function Customers() {
             <div className="p-10 text-center text-sm text-gray-500">No notifications sent yet.</div>
           ) : history.map(item => (
             <div key={item._id} className="p-4">
-              <div className="flex items-start justify-between gap-3">
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                 <div>
                   <p className="text-sm font-semibold text-gray-900">{item.subject}</p>
                   <p className="mt-1 text-xs text-gray-500 line-clamp-2">{item.message}</p>

@@ -87,7 +87,7 @@ function NotificationCard({ item }) {
   return (
     <article className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
       <div className="space-y-3 px-5 py-4">
-        <div className="flex items-start justify-between gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
             <p className="text-base font-semibold text-gray-900">{item.subject || '—'}</p>
             <span className="mt-0.5 inline-flex items-center gap-1 text-xs text-gray-400">

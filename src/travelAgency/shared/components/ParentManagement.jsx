@@ -76,7 +76,7 @@ export default function ParentManagement({ listParents, addParent, toggleParentA
         </div>
       </div> 
 
-      <form onSubmit={handleAdd} className="flex gap-2">
+      <form onSubmit={handleAdd} className="flex flex-col sm:flex-row gap-2">
         <input
           className="input-field flex-1"
           placeholder="Enter parent agent code…"
@@ -84,7 +84,7 @@ export default function ParentManagement({ listParents, addParent, toggleParentA
           onChange={(e) => setCode(e.target.value)}
           disabled={adding}
         />
-        <Button type="submit" disabled={adding || !code.trim()}>
+        <Button type="submit" disabled={adding || !code.trim()} className="w-full sm:w-auto justify-center">
           <Plus className="mr-1 inline h-4 w-4" />
           {adding ? 'Adding…' : 'Add'}
         </Button>
@@ -99,19 +99,19 @@ export default function ParentManagement({ listParents, addParent, toggleParentA
           {parents.map((p) => (
             <li
               key={p._id}
-              className={`flex items-center justify-between gap-3 rounded-xl border px-4 py-3 ${
+              className={`flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-xl border px-4 py-3 ${
                 p.status === 'approved' && !p.isActive
                   ? 'border-gray-200 bg-gray-100/60'
                   : 'border-gray-100 bg-gray-50/80'
               }`}
             >
-              <div className="min-w-0">
+              <div className="min-w-0 w-full sm:w-auto">
                 <p className={`truncate text-sm font-medium ${p.status === 'approved' && !p.isActive ? 'text-gray-400' : 'text-gray-900'}`}>
                   {p.name || '—'}
                 </p>
                 <p className="text-xs text-gray-500">{p.email || p.phone || p.agentCode || ''}</p>
               </div>
-              <div className="flex shrink-0 items-center gap-2">
+              <div className="flex shrink-0 w-full sm:w-auto items-center justify-between sm:justify-end gap-2 mt-1 sm:mt-0">
                 {p.status === 'approved' ? (
                   <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-100">
                     <CheckCircle className="h-3 w-3" /> Approved

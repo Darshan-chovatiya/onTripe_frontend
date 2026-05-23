@@ -258,7 +258,7 @@ export default function AgentCommissionsModal({ isOpen, onClose, data = [], indi
     <Modal isOpen={isOpen} onClose={onClose} title={title} maxWidth="max-w-5xl">
       <div className="flex flex-col gap-6">
         {/* Overall Stats Summary */}
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="flex items-center gap-3 rounded-xl bg-orange-50 p-4 ring-1 ring-orange-100 shadow-sm">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white text-orange-600 shadow-sm">
               <Zap className="h-6 w-6" strokeWidth={2.5} />
@@ -329,8 +329,8 @@ export default function AgentCommissionsModal({ isOpen, onClose, data = [], indi
 
         <div className="min-h-[300px]">
           {activeTab === 'agents' ? (
-            <div className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm">
-              <table className="w-full text-left text-sm">
+            <div className="overflow-x-auto rounded-xl border border-gray-100 bg-white shadow-sm">
+              <table className="w-full min-w-[600px] text-left text-sm">
                 <thead className="bg-gray-50 text-[10px] font-bold uppercase tracking-wider text-gray-500">
                   <tr>
                     <th className="px-4 py-3">Agent</th>
@@ -362,8 +362,8 @@ export default function AgentCommissionsModal({ isOpen, onClose, data = [], indi
               </table>
             </div>
           ) : (
-            <div className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm">
-              <table className="w-full text-left text-sm">
+            <div className="overflow-x-auto rounded-xl border border-gray-100 bg-white shadow-sm">
+              <table className="w-full min-w-[600px] text-left text-sm">
                 <thead className="bg-gray-50 text-[10px] font-bold uppercase tracking-wider text-gray-500">
                   <tr>
                     <th className="px-4 py-3">Customer & Date</th>

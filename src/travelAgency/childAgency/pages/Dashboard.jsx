@@ -153,16 +153,16 @@ export default function ChildDashboard() {
               )
             })}
           </div>
-          <div className="flex flex-wrap items-center gap-2 sm:flex-nowrap">
-            <div className="flex w-full items-center justify-between gap-1.5 rounded-xl border border-gray-200 bg-gray-50 px-2 sm:px-3 py-2 sm:w-auto sm:justify-start">
-              <CalendarDays className="h-3.5 w-3.5 shrink-0 text-gray-400" strokeWidth={2} />
+          <div className="flex flex-row items-center gap-2 w-full lg:w-auto mt-4 lg:mt-0">
+            <div className="flex flex-1 sm:flex-none items-center justify-between sm:justify-start gap-1.5 rounded-xl border border-gray-200 bg-gray-50 px-2 sm:px-3 py-2">
+              <CalendarDays className="hidden sm:block h-3.5 w-3.5 shrink-0 text-gray-400" strokeWidth={2} />
               <input type="date" value={dateRange.start} max={dateRange.end || todayStr()}
                 onChange={e => { const r = { ...dateRange, start: e.target.value }; setDateRange(r); if (r.start && r.end) fetchAll(r) }}
-                className="w-full min-w-[90px] max-w-[120px] bg-transparent text-xs font-medium text-gray-700 focus:outline-none" />
+                className="w-full max-w-[110px] sm:max-w-none bg-transparent text-xs font-medium text-gray-700 focus:outline-none" />
               <span className="text-gray-300">—</span>
               <input type="date" value={dateRange.end} min={dateRange.start} max={todayStr()}
                 onChange={e => { const r = { ...dateRange, end: e.target.value }; setDateRange(r); if (r.start && r.end) fetchAll(r) }}
-                className="w-full min-w-[90px] max-w-[120px] bg-transparent text-xs font-medium text-gray-700 focus:outline-none" />
+                className="w-full max-w-[110px] sm:max-w-none bg-transparent text-xs font-medium text-gray-700 focus:outline-none" />
             </div>
             <button type="button" onClick={() => fetchAll(dateRange)} disabled={loading}
               className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-400 transition hover:border-gray-400 hover:text-gray-700 disabled:opacity-40">

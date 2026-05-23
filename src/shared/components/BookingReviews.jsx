@@ -296,7 +296,7 @@ export default function BookingReviews({
         <div className="grid grid-cols-1 md:grid-cols-[260px_1fr] gap-0 min-h-0">
 
             {/* ── LEFT: Stats + My Review ────────────────────────── */}
-            <div className="border-r border-gray-100 pr-6 space-y-5 md:sticky md:top-0 h-fit">
+            <div className="border-b md:border-b-0 md:border-r border-gray-100 pb-6 md:pb-0 md:pr-6 space-y-5 md:sticky md:top-0 h-fit">
 
                 {/* Summary Stats Cards */}
                 <div className="space-y-3">
@@ -370,7 +370,7 @@ export default function BookingReviews({
             </div>
 
             {/* ── RIGHT: Paginated Reviews ─────────────────────────── */}
-            <div className="pl-6 flex flex-col gap-4 min-h-0">
+            <div className="md:pl-6 pt-4 md:pt-0 flex flex-col gap-4 min-h-0">
                 <div className="flex items-center justify-between">
                     <h4 className="text-[10px] font-bold uppercase tracking-widest text-gray-400">
                         Guest Feedback {totalReviews > 0 && <span className="normal-case text-gray-300">({totalReviews})</span>}

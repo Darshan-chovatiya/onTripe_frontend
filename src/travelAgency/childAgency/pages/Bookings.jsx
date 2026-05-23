@@ -138,7 +138,7 @@ export default function Bookings() {
       </header>
 
       {/* Booking Source Tabs */}
-      <div className="flex border-b border-gray-200">
+      <div className="flex border-b border-gray-200 overflow-x-auto whitespace-nowrap hide-scrollbar">
         <button
           onClick={() => setAgentType('all')}
           className={`px-4 py-2 text-sm font-medium transition-colors ${
