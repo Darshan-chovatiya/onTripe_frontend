@@ -3,7 +3,7 @@ import { NavLink, useNavigate } from 'react-router-dom'
 import { X, LogOut, LayoutDashboard, CalendarDays, Users, Settings, Package, UserCircle } from 'lucide-react'
 import { useAuth } from '@/shared/context/AuthContext.jsx'
 import ConfirmDialog from '@/shared/components/ConfirmDialog.jsx'
-import logoIcon from '@/assets/Logo Icon.png'
+import logoIcon from '@/assets/onTripLogo.png'
 
 const BASE = '/agency/child'
 

@@ -123,7 +123,7 @@ export default function BookingReviews({
     // ── Visibility Toggling ────────────────────────────────────────
     const [confirmVisibility, setConfirmVisibility] = useState({ open: false, reviewId: null, currentlyVisible: true })
 
-    const canReview = !readOnly && ['ongoing', 'completed'].includes(bookingStatus)
+    const canReview = !readOnly && Boolean(bookingId)
 
     // ── Resolve which endpoint to use ──────────────────────────────
     // Admin passes reviewsApiEndpoint = '/admin/reviews?packageId=xxx'

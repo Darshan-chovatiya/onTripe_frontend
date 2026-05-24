@@ -17,10 +17,11 @@ import {
 import { useAuth } from '@/shared/context/AuthContext.jsx'
 import { ROLES } from '@/shared/utils/constants.js'
 import ConfirmDialog from '@/shared/components/ConfirmDialog.jsx'
-import logoIcon from '@/assets/Logo Icon.png'
+// import logoIcon from '@/assets/Logo Icon.png'
 import { AGENCY_PANEL_BASE } from '@/travelAgency/agency/constants.js'
 import { useAgencyPermissions } from '@/travelAgency/agency/hooks/useAgencyPermissions.js'
 import { P } from '@/travelAgency/agency/rbac/agencyPermissions.js'
+import logoIcon from '@/assets/onTripLogo.png'
 
 /**
  * Agency panel nav — matches admin Sidebar layout/classes; items from RBAC.
@@ -91,7 +92,8 @@ export default function AgencyPanelSidebar({ isOpen, onClose }) {
         <div className="flex h-14 shrink-0 items-center justify-between px-4">
           <div className="flex items-center gap-2.5">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-600 shadow-lg shadow-primary-900/40">
-              <span className="text-xs font-black text-white">OT</span>
+              {/* <span className="text-xs font-black text-white">OT</span> */}
+              <img src={logoIcon} alt="OnTrip" />
             </div>
             <div className="leading-tight">
               <p className="text-[11px] font-black uppercase tracking-widest text-white">OnTrip</p>

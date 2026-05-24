@@ -3,6 +3,9 @@ import { X, LogOut, LayoutDashboard, Settings, Building2, Users2, Package, Bell,
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/shared/context/AuthContext.jsx'
 import ConfirmDialog from '@/shared/components/ConfirmDialog.jsx'
+// import logo from '@/assets/onTripLogo.png'
+import logo from '@/assets/onTripLogo.png'
+
 
 export default function Sidebar({ isOpen, onClose }) {
   const navigate = useNavigate()
@@ -50,8 +53,9 @@ export default function Sidebar({ isOpen, onClose }) {
         {/* Logo */}
         <div className="flex h-16 shrink-0 items-center justify-between px-5">
           <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/15 backdrop-blur-sm ring-1 ring-white/20">
-              <span className="text-xs font-black text-white">OT</span>
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-white backdrop-blur-sm ring-1 ring-white/20">
+              {/* <span className="text-xs font-black text-white">OT</span> */}
+              <img src={logo} alt="OnTrip" />
             </div>
             <div className="leading-tight">
               <p className="text-[13px] font-black tracking-tight text-white">OnTrip</p>

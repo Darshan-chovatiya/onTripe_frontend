@@ -725,8 +725,8 @@ export default function CustomerDetail() {
         <h2 className="text-sm font-semibold text-gray-900">Registry</h2>
         <div className="mt-4 space-y-4">
           <div>
-            <p className="text-xs font-medium text-gray-500">Customer ID</p>
-            <div className="mt-1 flex flex-wrap items-center gap-2">
+            {/* <p className="text-xs font-medium text-gray-500">Customer ID</p> */}
+            {/* <div className="mt-1 flex flex-wrap items-center gap-2">
               <code className="break-all text-sm text-gray-900">{String(customer._id)}</code>
               <button
                 type="button"
@@ -736,7 +736,7 @@ export default function CustomerDetail() {
                 {copied ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
                 Copy
               </button>
-            </div>
+            </div> */}
           </div>
           {(showEmail || showPhone || showUpdated) && (
             <div className="grid gap-3 border-t border-gray-100 pt-4 sm:grid-cols-2">
