@@ -107,12 +107,8 @@ export default function CreateBooking() {
   }, [whitelabels])
 
   useEffect(() => {
-    const hasWl = activeWhitelabels.length > 0
-    const hasPkg = (availablePackages ?? []).filter(p => !p.isSuspended).length > 0
-    if (urlWhitelabelId) setOfferType('whitelabel')
-    else if (urlPackageId) setOfferType('package')
-    else setOfferType(hasWl ? 'whitelabel' : hasPkg ? 'package' : 'whitelabel')
-  }, [activeWhitelabels.length, (availablePackages ?? []).filter(p => !p.isSuspended).length, urlWhitelabelId, urlPackageId])
+    setOfferType('whitelabel')
+  }, [])
 
   const toDateOnly = (dateStr) => {
     if (!dateStr) return ''
@@ -311,8 +307,8 @@ export default function CreateBooking() {
     fd.append('travelDate', new Date(travelDate).toISOString())
     fd.append('totalAmount', String(amount))
 
-    if (offerType === 'package') { if (!packageId) return; fd.append('packageId', packageId) }
-    else { if (!whitelabelId) return; fd.append('whitelabelPackageId', whitelabelId) }
+    if (!whitelabelId) return
+    fd.append('whitelabelPackageId', whitelabelId)
 
     const validTravelers = travelers
       .filter((r) => r.name.trim())
@@ -348,12 +344,13 @@ export default function CreateBooking() {
   }
 
   const canSubmit = Boolean(
+    activeWhitelabels.length > 0 &&
+    whitelabelId &&
     customerName.trim() && 
     normalizePhone(customerPhone) && 
     travelDate && 
     totalAmount && 
     Number(totalAmount) >= minTotalAmount &&
-    (whitelabelId || packageId) &&
     normalizePhone(customerPhone).length === 10 &&
     travelers.every(t => t.name.trim() && /^\d{10}$/.test(t.phone.replace(/\D/g, '')))
   )

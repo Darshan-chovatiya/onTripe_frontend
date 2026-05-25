@@ -117,7 +117,8 @@ export default function Reports() {
           <button 
             type="button"
             onClick={handleExport}
-            className="flex w-full sm:w-auto justify-center items-center gap-2 rounded-xl bg-gray-900 px-4 py-2 text-sm font-bold text-white shadow-lg transition hover:bg-gray-800 active:scale-95"
+            disabled={!data || packageActivity?.length === 0}
+            className="flex w-full sm:w-auto justify-center items-center gap-2 rounded-xl bg-gray-900 px-4 py-2 text-sm font-bold text-white shadow-lg transition hover:bg-gray-800 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Download className="h-4 w-4 shrink-0" />
             Export Data

@@ -1094,7 +1094,7 @@ export default function ChildAgencies({ agentRole = 'child_agent', pageTitle = '
             <Plus className="h-4 w-4" strokeWidth={2.5} />
             Add {agentRole === 'sub_child_agent' ? 'Sub-child' : 'Child'} Agency
           </button>
-          <button type="button" onClick={handleExport} disabled={exportLoading}
+          <button type="button" onClick={handleExport} disabled={exportLoading || agents.length === 0}
             className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 disabled:opacity-50 sm:w-auto">
             {exportLoading ? <Loader size="sm" /> : <Download size={16} strokeWidth={2} />}
             Export

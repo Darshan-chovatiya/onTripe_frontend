@@ -556,12 +556,30 @@ export default function CommunityChat({
   }
 
   const handleMediaPick = (e) => {
-    const picked = Array.from(e.target.files || []).filter((f) => f.type.startsWith('image/') || f.type.startsWith('video/'))
-    if (picked.length === 0) {
+    const rawPicked = Array.from(e.target.files || [])
+    const picked = rawPicked.filter((f) => f.type.startsWith('image/') || f.type.startsWith('video/'))
+    
+    const validPicked = []
+    let hasOversized = false
+
+    for (const file of picked) {
+      if (file.size > 10 * 1024 * 1024) {
+        hasOversized = true
+      } else {
+        validPicked.push(file)
+      }
+    }
+
+    if (hasOversized) {
+      toast.error('File too large. Maximum size is 10MB.')
+    }
+
+    if (validPicked.length === 0) {
       e.target.value = ''
       return
     }
-    const next = picked.map((file) => ({
+
+    const next = validPicked.map((file) => ({
       id: `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
       file,
       type: file.type.startsWith('video/') ? 'video' : 'image',

@@ -298,7 +298,7 @@ export default function Customers() {
         <button
           type="button"
           onClick={handleExport}
-          disabled={exportLoading}
+          disabled={exportLoading || customers.length === 0}
           className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 disabled:opacity-50 sm:w-auto"
         >
           {exportLoading ? <Loader size="sm" /> : <Download size={16} strokeWidth={2} />}

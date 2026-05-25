@@ -12,7 +12,7 @@ export default function PackageReviewsPage() {
     const navigate = useNavigate()
     const { user } = useAuth()
     const [searchParams] = useSearchParams()
-    const readOnly = searchParams.get('readOnly') === 'true'
+    const readOnly = searchParams.get('readOnly') === 'true' || user?.role !== 'customer'
     const bookingStatus = searchParams.get('status') || 'completed'
     const bookingId = searchParams.get('bookingId')
 
@@ -26,7 +26,7 @@ export default function PackageReviewsPage() {
         const fetchPkg = async () => {
             try {
                 let url = ''
-                if (isAdmin) url = `/admin/packages/${packageId}`
+                if (isAdmin) url = '' // No direct detail endpoint for admin, skip to avoid 404/401
                 else if (user?.role === 'parent_agent') url = `/parent-agent/packages/${packageId}`
                 else if (user?.role === 'child_agent' || user?.role === 'sub_child_agent') url = `/child-agent/packages/${packageId}`
                 else if (isCustomer) url = `/customer/packages/${packageId}`

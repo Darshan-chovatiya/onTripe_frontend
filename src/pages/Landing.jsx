@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowRight, ArrowUpRight, Globe, Zap, Shield, Star, MapPin, Users, Calendar, CheckCircle, Plane, MessageSquare, BarChart3, Lock } from 'lucide-react'
 import { useAuth } from '@/shared/context/AuthContext.jsx'
@@ -44,6 +44,7 @@ export default function Landing() {
   } = useAuth()
   const hasAnySession = isCustomerAuthenticated || isVendorAuthenticated || isAuthenticated
   const [scrolled, setScrolled] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40)
@@ -83,7 +84,36 @@ export default function Landing() {
               <Link to="/customer/login" className="ont-btn-primary">Get Started <ArrowRight size={14} /></Link>
             )}
           </div>
+          <button 
+            className="ont-mobile-toggle md:hidden"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            style={{ background: 'none', border: 'none', color: scrolled ? 'var(--text)' : 'white', fontSize: '24px', cursor: 'pointer', display: 'none' }}
+          >
+            ☰
+          </button>
         </div>
+        
+        {/* Mobile Menu */}
+        {mobileMenuOpen && (
+          <div className="ont-mobile-menu">
+            <a href="#features" onClick={() => setMobileMenuOpen(false)}>Features</a>
+            <a href="#how" onClick={() => setMobileMenuOpen(false)}>How it works</a>
+            <a href="#destinations" onClick={() => setMobileMenuOpen(false)}>Destinations</a>
+            <a href="#testimonials" onClick={() => setMobileMenuOpen(false)}>Reviews</a>
+            <hr style={{ borderColor: 'rgba(255,255,255,0.1)', margin: '10px 0' }}/>
+            <Link to="/login" onClick={() => setMobileMenuOpen(false)}>Agency Login</Link>
+            <Link to="/vendor/login" onClick={() => setMobileMenuOpen(false)}>Vendor Login</Link>
+            {!isCheckingAuth && hasAnySession ? (
+              <>
+                {isCustomerAuthenticated && <Link to="/customer/booking" onClick={() => setMobileMenuOpen(false)}>My Trips</Link>}
+                {isVendorAuthenticated && <Link to="/vendor/dashboard" onClick={() => setMobileMenuOpen(false)}>Vendor Panel</Link>}
+                {isAuthenticated && user?.role && <Link to={getRoleRedirectPath(user.role)} onClick={() => setMobileMenuOpen(false)}>Agency Dashboard</Link>}
+              </>
+            ) : (
+              <Link to="/customer/login" onClick={() => setMobileMenuOpen(false)} style={{ color: '#A78BFA' }}>Get Started</Link>
+            )}
+          </div>
+        )}
       </nav>
 
       {/* â”€â”€ HERO â”€â”€ */}
