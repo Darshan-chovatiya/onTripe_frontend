@@ -1095,7 +1095,7 @@ export default function ChildAgencies({ agentRole = 'child_agent', pageTitle = '
               : 'Manage and monitor secondary distribution entities.'}
           </p>
         </div>
-        <div className="flex w-full sm:w-auto items-center gap-2">
+        <div className="flex flex-col sm:flex-row w-full sm:w-auto items-stretch sm:items-center gap-2">
           <button type="button" onClick={() => setAgentFormModal({ open: true, mode: 'add', agent: null })}
             className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-700">
             <Plus className="h-4 w-4" strokeWidth={2.5} />

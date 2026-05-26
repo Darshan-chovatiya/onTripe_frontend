@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { User, Mail, Lock, Phone, Key, Eye, EyeOff, ArrowRight, ChevronLeft } from 'lucide-react'
 import { useAuth } from '@/shared/context/AuthContext.jsx'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
-import AgencyRegisterShell, { KycDocumentUploads } from '@/travelAgency/shared/components/AgencyRegisterShell.jsx'
+import AgencyRegisterShell, { KycDocumentUploads, AgencyLogoSlot } from '@/travelAgency/shared/components/AgencyRegisterShell.jsx'
 import '@/travelAgency/shared/components/RegisterForm.css'
 
 const KYC_NOTE = 'By submitting, you agree to our terms. Your account remains pending until KYC is approved.'
@@ -201,32 +201,12 @@ export default function ChildRegister() {
             </div>
           </div>
 
-          <div className="rform-field">
-            <label className="rform-label">Agency Logo <span style={{ color: '#ef4444' }}>*</span></label>
-            <label htmlFor="agency-logo-inline" className="rform-input-wrap" style={{ cursor: 'pointer', height: '46px', justifyContent: 'center', gap: '8px', background: files.agencyLogo ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.92)' }}>
-              <input
-                id="agency-logo-inline"
-                type="file"
-                name="agencyLogo"
-                className="sr-only"
-                onChange={handleFileChange}
-                accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
-              />
-              {files.agencyLogo ? (
-                <>
-                  <img
-                    src={URL.createObjectURL(files.agencyLogo)}
-                    alt="logo"
-                    style={{ height: '28px', width: '28px', objectFit: 'cover', borderRadius: '4px' }}
-                  />
-                  <span style={{ fontSize: '12px', color: '#475569', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100px' }}>
-                    {files.agencyLogo.name}
-                  </span>
-                </>
-              ) : (
-                <span style={{ fontSize: '13px', color: '#94a3b8' }}>Upload logo</span>
-              )}
-            </label>
+          <div className="rform-field rform-field-full">
+            <AgencyLogoSlot
+              file={files.agencyLogo}
+              onFileChange={handleFileChange}
+              onRemove={removeKycFile}
+            />
           </div>
 
           <div className="rform-field rform-field-full rform-actions" style={{ marginTop: '16px' }}>

@@ -160,6 +160,22 @@
 @media (max-width: 480px) {
   .rform-grid { grid-template-columns: 1fr; }
   .rform-field-full { grid-column: 1; }
+  
+  .rform-actions {
+    flex-direction: column-reverse;
+    gap: 12px;
+  }
+  .rform-btn-back, .rform-btn-primary {
+    width: 100%;
+  }
+  
+  .rform-inline-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .rform-inline-row > .kyc-slot-logo {
+    width: 100%;
+  }
 }
 
 .rform-hint {

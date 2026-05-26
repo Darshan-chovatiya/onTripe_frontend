@@ -1292,7 +1292,7 @@ export default function Agencies() {
             Manage tier-1 travel distribution entities and corporate identities
           </p>
         </div>
-        <div className="flex w-full sm:w-auto items-center gap-2">
+        <div className="flex flex-col sm:flex-row w-full sm:w-auto items-stretch sm:items-center gap-2">
           <button
             type="button"
             onClick={handleExport}

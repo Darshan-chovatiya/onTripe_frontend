@@ -625,15 +625,20 @@
     justify-content: center;
     padding: 40px 20px;
   }
-  .areg-card {
-    max-width: 100%;
-  }
   .areg-mobile-logo { display: flex !important; }
 }
 
+@media (max-width: 600px) {
+  .areg-card { padding: 28px 24px; }
+  .areg-steps { gap: 8px; padding: 12px; }
+  .areg-step-connector { margin: 0 6px; }
+}
+
 @media (max-width: 480px) {
-  .areg-card { padding: 24px 20px; }
-  .areg-steps { padding: 12px 14px; }
+  .areg-layout { padding: 20px 12px; }
+  .areg-card { padding: 24px 16px; border-radius: 16px; }
+  .areg-card-title { font-size: 18px; }
   .areg-step-label { font-size: 11px; }
+  .areg-step-label:not(.areg-step-label-active) { display: none; }
   .kyc-grid { grid-template-columns: 1fr; }
 }
