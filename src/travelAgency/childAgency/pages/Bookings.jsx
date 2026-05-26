@@ -320,20 +320,20 @@ export default function Bookings() {
                       <td className="whitespace-nowrap px-4 py-2.5 align-middle text-gray-600">
                         <span className="inline-flex items-center gap-0.5">
                           <IndianRupee className="h-3 w-3" />
-                          {(b.financials?.providerPrice ?? b.providerPriceAtBooking ?? b.parentPriceAtBooking ?? 0).toLocaleString('en-IN')}
+                          {(b.financials?.parentPrice ?? b.providerPriceAtBooking ?? 0).toLocaleString('en-IN')}
                         </span>
                       </td>
                       <td className="whitespace-nowrap px-4 py-2.5 align-middle text-gray-600 font-medium">
                         <span className="inline-flex items-center gap-0.5">
                           <IndianRupee className="h-3 w-3" />
-                          {(b.financials?.whitelabelPrice || b.whitelabelPriceAtBooking || 0).toLocaleString('en-IN')}
+                          {(b.whitelabelPackage?.commissionValue ?? b.whitelabelPackage?.commissionValue ?? 0).toLocaleString('en-IN')}
                         </span>
                       </td>
                       <td className="px-4 py-2.5 align-middle">
                         <div className="flex flex-col">
                           <span className="inline-flex items-center gap-0.5 text-emerald-600 font-bold">
                             <IndianRupee className="h-3 w-3" />
-                            {(b.financials?.commission || 0).toLocaleString('en-IN')}
+                            {(b.whitelabelPackage?.commissionValue || 0).toLocaleString('en-IN')}
                           </span>
                           {b.whitelabelPackage && (
                             <span className="text-[10px] text-gray-400">

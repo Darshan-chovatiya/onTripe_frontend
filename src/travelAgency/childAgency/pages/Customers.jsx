@@ -84,7 +84,14 @@ export default function Customers() {
     setImportBusy(true)
     try {
       const res = await importAgencyCustomers(customers)
-      toast.success(`Import complete: ${res.data.data.imported} imported, ${res.data.data.skipped} skipped`)
+      const { imported, skipped, duplicates } = res.data.data
+      
+      if (imported === 0 && duplicates > 0) {
+        toast.error('Data is already imported')
+      } else {
+        toast.success(`Import complete: ${imported} imported, ${skipped} skipped`)
+      }
+      
       fetchCustomers()
     } catch (err) {
       toast.error('Excel import failed: ' + err.message)
@@ -162,7 +169,7 @@ export default function Customers() {
 
   const openEdit = (row) => {
     setEditTarget(row)
-    setEditForm({ name: row.name, email: row.email, notes: row.notes })
+    setEditForm({ name: row.name, email: row.email, phone: row.phone, notes: row.notes })
   }
 
   const saveEdit = async () => {
@@ -510,14 +517,27 @@ export default function Customers() {
                 />
               </div>
             </div>
-            <div>
-              <label className="mb-1.5 block text-sm font-medium text-gray-700">Notes</label>
-              <textarea
-                rows={3}
-                className="w-full resize-none rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/10"
-                value={editForm.notes}
-                onChange={e => setEditForm(p => ({ ...p, notes: e.target.value }))}
-              />
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-gray-700">Phone</label>
+                <input
+                  type="text"
+                  value={editForm.phone}
+                  readOnly
+                  className="w-full cursor-not-allowed rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-500"
+                  disabled
+                />
+                <p className="mt-1 text-xs text-gray-500">Phone number cannot be edited by agents.</p>
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-gray-700">Notes</label>
+                <textarea
+                  rows={1}
+                  className="w-full resize-none rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/10"
+                  value={editForm.notes}
+                  onChange={e => setEditForm(p => ({ ...p, notes: e.target.value }))}
+                />
+              </div>
             </div>
             <div className="flex justify-end gap-2">
               <button type="button" onClick={() => setEditTarget(null)} disabled={editBusy} className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60">Cancel</button>

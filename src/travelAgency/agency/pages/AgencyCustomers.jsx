@@ -140,11 +140,19 @@ export default function AgencyCustomers() {
   const handleFinalImport = async (customers) => {
     setImportBusy(true)
     try {
-      const res = role === ROLES.CHILD_AGENCY 
-        ? await importChildAgencyCustomers(customers)
-        : await importParentAgencyCustomers(customers)
-
-      toast.success(`Import complete: ${res.data.data.imported} imported, ${res.data.data.skipped} skipped`)
+      const res =
+        role === ROLES.CHILD_AGENCY
+          ? await importChildAgencyCustomers(customers)
+          : await importParentAgencyCustomers(customers)
+          
+      const { imported, skipped, duplicates } = res.data.data
+      
+      if (imported === 0 && duplicates > 0) {
+        toast.error('Data is already imported')
+      } else {
+        toast.success(`Import complete: ${imported} imported, ${skipped} skipped`)
+      }
+      
       fetchCustomers()
     } catch (err) {
       toast.error('Excel import failed: ' + err.message)

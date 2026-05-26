@@ -91,7 +91,7 @@ export default function PackageDetailModal({ isOpen, onClose, pkg, isWhitelabel 
         {isWhitelabel && (
           <div className="rounded-xl border border-violet-100 bg-violet-50/60 px-4 py-3 text-sm space-y-1">
             <p className="font-semibold text-violet-900">White-label details</p>
-            <Row label="Base price">₹{Number(base.basePrice ?? 0).toLocaleString('en-IN')}</Row>
+            <Row label="Base price">₹{Number(pkg.parentWhitelabel?.finalPrice ?? base.basePrice ?? 0).toLocaleString('en-IN')}</Row>
             <Row label="Markup">
               {pkg.commissionType === 'percentage'
                 ? `${pkg.commissionValue}%`

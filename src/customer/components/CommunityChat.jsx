@@ -194,7 +194,14 @@ export default function CommunityChat({
         axiosInstance
           .get(`/community/${data.data.community._id}/notification-preference`, communityAuthConfig)
           .then(({ data: np }) => {
-            if (np?.success) setNotificationsEnabled(np.data?.notificationsEnabled !== false)
+            if (np?.success) {
+              const enabled = np.data?.notificationsEnabled !== false
+              setNotificationsEnabled(enabled)
+              if (!enabled) {
+                setIsSocketEnabled(false)
+                localStorage.setItem('chat_socket_enabled', 'false')
+              }
+            }
           })
           .catch(() => {})
       } else {
@@ -779,6 +786,10 @@ export default function CommunityChat({
       if (data?.success) {
         setNotificationsEnabled(next)
         toast.success(next ? 'Notifications enabled' : 'Notifications muted')
+        if (!next) {
+          setIsSocketEnabled(false)
+          localStorage.setItem('chat_socket_enabled', 'false')
+        }
       }
     } catch {
       toast.error('Could not update notification preference')

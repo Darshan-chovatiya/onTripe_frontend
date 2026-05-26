@@ -195,18 +195,25 @@ function AgentFormModal({ mode, agent, agentRole, onClose, onSaved }) {
     const load = async () => {
       setParentsLoading(true)
       try {
-        const roleForParents = agentRole === 'sub_child_agent' ? 'child_agent' : 'parent_agent'
-        const { data } = await adminApi.listAgents({ role: roleForParents, limit: 200 })
-        if (data?.success) {
-          // Filter to only include active and KYC-approved parents
-          const validParents = data.data.agents.filter(a => a.isActive && a.kyc?.status === 'approved')
-          setParentOptions(validParents.map(a => ({ value: a._id, label: a.name, code: a.agentCode })))
-        }
+        const [parentRes, childRes] = await Promise.all([
+          adminApi.listAgents({ role: 'parent_agent', limit: 200 }),
+          adminApi.listAgents({ role: 'child_agent', limit: 200 })
+        ])
+        
+        const parents = parentRes.data?.success ? parentRes.data.data.agents : []
+        const children = childRes.data?.success ? childRes.data.data.agents : []
+        const combined = [...parents, ...children]
+        
+        setParentOptions(combined.map(a => ({ 
+          value: a._id, 
+          label: `${a.name} (${a.role === 'parent_agent' ? 'Parent' : 'Child'})`, 
+          code: a.agentCode 
+        })))
       } catch { /* silent */ }
       finally { setParentsLoading(false) }
     }
     load()
-  }, [agentRole])
+  }, [])
 
   useEffect(() => {
     const handler = (e) => {
