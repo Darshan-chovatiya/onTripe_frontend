@@ -125,6 +125,10 @@ export function getVendorDetail(id) {
   return axiosInstance.get(`/admin/vendors/${id}`)
 }
 
+export function toggleVendor(id) {
+  return axiosInstance.patch(`/admin/vendors/toggle/${id}`)
+}
+
 const adminApi = {
   listAgents,
   listPendingKyc,
@@ -165,6 +169,7 @@ const adminApi = {
   getOtpLogs: (params) => axiosInstance.get('/admin/otp-logs', { params }),
   listAllVendors,
   getVendorDetail,
+  toggleVendor,
 }
 
 export const getAgentHierarchy = (id) => axiosInstance.get(`/admin/agents/${id}/hierarchy`);

@@ -1,23 +1,11 @@
 import { useEffect, useState, useRef } from 'react'
 import {
-  Calendar,
-  Clock,
-  MapPin,
-  Phone,
-  ChevronRight,
-  ChevronLeft,
-  Utensils,
-  Activity,
-  Info,
-  LogOut,
-  MessageSquare,
-  Star,
-  CheckCircle,
-  XCircle,
-  Ticket,
-  X
+  Calendar, Clock, MapPin, Phone, ChevronRight, ChevronLeft,
+  Utensils, Activity, Info, LogOut, MessageSquare, Star,
+  CheckCircle, XCircle, Ticket, X, Plane, Hotel, Car,
+  Camera, AlertTriangle, Hash, Sun, Bed, Users, Image,
 } from 'lucide-react'
-import { Link, NavLink, useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useAuth } from '@/shared/context/AuthContext.jsx'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
 import axiosInstance from '@/shared/services/axiosInstance.js'
@@ -25,518 +13,550 @@ import Loader from '@/shared/components/Loader.jsx'
 import TicketsModal from '@/customer/components/TicketsModal.jsx'
 import VendorChatModal from '@/customer/components/VendorChatModal.jsx'
 
-const BASE_IMG_URL = import.meta.env.VITE_API_BASE_URL?.replace('/api', '').replace(/\/$/, '') || 'http://localhost:5001'
-const getFullUrl = (path) => path ? `${BASE_IMG_URL}/${path.replace(/\\/g, '/')}` : null
+const BASE_URL = import.meta.env.VITE_API_BASE_URL?.replace('/api', '').replace(/\/$/, '') || 'http://localhost:5001'
+const toUrl = (p) => p ? `${BASE_URL}/${p.replace(/\\/g, '/')}` : null
+
+const CAT_STYLE = {
+  hotel_checkin:  { icon: Hotel,    bg: 'bg-sky-500',      label: 'Check-In'  },
+  hotel_checkout: { icon: Hotel,    bg: 'bg-sky-400',      label: 'Check-Out' },
+  transfer:       { icon: Car,      bg: 'bg-amber-500',    label: 'Transfer'  },
+  meal:           { icon: Utensils, bg: 'bg-orange-500',   label: 'Meal'      },
+  activity:       { icon: Activity, bg: 'bg-emerald-500',  label: 'Activity'  },
+}
+const STATUS = {
+  confirmed: { label: 'Confirmed', ring: 'ring-emerald-400/60', dot: 'bg-emerald-400' },
+  pending:   { label: 'Pending',   ring: 'ring-amber-400/60',   dot: 'bg-amber-400'   },
+  completed: { label: 'Completed', ring: 'ring-blue-400/60',    dot: 'bg-blue-400'    },
+  cancelled: { label: 'Cancelled', ring: 'ring-red-400/60',     dot: 'bg-red-400'     },
+}
+
+const TABS = ['Overview', 'Itinerary', 'Gallery', 'Details']
 
 export default function Booking() {
-  const navigate = useNavigate()
-  const { bookingId: paramBookingId } = useParams()
+  const { bookingId: paramId } = useParams()
   const [searchParams, setSearchParams] = useSearchParams()
+  const navigate = useNavigate()
   const { logout } = useAuth()
   const { toast } = useToast()
 
   const [booking, setBooking] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [activeDayIdx, setActiveDayIdx] = useState(0)
-  const [currentImgIdx, setCurrentImgIdx] = useState(0)
-  const [showTicketsModal, setShowTicketsModal] = useState(false)
-  const [showInclusions, setShowInclusions] = useState(false)
-  const [showExclusions, setShowExclusions] = useState(false)
-  const [showNotes, setShowNotes] = useState(false)
+  const [tab, setTab] = useState('Overview')
+  const [dayIdx, setDayIdx] = useState(0)
+  const [lb, setLb] = useState({ open: false, idx: 0 })
+  const [showTickets, setShowTickets] = useState(false)
   const [chatVendor, setChatVendor] = useState(null)
-  const carouselTimer = useRef(null)
+  const tabBarRef = useRef(null)
 
   useEffect(() => {
-    let isMounted = true
-    const fetchRequiredBooking = async () => {
+    let alive = true
+    ;(async () => {
       setLoading(true)
       try {
-        let targetId = paramBookingId
-
-        if (!targetId) {
-          const { data: listRes } = await axiosInstance.get('/customer/bookings')
-          if (listRes?.success && listRes.data?.bookings?.length > 0) {
-            const bookings = listRes.data.bookings
+        let id = paramId
+        if (!id) {
+          const { data } = await axiosInstance.get('/customer/bookings')
+          if (data?.success && data.data?.bookings?.length) {
             const now = new Date()
-            const sorted = [...bookings].sort((a, b) => {
-              const diffA = Math.abs(new Date(a.travelDate) - now)
-              const diffB = Math.abs(new Date(b.travelDate) - now)
-              return diffA - diffB
-            })
-            targetId = sorted[0].bookingId
+            id = [...data.data.bookings]
+              .sort((a, b) => Math.abs(new Date(a.travelDate) - now) - Math.abs(new Date(b.travelDate) - now))[0].bookingId
           }
         }
-
-        if (!targetId) {
-          if (isMounted) setLoading(false)
-          return
-        }
-
-        const { data } = await axiosInstance.get(`/customer/bookings/${targetId}`)
-        if (!isMounted) return
-
-        if (data?.success && data?.data?.booking) {
-          setBooking(data.data.booking)
-          if (data.data.booking.package?.itinerary?.length > 0) {
-            setActiveDayIdx(0)
-          }
-        } else {
-          toast.error(data?.message || 'Could not find booking details')
-        }
-      } catch (err) {
-        if (isMounted) toast.error('Failed to fetch booking details')
-      } finally {
-        if (isMounted) setLoading(false)
-      }
-    }
-
-    fetchRequiredBooking()
-    return () => { isMounted = false }
-  }, [paramBookingId])
+        if (!id) { if (alive) setLoading(false); return }
+        const { data } = await axiosInstance.get(`/customer/bookings/${id}`)
+        if (alive && data?.success) setBooking(data.data.booking)
+      } catch { if (alive) toast.error('Failed to load booking') }
+      finally { if (alive) setLoading(false) }
+    })()
+    return () => { alive = false }
+  }, [paramId])
 
   useEffect(() => {
-    const chatVendorId = searchParams.get('chatVendor')
-    if (!chatVendorId || !booking?.package?.itinerary) return
-
-    let vendor = null
-    for (const day of booking.package.itinerary) {
-      for (const exp of day.experiences || []) {
-        const v = exp.vendor
-        if (v && String(v._id || v.id) === String(chatVendorId)) {
-          vendor = v
-          break
+    const vid = searchParams.get('chatVendor')
+    if (!vid || !booking?.package?.itinerary) return
+    for (const day of booking.package.itinerary)
+      for (const exp of day.experiences || [])
+        if (String(exp.vendor?._id || exp.vendor?.id) === vid) {
+          setChatVendor(exp.vendor)
+          const p = new URLSearchParams(searchParams); p.delete('chatVendor')
+          setSearchParams(p, { replace: true }); return
         }
-      }
-      if (vendor) break
-    }
+  }, [booking, searchParams])
 
-    if (vendor?.name) {
-      setChatVendor(vendor)
-      const next = new URLSearchParams(searchParams)
-      next.delete('chatVendor')
-      setSearchParams(next, { replace: true })
-    }
-  }, [booking, searchParams, setSearchParams])
+  if (loading) return (
+    <div className="flex min-h-screen items-center justify-center bg-white">
+      <Loader size="lg" text="Loading your trip…" />
+    </div>
+  )
 
-  const pkg = booking?.package || {}
-  const wlPkg = booking?.whitelabelPackage || {}
-  const itinerary = pkg.itinerary || []
-  const activeDay = itinerary[activeDayIdx] || null
-
-  const allImages = []
-  const pkgImages = pkg.images || []
-  const coverImg = pkg.coverImage
-
-  if (coverImg) allImages.push(getFullUrl(coverImg))
-  if (pkgImages.length > 0) {
-    pkgImages.forEach(img => {
-      const url = getFullUrl(img)
-      if (url && !allImages.includes(url)) allImages.push(url)
-    })
-  }
-
-  useEffect(() => {
-    if (allImages.length > 1) {
-      if (carouselTimer.current) clearInterval(carouselTimer.current)
-      carouselTimer.current = setInterval(() => {
-        setCurrentImgIdx(prev => (prev + 1) % allImages.length)
-      }, 5000)
-    }
-    return () => clearInterval(carouselTimer.current)
-  }, [allImages.length])
-
-  if (loading) {
-    return <div className="flex min-h-[60vh] items-center justify-center"><Loader size="lg" text="Fetching itinerary…" /></div>
-  }
-
-  if (!booking) {
-    return (
-      <div className="flex min-h-[60vh] flex-col items-center justify-center p-8 text-center bg-white rounded-2xl border border-gray-100 shadow-sm">
-        <div className="mb-4 rounded-full bg-red-50 p-4"><Info className="h-10 w-10 text-red-500" /></div>
-        <h2 className="mb-2 text-xl font-bold text-gray-900 font-inter">No Booking Found</h2>
-        <p className="text-gray-600 mb-6">We couldn't retrieve your booking details.</p>
+  if (!booking) return (
+    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
+      <div className="max-w-sm w-full text-center">
+        <div className="mx-auto mb-6 w-16 h-16 rounded-2xl bg-primary-100 flex items-center justify-center">
+          <Plane size={28} className="text-primary-600" />
+        </div>
+        <h2 className="text-xl font-black text-gray-900 mb-2">No Booking Found</h2>
+        <p className="text-sm text-gray-500 mb-6">Contact your travel admin to get a package assigned.</p>
+        <button onClick={() => { logout(); navigate('/customer/login', { replace: true }) }}
+          className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-primary-600 text-white text-sm font-bold hover:bg-primary-700 transition-colors">
+          <LogOut size={15} /> Sign out
+        </button>
       </div>
-    )
-  }
+    </div>
+  )
 
-  const prevImage = () => setCurrentImgIdx(prev => (prev - 1 + allImages.length) % allImages.length)
-  const nextImage = () => setCurrentImgIdx(prev => (prev + 1) % allImages.length)
+  const pkg = booking.package || {}
+  const wlPkg = booking.whitelabelPackage || {}
+  const itinerary = pkg.itinerary || []
+  const days = pkg.totalDays || itinerary.length || 0
+  const nights = days > 1 ? days - 1 : 0
+  const statusCfg = STATUS[booking.bookingStatus] || STATUS.confirmed
+  const travelDate = booking.travelDate
+    ? new Date(booking.travelDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })
+    : '—'
+  const activeDay = itinerary[dayIdx] || null
+
+  const images = []
+  if (pkg.coverImage) images.push(toUrl(pkg.coverImage))
+  ;(pkg.images || []).forEach(p => { const u = toUrl(p); if (u && !images.includes(u)) images.push(u) })
+
+  const coverImg = images[0]
 
   return (
     <>
-      <div className="space-y-8 animate-fade-in pb-40">
-        <style dangerouslySetInnerHTML={{
-          __html: `
-        .scrollbar-hide::-webkit-scrollbar { display: none !important; }
-        .scrollbar-hide { -ms-overflow-style: none !important; scrollbar-width: none !important; }
-        .animate-bounce-slow { animation: bounce 3s infinite; }
-        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
-      `}} />
+      <style>{`.noscroll::-webkit-scrollbar{display:none}.noscroll{-ms-overflow-style:none;scrollbar-width:none}`}</style>
 
-        {/* Full-Screen Hero Carousel */}
-        <div className="group relative h-screen w-full overflow-hidden bg-gray-950">
-          {allImages.length > 0 ? (
-            <div className="relative h-full w-full">
-              {allImages.map((img, idx) => (
-                <div key={idx} className={`absolute inset-0 transition-opacity duration-1500 ease-in-out ${idx === currentImgIdx ? 'opacity-100' : 'opacity-0'}`}>
-                  <img src={img} alt={pkg.title} className="h-full w-full object-cover brightness-[0.6] transition-transform duration-[15s] scale-105 group-hover:scale-110" />
-                </div>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+
+        {/* ═══════════════════ HERO ═══════════════════ */}
+        <div className="relative h-[55vh] min-h-[380px] overflow-hidden">
+          {/* Background blurred photo */}
+          {coverImg ? (
+            <img src={coverImg} alt="" className="absolute inset-0 h-full w-full object-cover scale-110" style={{ filter: 'blur(2px) brightness(0.45)' }} />
+          ) : (
+            <div className="absolute inset-0 bg-gradient-to-br from-primary-900 via-primary-800 to-indigo-900" />
+          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+
+          {/* Centered glass card */}
+          <div className="relative z-10 h-full flex flex-col items-center justify-center px-4 text-center">
+            {/* Status pill */}
+            <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full ring-1 ${statusCfg.ring} bg-white/10 backdrop-blur-sm mb-4`}>
+              <span className={`h-2 w-2 rounded-full ${statusCfg.dot} animate-pulse`} />
+              <span className="text-white text-xs font-bold tracking-wide">{statusCfg.label}</span>
+            </div>
+
+            {/* Title */}
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-white leading-tight max-w-3xl drop-shadow-lg">
+              {wlPkg.customTitle || pkg.title || 'Your Journey'}
+            </h1>
+
+            {/* Key stats row */}
+            <div className="flex flex-wrap items-center justify-center gap-3 mt-6">
+              {[
+                { icon: MapPin,    val: pkg.destination },
+                { icon: Calendar, val: travelDate },
+                { icon: Sun,      val: days > 0 ? `${days}D · ${nights}N` : null },
+              ].filter(s => s.val).map(({ icon: Icon, val }) => (
+                <span key={val} className="flex items-center gap-1.5 bg-white/10 backdrop-blur-md text-white text-sm font-semibold px-4 py-1.5 rounded-full border border-white/20">
+                  <Icon size={13} className="opacity-70" />{val}
+                </span>
               ))}
-              <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/60" />
+            </div>
 
-              {allImages.length > 1 && (
+            {/* Cover photo thumbnail strip (if multiple) */}
+            {images.length > 1 && (
+              <button onClick={() => { setTab('Gallery'); setTimeout(() => window.scrollTo({ top: 200, behavior: 'smooth' }), 50) }}
+                className="mt-5 flex items-center gap-2 text-white/70 text-xs font-semibold hover:text-white transition-colors">
+                <Camera size={13} /> {images.length} photos — View gallery
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* ═══════════════════ TAB BAR ═══════════════════ */}
+        <div ref={tabBarRef} className="sticky top-20 z-40 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shadow-sm">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6">
+            <div className="flex overflow-x-auto noscroll">
+              {TABS.map(t => (
+                <button key={t} onClick={() => setTab(t)}
+                  className={`relative shrink-0 px-5 py-4 text-sm font-bold transition-colors ${
+                    tab === t
+                      ? 'text-primary-600 dark:text-primary-400'
+                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white'
+                  }`}>
+                  {t}
+                  {tab === t && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary-600 rounded-full" />}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* ═══════════════════ CONTENT ═══════════════════ */}
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 lg:py-10">
+
+          {/* ── OVERVIEW ────────────────────────────────── */}
+          {tab === 'Overview' && (
+            <div className="space-y-8">
+              {/* Stat cards */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {[
+                  { label: 'Booking ID',  value: booking.bookingId, icon: Hash,     color: 'text-primary-600 bg-primary-50 dark:bg-primary-950/30' },
+                  { label: 'Duration',    value: days > 0 ? `${days} Days, ${nights} Nights` : '—', icon: Sun, color: 'text-amber-600 bg-amber-50 dark:bg-amber-950/20' },
+                  { label: 'Destination', value: pkg.destination || '—', icon: MapPin,  color: 'text-emerald-600 bg-emerald-50 dark:bg-emerald-950/20' },
+                  { label: 'Travel Date', value: travelDate, icon: Calendar, color: 'text-indigo-600 bg-indigo-50 dark:bg-indigo-950/20' },
+                ].map(({ label, value, icon: Icon, color }) => (
+                  <div key={label} className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-4 flex flex-col gap-2">
+                    <div className={`h-9 w-9 rounded-xl flex items-center justify-center ${color}`}>
+                      <Icon size={16} />
+                    </div>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 leading-none">{label}</p>
+                    <p className="text-sm font-black text-gray-900 dark:text-white leading-tight">{value}</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Description */}
+              {pkg.description && (
+                <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-6">
+                  <h3 className="text-xs font-black uppercase tracking-widest text-gray-400 mb-3">About This Trip</h3>
+                  <p className="text-gray-700 dark:text-gray-300 leading-relaxed">{pkg.description}</p>
+                </div>
+              )}
+
+              {/* Agent card */}
+              <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 overflow-hidden">
+                <div className="px-6 py-3 border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Your Travel Agent</p>
+                </div>
+                {booking.bookedBy ? (
+                  <div className="p-6 flex items-center gap-4">
+                    <div className="h-14 w-14 rounded-2xl bg-primary-100 dark:bg-primary-950/40 text-primary-600 font-black text-xl flex items-center justify-center shrink-0">
+                      {booking.bookedBy.name.charAt(0)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-black text-gray-900 dark:text-white">{booking.bookedBy.name}</p>
+                      {booking.bookedBy.phone && (
+                        <a href={`tel:${booking.bookedBy.phone}`} className="text-sm text-gray-500 hover:text-primary-600 transition-colors flex items-center gap-1 mt-0.5">
+                          <Phone size={12} />{booking.bookedBy.phone}
+                        </a>
+                      )}
+                    </div>
+                    {booking.bookedBy.phone && (
+                      <a href={`tel:${booking.bookedBy.phone}`}
+                        className="h-11 w-11 rounded-2xl bg-emerald-500 text-white flex items-center justify-center hover:bg-emerald-600 transition-colors shadow-lg shadow-emerald-200/50 dark:shadow-none shrink-0">
+                        <Phone size={18} />
+                      </a>
+                    )}
+                  </div>
+                ) : (
+                  <div className="p-6 text-sm text-gray-400 text-center py-8">No agent assigned yet</div>
+                )}
+              </div>
+
+              {/* Action row */}
+              <div className="grid grid-cols-3 gap-3">
+                {[
+                  { icon: Ticket,        label: 'My Tickets',   sub: 'Vouchers & docs',  onClick: () => setShowTickets(true),   bg: 'from-cyan-500 to-cyan-600' },
+                  { icon: MessageSquare, label: 'Community',    sub: 'Chat with group',  to: '/customer/community',             bg: 'from-indigo-500 to-indigo-600' },
+                  { icon: Star,          label: 'Rate Trip',    sub: 'Leave a review',   to: `/customer/booking/${booking.bookingId}/reviews/${pkg._id}?readOnly=false&status=${booking.bookingStatus}&bookingId=${booking.bookingId}`, bg: 'from-amber-500 to-amber-600' },
+                ].map(({ icon: Icon, label, sub, onClick, to, bg }) => (
+                  to ? (
+                    <Link key={label} to={to}
+                      className={`flex flex-col items-center justify-center gap-2 py-5 rounded-2xl bg-gradient-to-br ${bg} text-white shadow-md hover:shadow-lg hover:-translate-y-0.5 active:scale-95 transition-all`}>
+                      <Icon size={22} strokeWidth={1.8} />
+                      <div className="text-center">
+                        <p className="text-xs font-black">{label}</p>
+                        <p className="text-[10px] opacity-70">{sub}</p>
+                      </div>
+                    </Link>
+                  ) : (
+                    <button key={label} onClick={onClick}
+                      className={`flex flex-col items-center justify-center gap-2 py-5 rounded-2xl bg-gradient-to-br ${bg} text-white shadow-md hover:shadow-lg hover:-translate-y-0.5 active:scale-95 transition-all`}>
+                      <Icon size={22} strokeWidth={1.8} />
+                      <div className="text-center">
+                        <p className="text-xs font-black">{label}</p>
+                        <p className="text-[10px] opacity-70">{sub}</p>
+                      </div>
+                    </button>
+                  )
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ── ITINERARY ───────────────────────────────── */}
+          {tab === 'Itinerary' && (
+            <div className="space-y-6">
+              {itinerary.length === 0 ? (
+                <div className="text-center py-20 text-gray-400">
+                  <Bed size={40} className="mx-auto mb-3 opacity-30" strokeWidth={1.5} />
+                  <p className="font-bold">No itinerary added yet</p>
+                </div>
+              ) : (
                 <>
-                  <button onClick={prevImage} className="absolute left-8 top-1/2 -translate-y-1/2 z-20 flex h-14 w-14 items-center justify-center rounded-full bg-black/10 text-white backdrop-blur-xl border border-white/10 transition-all hover:bg-white/20 opacity-0 group-hover:opacity-100"><ChevronLeft size={32} /></button>
-                  <button onClick={nextImage} className="absolute right-8 top-1/2 -translate-y-1/2 z-20 flex h-14 w-14 items-center justify-center rounded-full bg-black/10 text-white backdrop-blur-xl border border-white/10 transition-all hover:bg-white/20 opacity-0 group-hover:opacity-100"><ChevronRight size={32} /></button>
-                  <div className="absolute bottom-24 left-1/2 z-20 flex -translate-x-1/2 gap-3">
-                    {allImages.map((_, idx) => (
-                      <button key={idx} onClick={() => setCurrentImgIdx(idx)} className={`h-1 rounded-full transition-all duration-500 ${idx === currentImgIdx ? 'w-10 bg-white' : 'w-3 bg-white/30'}`} />
+                  {/* Day tabs */}
+                  <div className="flex gap-2 overflow-x-auto noscroll pb-1">
+                    {itinerary.map((_, i) => {
+                      let label = `Day ${i + 1}`
+                      let sub = ''
+                      if (booking.travelDate) {
+                        const d = new Date(booking.travelDate); d.setDate(d.getDate() + i)
+                        label = d.toLocaleDateString('en-IN', { day: 'numeric' })
+                        sub   = d.toLocaleDateString('en-IN', { month: 'short' })
+                      }
+                      const isActive = dayIdx === i
+                      return (
+                        <button key={i} onClick={() => setDayIdx(i)}
+                          className={`shrink-0 flex flex-col items-center w-14 py-2.5 rounded-2xl text-xs font-bold transition-all border ${
+                            isActive
+                              ? 'bg-primary-600 text-white border-primary-600 shadow-lg shadow-primary-200/50 scale-105'
+                              : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-primary-200 hover:text-primary-600'
+                          }`}>
+                          <span className="text-lg font-black leading-none">{label}</span>
+                          {sub && <span className={`text-[10px] mt-0.5 ${isActive ? 'text-primary-200' : 'text-gray-400'}`}>{sub}</span>}
+                        </button>
+                      )
+                    })}
+                  </div>
+
+                  {/* Active day content */}
+                  {activeDay && (
+                    <div>
+                      {/* Day header */}
+                      <div className="flex items-center gap-3 mb-6">
+                        <div className="h-10 w-10 rounded-2xl bg-primary-600 text-white font-black text-sm flex items-center justify-center shrink-0">
+                          {dayIdx + 1}
+                        </div>
+                        <div>
+                          <h2 className="text-xl font-black text-gray-900 dark:text-white leading-tight">
+                            {activeDay.title || activeDay.name || `Day ${dayIdx + 1}`}
+                          </h2>
+                          {activeDay.description && (
+                            <p className="text-sm text-gray-500 mt-0.5">{activeDay.description}</p>
+                          )}
+                        </div>
+                      </div>
+
+                      {(activeDay.experiences || []).length > 0 ? (
+                        <div className="grid sm:grid-cols-2 gap-4">
+                          {(activeDay.experiences || []).map((exp, ei) => {
+                            const cat = CAT_STYLE[exp.type] || { icon: Activity, bg: 'bg-gray-500', label: 'Experience' }
+                            const Icon = cat.icon
+                            const expImg = exp.images?.[0] ? toUrl(exp.images[0]) : null
+                            const vendor = exp.vendor || {}
+
+                            return (
+                              <div key={ei} className="group bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 overflow-hidden hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300">
+                                {/* Image header */}
+                                <div className="relative h-44 bg-gray-100 dark:bg-gray-800 overflow-hidden">
+                                  {expImg ? (
+                                    <img src={expImg} alt={exp.name}
+                                      className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                                  ) : (
+                                    <div className={`h-full flex items-center justify-center ${cat.bg} bg-opacity-10`}>
+                                      <Icon size={44} className={`${cat.bg.replace('bg-', 'text-')} opacity-40`} strokeWidth={1} />
+                                    </div>
+                                  )}
+                                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+
+                                  {/* Category badge */}
+                                  <div className="absolute top-3 left-3">
+                                    <span className={`flex items-center gap-1.5 ${cat.bg} text-white text-[10px] font-black px-2.5 py-1 rounded-lg uppercase tracking-wide`}>
+                                      <Icon size={10} />{cat.label}
+                                    </span>
+                                  </div>
+
+                                  {/* Time badge */}
+                                  {exp.startTime && (
+                                    <div className="absolute top-3 right-3">
+                                      <span className="flex items-center gap-1 bg-black/40 backdrop-blur-sm text-white text-[10px] font-bold px-2.5 py-1 rounded-lg">
+                                        <Clock size={10} />{exp.startTime}{exp.endTime ? ` — ${exp.endTime}` : ''}
+                                      </span>
+                                    </div>
+                                  )}
+
+                                  {/* Vendor name on image */}
+                                  {vendor.name && (
+                                    <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between">
+                                      <span className="text-white text-xs font-semibold truncate">{vendor.name}</span>
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* Body */}
+                                <div className="p-4">
+                                  <h3 className="font-black text-gray-900 dark:text-white leading-snug mb-1">{exp.name}</h3>
+                                  {exp.description && (
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed">{exp.description}</p>
+                                  )}
+
+                                  {vendor.name && vendor.phone && (
+                                    <div className="flex gap-2 mt-4">
+                                      <a href={`tel:${vendor.phone}`}
+                                        className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-xs font-bold hover:bg-primary-600 dark:hover:bg-primary-100 transition-colors">
+                                        <Phone size={13} /> Call
+                                      </a>
+                                      <button onClick={() => setChatVendor(vendor)}
+                                        className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 text-xs font-bold hover:bg-primary-50 hover:border-primary-200 hover:text-primary-600 transition-colors">
+                                        <MessageSquare size={13} /> Chat
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center py-16 rounded-2xl border-2 border-dashed border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 text-center">
+                          <Sun size={36} className="text-amber-300 mb-2" strokeWidth={1.5} />
+                          <p className="font-bold text-gray-400 text-sm">Free day — enjoy some rest!</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+
+          {/* ── GALLERY ─────────────────────────────────── */}
+          {tab === 'Gallery' && (
+            <div>
+              {images.length === 0 ? (
+                <div className="flex flex-col items-center py-20 text-gray-400">
+                  <Image size={48} className="mb-3 opacity-30" strokeWidth={1.5} />
+                  <p className="font-bold">No photos available</p>
+                </div>
+              ) : (
+                <>
+                  <p className="text-xs font-black uppercase tracking-widest text-gray-400 mb-4">{images.length} Photos</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {images.map((src, i) => (
+                      <button key={i} onClick={() => setLb({ open: true, idx: i })}
+                        className={`group relative overflow-hidden rounded-2xl bg-gray-100 dark:bg-gray-800 hover:shadow-lg transition-all ${
+                          i === 0 ? 'col-span-2 sm:col-span-2 aspect-[16/9]' : 'aspect-square'
+                        }`}>
+                        <img src={src} alt="" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
+                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div className="h-10 w-10 rounded-full bg-white/90 flex items-center justify-center">
+                            <Camera size={16} className="text-gray-700" />
+                          </div>
+                        </div>
+                      </button>
                     ))}
                   </div>
                 </>
               )}
             </div>
-          ) : (
-            <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary-900 to-indigo-950">
-              <h1 className="text-5xl font-black text-white opacity-10 uppercase tracking-widest">OnTrip Adventure</h1>
+          )}
+
+          {/* ── DETAILS ─────────────────────────────────── */}
+          {tab === 'Details' && (
+            <div className="space-y-6">
+              {/* Inclusions */}
+              {pkg.inclusions?.length > 0 && (
+                <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 overflow-hidden">
+                  <div className="flex items-center gap-2 px-6 py-4 border-b border-gray-100 dark:border-gray-800 bg-emerald-50/50 dark:bg-emerald-950/10">
+                    <CheckCircle size={16} className="text-emerald-600" />
+                    <h3 className="text-sm font-black text-emerald-700 dark:text-emerald-400 uppercase tracking-widest">What's Included</h3>
+                  </div>
+                  <ul className="p-6 grid sm:grid-cols-2 gap-3">
+                    {pkg.inclusions.map((item, i) => (
+                      <li key={i} className="flex items-start gap-3">
+                        <CheckCircle size={16} className="shrink-0 mt-0.5 text-emerald-500" strokeWidth={2.5} />
+                        <span className="text-sm text-gray-700 dark:text-gray-300">{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Exclusions */}
+              {pkg.exclusions?.length > 0 && (
+                <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 overflow-hidden">
+                  <div className="flex items-center gap-2 px-6 py-4 border-b border-gray-100 dark:border-gray-800 bg-rose-50/50 dark:bg-rose-950/10">
+                    <XCircle size={16} className="text-rose-500" />
+                    <h3 className="text-sm font-black text-rose-600 dark:text-rose-400 uppercase tracking-widest">Not Included</h3>
+                  </div>
+                  <ul className="p-6 grid sm:grid-cols-2 gap-3">
+                    {pkg.exclusions.map((item, i) => (
+                      <li key={i} className="flex items-start gap-3">
+                        <XCircle size={16} className="shrink-0 mt-0.5 text-rose-400" strokeWidth={2.5} />
+                        <span className="text-sm text-gray-500 dark:text-gray-400">{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Important Notes */}
+              {pkg.importantNotes?.length > 0 && (
+                <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 overflow-hidden">
+                  <div className="flex items-center gap-2 px-6 py-4 border-b border-gray-100 dark:border-gray-800 bg-amber-50/50 dark:bg-amber-950/10">
+                    <AlertTriangle size={16} className="text-amber-500" />
+                    <h3 className="text-sm font-black text-amber-600 dark:text-amber-400 uppercase tracking-widest">Important Notes</h3>
+                  </div>
+                  <div className="p-6 space-y-3">
+                    {pkg.importantNotes.map((note, i) => (
+                      <div key={i} className="flex items-start gap-3 bg-amber-50 dark:bg-amber-950/20 rounded-xl px-4 py-3 border border-amber-100 dark:border-amber-900/30">
+                        <span className="shrink-0 h-5 w-5 rounded-full bg-amber-200 dark:bg-amber-900 text-amber-700 dark:text-amber-300 text-[10px] font-black flex items-center justify-center mt-0.5">{i + 1}</span>
+                        <p className="text-sm text-amber-900 dark:text-amber-200 leading-relaxed">{note}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {!pkg.inclusions?.length && !pkg.exclusions?.length && !pkg.importantNotes?.length && (
+                <div className="text-center py-20 text-gray-400">
+                  <Info size={40} className="mx-auto mb-3 opacity-30" strokeWidth={1.5} />
+                  <p className="font-bold">No details available</p>
+                </div>
+              )}
             </div>
           )}
 
-          <div className="absolute inset-0 z-10 flex flex-col justify-end items-start text-left px-6 sm:px-12 md:px-16 pb-24 md:pb-32 bg-gradient-to-t from-gray-900/90 via-gray-900/30 to-transparent">
-            <div className="animate-fade-up max-w-4xl">
-              <h1 className="text-4xl md:text-5xl lg:text-7xl font-black tracking-tight text-white leading-[1.1] mb-8 drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)]">
-                {wlPkg.customTitle || pkg.title || 'Your Journey'}
-              </h1>
-
-              <div className="flex flex-wrap items-center gap-4">
-                <div className="flex items-center gap-3 text-white font-bold bg-black/40 hover:bg-black/60 transition-colors backdrop-blur-xl px-6 py-3 rounded-2xl border border-white/10 shadow-2xl">
-                  <MapPin className="h-5 w-5 text-primary-400" />
-                  <span className="uppercase tracking-[0.2em] text-[10px] md:text-xs">{pkg.destination}</span>
-                </div>
-                <div className="flex items-center gap-3 text-white font-bold bg-black/40 hover:bg-black/60 transition-colors backdrop-blur-xl px-6 py-3 rounded-2xl border border-white/10 shadow-2xl">
-                  <Calendar className="h-5 w-5 text-emerald-400" />
-                  <span className="uppercase tracking-[0.2em] text-[10px] md:text-xs">{new Date(booking.travelDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
+      </div>
 
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 -mt-16 relative z-30">
-          <div className="bg-white dark:bg-gray-800 rounded-[2rem] shadow-xl shadow-gray-200/50 dark:shadow-none border border-gray-100 dark:border-gray-700 p-6 sm:p-8 flex flex-col lg:flex-row items-center justify-between gap-6 lg:gap-8">
-            
-            {/* 1. Support / Agent Details */}
-            <div className="flex items-center gap-5 w-full lg:w-auto shrink-0">
-              {booking.bookedBy ? (
-                <>
-                  <div className="w-14 h-14 rounded-2xl bg-primary-50 text-primary-600 flex items-center justify-center text-xl font-black shadow-inner shrink-0">
-                    {booking.bookedBy.name.charAt(0)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-gray-900 dark:text-white truncate mb-1">{booking.bookedBy.name}</p>
-                    <a href={`tel:${booking.bookedBy.phone}`} className="inline-flex items-center gap-1.5 text-lg font-black text-gray-700 hover:text-primary-600 transition-colors">
-                      <Phone size={16} />
-                      {booking.bookedBy.phone}
-                    </a>
-                  </div>
-                </>
-              ) : (
-                <div className="flex items-center gap-4 text-gray-400">
-                  <div className="w-12 h-12 rounded-2xl bg-gray-50 flex items-center justify-center"><Phone size={20} /></div>
-                  <div>
-                    <p className="text-[10px] font-black uppercase tracking-widest">Support</p>
-                    <p className="text-sm font-bold">No Agent Assigned</p>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Divider 1 */}
-            <div className="hidden lg:block w-px h-16 bg-gray-100 dark:bg-gray-700 shrink-0"></div>
-            <div className="lg:hidden w-full h-px bg-gray-100 dark:bg-gray-700"></div>
-
-            {/* 2. Package Details Buttons */}
-            <div className="flex flex-col sm:flex-row flex-wrap items-center justify-center gap-3 w-full lg:w-auto flex-1">
-              <button
-                onClick={() => setShowInclusions(true)}
-                className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-50 text-emerald-700 hover:bg-emerald-100 font-bold text-sm transition-colors border border-emerald-100 active:scale-95"
-              >
-                <CheckCircle size={16} />
-                Inclusions
-              </button>
-              <button
-                onClick={() => setShowExclusions(true)}
-                className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-rose-50 text-rose-700 hover:bg-rose-100 font-bold text-sm transition-colors border border-rose-100 active:scale-95"
-              >
-                <XCircle size={16} />
-                Exclusions
-              </button>
-              <button
-                onClick={() => setShowNotes(true)}
-                className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-amber-50 text-amber-700 hover:bg-amber-100 font-bold text-sm transition-colors border border-amber-100 active:scale-95"
-              >
-                <Info size={16} />
-                Important Notes
-              </button>
-            </div>
-
-            {/* Divider 2 */}
-            <div className="hidden lg:block w-px h-16 bg-gray-100 dark:bg-gray-700 shrink-0"></div>
-            <div className="lg:hidden w-full h-px bg-gray-100 dark:bg-gray-700"></div>
-
-            {/* 3. Quick Actions */}
-            <div className="flex items-center justify-center gap-3 w-full lg:w-auto shrink-0">
-              <Link
-                to="/customer/community"
-                state={{ selectedPackageId: booking.package?._id }}
-                className="p-3.5 rounded-xl bg-indigo-50 text-indigo-600 hover:bg-indigo-100 hover:text-indigo-700 transition-all active:scale-95"
-                title="Community Chat"
-              >
-                <MessageSquare size={20} />
-              </Link>
-              <Link
-                to={`/customer/booking/${booking.bookingId}/reviews/${booking.package?._id}?readOnly=false&status=${booking.bookingStatus}&bookingId=${booking.bookingId}`}
-                className="p-3.5 rounded-xl bg-amber-50 text-amber-600 hover:bg-amber-100 hover:text-amber-700 transition-all active:scale-95 group"
-                title="Guest Experience"
-              >
-                <Star size={20} className="group-hover:fill-amber-600 transition-all" />
-              </Link>
-              <button
-                onClick={() => setShowTicketsModal(true)}
-                className="p-3.5 rounded-xl bg-cyan-50 text-cyan-600 hover:bg-cyan-100 hover:text-cyan-700 transition-all active:scale-95"
-                title="Travel Tickets"
-              >
-                <Ticket size={20} />
-              </button>
-            </div>
-
+      {/* ═══════════════════ LIGHTBOX ═══════════════════ */}
+      {lb.open && (
+        <div className="fixed inset-0 z-[500] bg-black/95 flex flex-col">
+          <div className="flex items-center justify-between px-6 py-4 shrink-0">
+            <span className="text-white/50 text-sm">{lb.idx + 1} / {images.length}</span>
+            <button onClick={() => setLb({ open: false, idx: 0 })}
+              className="h-10 w-10 rounded-full bg-white/10 text-white flex items-center justify-center hover:bg-white/20 transition-colors">
+              <X size={20} />
+            </button>
           </div>
-        </div>
-        {/* Day Navigation & Action Bar */}
-        <div className="sticky top-20 z-40 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl py-6 border-b border-gray-100 dark:border-white/5 px-4 sm:px-6">
-          <div className="max-w-7xl mx-auto">
-            <div className="flex gap-3 md:gap-5 overflow-x-auto scrollbar-hide w-full snap-x snap-mandatory px-2 py-2">
-              {itinerary.map((day, idx) => {
-                const isActive = activeDayIdx === idx
-
-                let dayNumStr = `${idx + 1}`;
-                let labelStr = 'Day';
-
-                if (booking.travelDate) {
-                  const dayDate = new Date(booking.travelDate);
-                  dayDate.setDate(dayDate.getDate() + idx);
-                  dayNumStr = dayDate.toLocaleDateString('en-IN', { day: '2-digit' });
-                  labelStr = dayDate.toLocaleDateString('en-IN', { month: 'short' });
-                }
-
-                return (
-                  <button
-                    key={idx}
-                    onClick={() => setActiveDayIdx(idx)}
-                    className={`flex flex-col items-center justify-center min-w-[70px] h-[70px] md:min-w-[80px] md:h-[80px] rounded-full border transition-all duration-300 snap-center outline-none shrink-0
-                  ${isActive ? 'bg-primary-500 border-primary-500 text-white shadow-lg shadow-primary-200/50 scale-105' : 'bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700 text-gray-800 dark:text-gray-200 hover:border-primary-200 dark:hover:border-primary-900 hover:bg-primary-50 dark:hover:bg-primary-900/20'}`}
-                  >
-                    <span className="text-xl md:text-2xl font-black mb-0.5">{dayNumStr}</span>
-                    <span className={`text-[10px] md:text-[11px] font-bold tracking-wide capitalize ${isActive ? 'text-primary-50' : 'text-gray-400 dark:text-gray-500'}`}>{labelStr}</span>
-                  </button>
-                )
-              })}
-            </div>
+          <div className="flex-1 flex items-center justify-center relative px-4">
+            <button onClick={() => setLb(s => ({ ...s, idx: (s.idx - 1 + images.length) % images.length }))}
+              className="absolute left-4 h-12 w-12 rounded-full bg-white/10 text-white flex items-center justify-center hover:bg-white/25 transition-colors z-10">
+              <ChevronLeft size={24} />
+            </button>
+            <img src={images[lb.idx]} alt="" className="max-h-[75vh] max-w-full rounded-xl object-contain" />
+            <button onClick={() => setLb(s => ({ ...s, idx: (s.idx + 1) % images.length }))}
+              className="absolute right-4 h-12 w-12 rounded-full bg-white/10 text-white flex items-center justify-center hover:bg-white/25 transition-colors z-10">
+              <ChevronRight size={24} />
+            </button>
           </div>
-        </div>
-
-        {/* Active Day Header & Content */}
-        {
-          activeDay ? (
-            <div className="w-full max-w-7xl mx-auto space-y-8 px-4 sm:px-6 lg:px-8 mb-32">
-              <div className="animate-fade-up">
-                <h2 className="text-3xl md:text-4xl lg:text-5xl font-black text-gray-900 dark:text-white leading-tight mb-4">{activeDay.title || activeDay.name}</h2>
-                <p className="text-base md:text-lg text-gray-500 dark:text-gray-400 font-medium leading-relaxed max-w-3xl">{activeDay.description || 'Discover new stories today.'}</p>
-              </div>
-              {/* Experiences List */}
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-                {(activeDay.experiences || []).map((exp, eIdx) => {
-                  const vendor = exp.vendor || {}
-                  return (
-                    <div key={eIdx} className="bg-white dark:bg-gray-800 rounded-[2rem] overflow-hidden shadow-xl shadow-gray-200/40 border border-gray-100 dark:border-gray-700 transition-all hover:shadow-2xl hover:-translate-y-2 flex flex-col group">
-                      {/* Image Frame */}
-                      <div className="w-full h-48 md:h-56 shrink-0 bg-gray-50 dark:bg-gray-900 relative">
-                        {exp.images?.[0] ? (
-                          <img
-                            src={getFullUrl(exp.images[0])}
-                            alt={exp.name}
-                            onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextSibling.style.display = 'flex'; }}
-                            className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
-                          />
-                        ) : null}
-                        <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-300 bg-gradient-to-br from-gray-50 to-gray-100" style={{ display: exp.images?.[0] ? 'none' : 'flex' }}>
-                          <Activity size={40} strokeWidth={1.5} />
-                          <span className="mt-2 text-[10px] font-black uppercase tracking-widest text-gray-400">No Image</span>
-                        </div>
-                        <div className="absolute top-4 left-4">
-                          <span className="px-3 py-1.5 rounded-lg bg-white/90 backdrop-blur-md shadow-sm text-primary-600 text-[10px] font-black uppercase tracking-widest border border-white">
-                            {exp.category}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Content */}
-                      <div className="flex-1 p-6 md:p-8 flex flex-col">
-                        <div className="flex items-center gap-3 mb-4">
-                          <div className="flex items-center gap-2 bg-primary-50 dark:bg-gray-900 px-3 py-1.5 rounded-lg text-primary-600">
-                            <Clock size={14} />
-                            <span className="text-xs font-bold">{exp.startTime} {exp.endTime && `— ${exp.endTime}`}</span>
-                          </div>
-                        </div>
-
-                        <h3 className="text-xl md:text-2xl font-black text-gray-900 dark:text-white leading-tight mb-3 line-clamp-2">{exp.name}</h3>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 font-medium leading-relaxed mb-6 line-clamp-3">{exp.description}</p>
-
-                        <div className="mt-auto pt-5 border-t border-gray-100 dark:border-gray-700">
-                          {vendor.name ? (
-                            <div className="flex flex-col gap-4">
-                              <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-500 font-bold">
-                                  {vendor.name.charAt(0)}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 truncate">Activity Contact</p>
-                                  <p className="text-sm font-bold text-gray-900 dark:text-white truncate">{vendor.name}</p>
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-2 mt-2">
-                                <a
-                                  href={`tel:${vendor.phone}`}
-                                  className="flex items-center justify-center gap-2 flex-1 py-3 rounded-xl bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-bold text-sm hover:bg-primary-600 dark:hover:bg-primary-500 hover:text-white transition-all shadow-md active:scale-95"
-                                >
-                                  <Phone size={16} />
-                                  Call
-                                </a>
-                                <button
-                                  onClick={() => setChatVendor(vendor)}
-                                  className="flex items-center justify-center gap-2 flex-1 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white font-bold text-sm hover:bg-primary-50 hover:text-primary-600 hover:border-primary-200 transition-all shadow-sm active:scale-95"
-                                >
-                                  <MessageSquare size={16} />
-                                  Chat
-                                </button>
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="text-xs font-bold text-gray-400 uppercase tracking-widest py-2 text-center bg-gray-50 rounded-xl">No Vendor Assigned</div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          ) : (
-            <div className="flex h-80 items-center justify-center rounded-[3rem] border-4 border-dashed border-gray-100 text-gray-300 font-black uppercase tracking-[0.3em] text-sm">Select A Day To Begin</div>
-          )
-        }
-
-      </div >
-
-      <TicketsModal
-        isOpen={showTicketsModal}
-        onClose={() => setShowTicketsModal(false)}
-        tickets={booking.tickets}
-      />
-
-      <VendorChatModal
-        isOpen={!!chatVendor}
-        onClose={() => setChatVendor(null)}
-        bookingId={booking.bookingId || booking._id}
-        vendor={chatVendor}
-      />
-
-      {/* Inclusions Modal */}
-      {showInclusions && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowInclusions(false)} />
-          <div className="relative z-10 w-full max-w-md bg-white dark:bg-gray-800 rounded-3xl shadow-2xl p-6 sm:p-8 animate-scale-in">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3 text-emerald-600">
-                <div className="p-2 rounded-xl bg-emerald-50"><CheckCircle size={24} /></div>
-                <h3 className="text-lg font-black uppercase tracking-widest">What's Included</h3>
-              </div>
-              <button onClick={() => setShowInclusions(false)} className="p-2 text-gray-400 hover:bg-gray-100 rounded-xl"><X size={20} className="rotate-180" /></button>
-            </div>
-            <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
-              {pkg.inclusions && pkg.inclusions.length > 0 ? (
-                pkg.inclusions.map((item, idx) => (
-                  <div key={idx} className="flex gap-3 items-start">
-                    <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{item}</span>
-                  </div>
-                ))
-              ) : (
-                <p className="text-sm text-gray-500 italic text-center py-4 bg-gray-50 rounded-xl">No inclusions specified.</p>
-              )}
-            </div>
-            <button onClick={() => setShowInclusions(false)} className="mt-8 w-full py-3 bg-gray-900 text-white font-bold rounded-xl hover:opacity-90 transition-opacity">Close</button>
+          <div className="flex gap-2 overflow-x-auto noscroll px-6 py-4 justify-center shrink-0">
+            {images.map((src, i) => (
+              <button key={i} onClick={() => setLb(s => ({ ...s, idx: i }))}
+                className={`shrink-0 h-14 w-20 rounded-lg overflow-hidden border-2 transition-all ${i === lb.idx ? 'border-white scale-105' : 'border-white/15 opacity-50 hover:opacity-80'}`}>
+                <img src={src} alt="" className="h-full w-full object-cover" />
+              </button>
+            ))}
           </div>
         </div>
       )}
 
-      {/* Exclusions Modal */}
-      {showExclusions && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowExclusions(false)} />
-          <div className="relative z-10 w-full max-w-md bg-white dark:bg-gray-800 rounded-3xl shadow-2xl p-6 sm:p-8 animate-scale-in">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3 text-rose-600">
-                <div className="p-2 rounded-xl bg-rose-50"><XCircle size={24} /></div>
-                <h3 className="text-lg font-black uppercase tracking-widest">What's Excluded</h3>
-              </div>
-              <button onClick={() => setShowExclusions(false)} className="p-2 text-gray-400 hover:bg-gray-100 rounded-xl"><X size={20} className="rotate-180" /></button>
-            </div>
-            <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
-              {pkg.exclusions && pkg.exclusions.length > 0 ? (
-                pkg.exclusions.map((item, idx) => (
-                  <div key={idx} className="flex gap-3 items-start">
-                    <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{item}</span>
-                  </div>
-                ))
-              ) : (
-                <p className="text-sm text-gray-500 italic text-center py-4 bg-gray-50 rounded-xl">No exclusions specified.</p>
-              )}
-            </div>
-            <button onClick={() => setShowExclusions(false)} className="mt-8 w-full py-3 bg-gray-900 text-white font-bold rounded-xl hover:opacity-90 transition-opacity">Close</button>
-          </div>
-        </div>
-      )}
-
-      {/* Important Notes Modal */}
-      {showNotes && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowNotes(false)} />
-          <div className="relative z-10 w-full max-w-md bg-white dark:bg-gray-800 rounded-3xl shadow-2xl p-6 sm:p-8 animate-scale-in">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3 text-amber-600">
-                <div className="p-2 rounded-xl bg-amber-50"><Info size={24} /></div>
-                <h3 className="text-lg font-black uppercase tracking-widest">Important Notes</h3>
-              </div>
-              <button onClick={() => setShowNotes(false)} className="p-2 text-gray-400 hover:bg-gray-100 rounded-xl"><X size={20} className="rotate-180" /></button>
-            </div>
-            <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
-              {pkg.importantNotes && pkg.importantNotes.length > 0 ? (
-                pkg.importantNotes.map((item, idx) => (
-                  <div key={idx} className="flex gap-3 items-start">
-                    <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{item}</span>
-                  </div>
-                ))
-              ) : (
-                <p className="text-sm text-gray-500 italic text-center py-4 bg-gray-50 rounded-xl">No important notes specified.</p>
-              )}
-            </div>
-            <button onClick={() => setShowNotes(false)} className="mt-8 w-full py-3 bg-gray-900 text-white font-bold rounded-xl hover:opacity-90 transition-opacity">Close</button>
-          </div>
-        </div>
-      )}
+      <TicketsModal isOpen={showTickets} onClose={() => setShowTickets(false)} tickets={booking.tickets} />
+      <VendorChatModal isOpen={!!chatVendor} onClose={() => setChatVendor(null)} bookingId={booking.bookingId || booking._id} vendor={chatVendor} />
     </>
   )
 }

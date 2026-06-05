@@ -35,29 +35,52 @@ export default function VendorDetails() {
   const navigate = useNavigate()
   const [vendor, setVendor] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [toggling, setToggling] = useState(false)
   const { toast } = useToast()
   const toastRef = useRef(toast)
   toastRef.current = toast
 
-  useEffect(() => {
-    const fetchVendor = async () => {
-      try {
-        const { data } = await adminApi.getVendorDetail(id)
-        if (data?.success) {
-          setVendor(data.data.vendor)
-        } else {
-          toastRef.current.error(data?.message || 'Vendor not found')
-          navigate('/admin/vendors', { replace: true })
-        }
-      } catch (err) {
-        toastRef.current.error(err?.response?.data?.message || 'Error fetching vendor')
+  const fetchVendor = async () => {
+    try {
+      const { data } = await adminApi.getVendorDetail(id)
+      if (data?.success) {
+        setVendor(data.data.vendor)
+      } else {
+        toastRef.current.error(data?.message || 'Vendor not found')
         navigate('/admin/vendors', { replace: true })
-      } finally {
-        setLoading(false)
       }
+    } catch (err) {
+      toastRef.current.error(err?.response?.data?.message || 'Error fetching vendor')
+      navigate('/admin/vendors', { replace: true })
+    } finally {
+      setLoading(false)
     }
+  }
+
+  useEffect(() => {
+    setLoading(true)
     fetchVendor()
-  }, [id, navigate])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id])
+
+  const handleToggleStatus = async () => {
+    if (!vendor?._id || toggling) return
+    setToggling(true)
+    try {
+      const { data } = await adminApi.toggleVendor(vendor._id)
+      if (data?.success) {
+        toastRef.current.success(data.message || 'Vendor status updated')
+        if (data.data?.vendor) setVendor(data.data.vendor)
+        else setVendor((v) => ({ ...v, isActive: !v.isActive }))
+      } else {
+        toastRef.current.error(data?.message || 'Could not update vendor status')
+      }
+    } catch (err) {
+      toastRef.current.error(err?.response?.data?.message || 'Failed to update vendor status')
+    } finally {
+      setToggling(false)
+    }
+  }
 
   if (loading) {
     return (
@@ -95,10 +118,27 @@ export default function VendorDetails() {
             </p>
             <p className="text-lg font-bold text-gray-900">{vendor.name}</p>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold capitalize ring-1 ${vendor.isActive ? 'bg-emerald-50 text-emerald-900 ring-emerald-100' : 'bg-red-50 text-red-800 ring-red-100'}`}>
-              {vendor.isActive ? 'Active' : 'Inactive'}
-            </span>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={handleToggleStatus}
+              disabled={toggling}
+              title={vendor.isActive ? 'Click to deactivate' : 'Click to activate'}
+              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ring-1 transition-all active:scale-95 disabled:opacity-60 ${
+                vendor.isActive
+                  ? 'bg-emerald-50 text-emerald-900 ring-emerald-100 hover:bg-emerald-100'
+                  : 'bg-red-50 text-red-800 ring-red-100 hover:bg-red-100'
+              }`}
+            >
+              {toggling ? (
+                <Loader size="sm" />
+              ) : (
+                <>
+                  <span className={`h-1.5 w-1.5 rounded-full ${vendor.isActive ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}`} />
+                  {vendor.isActive ? 'Active' : 'Inactive'}
+                </>
+              )}
+            </button>
             <span className="inline-flex rounded-full px-3 py-1 text-xs font-semibold capitalize ring-1 bg-blue-50 text-blue-800 ring-blue-100">
               {vendor.type || 'Unknown'}
             </span>

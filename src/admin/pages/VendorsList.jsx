@@ -21,6 +21,7 @@ export default function VendorsList() {
   toastRef.current = toast
   const [exportLoading, setExportLoading] = useState(false)
   const [typeFilter, setTypeFilter] = useState('all')
+  const [togglingId, setTogglingId] = useState(null)
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(searchInput.trim()), 400)
@@ -61,6 +62,28 @@ export default function VendorsList() {
 
   useEffect(() => { fetchVendors() }, [fetchVendors])
 
+  const handleToggleStatus = async (vendorId) => {
+    if (togglingId) return
+    setTogglingId(vendorId)
+    try {
+      const { data } = await adminApi.toggleVendor(vendorId)
+      if (data?.success) {
+        toastRef.current.success(data.message || 'Vendor status updated')
+        setVendors((prev) =>
+          prev.map((v) =>
+            v._id === vendorId ? { ...v, isActive: data.data?.vendor?.isActive ?? !v.isActive } : v
+          )
+        )
+      } else {
+        toastRef.current.error(data?.message || 'Could not update vendor status')
+      }
+    } catch (err) {
+      toastRef.current.error(err?.response?.data?.message || 'Failed to update vendor status')
+    } finally {
+      setTogglingId(null)
+    }
+  }
+
   const handleExport = async () => {
     setExportLoading(true)
     try {
@@ -73,7 +96,8 @@ export default function VendorsList() {
       await exportToExcel(
         (data?.data?.vendors ?? []).map((v) => ({
           Name: v.name || '', Email: v.email || '', Phone: v.phone || '',
-          Type: v.type || '', City: v.city || '', State: v.state || '',
+          Type: v.type || '', Status: v.isActive ? 'Active' : 'Inactive',
+          City: v.city || '', State: v.state || '',
           'Parent Agent': v.createdBy?.name || '',
           'Joined On': v.createdAt ? new Date(v.createdAt).toLocaleDateString() : '',
         })),
@@ -182,10 +206,26 @@ export default function VendorsList() {
                             <span className="inline-flex items-center rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10 capitalize">
                               {v.type || 'Unknown'}
                             </span>
-                            <span className={`inline-flex items-center gap-1.5 text-xs font-medium ${v.isActive ? 'text-green-600' : 'text-red-600'}`}>
-                              <span className={`h-1.5 w-1.5 rounded-full ${v.isActive ? 'bg-green-600' : 'bg-red-600'}`} />
-                              {v.isActive ? 'Active' : 'Inactive'}
-                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleToggleStatus(v._id)}
+                              disabled={togglingId === v._id}
+                              title={v.isActive ? 'Click to deactivate' : 'Click to activate'}
+                              className={`inline-flex min-w-[5.5rem] items-center justify-center gap-1.5 rounded-lg border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide transition-all active:scale-95 disabled:opacity-60 ${
+                                v.isActive
+                                  ? 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                                  : 'border-red-200 bg-red-50 text-red-700 hover:bg-red-100'
+                              }`}
+                            >
+                              {togglingId === v._id ? (
+                                <Loader size="sm" />
+                              ) : (
+                                <>
+                                  <span className={`h-1.5 w-1.5 rounded-full ${v.isActive ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}`} />
+                                  {v.isActive ? 'Active' : 'Inactive'}
+                                </>
+                              )}
+                            </button>
                           </div>
                         </td>
                         <td className="max-w-[200px] px-5 py-3.5 space-y-1">

@@ -1,355 +1,409 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   CalendarDays,
   Eye,
-  IndianRupee,
   Ticket,
   Search,
   Download,
   RefreshCw,
-  User,
   MapPin,
   Tag,
-  Package as PackageIcon,
-  Users as UsersIcon
+  IndianRupee,
+  Phone,
+  X,
 } from 'lucide-react'
 import adminApi from '@/admin/services/adminApi.js'
 import { useToast } from '@/shared/components/ToastContainer.jsx'
+import Loader from '@/shared/components/Loader.jsx'
 import Pagination from '@/admin/components/Pagination.jsx'
 import { exportToExcel } from '@/admin/utils/exportExcel.js'
 import CustomDropdown from '@/shared/components/CustomDropdown.jsx'
 
 const PAGE_SIZE = 10
 
-function statusClass(status) {
-  switch (status) {
-    case 'confirmed': return 'bg-emerald-100 text-emerald-800'
-    case 'ongoing': return 'bg-blue-100 text-blue-800'
-    case 'completed': return 'bg-gray-100 text-gray-800'
-    case 'cancelled': return 'bg-red-100 text-red-800'
-    default: return 'bg-amber-100 text-amber-800'
-  }
+const STATUS_BADGE = {
+  confirmed: 'border-emerald-200 bg-emerald-50 text-emerald-700',
+  ongoing:   'border-blue-200 bg-blue-50 text-blue-700',
+  completed: 'border-gray-200 bg-gray-100 text-gray-600',
+  cancelled: 'border-red-200 bg-red-50 text-red-700',
+}
+const STATUS_DOT = {
+  confirmed: 'bg-emerald-500 animate-pulse',
+  ongoing:   'bg-blue-500 animate-pulse',
+  completed: 'bg-gray-400',
+  cancelled: 'bg-red-500',
 }
 
-export default function Bookings() {
-  const navigate = useNavigate()
-  const { toast } = useToast()
-  const [bookings, setBookings] = useState([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
-  const [search, setSearch] = useState('')
-  const [statusFilter, setStatusFilter] = useState('all')
-  const [packageFilter, setPackageFilter] = useState('all')
-  const [bookedByFilter, setBookedByFilter] = useState('all')
-  const [packages, setPackages] = useState([])
-  const [agents, setAgents] = useState([])
-  const [pagination, setPagination] = useState({ page: 1, totalPages: 1, totalCount: 0 })
-  const [exportLoading, setExportLoading] = useState(false)
+function fmtINR(n) {
+  return (n || 0).toLocaleString('en-IN')
+}
 
-  // Fetch packages for filter
+
+export default function Bookings() {
+  const navigate   = useNavigate()
+  const { toast }  = useToast()
+  const toastRef   = useRef(toast)
+  toastRef.current = toast
+
+  const [bookings, setBookings]             = useState([])
+  const [loading, setLoading]               = useState(false)
+  const [error, setError]                   = useState(null)
+  const [searchInput, setSearchInput]       = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
+  const [statusFilter, setStatusFilter]     = useState('all')
+  const [packageFilter, setPackageFilter]   = useState('all')
+  const [bookedByFilter, setBookedByFilter] = useState('all')
+  const [packages, setPackages]             = useState([])
+  const [agents, setAgents]                 = useState([])
+  const [page, setPage]                     = useState(1)
+  const [totalPages, setTotalPages]         = useState(1)
+  const [total, setTotal]                   = useState(0)
+  const [exportLoading, setExportLoading]   = useState(false)
+
+  // Populate filter dropdowns once
   useEffect(() => {
     adminApi.listPackages({ limit: 1000 })
-      .then(res => setPackages(res.data?.data?.packages || []))
-      .catch(err => console.error('Failed to fetch packages', err))
-
+      .then((r) => setPackages(r.data?.data?.packages || []))
+      .catch(() => {})
     adminApi.listAgents({ limit: 1000 })
-      .then(res => setAgents(res.data?.data?.agents || []))
-      .catch(err => console.error('Failed to fetch agents', err))
+      .then((r) => setAgents(r.data?.data?.agents || []))
+      .catch(() => {})
   }, [])
 
-  const fetchBookings = async (page = 1) => {
+  // Debounce search
+  useEffect(() => {
+    const t = setTimeout(() => { setDebouncedSearch(searchInput.trim()); setPage(1) }, 380)
+    return () => clearTimeout(t)
+  }, [searchInput])
+
+  // Reset to page 1 when filters change
+  useEffect(() => { setPage(1) }, [statusFilter, packageFilter, bookedByFilter])
+
+  const fetchBookings = useCallback(async (pg = 1) => {
     setLoading(true)
     setError(null)
     try {
       const res = await adminApi.listAllBookings({
-        page,
+        page: pg,
         limit: PAGE_SIZE,
-        search: search.trim(),
-        status: statusFilter === 'all' ? undefined : statusFilter,
-        packageId: packageFilter === 'all' ? undefined : packageFilter,
-        bookedBy: bookedByFilter === 'all' ? undefined : bookedByFilter
+        search:    debouncedSearch || undefined,
+        status:    statusFilter   === 'all' ? undefined : statusFilter,
+        packageId: packageFilter  === 'all' ? undefined : packageFilter,
+        bookedBy:  bookedByFilter === 'all' ? undefined : bookedByFilter,
       })
-      const { bookings, totalPages, totalCount, currentPage } = res.data?.data || {}
-      setBookings(bookings || [])
-      setPagination({ page: currentPage, totalPages, totalCount })
+      const d = res.data?.data || {}
+      setBookings(d.bookings || [])
+      setTotalPages(d.totalPages  || 1)
+      setTotal(d.totalCount || 0)
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to load bookings')
     } finally {
       setLoading(false)
     }
-  }
+  }, [debouncedSearch, statusFilter, packageFilter, bookedByFilter])
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      fetchBookings(1)
-    }, 400)
-    return () => clearTimeout(timer)
-  }, [search, statusFilter, packageFilter, bookedByFilter])
-
-  const handlePageChange = (newPage) => {
-    fetchBookings(newPage)
-  }
+  useEffect(() => { fetchBookings(page) }, [fetchBookings, page])
 
   const handleExport = async () => {
     setExportLoading(true)
     try {
       const { data } = await adminApi.listAllBookings({
-        page: 1,
-        limit: 10000,
-        search: search.trim(),
-        status: statusFilter === 'all' ? undefined : statusFilter,
-        packageId: packageFilter === 'all' ? undefined : packageFilter,
-        bookedBy: bookedByFilter === 'all' ? undefined : bookedByFilter
+        page: 1, limit: 10000,
+        search:    debouncedSearch || undefined,
+        status:    statusFilter   === 'all' ? undefined : statusFilter,
+        packageId: packageFilter  === 'all' ? undefined : packageFilter,
+        bookedBy:  bookedByFilter === 'all' ? undefined : bookedByFilter,
       })
-      const rows = data?.data?.bookings || []
       await exportToExcel(
-        rows.map((b, idx) => ({
-          '#': idx + 1,
-          'Booking ID': b.bookingId || '',
-          'Package': b.whitelabelPackage?.customTitle || b.package?.title || '—',
-          'Customer': b.customer?.name || '—',
-          'Customer Phone': b.customer?.phone || '',
-          'Booked By': `${b.bookedBy?.name} (${b.bookedBy?.role})` || '—',
-          'Travel Date': b.travelDate ? new Date(b.travelDate).toLocaleDateString() : '—',
-          'Parent Price': b.parentPriceAtBooking || 0,
-          'WL Price': b.bookedBy?.role === 'parent_agent' ? '—' : (b.whitelabelPriceAtBooking || 0),
-          'Extra Income': (b.totalAmount - b.whitelabelPriceAtBooking) || 0,
-          'Total Amount': b.totalAmount || 0,
-          'Status': b.bookingStatus || '—',
-          'Created At': new Date(b.createdAt).toLocaleString()
+        (data?.data?.bookings || []).map((b, i) => ({
+          '#':               i + 1,
+          'Booking ID':      b.bookingId || '',
+          Package:           b.whitelabelPackage?.customTitle || b.package?.title || '—',
+          Destination:       b.package?.destination || '—',
+          Customer:          b.customer?.name || '—',
+          'Customer Phone':  b.customer?.phone || '',
+          'Booked By':       `${b.bookedBy?.name || ''} (${b.bookedBy?.role || ''})`,
+          'Travel Date':     b.travelDate ? new Date(b.travelDate).toLocaleDateString() : '—',
+          'Parent Price':    b.parentPriceAtBooking || 0,
+          'WL Price':        b.bookedBy?.role === 'parent_agent' ? '—' : (b.whitelabelPriceAtBooking || 0),
+          'Extra Income':    (b.totalAmount - b.whitelabelPriceAtBooking) || 0,
+          'Total Amount':    b.totalAmount || 0,
+          Status:            b.bookingStatus || '—',
+          'Created At':      new Date(b.createdAt).toLocaleString(),
         })),
         'all_bookings',
         'All Bookings'
       )
-    } catch (err) {
-      toast.error('Export failed')
+    } catch {
+      toastRef.current.error('Export failed')
     } finally {
       setExportLoading(false)
     }
   }
 
   return (
-    <div className="space-y-6">
-      <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <div className="animate-fade-in space-y-4">
+
+      {/* ── Page header ── */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">All Platform Bookings</h1>
+          <h1 className="text-xl font-semibold tracking-tight text-gray-900 sm:text-2xl">
+            All Platform Bookings
+          </h1>
           <p className="mt-1 text-sm text-gray-500">
-            Monitor and manage every booking across the entire platform hierarchy.
+            Monitor every booking across the entire platform hierarchy.
           </p>
         </div>
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={handleExport}
-            disabled={bookings.length === 0 || exportLoading}
-            className="w-full sm:w-auto inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition-colors hover:bg-gray-50 disabled:opacity-50"
-          >
-            {exportLoading ? <RefreshCw size={16} className="animate-spin" /> : <Download size={16} />}
-            Export Excel
-          </button>
-        </div>
-      </header>
+        <button
+          type="button"
+          onClick={handleExport}
+          disabled={total === 0 || exportLoading}
+          className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 disabled:opacity-50 sm:w-auto"
+        >
+          {exportLoading
+            ? <RefreshCw size={15} className="animate-spin" />
+            : <Download size={15} strokeWidth={2} />}
+          Export Excel
+        </button>
+      </div>
 
-      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-        {/* Filters */}
-        <div className="flex flex-col gap-4 border-b border-gray-200 bg-gray-50/30 px-4 py-4 sm:flex-row sm:flex-wrap sm:items-center">
+      {/* ── Main card ── */}
+      <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+
+        {/* Filter bar */}
+        <div className="flex flex-col gap-3 border-b border-gray-100 px-4 py-3 sm:flex-row sm:flex-wrap sm:items-center">
+
+          {/* Search */}
           <div className="relative min-w-0 flex-1">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" strokeWidth={2} />
             <input
-              className="w-full rounded-lg border border-gray-200 bg-white py-2 pl-10 pr-4 text-sm text-gray-900 placeholder:text-gray-400 focus:border-primary-500 focus:outline-none focus:ring-4 focus:ring-primary-500/10"
-              placeholder="Search by Booking ID or Customer name..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              type="search"
+              placeholder="Search booking ID or customer name…"
+              autoComplete="off"
+              className="w-full rounded-xl border border-gray-200 bg-gray-50 py-2 pl-9 pr-9 text-sm text-gray-900 placeholder:text-gray-400 focus:border-primary-300 focus:bg-white focus:outline-none focus:ring-1 focus:ring-primary-200"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
             />
+            {searchInput && (
+              <button
+                type="button"
+                onClick={() => setSearchInput('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded p-0.5 text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
           </div>
+
+          {/* Status */}
           <select
-            className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:border-primary-500 focus:outline-none focus:ring-4 focus:ring-primary-500/10 sm:w-48"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
+            className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-900 focus:border-primary-300 focus:bg-white focus:outline-none focus:ring-1 focus:ring-primary-200 sm:w-44"
           >
-            <option value="all">All status</option>
+            <option value="all">All Statuses</option>
             <option value="confirmed">Confirmed</option>
             <option value="ongoing">Ongoing</option>
             <option value="completed">Completed</option>
             <option value="cancelled">Cancelled</option>
           </select>
 
-          <CustomDropdown
-            value={packageFilter}
-            onChange={setPackageFilter}
-            options={[
-              { value: 'all', label: 'All Packages' },
-              ...packages.map(pkg => ({ value: pkg._id, label: pkg.title }))
-            ]}
-            searchable={true}
-            placeholder="Select Package"
-            className="w-full sm:w-64"
-            buttonClassName="!py-2 !h-9.5"
-            truncateLength={40}
-          />
-
-          <CustomDropdown
-            value={bookedByFilter}
-            onChange={setBookedByFilter}
-            options={[
-              { value: 'all', label: 'All Agents' },
-              ...agents.map(agent => ({ value: agent._id, label: `${agent.name} (${agent.agentCode})` }))
-            ]}
-            searchable={true}
-            placeholder="Select Agent"
-            className="w-full sm:w-64"
-            buttonClassName="!py-2 !h-9.5"
-            truncateLength={40}
-          />
-        </div>
-
-        {error && <div className="m-4 rounded-lg bg-red-50 p-4 text-sm text-red-700">{error}</div>}
-
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[1000px] text-sm text-left">
-            <thead className="border-b border-gray-200 bg-gray-50/50 text-[11px] font-bold uppercase tracking-wider text-gray-500">
-              <tr>
-                <th className="px-6 py-4">Booking / ID</th>
-                <th className="px-6 py-4">Package</th>
-                <th className="px-6 py-4">Customer</th>
-                <th className="px-6 py-4">Booked By</th>
-                <th className="px-6 py-4">Travel Date</th>
-                <th className="px-6 py-4 text-right">Parent Price</th>
-                <th className="px-6 py-4 text-right">WL Price</th>
-                <th className="px-6 py-4 text-right">Extra Income</th>
-                <th className="px-6 py-4 text-right">Total Amount</th>
-                <th className="px-6 py-4">Status</th>
-                <th className="px-6 py-4 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {loading && bookings.length === 0 ? (
-                [1, 2, 3, 4, 5].map(i => (
-                  <tr key={i} className="animate-pulse">
-                    <td colSpan={12} className="px-6 py-4"><div className="h-4 w-full rounded bg-gray-100" /></td>
-                  </tr>
-                ))
-              ) : bookings.length === 0 ? (
-                <tr>
-                  <td colSpan={12} className="px-6 py-12 text-center text-gray-500">
-                    <Ticket className="mx-auto mb-3 h-10 w-10 text-gray-300" />
-                    No bookings found matching your filters.
-                  </td>
-                </tr>
-              ) : (
-                bookings.map(b => (
-                  <tr key={b._id} className="transition-colors hover:bg-gray-50/50">
-                    <td className="px-6 py-4">
-                      <div className="flex flex-col">
-                        <span className="font-mono text-xs font-bold text-gray-900">{b.bookingId}</span>
-                        <span className="mt-0.5 text-[10px] text-gray-400">Created {new Date(b.createdAt).toLocaleDateString()}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex flex-col max-w-[200px]">
-                        <span className="truncate font-medium text-gray-900" title={b.whitelabelPackage?.customTitle || b.package?.title}>
-                          {b.whitelabelPackage?.customTitle || b.package?.title || '—'}
-                        </span>
-                        {b.whitelabelPackage && (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-primary-600">
-                            <Tag size={10} /> White-label
-                          </span>
-                        )}
-                        <span className="mt-0.5 flex items-center gap-1 text-[10px] text-gray-400">
-                          <MapPin size={10} /> {b.package?.destination || 'N/A'}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-gray-700">
-                      <div className="flex flex-col">
-                        <span className="font-medium text-gray-900">{b.customer?.name || '—'}</span>
-                        <span className="text-xs text-gray-400">{b.customer?.phone || ''}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-gray-700">
-                      <div className="flex flex-col">
-                        <span className="flex items-center gap-1.5 font-medium text-gray-900">
-                          <User size={12} className="text-gray-400" />
-                          {b.bookedBy?.name || '—'}
-                        </span>
-                        <span className="text-[10px] uppercase tracking-wide text-primary-600 font-bold">
-                          {b.bookedBy?.role?.replace('_', ' ')}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-gray-600">
-                      <div className="flex items-center gap-2">
-                        <CalendarDays size={14} className="text-gray-400" />
-                        {b.travelDate ? new Date(b.travelDate).toLocaleDateString(undefined, { dateStyle: 'medium' }) : '—'}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-right font-medium text-gray-500">
-                      <div className="flex items-center justify-end gap-0.5">
-                        <IndianRupee size={12} />
-                        {(b.parentPriceAtBooking || 0).toLocaleString('en-IN')}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-right font-medium text-gray-600">
-                      <div className="flex items-center justify-end gap-0.5">
-                        {b.bookedBy?.role === 'parent_agent' ? (
-                          <span className="text-gray-300">—</span>
-                        ) : (
-                          <>
-                            <IndianRupee size={12} />
-                            {(b.whitelabelPriceAtBooking || 0).toLocaleString('en-IN')}
-                          </>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-right font-bold text-emerald-600">
-                      <div className="flex items-center justify-end gap-0.5">
-                        {(b.totalAmount - b.whitelabelPriceAtBooking) > 0 ? (
-                          <>
-                            <IndianRupee size={12} />
-                            {(b.totalAmount - b.whitelabelPriceAtBooking).toLocaleString('en-IN')}
-                          </>
-                        ) : (
-                          <span className="text-gray-300">—</span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-right font-black text-gray-900">
-                      <div className="flex items-center justify-end gap-0.5">
-                        <IndianRupee size={12} />
-                        {(b.totalAmount || 0).toLocaleString('en-IN')}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-bold capitalize ${statusClass(b.bookingStatus)}`}>
-                        {b.bookingStatus}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <button
-                        onClick={() => navigate(`/admin/bookings/${b._id}`)}
-                        className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-600 transition hover:bg-primary-50 hover:text-primary-600 hover:border-primary-100"
-                      >
-                        <Eye size={14} />
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {bookings.length > 0 && (
-          <div className="border-t border-gray-200 px-6 py-4">
-            <Pagination
-              page={pagination.page}
-              totalPages={pagination.totalPages}
-              total={pagination.totalCount}
-              limit={PAGE_SIZE}
-              onPageChange={handlePageChange}
+          {/* Package */}
+          <div className="w-full sm:w-56">
+            <CustomDropdown
+              value={packageFilter}
+              onChange={setPackageFilter}
+              options={[
+                { value: 'all', label: 'All Packages' },
+                ...packages.map((p) => ({ value: p._id, label: p.title })),
+              ]}
+              searchable
+              placeholder="All Packages"
+              truncateLength={32}
             />
           </div>
+
+          {/* Agent */}
+          <div className="w-full sm:w-60">
+            <CustomDropdown
+              value={bookedByFilter}
+              onChange={setBookedByFilter}
+              options={[
+                { value: 'all', label: 'All Agents' },
+                ...agents.map((a) => ({ value: a._id, label: `${a.name} (${a.agentCode})` })),
+              ]}
+              searchable
+              placeholder="All Agents"
+              truncateLength={32}
+            />
+          </div>
+        </div>
+
+        {/* Error */}
+        {error && (
+          <div className="mx-4 mt-3 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
+        )}
+
+        {/* Content */}
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-16">
+            <Loader size="lg" />
+            <p className="mt-4 text-xs text-gray-500">Loading bookings…</p>
+          </div>
+        ) : bookings.length === 0 ? (
+          <div className="px-4 py-14 text-center">
+            <Ticket className="mx-auto h-8 w-8 text-gray-300" strokeWidth={1.5} />
+            <p className="mt-3 text-sm font-medium text-gray-900">No bookings found</p>
+            <p className="mt-1 text-sm text-gray-500">Try adjusting your search or filters.</p>
+          </div>
+        ) : (
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[1060px] text-sm">
+                <thead className="border-b border-gray-100 bg-gray-50/60">
+                  <tr>
+                    <th className="whitespace-nowrap px-5 py-3 text-left text-[10px] font-bold uppercase tracking-widest text-gray-400">Booking ID</th>
+                    <th className="px-5 py-3 text-left   text-[10px] font-bold uppercase tracking-widest text-gray-400">Package</th>
+                    <th className="px-5 py-3 text-left   text-[10px] font-bold uppercase tracking-widest text-gray-400">Customer</th>
+                    <th className="px-5 py-3 text-left   text-[10px] font-bold uppercase tracking-widest text-gray-400">Booked By</th>
+                    <th className="px-5 py-3 text-left   text-[10px] font-bold uppercase tracking-widest text-gray-400">Travel Date</th>
+                    <th className="px-5 py-3 text-right  text-[10px] font-bold uppercase tracking-widest text-gray-400">Parent ₹</th>
+                    <th className="px-5 py-3 text-right  text-[10px] font-bold uppercase tracking-widest text-gray-400">WL ₹</th>
+                    <th className="px-5 py-3 text-right  text-[10px] font-bold uppercase tracking-widest text-gray-400">Extra ₹</th>
+                    <th className="px-5 py-3 text-right  text-[10px] font-bold uppercase tracking-widest text-gray-400">Total ₹</th>
+                    <th className="px-5 py-3 text-left   text-[10px] font-bold uppercase tracking-widest text-gray-400">Status</th>
+                    <th className="px-5 py-3 text-center text-[10px] font-bold uppercase tracking-widest text-gray-400">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {bookings.map((b) => {
+                    const extra    = (b.totalAmount || 0) - (b.whitelabelPriceAtBooking || 0)
+                    const isParent = b.bookedBy?.role === 'parent_agent'
+                    const status   = b.bookingStatus || 'confirmed'
+                    const title    = b.whitelabelPackage?.customTitle || b.package?.title || '—'
+
+                    return (
+                      <tr key={b._id} className="group transition-colors hover:bg-gray-50/60">
+
+                        {/* Booking ID */}
+                        <td className="whitespace-nowrap px-5 py-3.5">
+                          <p className="font-mono text-xs font-bold tracking-tight text-gray-900">{b.bookingId}</p>
+                          <p className="mt-0.5 text-[10px] text-gray-400">
+                            {new Date(b.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: '2-digit' })}
+                          </p>
+                        </td>
+
+                        {/* Package */}
+                        <td className="px-5 py-3.5">
+                          <p className="max-w-[200px] truncate text-sm font-semibold text-gray-900" title={title}>
+                            {title}
+                          </p>
+                          <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
+                            {b.whitelabelPackage && (
+                              <span className="inline-flex items-center gap-0.5 rounded-full bg-primary-100 px-1.5 py-0.5 text-[10px] font-bold text-primary-600">
+                                <Tag size={8} strokeWidth={2.5} /> WL
+                              </span>
+                            )}
+                            {b.package?.destination && (
+                              <span className="flex items-center gap-0.5 text-[10px] text-gray-400">
+                                <MapPin size={9} /> {b.package.destination}
+                              </span>
+                            )}
+                          </div>
+                        </td>
+
+                        {/* Customer */}
+                        <td className="px-5 py-3.5">
+                          <p className="text-sm font-semibold text-gray-900">{b.customer?.name || '—'}</p>
+                          {b.customer?.phone && (
+                            <p className="flex items-center gap-1 text-[10px] text-gray-500">
+                              <Phone className="h-2.5 w-2.5" /> {b.customer.phone}
+                            </p>
+                          )}
+                        </td>
+
+                        {/* Booked By */}
+                        <td className="px-5 py-3.5">
+                          <p className="truncate text-sm font-semibold text-gray-900">{b.bookedBy?.name || '—'}</p>
+                          <p className="text-[10px] font-bold uppercase tracking-wide text-primary-500">
+                            {(b.bookedBy?.role || '').replace(/_/g, ' ')}
+                          </p>
+                        </td>
+
+                        {/* Travel date */}
+                        <td className="whitespace-nowrap px-5 py-3.5">
+                          <div className="flex items-center gap-1.5 text-sm text-gray-700">
+                            <CalendarDays className="h-3.5 w-3.5 shrink-0 text-gray-400" strokeWidth={2} />
+                            {b.travelDate
+                              ? new Date(b.travelDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+                              : '—'}
+                          </div>
+                        </td>
+
+                        {/* Parent price */}
+                        <td className="px-5 py-3.5 text-right">
+                          <span className="text-sm tabular-nums text-gray-500">{fmtINR(b.parentPriceAtBooking)}</span>
+                        </td>
+
+                        {/* WL price */}
+                        <td className="px-5 py-3.5 text-right">
+                          {isParent
+                            ? <span className="select-none text-gray-300">—</span>
+                            : <span className="text-sm tabular-nums text-gray-600">{fmtINR(b.whitelabelPriceAtBooking)}</span>
+                          }
+                        </td>
+
+                        {/* Extra income */}
+                        <td className="px-5 py-3.5 text-right">
+                          {extra > 0
+                            ? (
+                              <span className="inline-flex items-center gap-0.5 rounded-md bg-emerald-50 px-2 py-0.5 text-xs font-bold tabular-nums text-emerald-700 ring-1 ring-inset ring-emerald-200">
+                                +{fmtINR(extra)}
+                              </span>
+                            )
+                            : <span className="select-none text-gray-300">—</span>
+                          }
+                        </td>
+
+                        {/* Total */}
+                        <td className="px-5 py-3.5 text-right">
+                          <span className="text-sm font-bold tabular-nums text-gray-900">{fmtINR(b.totalAmount)}</span>
+                        </td>
+
+                        {/* Status */}
+                        <td className="px-5 py-3.5">
+                          <span className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[11px] font-bold capitalize ${STATUS_BADGE[status] || 'border-gray-200 bg-gray-50 text-gray-600'}`}>
+                            <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${STATUS_DOT[status] || 'bg-gray-400'}`} />
+                            {b.bookingStatus}
+                          </span>
+                        </td>
+
+                        {/* View */}
+                        <td className="px-5 py-3.5 text-center">
+                          <button
+                            type="button"
+                            onClick={() => navigate(`/admin/bookings/${b._id}`)}
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-700"
+                          >
+                            <Eye className="h-3.5 w-3.5" strokeWidth={2} />
+                          </button>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            <Pagination
+              page={page}
+              totalPages={totalPages}
+              total={total}
+              limit={PAGE_SIZE}
+              onPageChange={(p) => { setPage(p); fetchBookings(p) }}
+            />
+          </>
         )}
       </div>
     </div>

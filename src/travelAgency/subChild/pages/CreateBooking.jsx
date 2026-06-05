@@ -89,7 +89,9 @@ export default function CreateBooking() {
   const [lookupMeta, setLookupMeta] = useState(null)
   const skipNextLookupRef = useRef(false)
 
-  const activeWhitelabels = (whitelabels ?? []).filter((w) => w.isActive !== false)
+  const activeWhitelabels = (whitelabels ?? []).filter(
+    (w) => w.isActive !== false && !w.originalPackage?.isSuspended
+  )
 
   useEffect(() => {
     const hasWl = activeWhitelabels.length > 0

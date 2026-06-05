@@ -31,6 +31,7 @@ export default function Bookings() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [searchParams] = useSearchParams()
   const [statusFilter, setStatusFilter] = useState('all')
   const [packageFilter, setPackageFilter] = useState(searchParams.get('packageId') || 'all')
@@ -43,6 +44,12 @@ export default function Bookings() {
   const [exportLoading, setExportLoading] = useState(false)
   const [agentType, setAgentType] = useState('all') // 'all', 'self', 'agency'
 
+  // Debounce search input — wait 400ms after user stops typing
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search.trim()), 400)
+    return () => clearTimeout(t)
+  }, [search])
+
   const fetchBookings = useCallback(async () => {
     setLoading(true)
     setError(null)
@@ -50,7 +57,7 @@ export default function Bookings() {
       const res = await listBookings({
         page,
         limit: PAGE_SIZE,
-        search: search.trim(),
+        search: debouncedSearch,
         status: statusFilter === 'all' ? undefined : statusFilter,
         packageId: packageFilter === 'all' ? undefined : packageFilter,
         agentType: agentType === 'all' ? undefined : agentType,
@@ -68,11 +75,11 @@ export default function Bookings() {
     } finally {
       setLoading(false)
     }
-  }, [page, search, statusFilter, packageFilter, agentType])
+  }, [page, debouncedSearch, statusFilter, packageFilter, agentType])
 
   useEffect(() => { fetchBookings() }, [fetchBookings])
 
-  useEffect(() => { setPage(1) }, [search, statusFilter, packageFilter, agentType])
+  useEffect(() => { setPage(1) }, [debouncedSearch, statusFilter, packageFilter, agentType])
 
   useEffect(() => {
     listBookings({ page: 1, limit: 5000, agentType: agentType === 'all' ? undefined : agentType })
@@ -331,7 +338,16 @@ export default function Bookings() {
                           </span>
                         </td>
                         <td className="px-4 py-3.5 align-middle">
-                          <span className="text-sm font-bold text-blue-600">₹{Number((b.totalAmount || 0) - (b.whitelabelPriceAtBooking || 0)).toLocaleString('en-IN')}</span>
+                          {(() => {
+                            const income = b.whitelabelPackage
+                              ? (b.whitelabelPriceAtBooking || 0) - (b.parentPriceAtBooking || 0)
+                              : (b.totalAmount || 0) - (b.parentPriceAtBooking || 0)
+                            return (
+                              <span className={`text-sm font-bold ${income > 0 ? 'text-blue-600' : income < 0 ? 'text-red-500' : 'text-gray-400'}`}>
+                                ₹{Number(income).toLocaleString('en-IN')}
+                              </span>
+                            )
+                          })()}
                         </td>
                         <td className="px-4 py-3.5 align-middle">
                           <div className="flex flex-col">
@@ -382,7 +398,9 @@ export default function Bookings() {
                 const customerName = b.customer?.name || '—'
                 const pkgTitle = b.whitelabelPackage?.customTitle || b.package?.title || '—'
                 const isWl = !!b.whitelabelPackage
-                const extraIncome = (b.totalAmount || 0) - (b.whitelabelPriceAtBooking || 0)
+                const extraIncome = b.whitelabelPackage
+                  ? (b.whitelabelPriceAtBooking || 0) - (b.parentPriceAtBooking || 0)
+                  : (b.totalAmount || 0) - (b.parentPriceAtBooking || 0)
                 return (
                   <div key={b._id} className="p-4 space-y-3 bg-white">
                     <div className="flex items-start justify-between">

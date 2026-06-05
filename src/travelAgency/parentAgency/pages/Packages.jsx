@@ -106,15 +106,22 @@ function PackageGridCard({ pkg, onEdit, onClone, onCover, onGallery, onToggle, o
 
       {/* Actions & Status (top-right) — OUTSIDE overflow-hidden container to prevent menu clipping */}
       <div className="absolute right-3 top-3 z-30 flex items-center gap-2">
-        <button type="button"
-          onClick={(e) => { e.stopPropagation(); onToggle(pkg) }}
-          className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide shadow-sm backdrop-blur-sm transition active:scale-95 ${pkg.isActive
-            ? 'bg-emerald-500/90 text-white hover:bg-emerald-600'
-            : 'bg-black/50 text-white/80 hover:bg-black/70'
-            }`}>
-          <span className={`h-1.5 w-1.5 rounded-full ${pkg.isActive ? 'bg-white animate-pulse' : 'bg-white/50'}`} />
-          {pkg.isActive ? 'Live' : 'Paused'}
-        </button>
+        {pkg.isSuspended ? (
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-red-600/90 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white shadow-sm backdrop-blur-sm cursor-default">
+            <span className="h-1.5 w-1.5 rounded-full bg-white/80" />
+            Suspended
+          </span>
+        ) : (
+          <button type="button"
+            onClick={(e) => { e.stopPropagation(); onToggle(pkg) }}
+            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide shadow-sm backdrop-blur-sm transition active:scale-95 ${pkg.isActive
+              ? 'bg-emerald-500/90 text-white hover:bg-emerald-600'
+              : 'bg-black/50 text-white/80 hover:bg-black/70'
+              }`}>
+            <span className={`h-1.5 w-1.5 rounded-full ${pkg.isActive ? 'bg-white animate-pulse' : 'bg-white/50'}`} />
+            {pkg.isActive ? 'Live' : 'Paused'}
+          </button>
+        )}
 
         <div className="relative">
           <button
@@ -133,7 +140,11 @@ function PackageGridCard({ pkg, onEdit, onClone, onCover, onGallery, onToggle, o
                   <button onClick={(e) => { e.stopPropagation(); onEdit(pkg); setMenuOpen(false) }} className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-xs font-semibold text-gray-700 hover:bg-gray-50">
                     <Edit2 className="h-4 w-4 text-gray-400" /> Edit Package
                   </button>
-                  <button onClick={(e) => { e.stopPropagation(); onClone(pkg); setMenuOpen(false) }} className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-xs font-semibold text-gray-700 hover:bg-gray-50">
+                  <button
+                    disabled={pkg.isSuspended}
+                    onClick={(e) => { e.stopPropagation(); if (!pkg.isSuspended) { onClone(pkg); setMenuOpen(false) } }}
+                    className={`flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-xs font-semibold ${pkg.isSuspended ? 'cursor-not-allowed text-gray-300' : 'text-gray-700 hover:bg-gray-50'}`}
+                  >
                     <Copy className="h-4 w-4 text-gray-400" /> Clone Package
                   </button>
                   <button onClick={(e) => { e.stopPropagation(); onCover(pkg); setMenuOpen(false) }} className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-xs font-semibold text-gray-700 hover:bg-gray-50">
@@ -242,11 +253,11 @@ function PackageGridCard({ pkg, onEdit, onClone, onCover, onGallery, onToggle, o
               View Details
             </button>
             <button type="button"
-              disabled={isExpired}
-              title={isExpired ? "Package start date has passed" : "Book Now"}
+              disabled={isExpired || pkg.isSuspended}
+              title={pkg.isSuspended ? 'Package is suspended by admin' : isExpired ? 'Package start date has passed' : 'Book Now'}
               onClick={() => navigate(`${AGENCY_PANEL_BASE}/bookings/create?packageId=${pkg._id}`)}
-              className={`flex-1 rounded-xl py-2.5 text-xs font-bold text-white transition shadow-sm ${isExpired ? 'bg-gray-300 cursor-not-allowed text-gray-500' : 'bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98]'}`}>
-              {isExpired ? 'Expired' : 'Book Now'}
+              className={`flex-1 rounded-xl py-2.5 text-xs font-bold text-white transition shadow-sm ${pkg.isSuspended || isExpired ? 'bg-gray-300 cursor-not-allowed text-gray-500' : 'bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98]'}`}>
+              {pkg.isSuspended ? 'Suspended' : isExpired ? 'Expired' : 'Book Now'}
             </button>
           </div>
         </div>
@@ -384,7 +395,11 @@ function PackageListRow({ pkg, onEdit, onClone, onCover, onGallery, onToggle, on
                   <button onClick={(e) => { e.stopPropagation(); onEdit(pkg); setMenuOpen(false) }} className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-xs font-semibold text-gray-700 hover:bg-gray-50">
                     <Edit2 className="h-4 w-4 text-gray-400" /> Edit Package
                   </button>
-                  <button onClick={(e) => { e.stopPropagation(); onClone(pkg); setMenuOpen(false) }} className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-xs font-semibold text-gray-700 hover:bg-gray-50">
+                  <button
+                    disabled={pkg.isSuspended}
+                    onClick={(e) => { e.stopPropagation(); if (!pkg.isSuspended) { onClone(pkg); setMenuOpen(false) } }}
+                    className={`flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-xs font-semibold ${pkg.isSuspended ? 'cursor-not-allowed text-gray-300' : 'text-gray-700 hover:bg-gray-50'}`}
+                  >
                     <Copy className="h-4 w-4 text-gray-400" /> Clone Package
                   </button>
                   <button onClick={(e) => { e.stopPropagation(); onCover(pkg); setMenuOpen(false) }} className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-xs font-semibold text-gray-700 hover:bg-gray-50">

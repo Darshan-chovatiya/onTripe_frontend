@@ -117,19 +117,72 @@ export default function Home() {
 
   if (!booking) {
     return (
-      <div className="flex min-h-[60vh] flex-col items-center justify-center p-8 text-center bg-white rounded-3xl border border-gray-100 shadow-sm dark:bg-gray-800 dark:border-gray-700">
-        <div className="mb-6 rounded-full bg-primary-50 p-6 dark:bg-primary-900/30">
-          <MapPin className="h-12 w-12 text-primary-600 dark:text-primary-400" />
-        </div>
-        <h2 className="mb-2 text-2xl font-bold text-gray-900 font-inter dark:text-white">Welcome, {user?.name || 'Traveler'}!</h2>
-        <p className="text-gray-600 mb-8 max-w-sm dark:text-gray-400">
-          We couldn't find an active booking for you yet. Once a booking is assigned, your itinerary will appear here.
-        </p>
-        <div className="flex gap-4">
-          <Link to="/customer/search" className="btn-primary">Find a Package</Link>
-          <button onClick={handleLogout} className="btn-secondary flex items-center gap-2">
-            <LogOut size={18} /> Logout
-          </button>
+      <div className="flex min-h-[80vh] items-center justify-center px-4 py-12">
+        <div className="w-full max-w-md">
+          {/* Card */}
+          <div className="overflow-hidden rounded-3xl bg-white shadow-xl border border-gray-100">
+            {/* Top gradient bar */}
+            <div className="h-2 w-full bg-gradient-to-r from-primary-400 via-primary-600 to-indigo-600" />
+
+            <div className="flex flex-col items-center px-8 py-10 text-center">
+              {/* Avatar initials */}
+              <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-primary-400 to-primary-700 text-2xl font-black text-white shadow-lg shadow-primary-200">
+                {(user?.name || 'T').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
+              </div>
+
+              {/* Greeting */}
+              <p className="text-sm font-semibold uppercase tracking-widest text-primary-500">
+                Hello, {user?.name?.split(' ')[0] || 'Traveler'}
+              </p>
+
+              {/* Icon */}
+              <div className="my-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-50 border border-amber-100">
+                <Info className="h-8 w-8 text-amber-500" />
+              </div>
+
+              <h2 className="text-xl font-black text-gray-900 leading-snug">
+                Not added to a package yet
+              </h2>
+              <p className="mt-3 text-sm leading-relaxed text-gray-500 max-w-xs">
+                You have not been added to a package yet. Please contact your travel administrator to get your trip assigned.
+              </p>
+
+              {/* Divider */}
+              <div className="my-7 w-full border-t border-dashed border-gray-100" />
+
+              {/* Info note */}
+              <div className="w-full rounded-2xl bg-gray-50 border border-gray-100 px-5 py-4 text-left">
+                <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400 mb-2">What to do next</p>
+                <ul className="space-y-2 text-sm text-gray-600">
+                  <li className="flex items-start gap-2">
+                    <span className="mt-0.5 h-4 w-4 shrink-0 rounded-full bg-primary-100 flex items-center justify-center text-[9px] font-black text-primary-600">1</span>
+                    Contact your travel agency or trip organizer.
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="mt-0.5 h-4 w-4 shrink-0 rounded-full bg-primary-100 flex items-center justify-center text-[9px] font-black text-primary-600">2</span>
+                    Ask them to assign a package to your account.
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="mt-0.5 h-4 w-4 shrink-0 rounded-full bg-primary-100 flex items-center justify-center text-[9px] font-black text-primary-600">3</span>
+                    Log back in once your itinerary is ready.
+                  </li>
+                </ul>
+              </div>
+
+              {/* Logout */}
+              <button
+                onClick={handleLogout}
+                className="mt-6 flex w-full items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white py-3 text-sm font-semibold text-gray-600 transition hover:bg-gray-50 active:scale-95"
+              >
+                <LogOut size={16} /> Sign out
+              </button>
+            </div>
+          </div>
+
+          {/* Footer note */}
+          <p className="mt-4 text-center text-xs text-gray-400">
+            This page will automatically update once a package is assigned.
+          </p>
         </div>
       </div>
     )

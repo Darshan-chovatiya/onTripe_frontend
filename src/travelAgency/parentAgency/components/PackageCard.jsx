@@ -47,12 +47,15 @@ export default function PackageCard({ pkg, onEdit, onUpdateCover, onUpdateGaller
 
         <div className="absolute right-3 top-3 flex flex-col items-end gap-1.5">
           <span
-            className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide shadow-sm ${pkg.isActive
-              ? 'bg-emerald-500/95 text-white'
-              : 'bg-white/95 text-red-600 ring-1 ring-red-200'
-              }`}
+            className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide shadow-sm ${
+              pkg.isSuspended
+                ? 'bg-red-600/95 text-white'
+                : pkg.isActive
+                  ? 'bg-emerald-500/95 text-white'
+                  : 'bg-white/95 text-red-600 ring-1 ring-red-200'
+            }`}
           >
-            {pkg.isActive ? 'Live' : 'Inactive'}
+            {pkg.isSuspended ? 'Suspended' : pkg.isActive ? 'Live' : 'Inactive'}
           </span>
         </div>
 

@@ -150,7 +150,7 @@ export default function CommunityChat({
   // Do not require AGENT_ROLES — a mis-mapped role would hide controls while the API still allows the user.
   const isAgentManager = useMemo(() => {
     if (!user || !community) return false
-    if (user.role === ROLES.ADMIN) return true
+    if (user.role === ROLES.ADMIN) return true // platform admin: all package communities
     const uid = idStr(user)
     if (!uid) return false
     return (community.agentMembers || []).some((m) => idStr(m) === uid)
@@ -823,7 +823,9 @@ export default function CommunityChat({
     const description = isUnauthorized
       ? 'Your session may have expired. Log in again to join the group chat for this trip.'
       : isForbidden
-        ? (loadError?.message || 'You are not a member of this trip community yet.')
+        ? (loadError?.message || (user?.role === ROLES.ADMIN
+          ? 'You do not have access to this community.'
+          : 'You are not a member of this trip community yet.'))
         : isNotFound
           ? (loadError?.message || 'Group chat has not been set up for this package yet. Check back after your booking is confirmed.')
           : (loadError?.message || 'Something went wrong while loading the community. Please try again later.')
@@ -1197,31 +1199,6 @@ export default function CommunityChat({
         <div className="min-h-0 flex-1 overflow-y-auto bg-white dark:bg-gray-950">
           <div className="p-4 space-y-6">
             <section>
-              <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3 px-1">Connectivity</h4>
-              <div className="space-y-2">
-                <label className="flex items-center justify-between p-3 rounded-xl border border-gray-100 bg-gray-50/50 dark:border-white/5 dark:bg-white/5">
-                  <div>
-                    <p className="text-sm font-semibold text-gray-900 dark:text-white">Online Status</p>
-                    <p className="text-xs text-gray-500">Enable real-time message updates</p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const next = !isSocketEnabled
-                      setIsSocketEnabled(next)
-                      localStorage.setItem('chat_socket_enabled', String(next))
-                    }}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                      isSocketEnabled ? 'bg-primary-600' : 'bg-gray-200 dark:bg-gray-700'
-                    }`}
-                  >
-                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isSocketEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
-                  </button>
-                </label>
-              </div>
-            </section>
-
-            <section>
               <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3 px-1">Notifications</h4>
               <div className="space-y-2">
                 <label className="flex items-center justify-between p-3 rounded-xl border border-gray-100 bg-gray-50/50 dark:border-white/5 dark:bg-white/5">
@@ -1263,9 +1240,9 @@ export default function CommunityChat({
               </div>
             </section>
 
-            <div className="pt-4 border-t border-gray-100 dark:border-white/5 text-center">
+            {/* <div className="pt-4 border-t border-gray-100 dark:border-white/5 text-center">
               <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Package Chat Settings</p>
-            </div>
+            </div> */}
           </div>
         </div>
       ) : subScreen === 'gallery' ? (

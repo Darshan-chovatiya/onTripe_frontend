@@ -219,7 +219,7 @@ export default function AgencyCustomers() {
         agencyCustomerId: item._id,
         name: item.name || item.customer?.name || '—',
         phone: item.phone || item.customer?.phone || '—',
-        email: item.email || item.customer?.email || '—',
+        email: item.email || item.customer?.email ,
         notes: item.notes || '',
         dob: item.dob || null,
         gender: item.gender || '',
@@ -634,10 +634,10 @@ export default function AgencyCustomers() {
                         <Phone className="h-3.5 w-3.5 text-gray-400" />
                         {c.phone}
                       </span>
-                      <span className="flex items-center gap-1.5 text-xs text-gray-500">
+                       {c.email && <span className="flex items-center gap-1.5 text-xs text-gray-500">
                         <Mail className="h-3.5 w-3.5 text-gray-400" />
                         {c.email}
-                      </span>
+                      </span> }
                     </div>
                   </td>
                   <td className="px-4 py-3 text-gray-800">

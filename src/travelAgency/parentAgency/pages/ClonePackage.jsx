@@ -103,6 +103,11 @@ export default function ClonePackage() {
       try {
         const [pkgRes, vendorRes] = await Promise.all([getPackageById(id), listVendors()])
         const pkg = pkgRes.data?.data?.package || pkgRes.data?.data
+        if (pkg.isSuspended) {
+          toast.error('This package has been suspended by the admin and cannot be cloned.')
+          navigate('/agency/packages')
+          return
+        }
         setVendors(vendorRes.data?.data?.vendors || [])
         setExistingCover(pkg.coverImage || null)
         setExistingGallery(pkg.images || [])

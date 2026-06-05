@@ -400,10 +400,12 @@ export default function Customers() {
                         </td>
                         {/* Email */}
                         <td className="max-w-[200px] px-5 py-3.5">
-                          <div className="flex items-center gap-1.5">
-                            <Mail className="h-3.5 w-3.5 shrink-0 text-gray-400" strokeWidth={2} />
-                            <span className="truncate text-xs text-gray-700" title={c.email || ''}>{c.email || '—'}</span>
-                          </div>
+                          {c.email ? (
+                            <div className="flex items-center gap-1.5">
+                              <Mail className="h-3.5 w-3.5 shrink-0 text-gray-400" strokeWidth={2} />
+                              <span className="truncate text-xs text-gray-700" title={c.email}>{c.email}</span>
+                            </div>
+                          ) : null}
                         </td>
                         {/* Phone */}
                         <td className="px-5 py-3.5">

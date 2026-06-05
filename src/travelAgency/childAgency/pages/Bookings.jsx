@@ -46,12 +46,19 @@ export default function Bookings() {
   const { bookings, loading, error, currentUserId, fetchBookings, pagination } = useChildBookings()
   const { toast } = useToast()
   const [search, setSearch] = useState(initialSearch)
+  const [debouncedSearch, setDebouncedSearch] = useState(initialSearch)
   const [statusFilter, setStatusFilter] = useState('all')
   const [whitelabelFilter, setWhitelabelFilter] = useState(whitelabelId || 'all')
   const [whitelabels, setWhitelabels] = useState([])
   const [page, setPage] = useState(1)
   const [exportLoading, setExportLoading] = useState(false)
   const [agentType, setAgentType] = useState('all') // 'all', 'self', 'agency'
+
+  // Debounce search input — wait 400ms after user stops typing
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search.trim()), 400)
+    return () => clearTimeout(t)
+  }, [search])
 
   // Fetch whitelabels for filter
   useEffect(() => {
@@ -63,20 +70,20 @@ export default function Bookings() {
   // Reset page when filters change
   useEffect(() => {
     setPage(1)
-  }, [search, statusFilter, whitelabelFilter, agentType])
+  }, [debouncedSearch, statusFilter, whitelabelFilter, agentType])
 
   // Fetch bookings with pagination
   useEffect(() => {
     fetchBookings({
       page,
       limit: PAGE_SIZE,
-      search: search.trim(),
+      search: debouncedSearch,
       status: statusFilter === 'all' ? undefined : statusFilter,
       packageId,
       whitelabelId: whitelabelFilter === 'all' ? undefined : whitelabelFilter,
       agentType: agentType === 'all' ? undefined : agentType
     })
-  }, [fetchBookings, page, search, statusFilter, packageId, whitelabelFilter, agentType])
+  }, [fetchBookings, page, debouncedSearch, statusFilter, packageId, whitelabelFilter, agentType])
 
   const handleExport = async () => {
     setExportLoading(true)

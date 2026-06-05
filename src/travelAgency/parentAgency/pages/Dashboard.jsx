@@ -5,10 +5,10 @@ import {
   Copy, Check, ArrowRight, Share2,
   ChevronRight, Wallet, Layers, RefreshCw,
   ShieldCheck, Clock, XCircle, CalendarDays,
-  TrendingUp, Building2, GitBranch,
+  Building2, TrendingUp, IndianRupee,
 } from 'lucide-react'
 import { useAuth } from '@/shared/context/AuthContext.jsx'
-import { getAnalytics, getEarnings } from '@/travelAgency/parentAgency/services/parentAgencyApi.js'
+import { getAnalytics } from '@/travelAgency/parentAgency/services/parentAgencyApi.js'
 import { getApiErrorMessage } from '@/shared/services/apiHelpers.js'
 
 /* ── date helpers ── */
@@ -23,6 +23,10 @@ function lastMonthRange() {
   const d = new Date(); const y = d.getUTCFullYear(), m = d.getUTCMonth()
   const sy = m === 0 ? y - 1 : y, sm = m === 0 ? 12 : m
   return { start: `${sy}-${String(sm).padStart(2, '0')}-01`, end: new Date(Date.UTC(y, m, 0)).toISOString().slice(0, 10) }
+}
+function fmtDate(s) {
+  if (!s) return ''
+  return new Date(s).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
 const PRESETS = [
@@ -40,30 +44,56 @@ function fmt(n) {
   if (n >= 10000000) return `₹${(n / 10000000).toFixed(1)}Cr`
   if (n >= 100000)   return `₹${(n / 100000).toFixed(1)}L`
   if (n >= 1000)     return `₹${(n / 1000).toFixed(1)}K`
-  return `₹${n}`
+  return `₹${n.toLocaleString('en-IN')}`
 }
 
-function NumSkeleton() {
-  return <span className="inline-block h-8 w-14 animate-pulse rounded-lg bg-gray-100" />
+function Skeleton({ w = 'w-14', h = 'h-8' }) {
+  return <span className={`inline-block ${h} ${w} animate-pulse rounded-lg bg-gray-100`} />
 }
 
-/* ── Stat card — clean white ── */
-function StatCard({ label, value, icon: Icon, accent, loading, onClick }) {
+/* Period stat card — changes with date filter */
+function PeriodCard({ label, value, sub, icon: Icon, accent, loading, onClick }) {
   return (
     <button type="button" onClick={onClick}
       className="group w-full rounded-2xl border border-gray-100 bg-white p-5 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
       <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400">{label}</p>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-1.5">
+            <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400">{label}</p>
+            <span className="inline-flex items-center rounded-full bg-primary-50 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-primary-500">period</span>
+          </div>
           <p className="mt-2 text-3xl font-black tabular-nums text-gray-900">
-            {loading ? <NumSkeleton /> : value}
+            {loading ? <Skeleton /> : value}
+          </p>
+          {sub && <p className="mt-1 text-[10px] text-gray-400 truncate">{sub}</p>}
+        </div>
+        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${accent}`}>
+          <Icon className="h-5 w-5" strokeWidth={2} />
+        </div>
+      </div>
+    </button>
+  )
+}
+
+/* Total stat card — always all-time, never affected by date filter */
+function TotalCard({ label, value, icon: Icon, accent, loading, onClick }) {
+  return (
+    <button type="button" onClick={onClick}
+      className="group w-full rounded-2xl border border-gray-100 bg-white p-5 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-1.5">
+            <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400">{label}</p>
+            <span className="inline-flex items-center rounded-full bg-gray-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-gray-400">total</span>
+          </div>
+          <p className="mt-2 text-3xl font-black tabular-nums text-gray-900">
+            {loading ? <Skeleton /> : value}
           </p>
         </div>
         <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${accent}`}>
           <Icon className="h-5 w-5" strokeWidth={2} />
         </div>
       </div>
-      <div className={`mt-4 h-0.5 w-full rounded-full ${accent.replace('bg-', 'bg-').replace('text-', '')} opacity-20 group-hover:opacity-40 transition-opacity`} />
     </button>
   )
 }
@@ -79,7 +109,6 @@ export default function ParentDashboard() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const [analytics, setAnalytics] = useState(null)
-  const [earnings, setEarnings]   = useState(null)
   const [loading, setLoading]     = useState(true)
   const [err, setErr]             = useState('')
   const [copied, setCopied]       = useState(false)
@@ -100,19 +129,21 @@ export default function ParentDashboard() {
     setLoading(true); setErr('')
     try {
       const params = range?.start && range?.end ? { startDate: range.start, endDate: range.end } : {}
-      const [aRes, eRes] = await Promise.allSettled([getAnalytics(params), getEarnings(params)])
-      if (aRes.status === 'fulfilled') setAnalytics(aRes.value.data?.data || null)
-      if (eRes.status === 'fulfilled') setEarnings(eRes.value.data?.data || null)
-      if (aRes.status === 'rejected')  setErr(getApiErrorMessage(aRes.reason))
+      const res = await getAnalytics(params)
+      setAnalytics(res.data?.data || null)
+    } catch (e) {
+      setErr(getApiErrorMessage(e))
     } finally { setLoading(false) }
   }
 
   useEffect(() => { fetchAll(DEFAULT_RANGE) }, [])
 
-  const totalRevenue  = earnings?.summary?.totalRevenue  ?? analytics?.totalRevenue  ?? 0
-  const totalEarnings = earnings?.summary?.totalEarnings ?? analytics?.totalEarnings ?? 0
+  const totalRevenue     = analytics?.totalRevenue  ?? 0
+  const totalEarnings    = analytics?.totalEarnings ?? 0
+  const totalBookings    = analytics?.totalBookings ?? 0
   const bookingsByStatus = analytics?.bookingsByStatus || []
-  const getStatus = (s) => bookingsByStatus.find(b => b._id === s)?.count ?? 0
+  const getStatus        = (s) => bookingsByStatus.find(b => b._id === s)?.count ?? 0
+  const periodLabel      = `${fmtDate(dateRange.start)} – ${fmtDate(dateRange.end)}`
 
   return (
     <div className="animate-fade-in space-y-6 pb-8">
@@ -129,7 +160,6 @@ export default function ParentDashboard() {
       {/* ── Date filter bar ── */}
       <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          {/* Preset pills */}
           <div className="flex flex-wrap gap-1.5">
             {PRESETS.map(p => {
               const r = p.getRange()
@@ -139,7 +169,7 @@ export default function ParentDashboard() {
                   onClick={() => { setDateRange(r); fetchAll(r) }}
                   className={`rounded-full border px-3 py-1 text-xs font-semibold transition-all ${
                     active
-                      ? 'border-gray-900 bg-gray-900 text-white'
+                      ? 'border-primary-600 bg-primary-600 text-white'
                       : 'border-gray-200 bg-white text-gray-500 hover:border-gray-400 hover:text-gray-700'
                   }`}>
                   {p.label}
@@ -147,23 +177,20 @@ export default function ParentDashboard() {
               )
             })}
           </div>
-
-          {/* Custom date range */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 mt-2 sm:mt-0">
-            <div className="flex flex-1 sm:flex-none items-center justify-between sm:justify-start gap-1.5 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2">
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2">
               <CalendarDays className="h-3.5 w-3.5 shrink-0 text-gray-400 hidden sm:block" strokeWidth={2} />
               <input type="date" value={dateRange.start} max={dateRange.end || todayStr()}
                 onChange={e => { const r = { ...dateRange, start: e.target.value }; setDateRange(r); if (r.start && r.end) fetchAll(r) }}
-                className="w-full sm:w-[120px] bg-transparent text-xs font-medium text-gray-700 focus:outline-none" />
-              <span className="text-gray-300">—</span>
+                className="w-[110px] bg-transparent text-xs font-medium text-gray-700 focus:outline-none" />
+              <span className="text-gray-300">–</span>
               <input type="date" value={dateRange.end} min={dateRange.start} max={todayStr()}
                 onChange={e => { const r = { ...dateRange, end: e.target.value }; setDateRange(r); if (r.start && r.end) fetchAll(r) }}
-                className="w-full sm:w-[120px] bg-transparent text-xs font-medium text-gray-700 focus:outline-none" />
+                className="w-[110px] bg-transparent text-xs font-medium text-gray-700 focus:outline-none" />
             </div>
             <button type="button" onClick={() => fetchAll(dateRange)} disabled={loading}
-              className="flex h-9 w-full sm:w-9 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-400 transition hover:border-gray-400 hover:text-gray-700 disabled:opacity-40">
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-400 transition hover:border-gray-400 hover:text-gray-700 disabled:opacity-40">
               <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} strokeWidth={2} />
-              <span className="ml-2 text-xs font-semibold sm:hidden">Refresh</span>
             </button>
           </div>
         </div>
@@ -171,16 +198,52 @@ export default function ParentDashboard() {
 
       {err && <div className="rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">{err}</div>}
 
-      {/* ── Stat cards ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatCard label="Total Bookings"  value={loading ? null : analytics?.totalBookings ?? 0}
-          icon={BookOpen} accent="bg-sky-50 text-sky-600"    loading={loading} onClick={() => navigate('/agency/bookings')} />
-        <StatCard label="Packages"        value={loading ? null : analytics?.totalPackages ?? 0}
-          icon={Package}  accent="bg-violet-50 text-violet-600" loading={loading} onClick={() => navigate('/agency/packages')} />
-        <StatCard label="Child Agencies"  value={loading ? null : analytics?.totalChildAgencies ?? 0}
-          icon={Users}    accent="bg-amber-50 text-amber-600"  loading={loading} onClick={() => navigate('/agency/manage-downstream')} />
-        <StatCard label="Revenue"         value={loading ? null : fmt(totalRevenue ?? 0)}
-          icon={Wallet}   accent="bg-emerald-50 text-emerald-600" loading={loading} onClick={() => navigate('/agency/earnings')} />
+      {/* ── Period stat cards (change with date filter) ── */}
+      <div>
+        <p className="mb-2 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-gray-400">
+          <CalendarDays className="h-3 w-3" />
+          Period summary · {periodLabel}
+        </p>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <PeriodCard
+            label="Bookings"
+            value={loading ? null : totalBookings}
+            sub={periodLabel}
+            icon={BookOpen}
+            accent="bg-sky-50 text-sky-600"
+            loading={loading}
+            onClick={() => navigate('/agency/bookings')}
+          />
+          <PeriodCard
+            label="Revenue"
+            value={loading ? null : fmt(totalRevenue)}
+            sub={periodLabel}
+            icon={IndianRupee}
+            accent="bg-emerald-50 text-emerald-600"
+            loading={loading}
+            onClick={() => navigate('/agency/earnings')}
+          />
+          <PeriodCard
+            label="Net Earnings"
+            value={loading ? null : fmt(totalEarnings)}
+            sub={periodLabel}
+            icon={Wallet}
+            accent="bg-primary-50 text-primary-600"
+            loading={loading}
+            onClick={() => navigate('/agency/earnings')}
+          />
+        </div>
+      </div>
+
+      {/* ── All-time inventory cards (never change with date) ── */}
+      <div>
+        <p className="mb-2 text-[11px] font-bold uppercase tracking-widest text-gray-400">Platform totals · All time</p>
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          <TotalCard label="Packages"       value={loading ? null : analytics?.totalPackages ?? 0}       icon={Package}   accent="bg-violet-50 text-violet-600"  loading={loading} onClick={() => navigate('/agency/packages')} />
+          <TotalCard label="Child Agencies" value={loading ? null : analytics?.totalChildAgencies ?? 0}  icon={Users}     accent="bg-amber-50 text-amber-600"    loading={loading} onClick={() => navigate('/agency/manage-downstream')} />
+          <TotalCard label="Vendors"        value={loading ? null : analytics?.totalVendors ?? 0}        icon={Store}     accent="bg-rose-50 text-rose-500"      loading={loading} onClick={() => navigate('/agency/vendors')} />
+          <TotalCard label="Whitelabels"    value={loading ? null : analytics?.totalWhitelabels ?? 0}    icon={Layers}    accent="bg-indigo-50 text-indigo-600"  loading={loading} onClick={() => navigate('/agency/packages')} />
+        </div>
       </div>
 
       {/* ── Main grid ── */}
@@ -193,8 +256,8 @@ export default function ParentDashboard() {
           <section className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
             <div className="flex items-center justify-between border-b border-gray-50 px-6 py-4">
               <div>
-                <h2 className="text-sm font-bold text-gray-900">Booking Overview</h2>
-                <p className="text-xs text-gray-400">{dateRange.start} – {dateRange.end}</p>
+                <h2 className="text-sm font-bold text-gray-900">Booking Breakdown</h2>
+                <p className="mt-0.5 text-xs text-gray-400">{periodLabel} · {totalBookings} bookings</p>
               </div>
               <Link to="/agency/bookings"
                 className="inline-flex items-center gap-1 rounded-full border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-600 transition hover:bg-gray-50">
@@ -203,15 +266,43 @@ export default function ParentDashboard() {
             </div>
             <div className="grid grid-cols-2 gap-px bg-gray-100 sm:grid-cols-4">
               {[
-                { label: 'Confirmed', status: 'confirmed', num: 'text-sky-700',     bg: 'bg-white', badge: 'bg-sky-100 text-sky-700' },
-                { label: 'Ongoing',   status: 'ongoing',   num: 'text-amber-700',   bg: 'bg-white', badge: 'bg-amber-100 text-amber-700' },
-                { label: 'Completed', status: 'completed', num: 'text-emerald-700', bg: 'bg-white', badge: 'bg-emerald-100 text-emerald-700' },
-                { label: 'Cancelled', status: 'cancelled', num: 'text-red-600',     bg: 'bg-white', badge: 'bg-red-100 text-red-600' },
-              ].map(({ label, status, num, bg, badge }) => (
-                <div key={status} className={`${bg} p-5`}>
+                { label: 'Confirmed', status: 'confirmed', num: 'text-sky-700',     badge: 'bg-sky-100 text-sky-700' },
+                { label: 'Ongoing',   status: 'ongoing',   num: 'text-amber-700',   badge: 'bg-amber-100 text-amber-700' },
+                { label: 'Completed', status: 'completed', num: 'text-emerald-700', badge: 'bg-emerald-100 text-emerald-700' },
+                { label: 'Cancelled', status: 'cancelled', num: 'text-red-600',     badge: 'bg-red-100 text-red-600' },
+              ].map(({ label, status, num, badge }) => (
+                <div key={status} className="bg-white p-5">
                   <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${badge}`}>{label}</span>
                   <p className={`mt-3 text-3xl font-black tabular-nums ${num}`}>
-                    {loading ? <span className="inline-block h-8 w-10 animate-pulse rounded bg-gray-100" /> : getStatus(status)}
+                    {loading ? <Skeleton w="w-10" /> : getStatus(status)}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* Earnings summary */}
+          <section className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+            <div className="flex items-center justify-between border-b border-gray-50 px-6 py-4">
+              <div>
+                <h2 className="text-sm font-bold text-gray-900">Earnings Summary</h2>
+                <p className="mt-0.5 text-xs text-gray-400">{periodLabel}</p>
+              </div>
+              <Link to="/agency/earnings"
+                className="inline-flex items-center gap-1 rounded-full border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-600 transition hover:bg-gray-50">
+                Details <ChevronRight className="h-3.5 w-3.5" strokeWidth={2.5} />
+              </Link>
+            </div>
+            <div className="grid grid-cols-1 divide-y sm:grid-cols-3 sm:divide-x sm:divide-y-0 divide-gray-100">
+              {[
+                { label: 'Total Revenue', value: fmt(totalRevenue),  color: 'text-emerald-700' },
+                { label: 'Net Earnings',  value: fmt(totalEarnings), color: 'text-sky-700' },
+                { label: 'Bookings',      value: loading ? null : totalBookings, color: 'text-gray-900' },
+              ].map(({ label, value, color }) => (
+                <div key={label} className="p-5">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">{label}</p>
+                  <p className={`mt-2 text-2xl font-black tabular-nums ${color}`}>
+                    {loading ? <Skeleton h="h-7" /> : value}
                   </p>
                 </div>
               ))}
@@ -237,34 +328,6 @@ export default function ParentDashboard() {
                   </div>
                   <ArrowRight className="h-4 w-4 shrink-0 text-gray-300 transition group-hover:translate-x-0.5 group-hover:text-gray-600" strokeWidth={2} />
                 </Link>
-              ))}
-            </div>
-          </section>
-
-          {/* Earnings summary */}
-          <section className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
-            <div className="flex items-center justify-between border-b border-gray-50 px-6 py-4">
-              <div>
-                <h2 className="text-sm font-bold text-gray-900">Earnings Summary</h2>
-                <p className="text-xs text-gray-400">{dateRange.start} – {dateRange.end}</p>
-              </div>
-              <Link to="/agency/earnings"
-                className="inline-flex items-center gap-1 rounded-full border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-600 transition hover:bg-gray-50">
-                Details <ChevronRight className="h-3.5 w-3.5" strokeWidth={2.5} />
-              </Link>
-            </div>
-            <div className="grid grid-cols-1 divide-y sm:grid-cols-3 sm:divide-x sm:divide-y-0 divide-gray-100">
-              {[
-                { label: 'Total Revenue', value: fmt(totalRevenue ?? 0),  color: 'text-emerald-700' },
-                { label: 'Net Earnings',  value: fmt(totalEarnings ?? 0), color: 'text-sky-700' },
-                { label: 'Vendors',       value: loading ? null : analytics?.totalVendors ?? 0, color: 'text-violet-700' },
-              ].map(({ label, value, color }) => (
-                <div key={label} className="p-5">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">{label}</p>
-                  <p className={`mt-2 text-2xl font-black tabular-nums ${color}`}>
-                    {loading ? <span className="inline-block h-7 w-14 animate-pulse rounded bg-gray-100" /> : value}
-                  </p>
-                </div>
               ))}
             </div>
           </section>
@@ -313,26 +376,24 @@ export default function ParentDashboard() {
           <section className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
             <div className="border-b border-gray-50 px-5 py-4">
               <h2 className="text-sm font-bold text-gray-900">Network</h2>
-              <p className="text-xs text-gray-400">Your distribution hierarchy</p>
+              <p className="text-xs text-gray-400">All-time distribution hierarchy</p>
             </div>
             <div className="divide-y divide-gray-50">
               {[
-                { label: 'Child Agencies', value: analytics?.totalChildAgencies ?? 0, icon: Building2, to: '/agency/manage-downstream' },
-                { label: 'Packages',       value: analytics?.totalPackages ?? 0,       icon: Package,   to: '/agency/packages' },
-                { label: 'Vendors',        value: analytics?.totalVendors ?? 0,        icon: Store,     to: '/agency/vendors' },
-                { label: 'Whitelabels',    value: analytics?.totalWhitelabels ?? 0,    icon: Layers,    to: '/agency/packages' },
-              ].map(({ label, value, icon: Icon, to }) => (
-                <Link key={label} to={to}
-                  className="group flex items-center gap-3 px-5 py-3 transition-colors hover:bg-gray-50">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-gray-100 bg-gray-50 text-gray-500 transition group-hover:border-gray-200 group-hover:bg-white">
+                { label: 'Child Agencies', value: analytics?.totalChildAgencies ?? 0, icon: Building2 },
+                { label: 'Packages',       value: analytics?.totalPackages ?? 0,       icon: Package },
+                { label: 'Vendors',        value: analytics?.totalVendors ?? 0,        icon: Store },
+                { label: 'Whitelabels',    value: analytics?.totalWhitelabels ?? 0,    icon: Layers },
+              ].map(({ label, value, icon: Icon }) => (
+                <div key={label} className="flex items-center gap-3 px-5 py-3">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-gray-100 bg-gray-50 text-gray-500">
                     <Icon className="h-4 w-4" strokeWidth={2} />
                   </div>
                   <span className="flex-1 text-sm font-medium text-gray-700">{label}</span>
                   <span className="text-sm font-bold tabular-nums text-gray-900">
-                    {loading ? <span className="inline-block h-4 w-6 animate-pulse rounded bg-gray-100" /> : value}
+                    {loading ? <Skeleton w="w-6" h="h-4" /> : value}
                   </span>
-                  <ChevronRight className="h-3.5 w-3.5 text-gray-300 transition group-hover:text-gray-500" strokeWidth={2} />
-                </Link>
+                </div>
               ))}
             </div>
           </section>
