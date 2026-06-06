@@ -197,10 +197,7 @@ export default function CommunityChat({
             if (np?.success) {
               const enabled = np.data?.notificationsEnabled !== false
               setNotificationsEnabled(enabled)
-              if (!enabled) {
-                setIsSocketEnabled(false)
-                localStorage.setItem('chat_socket_enabled', 'false')
-              }
+              // Notification preference only controls push/sound, not socket connectivity
             }
           })
           .catch(() => {})
@@ -251,10 +248,18 @@ export default function CommunityChat({
       socketRef.current = null
     }
 
-    if (!isSocketEnabled) return
+    // Always connect — socket is required for real-time messages from others.
+    // Mute/notification preferences only affect sound/push, not the connection.
+    socketRef.current = io(SOCKET_URL, { transports: ['websocket', 'polling'] })
 
-    socketRef.current = io(SOCKET_URL)
-    socketRef.current.emit('join_community', communityId)
+    socketRef.current.on('connect', () => {
+      socketRef.current.emit('join_community', communityId)
+    })
+
+    // If already connected (socket reuse), join immediately
+    if (socketRef.current.connected) {
+      socketRef.current.emit('join_community', communityId)
+    }
 
     socketRef.current.on('new_message', (msg) => {
       setMessages((prev) => {
@@ -302,9 +307,13 @@ export default function CommunityChat({
   useEffect(() => {
     fetchCommunity()
     return () => {
-      if (socketRef.current) socketRef.current.disconnect()
+      if (socketRef.current) {
+        socketRef.current.disconnect()
+        socketRef.current = null
+      }
     }
-  }, [packageId, isSocketEnabled])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [packageId])
 
   useEffect(() => {
     pendingImagesRef.current = pendingImages
@@ -597,6 +606,16 @@ export default function CommunityChat({
     setTimeout(() => inputRef.current?.focus(), 10)
   }
 
+  /** Add a message to state, deduplicating by _id so socket + HTTP never double-show. */
+  const addMessageToState = useCallback((msg) => {
+    if (!msg) return
+    setMessages((prev) => {
+      const mid = msg._id != null ? String(msg._id) : ''
+      if (mid && prev.some((p) => String(p._id) === mid)) return prev
+      return [...prev, msg]
+    })
+  }, [])
+
   const handleSendMessage = async (e) => {
     e.preventDefault()
     if (!canPostInCommunity) {
@@ -610,14 +629,19 @@ export default function CommunityChat({
     setIsSending(true)
     try {
       if (queue.length === 0) {
+        // Text-only message
         const { data } = await axiosInstance.post(`/community/${community._id}/messages`, { content: text }, communityAuthConfig)
-        if (!data?.success) toast.error('Message failed to send')
-        else setInputText('')
+        if (!data?.success) {
+          toast.error('Message failed to send')
+        } else {
+          setInputText('')
+          // Immediately show own message — socket will dedup if it also fires
+          if (data.data?.message) addMessageToState(data.data.message)
+        }
         return
       }
 
-      // One text bubble for the whole batch: with 2+ photos, send the line as a normal message first
-      // so it is not hidden as a caption on only the first image.
+      // One text bubble for the whole batch: with 2+ photos, send the line as a normal message first.
       if (text && queue.length > 1) {
         const { data: textRes } = await axiosInstance.post(
           `/community/${community._id}/messages`,
@@ -629,11 +653,13 @@ export default function CommunityChat({
           return
         }
         setInputText('')
+        if (textRes.data?.message) addMessageToState(textRes.data.message)
       }
 
       const captionOnImage = text && queue.length === 1 ? text : ''
 
       let lastOk = -1
+      const sentMessages = []
       for (let i = 0; i < queue.length; i++) {
         const formData = new FormData()
         formData.append('media', queue[i].file)
@@ -647,6 +673,7 @@ export default function CommunityChat({
           toast.error('A photo failed to send')
           break
         }
+        if (data.data?.message) sentMessages.push(data.data.message)
         lastOk = i
       }
 
@@ -654,12 +681,13 @@ export default function CommunityChat({
         queue.forEach((q) => URL.revokeObjectURL(q.previewUrl))
         setPendingImages([])
         if (queue.length === 1) setInputText('')
+        // Immediately show all sent media messages
+        sentMessages.forEach(addMessageToState)
         toast.success(queue.length === 1 ? (queue[0].type === 'video' ? 'Video sent' : 'Photo sent') : `${queue.length} items sent`)
       } else if (lastOk >= 0) {
-        for (let j = 0; j <= lastOk; j++) {
-          URL.revokeObjectURL(queue[j].previewUrl)
-        }
+        for (let j = 0; j <= lastOk; j++) URL.revokeObjectURL(queue[j].previewUrl)
         setPendingImages(queue.slice(lastOk + 1))
+        sentMessages.forEach(addMessageToState)
         toast.error('Some photos were not sent — you can retry the rest')
       }
     } catch {
